@@ -1,0 +1,239 @@
+<?php
+/**
+ * sqlsrv_* shim for legacy CDAT PHP app on PostgreSQL.
+ * Routes CDATDUPL -> postgres, distributed tables via FDW views.
+ */
+if (defined('SQLSRV_COMPAT_LOADED')) {
+    return;
+}
+define('SQLSRV_COMPAT_LOADED', true);
+define('SQLSRV_FETCH_ASSOC', 2);
+
+$GLOBALS['__sqlsrv_connections'] = [];
+$GLOBALS['__sqlsrv_last_error'] = null;
+$GLOBALS['__sqlsrv_conn_seq'] = 0;
+
+function __sqlsrv_root(): string
+{
+    return __DIR__;
+}
+
+function __sqlsrv_cfg(): array
+{
+    static $cfg = null;
+    if ($cfg === null) {
+        $cfg = require __DIR__ . '/db_config.php';
+    }
+    return $cfg;
+}
+
+function __sqlsrv_dbname(array $connectionInfo): string
+{
+    $name = strtolower((string)($connectionInfo['Database'] ?? 'cdatdupl'));
+    $map = [
+        'cdatdupl' => 'postgres',
+        'cdat' => 'postgres',
+        'postgres' => 'postgres',
+        'twrmdb' => 'postgres',
+        'irforms' => 'postgres',
+        'forms' => 'postgres',
+        'jrms' => 'postgres',
+        'pdact' => 'postgres',
+        'lostreport_hawkeye' => 'postgres',
+        'migrant_labours_form' => 'postgres',
+        'training_db' => 'postgres',
+        'cpms' => 'postgres',
+        'cafs' => 'postgres',
+        'cis_data_base' => 'postgres',
+        'cdat_import' => 'postgres',
+        'testing_db' => 'postgres',
+        'rough' => 'postgres',
+        'distributed_db' => 'postgres',
+    ];
+    return $map[$name] ?? 'postgres';
+}
+
+function sqlsrv_connect($serverName, array $connectionInfo = [])
+{
+    $cfg = __sqlsrv_cfg();
+    $db = __sqlsrv_dbname($connectionInfo);
+    $dsn = sprintf('pgsql:host=%s;port=%s;dbname=%s', $cfg['host'], $cfg['port'], $db);
+    try {
+        $pdo = new PDO($dsn, $cfg['user'], $cfg['password'], [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        ]);
+        $id = 'sqlsrv_' . (++$GLOBALS['__sqlsrv_conn_seq']);
+        $GLOBALS['__sqlsrv_connections'][$id] = $pdo;
+        return $id;
+    } catch (Throwable $e) {
+        $GLOBALS['__sqlsrv_last_error'] = [['message' => $e->getMessage(), 'code' => $e->getCode()]];
+        return false;
+    }
+}
+
+function __sqlsrv_pdo($conn)
+{
+    return $GLOBALS['__sqlsrv_connections'][$conn] ?? null;
+}
+
+function __sqlsrv_translate(string $sql): string
+{
+    $q = $sql;
+
+    // Bracket quoting from MSSQL
+    $q = preg_replace('/\[dbo\]\./i', '', $q);
+    $q = preg_replace('/\[([A-Za-z0-9_]+)\]/', '$1', $q);
+
+    if (preg_match('/^\s*SELECT\b/i', $q) && preg_match('/\bINTO\s+#([A-Za-z0-9_]+)/i', $q, $m)) {
+        $q = preg_replace('/\bINTO\s+#([A-Za-z0-9_]+)/i', '', $q, 1);
+        $q = 'CREATE TEMP TABLE ' . strtolower($m[1]) . ' AS ' . $q;
+    }
+
+    $q = preg_replace('/#([A-Za-z0-9_]+)/', '$1', $q);
+    $q = preg_replace('/\b[A-Za-z0-9_]+\.\.([A-Za-z0-9_]+)/i', '$1', $q);
+    $q = preg_replace('/\b[A-Za-z0-9_]+\.DBO\.([A-Za-z0-9_]+)/i', '$1', $q);
+    $q = preg_replace('/\b[A-Za-z0-9_]+\.dbo\.([A-Za-z0-9_]+)/i', '$1', $q);
+    // CDATDUPL.CDAT_RTA (single-dot db prefix after bracket strip)
+    $q = preg_replace(
+        '/\b(?:CDATDUPL|JRMS|FORMS|IRFORMS|PDACT|TWRMDB|CDAT|CIS_DATA_BASE|CDAT_IMPORT)\.([A-Za-z0-9_]+)/i',
+        '$1',
+        $q
+    );
+    $q = preg_replace('/^\s*SET\s+DATEFORMAT\s+\w+\s*/i', '', $q);
+    $q = preg_replace('/\bWITH\s*\(\s*NOLOCK\s*\)/i', '', $q);
+
+    $q = preg_replace_callback(
+        '/\bCONVERT\s*\(\s*VARCHAR\s*\(\s*\d+\s*\)\s*,\s*([^,\)]+)\s*,\s*106\s*\)/i',
+        static fn($m) => "to_char(" . trim($m[1]) . "::timestamp, 'DD Mon YYYY')",
+        $q
+    );
+    $q = preg_replace_callback(
+        '/\bCONVERT\s*\(\s*VARCHAR\s*,\s*([^,]+)\s*,\s*106\s*\)/i',
+        static fn($m) => "to_char(" . trim($m[1]) . "::timestamp, 'DD Mon YYYY')",
+        $q
+    );
+    $q = preg_replace_callback(
+        '/\bCONVERT\s*\(\s*VARCHAR\s*\(\s*\d+\s*\)\s*,\s*([^,\)]+)\s*\)/i',
+        static fn($m) => '(' . trim($m[1]) . ')::text',
+        $q
+    );
+    $q = preg_replace_callback(
+        '/\bCONVERT\s*\(\s*VARCHAR\s*,\s*([^,]+)\s*,\s*20\s*\)/i',
+        static fn($m) => "to_char(" . trim($m[1]) . ", 'YYYY-MM-DD HH24:MI:SS')",
+        $q
+    );
+    $q = preg_replace_callback(
+        '/\bCONVERT\s*\(\s*DATE\s*,\s*([^)]+)\)/i',
+        static fn($m) => '(' . trim($m[1]) . ')::date',
+        $q
+    );
+    $q = preg_replace_callback(
+        '/\bCONVERT\s*\(\s*TIME\s*,\s*([^)]+)\)/i',
+        static fn($m) => '(' . trim($m[1]) . ')::time',
+        $q
+    );
+    $q = preg_replace_callback(
+        '/\bCONVERT\s*\(\s*VARCHAR\s*,\s*([^,]+)\s*,\s*(\d+)\s*\)/i',
+        static fn($m) => "to_char(" . trim($m[1]) . ", 'YYYY-MM-DD HH24:MI:SS')",
+        $q
+    );
+
+    $q = preg_replace('/\bISNULL\s*\(/i', 'COALESCE(', $q);
+    $q = preg_replace('/\bisnumeric\s*\(/i', 'isnumeric(', $q);
+    $q = preg_replace('/\bISNUMERIC\s*\(\s*([^)]+)\)/i', "($1 ~ '^[0-9]+$')", $q);
+    $q = preg_replace('/\bCHARINDEX\s*\(\s*\'([^\']*)\'\s*,\s*([^)]+)\)/i', "strpos($2, '$1')", $q);
+    $q = preg_replace('/\bREVERSE\s*\(/i', 'reverse(', $q);
+    $q = preg_replace('/\bCONVERT\s*\(\s*IMAGE\s*,\s*([^)]+)\)/i', '($1)::text', $q);
+    $q = preg_replace('/\bLEN\s*\(/i', 'length(', $q);
+    $q = preg_replace('/\bLTRIM\s*\(\s*RTRIM\s*\(/i', 'trim(', $q);
+    $q = preg_replace('/\bLTRIM\s*\(/i', 'ltrim(', $q);
+    $q = preg_replace('/\bRTRIM\s*\(/i', 'rtrim(', $q);
+
+    // Common CDAT_RTA column expressions (precomputed in cdat_rta view)
+    $q = preg_replace('/FULLADDRESS\s*\+\s*\'\,\s*\'\s*\+\s*CITY/i', 'FULLADDRESS', $q);
+    $q = preg_replace(
+        '/MKR_CLAS\s*\+\s*\'\,\s*COLOR:\s*\'\s*\+\s*COLOUR\s*\+\s*\'\,\s*\'\s*\+\s*VEH_CLASS/i',
+        'VEHICLE_TYPE',
+        $q
+    );
+
+    // MSSQL string concat: fold + into CONCAT() one pair at a time (handles nesting)
+    for ($i = 0; $i < 24; $i++) {
+        $prev = $q;
+        $q = preg_replace(
+            "/((?:CONCAT\([^;]*?\)|'[^']*'|[A-Za-z0-9_.]+))\s*\+\s*((?:CONCAT\([^;]*?\)|'[^']*'|[A-Za-z0-9_.]+))/i",
+            'CONCAT($1, $2)',
+            $q,
+            1
+        );
+        if ($q === $prev) {
+            break;
+        }
+    }
+    $q = preg_replace("/LIKE\s+'%'\s*\+\s*'([^']*)'/i", "LIKE '%' || '$1'", $q);
+
+    $q = preg_replace("/LIKE\s*'\[7-9\]%'/i", "SIMILAR TO '[7-9]%'", $q);
+
+    return $q;
+}
+
+function sqlsrv_query($conn, $query, array $params = [], array $options = [])
+{
+    $pdo = __sqlsrv_pdo($conn);
+    if (!$pdo) {
+        $GLOBALS['__sqlsrv_last_error'] = [['message' => 'Invalid connection', 'code' => 0]];
+        return false;
+    }
+    try {
+        $sql = __sqlsrv_translate($query);
+        $stmt = $pdo->query($sql);
+        $rows = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+        return (object)['rows' => $rows, 'pos' => 0, 'sql' => $sql];
+    } catch (Throwable $e) {
+        $GLOBALS['__sqlsrv_last_error'] = [['message' => $e->getMessage(), 'code' => $e->getCode(), 'sql' => $query]];
+        error_log('sqlsrv_compat: ' . $e->getMessage());
+        return false;
+    }
+}
+
+function sqlsrv_fetch_array($result, $fetchType = SQLSRV_FETCH_ASSOC)
+{
+    if (!is_object($result) || !isset($result->rows) || $result->pos >= count($result->rows)) {
+        return false;
+    }
+    $row = $result->rows[$result->pos++];
+    $row = array_change_key_case($row, CASE_UPPER);
+    return $fetchType === SQLSRV_FETCH_ASSOC ? $row : array_values($row);
+}
+
+function sqlsrv_num_rows($result)
+{
+    return (is_object($result) && isset($result->rows)) ? count($result->rows) : 0;
+}
+
+function sqlsrv_errors($errorsOrWarnings = null)
+{
+    return $GLOBALS['__sqlsrv_last_error'];
+}
+
+function sqlsrv_close($conn)
+{
+    unset($GLOBALS['__sqlsrv_connections'][$conn]);
+    return true;
+}
+
+function sqlsrv_free_stmt($stmt)
+{
+    return true;
+}
+
+function sqlsrv_prepare($conn, $query, array $params = [], array $options = [])
+{
+    return sqlsrv_query($conn, $query, $params, $options);
+}
+
+function sqlsrv_execute($stmt)
+{
+    return true;
+}

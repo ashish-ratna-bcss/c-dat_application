@@ -1,0 +1,1 @@
+video-clapper.svg

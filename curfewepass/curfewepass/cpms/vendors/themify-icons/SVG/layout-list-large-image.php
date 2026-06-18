@@ -1,0 +1,1 @@
+layout-list-large-image.svg

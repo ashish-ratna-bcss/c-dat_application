@@ -1,0 +1,74 @@
+<DOCHTML>
+<html>
+<head>
+<title> BRIEF FACTS FORM </title>
+<meta charset="utf-8">
+<link rel="stylesheet" href="mystyles.css">
+<link href="SpryAssets/SpryMenuBarHorizontal.css" rel="stylesheet" type="text/css" />
+<style>
+input[type=text], select {
+    width: 25%;
+    padding: 3px 10px;
+    margin: 4px 0;
+    display: inline-block;
+    border: 1px solid #ccc;
+    border-radius: 2px;
+    box-sizing: border-box;
+}
+
+input[type=submit] {
+    width: 15%;
+    background-color: ORANGE;
+    color: white;
+    padding: 4px 15px;
+    margin: 4px 0;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 25px;
+}
+
+div {
+    border-radius: 5px;
+    background-color: #f2f2f2;
+    padding: 5px;
+    width: 40%;
+    border-radius: 4px;
+    float:left;
+    width:200px;
+    text-align: left;
+        }
+       textarea{
+       width: 25%;
+       height: 25px;
+       }
+</style>
+<style type="test/css">
+label{
+float:left;
+width:150px;
+text-align=right;
+}
+</style>
+</head>
+<body bgcolor="#80800">
+<table>
+        <tr>
+          <th width="1126" align="center" scope="col">BRIEF FACTS</th>
+        </tr>
+</table>
+<form action="BRIEF_FACTS.php" Method="post">
+<div>IRKEY:</div><input  type="text" name="IRKEY" placeholder="IRKEY" style="float:center;">
+     <br/><br/>
+<div>BRIEF_FACTS1:</div><textarea type="text"  name="BRIEF_FACTS1" placeholder="BRIEF_FACTS"></textarea>
+<br/><br/>
+<div>BRIEF_FACTS2:</div><textarea type="text" name="BRIEF_FACTS2" placeholder="BRIEF_FACTS"></textarea>
+<br/><br/>
+<div>BRIEF_FACTS3:</div><textarea type="TEXT" name="BRIEF_FACTS3" placeholder="BRIEF_FACTS"></textarea>
+<br/><br/>
+<input type="submit" value="INSERT" style="padding:15px;">
+    <br/><br/>
+
+</form>
+</body>
+</html>

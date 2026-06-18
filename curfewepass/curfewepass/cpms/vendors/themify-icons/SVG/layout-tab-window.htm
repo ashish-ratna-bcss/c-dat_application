@@ -1,0 +1,1 @@
+layout-tab-window.svg

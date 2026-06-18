@@ -1,0 +1,1 @@
+hand-point-left.svg

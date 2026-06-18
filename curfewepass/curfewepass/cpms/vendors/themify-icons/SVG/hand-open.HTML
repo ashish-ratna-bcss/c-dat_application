@@ -1,0 +1,1 @@
+hand-open.svg

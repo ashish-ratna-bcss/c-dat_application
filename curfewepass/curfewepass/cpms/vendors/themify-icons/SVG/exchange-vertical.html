@@ -1,0 +1,1 @@
+exchange-vertical.svg

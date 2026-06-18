@@ -1,0 +1,1 @@
+view-pass-detail.php

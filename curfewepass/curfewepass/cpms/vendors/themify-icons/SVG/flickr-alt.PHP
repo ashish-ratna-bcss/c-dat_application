@@ -1,0 +1,1 @@
+flickr-alt.svg

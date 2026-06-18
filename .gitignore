@@ -1,0 +1,30 @@
+# Local configuration (never commit secrets)
+db_config.php
+.env
+.env.*
+!.env.example
+
+# Logs and runtime data
+*.log
+logs/
+cache/
+tmp/
+uploads/
+
+# OS and editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Dependencies (if added later)
+vendor/
+node_modules/
+
+# Backup and temp files
+*.bak
+*.save
+*.tmp

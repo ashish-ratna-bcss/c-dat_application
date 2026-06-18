@@ -1,0 +1,1 @@
+angle-double-right.svg

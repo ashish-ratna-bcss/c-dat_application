@@ -1,0 +1,1 @@
+layout-list-thumb-alt.svg

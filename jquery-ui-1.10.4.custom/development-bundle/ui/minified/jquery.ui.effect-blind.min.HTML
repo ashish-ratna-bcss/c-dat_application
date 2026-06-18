@@ -1,0 +1,1 @@
+jquery.ui.effect-blind.min.js
