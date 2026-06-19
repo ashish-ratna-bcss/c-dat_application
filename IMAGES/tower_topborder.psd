@@ -1,1 +1,0 @@
-TOWER_TOPBORDER.psd

@@ -1,1 +1,0 @@
-layout-grid3.svg

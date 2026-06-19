@@ -1,1 +1,0 @@
-transparent_1x1.png

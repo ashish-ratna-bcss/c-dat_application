@@ -1,1 +1,0 @@
-pinterest-alt.svg

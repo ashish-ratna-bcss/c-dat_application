@@ -1,1 +1,0 @@
-angle-double-left.svg

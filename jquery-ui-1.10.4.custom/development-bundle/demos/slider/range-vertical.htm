@@ -1,1 +1,0 @@
-range-vertical.html

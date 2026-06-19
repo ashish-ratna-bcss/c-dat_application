@@ -1,1 +1,0 @@
-tower-bridge.jpg

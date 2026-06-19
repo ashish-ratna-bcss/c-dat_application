@@ -1,1 +1,0 @@
-ui-bg_glass_75_e6e6e6_1x400.png

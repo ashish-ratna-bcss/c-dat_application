@@ -1,1 +1,0 @@
-ui-bg_highlight-soft_75_cccccc_1x100.png

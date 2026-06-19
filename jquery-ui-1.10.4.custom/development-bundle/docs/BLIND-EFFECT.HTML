@@ -1,1 +1,0 @@
-blind-effect.html

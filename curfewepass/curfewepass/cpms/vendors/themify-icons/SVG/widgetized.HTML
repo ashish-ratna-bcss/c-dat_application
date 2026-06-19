@@ -1,1 +1,0 @@
-widgetized.svg

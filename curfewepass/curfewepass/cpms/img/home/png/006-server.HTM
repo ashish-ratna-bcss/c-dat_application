@@ -1,1 +1,0 @@
-006-server.png

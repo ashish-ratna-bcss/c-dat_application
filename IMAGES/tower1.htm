@@ -1,1 +1,0 @@
-TOWER1.jpg

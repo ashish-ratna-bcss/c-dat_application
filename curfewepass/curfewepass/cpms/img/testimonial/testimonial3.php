@@ -1,1 +1,0 @@
-testimonial3.png

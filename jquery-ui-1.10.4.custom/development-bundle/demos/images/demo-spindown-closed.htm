@@ -1,1 +1,0 @@
-demo-spindown-closed.gif

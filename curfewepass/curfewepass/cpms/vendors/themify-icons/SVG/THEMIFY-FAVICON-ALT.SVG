@@ -1,1 +1,0 @@
-themify-favicon-alt.svg

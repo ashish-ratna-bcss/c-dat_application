@@ -1,1 +1,0 @@
-angle-down.svg

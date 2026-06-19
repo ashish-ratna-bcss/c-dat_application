@@ -1,1 +1,0 @@
-jquery.ui.datepicker-ar-DZ.min.js

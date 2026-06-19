@@ -1,1 +1,0 @@
-cursor-style.html

@@ -1,1 +1,0 @@
-jquery.ui.effect-clip.min.js

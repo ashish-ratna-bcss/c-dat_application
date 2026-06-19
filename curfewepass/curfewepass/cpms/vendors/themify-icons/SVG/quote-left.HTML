@@ -1,1 +1,0 @@
-quote-left.svg

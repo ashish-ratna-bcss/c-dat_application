@@ -1,1 +1,0 @@
-edit-category-detail.php

@@ -1,1 +1,0 @@
-pencil-alt.svg

@@ -1,1 +1,0 @@
-mouse-alt.svg

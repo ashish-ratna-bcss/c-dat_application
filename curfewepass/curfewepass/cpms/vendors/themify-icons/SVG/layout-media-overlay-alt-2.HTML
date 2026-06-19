@@ -1,1 +1,0 @@
-layout-media-overlay-alt-2.svg

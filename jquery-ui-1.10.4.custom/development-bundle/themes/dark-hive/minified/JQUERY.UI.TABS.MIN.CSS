@@ -1,1 +1,0 @@
-jquery.ui.tabs.min.css

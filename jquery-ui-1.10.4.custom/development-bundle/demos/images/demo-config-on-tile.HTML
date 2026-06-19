@@ -1,1 +1,0 @@
-demo-config-on-tile.gif

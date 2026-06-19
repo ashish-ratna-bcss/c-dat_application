@@ -1,1 +1,0 @@
-ruler-alt-2.svg

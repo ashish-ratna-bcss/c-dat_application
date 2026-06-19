@@ -1,1 +1,0 @@
-arrows-vertical.svg

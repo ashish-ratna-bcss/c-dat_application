@@ -1,1 +1,0 @@
-widget-i6.png

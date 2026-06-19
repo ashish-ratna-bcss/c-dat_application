@@ -1,1 +1,0 @@
-layout-media-right.svg

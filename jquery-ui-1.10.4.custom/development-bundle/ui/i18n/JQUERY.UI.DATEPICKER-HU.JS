@@ -1,1 +1,0 @@
-jquery.ui.datepicker-hu.js

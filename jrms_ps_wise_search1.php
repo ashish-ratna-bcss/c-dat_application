@@ -1,1 +1,0 @@
-JRMS_PS_WISE_SEARCH1.php

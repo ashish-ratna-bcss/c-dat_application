@@ -1,1 +1,0 @@
-layout-width-default-alt.svg

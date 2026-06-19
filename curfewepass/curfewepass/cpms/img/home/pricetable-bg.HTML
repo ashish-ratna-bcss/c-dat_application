@@ -1,1 +1,0 @@
-priceTable-bg.png

@@ -1,1 +1,0 @@
-Training Wing(2).png
