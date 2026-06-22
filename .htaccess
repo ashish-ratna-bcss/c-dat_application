@@ -1,0 +1,10 @@
+# Enable Rewrite Engine
+RewriteEngine On
+
+# If a file is requested with .php, but it doesn't exist,
+# and the same file exists with .PHP, internally rewrite the request.
+# This preserves POST data (unlike redirects) and solves the casing mismatch.
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_URI} ^(.*)\.php$ [NC]
+RewriteCond %{DOCUMENT_ROOT}%1.PHP -f
+RewriteRule ^(.*)\.php$ $1.PHP [L]

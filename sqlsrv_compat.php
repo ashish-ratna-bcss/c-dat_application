@@ -8,6 +8,11 @@ if (defined('SQLSRV_COMPAT_LOADED')) {
 }
 define('SQLSRV_COMPAT_LOADED', true);
 define('SQLSRV_FETCH_ASSOC', 2);
+define('SQLSRV_CURSOR_KEYSET', 'keyset');
+define('SQLSRV_CURSOR_FORWARD', 'forward');
+define('SQLSRV_CURSOR_DYNAMIC', 'dynamic');
+define('SQLSRV_CURSOR_STATIC', 'static');
+define('SQLSRV_CURSOR_BUFFERED', 'buffered');
 
 $GLOBALS['__sqlsrv_connections'] = [];
 $GLOBALS['__sqlsrv_last_error'] = null;
@@ -83,7 +88,18 @@ function __sqlsrv_translate(string $sql): string
 
     // Bracket quoting from MSSQL
     $q = preg_replace('/\[dbo\]\./i', '', $q);
+    $q = preg_replace('/\[IN\]/i', '"IN"', $q);
+    $q = preg_replace('/\[OUT\]/i', '"OUT"', $q);
     $q = preg_replace('/\[([A-Za-z0-9_]+)\]/', '$1', $q);
+    $q = preg_replace('/\bAS\s+\'IN\'/i', 'AS "IN"', $q);
+    $q = preg_replace('/\bAS\s+\'OUT\'/i', 'AS "OUT"', $q);
+
+    if (preg_match('/^\s*CREATE\s+TABLE\s+#([A-Za-z0-9_]+)\s*\((.*)\)/is', $q, $m)) {
+        $table = strtolower(trim($m[1]));
+        $definition = trim($m[2]);
+        $definition = preg_replace('/\bNVARCHAR\b/i', 'VARCHAR', $definition);
+        $q = "DROP TABLE IF EXISTS $table; CREATE TEMP TABLE $table ($definition)";
+    }
 
     if (preg_match('/^\s*SELECT\b/i', $q) && preg_match('/\bINTO\s+#([A-Za-z0-9_]+)/i', $q, $m)) {
         $q = preg_replace('/\bINTO\s+#([A-Za-z0-9_]+)/i', '', $q, 1);
@@ -139,6 +155,65 @@ function __sqlsrv_translate(string $sql): string
         $q
     );
 
+    $q = preg_replace_callback(
+        '/\bCONVERT\s*\(\s*CHAR\s*\(\s*10\s*\)\s*,\s*([^,]+)\s*,\s*121\s*\)/i',
+        static fn($m) => "to_char(" . trim($m[1]) . ", 'YYYY-MM-DD')",
+        $q
+    );
+
+    $q = preg_replace_callback(
+        '/\bCONVERT\s*\(\s*DATETIME\s*,\s*([^)]+)\)/i',
+        static fn($m) => '(' . trim($m[1]) . ')',
+        $q
+    );
+
+    $q = preg_replace_callback(
+        '/\bdatepart\s*\(\s*(\w+)\s*,\s*([^)]+)\)/i',
+        function($m) {
+            $unit = strtolower(trim($m[1]));
+            $expr = trim($m[2]);
+            $unit_map = [
+                'yy' => 'year', 'yyyy' => 'year', 'year' => 'year',
+                'qq' => 'quarter', 'q' => 'quarter', 'quarter' => 'quarter',
+                'mm' => 'month', 'm' => 'month', 'month' => 'month',
+                'dy' => 'doy', 'y' => 'doy', 'dayofyear' => 'doy',
+                'dd' => 'day', 'd' => 'day', 'day' => 'day',
+                'wk' => 'week', 'ww' => 'week', 'week' => 'week',
+                'dw' => 'dow', 'w' => 'dow', 'weekday' => 'dow',
+                'hh' => 'hour', 'hour' => 'hour',
+                'mi' => 'minute', 'n' => 'minute', 'minute' => 'minute',
+                'ss' => 'second', 's' => 'second', 'second' => 'second',
+                'ms' => 'millisecond', 'millisecond' => 'millisecond'
+            ];
+            $pg_unit = isset($unit_map[$unit]) ? $unit_map[$unit] : $unit;
+            return "date_part('$pg_unit', ($expr)::timestamp)";
+        },
+        $q
+    );
+
+    $q = preg_replace_callback(
+        '/\bdatediff\s*\(\s*(\w+)\s*,\s*([^,]+)\s*,\s*([^)]+)\)/i',
+        function($m) {
+            $unit = strtolower(trim($m[1]));
+            $start = trim($m[2]);
+            $end = trim($m[3]);
+            if ($unit === 'ss' || $unit === 'second' || $unit === 's') {
+                return "extract(epoch from (($end)::timestamp - ($start)::timestamp))";
+            }
+            if ($unit === 'mi' || $unit === 'minute' || $unit === 'n') {
+                return "(extract(epoch from (($end)::timestamp - ($start)::timestamp)) / 60)";
+            }
+            if ($unit === 'hh' || $unit === 'hour') {
+                return "(extract(epoch from (($end)::timestamp - ($start)::timestamp)) / 3600)";
+            }
+            if ($unit === 'dd' || $unit === 'day' || $unit === 'd') {
+                return "(extract(epoch from (($end)::timestamp - ($start)::timestamp)) / 86400)";
+            }
+            return "(($end)::timestamp - ($start)::timestamp)";
+        },
+        $q
+    );
+
     $q = preg_replace('/\bISNULL\s*\(/i', 'COALESCE(', $q);
     $q = preg_replace('/\bisnumeric\s*\(/i', 'isnumeric(', $q);
     $q = preg_replace('/\bISNUMERIC\s*\(\s*([^)]+)\)/i', "($1 ~ '^[0-9]+$')", $q);
@@ -146,7 +221,7 @@ function __sqlsrv_translate(string $sql): string
     $q = preg_replace('/\bREVERSE\s*\(/i', 'reverse(', $q);
     $q = preg_replace('/\bCONVERT\s*\(\s*IMAGE\s*,\s*([^)]+)\)/i', '($1)::text', $q);
     $q = preg_replace('/\bLEN\s*\(/i', 'length(', $q);
-    $q = preg_replace('/\bLTRIM\s*\(\s*RTRIM\s*\(/i', 'trim(', $q);
+    $q = preg_replace('/LTRIM\s*\(\s*RTRIM\s*\((.*?)\)\s*\)/i', 'trim($1)', $q);
     $q = preg_replace('/\bLTRIM\s*\(/i', 'ltrim(', $q);
     $q = preg_replace('/\bRTRIM\s*\(/i', 'rtrim(', $q);
 
@@ -158,21 +233,46 @@ function __sqlsrv_translate(string $sql): string
         $q
     );
 
-    // MSSQL string concat: fold + into CONCAT() one pair at a time (handles nesting)
-    for ($i = 0; $i < 24; $i++) {
-        $prev = $q;
-        $q = preg_replace(
-            "/((?:CONCAT\([^;]*?\)|'[^']*'|[A-Za-z0-9_.]+))\s*\+\s*((?:CONCAT\([^;]*?\)|'[^']*'|[A-Za-z0-9_.]+))/i",
-            'CONCAT($1, $2)',
-            $q,
-            1
-        );
-        if ($q === $prev) {
-            break;
-        }
-    }
-    $q = preg_replace("/LIKE\s+'%'\s*\+\s*'([^']*)'/i", "LIKE '%' || '$1'", $q);
+    $q = preg_replace_callback(
+        '/\bCONVERT\s*\(\s*VARCHAR\s*\(\s*\d+\s*\)\s*,\s*([^,]+)\s*,\s*120\s*\)/i',
+        static fn($m) => "to_char(" . trim($m[1]) . ", 'YYYY-MM-DD')",
+        $q
+    );
+    $q = preg_replace_callback(
+        '/\bCONVERT\s*\(\s*VARCHAR\s*\(\s*\d+\s*\)\s*,\s*([^,]+)\s*,\s*108\s*\)/i',
+        static fn($m) => "to_char(" . trim($m[1]) . ", 'HH24:MI:SS')",
+        $q
+    );
+    $q = preg_replace_callback(
+        '/\bCONVERT\s*\(\s*VARCHAR\s*,\s*([^,]+)\s*,\s*120\s*\)/i',
+        static fn($m) => "to_char(" . trim($m[1]) . ", 'YYYY-MM-DD HH24:MI:SS')",
+        $q
+    );
 
+    $q = preg_replace_callback(
+        '/\bOUTER\s+APPLY\s*\(\s*SELECT\s+TOP\s+1\s+(.*?)\s+FROM\s+(.*?)\s+WHERE\s+(.*?)\s*\)\s*([A-Za-z0-9_]+)/is',
+        function($m) {
+            $cols = trim($m[1]);
+            $from = trim($m[2]);
+            $where = trim($m[3]);
+            $alias = trim($m[4]);
+            return "LEFT JOIN LATERAL (SELECT $cols FROM $from WHERE $where LIMIT 1) $alias ON TRUE";
+        },
+        $q
+    );
+
+    $q = preg_replace('/\bOFFSET\s+(\S+)\s+ROWS\s+FETCH\s+NEXT\s+(\S+)\s+ROWS\s+ONLY/i', 'OFFSET $1 LIMIT $2', $q);
+
+    // Replace MS SQL + string concatenation with PostgreSQL || operator
+    // safely replacing only outside of string literals
+    $parts = explode("'", $q);
+    for ($i = 0; $i < count($parts); $i += 2) {
+        $parts[$i] = str_replace('+', '||', $parts[$i]);
+    }
+    $q = implode("'", $parts);
+
+
+    $q = preg_replace("/LIKE\s+'%'\s*\|\|\s*'([^']*)'/i", "LIKE '%' || '$1'", $q);
     $q = preg_replace("/LIKE\s*'\[7-9\]%'/i", "SIMILAR TO '[7-9]%'", $q);
 
     return $q;
@@ -187,7 +287,12 @@ function sqlsrv_query($conn, $query, array $params = [], array $options = [])
     }
     try {
         $sql = __sqlsrv_translate($query);
-        $stmt = $pdo->query($sql);
+        if (!empty($params)) {
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
+        } else {
+            $stmt = $pdo->query($sql);
+        }
         $rows = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
         return (object)['rows' => $rows, 'pos' => 0, 'sql' => $sql];
     } catch (Throwable $e) {
@@ -210,6 +315,11 @@ function sqlsrv_fetch_array($result, $fetchType = SQLSRV_FETCH_ASSOC)
 function sqlsrv_num_rows($result)
 {
     return (is_object($result) && isset($result->rows)) ? count($result->rows) : 0;
+}
+
+function sqlsrv_has_rows($result)
+{
+    return (is_object($result) && isset($result->rows) && count($result->rows) > 0);
 }
 
 function sqlsrv_errors($errorsOrWarnings = null)
