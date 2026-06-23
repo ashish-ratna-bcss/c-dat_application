@@ -146,3 +146,31 @@ COMMIT;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+
+
+
+ALTER TABLE cdatcelltowerareanew ADD COLUMN IF NOT EXISTS bts_id character varying;
+ALTER TABLE cdatcelltowerareanew ADD COLUMN IF NOT EXISTS lat character varying;
+ALTER TABLE cdatcelltowerareanew ADD COLUMN IF NOT EXISTS long character varying;
+ALTER TABLE cdatcelltowerareanew ADD COLUMN IF NOT EXISTS azimuth character varying;
+ 
+ 
+ALTER TABLE ir_particulars ADD COLUMN IF NOT EXISTS alias_name character varying;
+ALTER TABLE ir_particulars ADD COLUMN IF NOT EXISTS father_name character varying;
+ALTER TABLE ir_particulars ADD COLUMN IF NOT EXISTS age character varying;
+ALTER TABLE ir_particulars ADD COLUMN IF NOT EXISTS date_of_birth character varying;
+ALTER TABLE ir_particulars ADD COLUMN IF NOT EXISTS nationality character varying;
+ALTER TABLE ir_particulars ADD COLUMN IF NOT EXISTS occupation character varying;
+ALTER TABLE ir_particulars ADD COLUMN IF NOT EXISTS income_group character varying;
+ALTER TABLE ir_particulars ADD COLUMN IF NOT EXISTS regular_habits character varying;
+ALTER TABLE ir_particulars ADD COLUMN IF NOT EXISTS category character varying;
+ALTER TABLE ir_particulars ADD COLUMN IF NOT EXISTS present_address text;
+ALTER TABLE ir_particulars ADD COLUMN IF NOT EXISTS crime_head character varying;
+ALTER TABLE ir_particulars ADD COLUMN IF NOT EXISTS mo character varying;
+ALTER TABLE ir_particulars ADD COLUMN IF NOT EXISTS crime_no character varying;
+ALTER TABLE ir_particulars ADD COLUMN IF NOT EXISTS year character varying;
+ALTER TABLE ir_particulars ADD COLUMN IF NOT EXISTS sec_of_law character varying;
+ALTER TABLE ir_particulars ADD COLUMN IF NOT EXISTS police_station character varying;
+ALTER TABLE ir_particulars ADD COLUMN IF NOT EXISTS date_of_arrest timestamp without time zone;
+ALTER TABLE ir_particulars ADD COLUMN IF NOT EXISTS aadhar_no character varying;
+ALTER TABLE ir_particulars ADD COLUMN IF NOT EXISTS mobile character varying;
