@@ -137,6 +137,7 @@ function filterTable(col)
 <?php
 
 set_time_limit(0);
+require_once __DIR__ . '/activity_logger.php';
 
 /*
 ==================================================
@@ -168,6 +169,7 @@ $number='';
 if(isset($_POST['PHONE_NO']))
 {
     $number = trim($_POST['PHONE_NO']);
+    audit_log('Movements / Call Details', 'Search', ['phone_number' => $number]);
 }
 
 if($number=='')

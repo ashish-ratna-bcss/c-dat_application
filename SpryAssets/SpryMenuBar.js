@@ -761,3 +761,46 @@ Spry.Widget.MenuBar.setOptions = function(obj, optionsObj, ignoreUndefinedProps)
 };
 
 })(); // EndSpryComponent
+
+(function() {
+    function hideAdminMenus() {
+        // Detect path of check_role.php relative to the script location if possible
+        var scriptTags = document.getElementsByTagName('script');
+        var basePath = '';
+        for (var i = 0; i < scriptTags.length; i++) {
+            var src = scriptTags[i].getAttribute('src') || '';
+            if (src.indexOf('SpryMenuBar.js') !== -1) {
+                basePath = src.substring(0, src.indexOf('SpryAssets/SpryMenuBar.js'));
+                break;
+            }
+        }
+        var url = basePath + 'check_role.php';
+
+        fetch(url)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (!data.is_admin) {
+                    var links = document.getElementsByTagName('a');
+                    for (var i = 0; i < links.length; i++) {
+                        var href = links[i].getAttribute('href') || '';
+                        var hrefLower = href.toLowerCase();
+                        if (hrefLower === 'admin_activity_log.php' || hrefLower === 'admin_sql_console.php' || hrefLower === 'admin_create_user.php') {
+                            var parentLi = links[i].parentNode;
+                            if (parentLi && parentLi.tagName.toLowerCase() === 'li') {
+                                parentLi.style.display = 'none';
+                            }
+                        }
+                    }
+                }
+            })
+            .catch(function(err) {
+                // Fail silently
+            });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', hideAdminMenus);
+    } else {
+        hideAdminMenus();
+    }
+})();

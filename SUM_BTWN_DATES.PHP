@@ -4,6 +4,7 @@
 <body bgcolor="#0C5D90">
 <li><a href="SUM_BETWEEN_DATES.HTML"><font color=#FDEFEF>Back</a></li>
 <?php
+require_once __DIR__ . '/activity_logger.php';
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"CDATDUPL");
 $conn = sqlsrv_connect( $serverName, $connectionInfo );
@@ -13,6 +14,7 @@ if( $conn === false ) {
 $number = $_POST['PHONE_NO'];
 $f_date = $_POST['FROM_DT'];
 $t_date = $_POST['TO_DT'];
+audit_log('Summary Between Dates', 'Search', ['phone_number' => $number, 'from_date' => $f_date, 'to_date' => $t_date]);
 
 $sql1 ="SELECT * INTO #TT FROM CDAT_DETAILS1 WHERE PHONE='$number' AND CONVERT(CHAR(10),STARTTIME,121) BETWEEN'$f_date' and '$t_date'";
 

@@ -4,6 +4,7 @@
 <body bgcolor="#0C5D90">
 <li><a href="CALLS_BTWN_DATES.HTML"><font color=#FDEFEF>Back</a></li>
 <?php
+require_once __DIR__ . '/activity_logger.php';
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"CDATDUPL");
 $conn = sqlsrv_connect( $serverName, $connectionInfo );
@@ -14,6 +15,7 @@ $number = $_POST['PHONE_NO'];
 $operator= $_POST['OPERATOR'];
 $state	= $_POST['STATE'];
 $f_date = $_POST['FROM_DT'];
+audit_log('Call Details Between Dates', 'Search', ['phone_number' => $number, 'from_date' => $f_date, 'state' => $state, 'operator' => $operator]);
 $t_date = $_POST['TO_DT'];
 
 $sql1 ="SELECT DISTINCT PHONE,OTHER,CONVERT(VARCHAR,STARTTIME,20) AS STARTTIME,DURATION,
