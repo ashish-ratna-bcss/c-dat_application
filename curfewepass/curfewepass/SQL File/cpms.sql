@@ -174,3 +174,37 @@ ALTER TABLE ir_particulars ADD COLUMN IF NOT EXISTS police_station character var
 ALTER TABLE ir_particulars ADD COLUMN IF NOT EXISTS date_of_arrest timestamp without time zone;
 ALTER TABLE ir_particulars ADD COLUMN IF NOT EXISTS aadhar_no character varying;
 ALTER TABLE ir_particulars ADD COLUMN IF NOT EXISTS mobile character varying;
+
+
+
+ALTER TABLE LOGINS ADD ROLE VARCHAR(50);
+ALTER TABLE LOGINS ADD FULLNAME VARCHAR(100);
+
+ 
+CREATE TABLE IF NOT EXISTS user_sessions (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER,
+    username VARCHAR(100) NOT NULL,
+    fullname VARCHAR(200),
+    login_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    logout_time TIMESTAMP,
+    session_duration INTEGER,
+    ip_address VARCHAR(45),
+    browser_info TEXT,
+    device_info VARCHAR(50),
+    session_token VARCHAR(64)
+);
+ 
+CREATE TABLE IF NOT EXISTS user_activity_logs (
+    id SERIAL PRIMARY KEY,
+    session_id INTEGER,
+    user_id INTEGER,
+    username VARCHAR(100) NOT NULL,
+    module_name VARCHAR(150) NOT NULL,
+    action_type VARCHAR(100) NOT NULL,
+    search_data JSONB, 
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+ 
+CREATE INDEX IF NOT EXISTS idx_user_sessions_username ON user_sessions(username);
+CREATE INDEX IF NOT EXISTS idx_user_activity_logs_username ON user_activity_logs(username);
