@@ -4,6 +4,8 @@
 <body bgcolor="#0C5D90">
 <li><a href="SUM_HOME.HTML"><font color=#FDEFEF>Back</a></li>
 <?php
+require_once __DIR__ . '/activity_logger.php';
+audit_log('Summary Total', 'Search', ['phone_number' => $_POST['PHONE_NO'] ?? '']);
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"CDATDUPL");
 $conn = sqlsrv_connect( $serverName, $connectionInfo );
