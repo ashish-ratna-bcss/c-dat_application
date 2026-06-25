@@ -208,3 +208,24 @@ CREATE TABLE IF NOT EXISTS user_activity_logs (
  
 CREATE INDEX IF NOT EXISTS idx_user_sessions_username ON user_sessions(username);
 CREATE INDEX IF NOT EXISTS idx_user_activity_logs_username ON user_activity_logs(username);
+
+
+CREATE TABLE upload_activity_logs (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL,
+    username VARCHAR(100) NOT NULL,
+    module_name VARCHAR(100) NOT NULL,
+    file_name VARCHAR(255) NOT NULL,
+    file_size BIGINT NOT NULL,
+    total_records INT DEFAULT 0,
+    inserted_records INT DEFAULT 0,
+    failed_records INT DEFAULT 0,
+    upload_status VARCHAR(20) NOT NULL, -- 'Success', 'Partial', 'Failed'
+    error_reason TEXT,
+    ip_address VARCHAR(45) NOT NULL,
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+ 
+-- Index for fast audit listing page loads (admin_upload_history.php)
+CREATE INDEX idx_upload_logs_uploaded_at ON upload_activity_logs(uploaded_at DESC);
+CREATE INDEX idx_upload_logs_username ON upload_activity_logs(username);

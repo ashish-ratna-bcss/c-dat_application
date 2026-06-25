@@ -42,7 +42,7 @@ if ($filter_user !== '') {
     $logParams = [':u' => $filter_user];
     if ($filter_from) { $logWhere .= " AND created_at >= :f"; $logParams[':f'] = $filter_from . ' 00:00:00'; }
     if ($filter_to)   { $logWhere .= " AND created_at <= :t"; $logParams[':t'] = $filter_to   . ' 23:59:59'; }
-    $st = $db->prepare("SELECT * FROM user_activity_logs $logWhere ORDER BY created_at ASC");
+    $st = $db->prepare("SELECT * FROM user_activity_logs $logWhere ORDER BY created_at DESC");
     $st->execute($logParams);
     $logs = $st->fetchAll(PDO::FETCH_ASSOC);
 }
