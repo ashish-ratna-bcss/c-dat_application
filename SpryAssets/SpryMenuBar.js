@@ -784,7 +784,7 @@ Spry.Widget.MenuBar.setOptions = function(obj, optionsObj, ignoreUndefinedProps)
                     for (var i = 0; i < links.length; i++) {
                         var href = links[i].getAttribute('href') || '';
                         var hrefLower = href.toLowerCase();
-                        if (hrefLower === 'admin_activity_log.php' || hrefLower === 'admin_sql_console.php' || hrefLower === 'admin_create_user.php') {
+                        if (hrefLower === 'admin_activity_log.php' || hrefLower === 'admin_sql_console.php' || hrefLower === 'admin_create_user.php' || hrefLower === 'admin_upload.php' || hrefLower === 'admin_upload_history.php') {
                             var parentLi = links[i].parentNode;
                             if (parentLi && parentLi.tagName.toLowerCase() === 'li') {
                                 parentLi.style.display = 'none';

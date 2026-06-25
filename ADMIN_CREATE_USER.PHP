@@ -171,6 +171,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <li><a href="MULAKATH_DETAILS.HTML">MULAKATH_DETAILS</a></li>
                 <li><a href="RETRIEVE.HTML">RETRIEVE</a></li>
                 <li><a href="ADMIN_CREATE_USER.PHP">CREATE USER</a></li>
+                <li><a href="admin_upload.php">DATA UPLOAD</a></li>
               </ul>
             </td>
           </tr>
