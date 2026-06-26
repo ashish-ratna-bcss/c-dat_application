@@ -7,7 +7,9 @@
 require_once __DIR__ . '/activity_logger.php';
 audit_require_admin();
 
-$configs = require __DIR__ . '/cdr_upload_config.php';
+$config = require __DIR__ . '/cdr_upload_config.php';
+$configs = $config;
+unset($configs['api']);
 $db = audit_db();
 
 // 1. Get unique upload usernames for filtering

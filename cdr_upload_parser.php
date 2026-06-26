@@ -1,78 +1,26 @@
 <?php
 /**
  * cdr_upload_parser.php
- * Core backend service for parsing, validating, and bulk-inserting CDR data.
- * Supports CSV, XLSX, and HTML/CSV-based XLS formats.
+ * Backend service for CDR/SDR uploads via the Document Processing API.
  */
 
 require_once __DIR__ . '/activity_logger.php';
+require_once __DIR__ . '/document_processing_client.php';
 
-class CdrUploadParser {
+class CdrUploadParser
+{
     private $db;
-    private $configs;
+    private $config;
+    private $modules;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->db = audit_db();
-        $this->configs = require __DIR__ . '/cdr_upload_config.php';
+        $this->config = require __DIR__ . '/cdr_upload_config.php';
+        $this->modules = $this->config;
+        unset($this->modules['api']);
     }
 
-    /**
-     * Parse and validate headers of a file for dynamic mapping preview.
-     */
-    public function getFileHeaders(string $filePath, string $ext): array {
-        $headers = [];
-        if ($ext === 'csv') {
-            if (($handle = fopen($filePath, 'r')) !== FALSE) {
-                $headers = fgetcsv($handle, 4096, ',');
-                fclose($handle);
-            }
-        } elseif ($ext === 'xlsx') {
-            $zip = new ZipArchive();
-            if ($zip->open($filePath) === TRUE) {
-                // Get shared strings
-                $sharedStrings = [];
-                $stringsData = $zip->getFromName('xl/sharedStrings.xml');
-                if ($stringsData) {
-                    $xml = @simplexml_load_string($stringsData);
-                    if ($xml) {
-                        foreach ($xml->si as $si) {
-                            $sharedStrings[] = (string)($si->t ?? $si->r->t ?? '');
-                        }
-                    }
-                }
-
-                // Get first sheet data
-                $sheetData = $zip->getFromName('xl/worksheets/sheet1.xml');
-                if ($sheetData) {
-                    $xml = @simplexml_load_string($sheetData);
-                    if ($xml && isset($xml->sheetData->row)) {
-                        // Just parse the first row
-                        foreach ($xml->sheetData->row as $row) {
-                            foreach ($row->c as $cell) {
-                                $val = (string)$cell->v;
-                                $type = (string)$cell['t'];
-                                if ($type === 's') {
-                                    $val = $sharedStrings[(int)$val] ?? '';
-                                }
-                                $headers[] = trim($val);
-                            }
-                            break; // Stop after first row
-                        }
-                    }
-                }
-                $zip->close();
-            }
-        }
-        
-        // Clean headers (remove empty elements and trim)
-        return array_map('trim', array_filter($headers, function($v) {
-            return $v !== null && $v !== '';
-        }));
-    }
-
-    /**
-     * Process file upload: parse, validate, deduplicate, and bulk insert.
-     */
     public function processUpload(
         string $moduleKey,
         string $filePath,
@@ -82,107 +30,213 @@ class CdrUploadParser {
         array $columnMapping,
         string $ipAddress
     ): array {
-        if (!isset($this->configs[$moduleKey])) {
-            return [
-                'status' => 'Failed',
-                'reason' => 'Invalid CDR module specified.',
-                'total' => 0,
-                'inserted' => 0,
-                'failed' => 0
-            ];
+        if (!isset($this->modules[$moduleKey])) {
+            return $this->failedResult('Invalid module specified.', 0);
         }
 
-        $config = $this->configs[$moduleKey];
-        $totalRecords = 0;
+        $moduleConfig = $this->modules[$moduleKey];
+        $apiModule = $moduleConfig['module'];
+        $apiConfig = $this->config['api'];
+        $batchSize = $apiModule === 'sdr'
+            ? (int)$apiConfig['sdr_batch_size']
+            : (int)$apiConfig['cdr_batch_size'];
 
-        // Count rows from file for logging statistics
-        try {
-            if ($ext === 'csv') {
-                if (($handle = fopen($filePath, 'r')) !== FALSE) {
-                    // Skip header row
-                    fgetcsv($handle, 4096, ',');
-                    while (fgetcsv($handle, 4096, ',') !== FALSE) {
-                        $totalRecords++;
-                    }
-                    fclose($handle);
-                }
-            } elseif ($ext === 'xlsx') {
-                $zip = new ZipArchive();
-                if ($zip->open($filePath) === TRUE) {
-                    $sheetData = $zip->getFromName('xl/worksheets/sheet1.xml');
-                    if ($sheetData) {
-                        $xml = @simplexml_load_string($sheetData);
-                        if ($xml && isset($xml->sheetData->row)) {
-                            // Count rows, subtracting 1 for header
-                            $rowCount = count($xml->sheetData->row);
-                            $totalRecords = max(0, $rowCount - 1);
-                        }
-                    }
-                    $zip->close();
-                }
-            }
-        } catch (Throwable $t) {
-            // Default total records to 0 if reading fails
-            $totalRecords = 0;
-        }
-
-        // 1. Create log entry in upload_activity_logs
         $userId = $_SESSION['audit_user_id'] ?? 0;
         $username = $_SESSION['audit_username'] ?? 'system';
-        
+        $moduleName = $moduleConfig['name'];
+
         try {
-            $logStmt = $this->db->prepare("
-                INSERT INTO upload_activity_logs (
-                    user_id, username, module_name, file_name, file_size,
-                    total_records, inserted_records, failed_records,
-                    upload_status, error_reason, ip_address
-                ) VALUES (
-                    :uid, :uname, :mod, :fname, :fsize,
-                    :total, :inserted, :failed,
-                    :status, :reason, :ip
-                )
-            ");
-            
-            $logStmt->execute([
-                ':uid' => $userId,
-                ':uname' => $username,
-                ':mod' => $config['name'],
-                ':fname' => $fileName,
-                ':fsize' => $fileSize,
-                ':total' => $totalRecords,
-                ':inserted' => $totalRecords,
-                ':failed' => 0,
-                ':status' => 'Success',
-                ':reason' => null,
-                ':ip' => $ipAddress
+            $client = new DocumentProcessingClient($apiConfig);
+            $submit = $client->submitDocument($apiModule, $filePath, $fileName, $batchSize);
+            $jobId = (int)$submit['job_id'];
+            $preview = $submit['preview'] ?? [];
+            $totalRecords = (int)($preview['total_records'] ?? 0);
+
+            $job = $client->waitForJob($jobId);
+            $timedOut = !empty($job['timed_out']);
+            $jobStatus = strtolower((string)($job['status'] ?? ''));
+            $rowsCommitted = (int)($job['rows_committed'] ?? 0);
+            $totalRecords = (int)($job['total_records'] ?? $totalRecords);
+
+            if ($timedOut) {
+                $uploadStatus = 'Processing';
+                $errorReason = 'Document job #' . $jobId . ' is still running. Refresh upload history later for final status.';
+                $inserted = $rowsCommitted;
+                $failed = max(0, $totalRecords - $rowsCommitted);
+            } elseif ($jobStatus === 'completed' || $jobStatus === 'validated') {
+                $uploadStatus = 'Success';
+                $errorReason = null;
+                $inserted = $rowsCommitted > 0 ? $rowsCommitted : $totalRecords;
+                $failed = max(0, $totalRecords - $inserted);
+            } elseif ($jobStatus === 'failed') {
+                $uploadStatus = 'Failed';
+                $errorReason = $job['error_message'] ?? 'Document processing failed.';
+                $inserted = $rowsCommitted;
+                $failed = max(0, $totalRecords - $inserted);
+            } else {
+                $uploadStatus = 'Processing';
+                $errorReason = 'Document job #' . $jobId . ' ended with status: ' . $jobStatus;
+                $inserted = $rowsCommitted;
+                $failed = max(0, $totalRecords - $inserted);
+            }
+
+            $logId = $this->insertUploadLog(
+                $userId,
+                $username,
+                $moduleName,
+                $fileName,
+                $fileSize,
+                $totalRecords,
+                $inserted,
+                $failed,
+                $uploadStatus,
+                $errorReason,
+                $ipAddress,
+                $jobId
+            );
+
+            audit_log('Data Upload', 'Upload File', [
+                'module' => $moduleName,
+                'file_name' => $fileName,
+                'status' => $uploadStatus,
+                'job_id' => $jobId,
+                'total' => $totalRecords,
+                'inserted' => $inserted,
+                'failed' => $failed,
             ]);
 
-            // Audit log integration
-            audit_log('Data Upload', 'Upload File', [
-                'module' => $config['name'],
-                'file_name' => $fileName,
-                'status' => 'Success',
-                'total' => $totalRecords,
-                'inserted' => $totalRecords,
-                'failed' => 0
-            ]);
-        } catch (Throwable $e) {
             return [
-                'status' => 'Failed',
-                'reason' => 'Database log insert error: ' . $e->getMessage(),
+                'status' => $uploadStatus,
+                'reason' => $errorReason,
                 'total' => $totalRecords,
-                'inserted' => 0,
-                'failed' => $totalRecords
+                'inserted' => $inserted,
+                'failed' => $failed,
+                'skipped' => 0,
+                'errors' => $errorReason ? [$errorReason] : [],
+                'job_id' => $jobId,
+                'module' => $apiModule,
+                'target_table' => $moduleConfig['target_table'] ?? null,
+                'operator' => $job['operator'] ?? ($preview['operator'] ?? null),
+                'target_phone' => $job['target_phone'] ?? ($preview['target_phone'] ?? null),
+                'mssql_database' => $job['mssql_database'] ?? ($preview['mssql_database'] ?? null),
+                'phase' => $job['phase'] ?? ($submit['phase'] ?? null),
+                'progress_percent' => $job['progress_percent'] ?? null,
+                'warnings' => $preview['warnings'] ?? [],
+                'log_id' => $logId,
+                'pending' => $timedOut,
+                'staging_rows' => $this->fetchProductionPreview(
+                    $moduleConfig['target_table'] ?? null,
+                    $job['target_phone'] ?? ($preview['target_phone'] ?? null),
+                    $uploadStatus
+                ),
             ];
+        } catch (Throwable $e) {
+            $this->insertUploadLog(
+                $userId,
+                $username,
+                $moduleName,
+                $fileName,
+                $fileSize,
+                0,
+                0,
+                0,
+                'Failed',
+                $e->getMessage(),
+                $ipAddress,
+                null
+            );
+
+            audit_log('Data Upload', 'Upload File', [
+                'module' => $moduleName,
+                'file_name' => $fileName,
+                'status' => 'Failed',
+                'error' => $e->getMessage(),
+            ]);
+
+            return $this->failedResult($e->getMessage(), 0);
+        }
+    }
+
+    private function insertUploadLog(
+        int $userId,
+        string $username,
+        string $moduleName,
+        string $fileName,
+        int $fileSize,
+        int $totalRecords,
+        int $inserted,
+        int $failed,
+        string $uploadStatus,
+        ?string $errorReason,
+        string $ipAddress,
+        ?int $jobId
+    ): ?int {
+        $stmt = $this->db->prepare("
+            INSERT INTO upload_activity_logs (
+                user_id, username, module_name, file_name, file_size,
+                total_records, inserted_records, failed_records,
+                upload_status, error_reason, ip_address, document_job_id
+            ) VALUES (
+                :uid, :uname, :mod, :fname, :fsize,
+                :total, :inserted, :failed,
+                :status, :reason, :ip, :job_id
+            )
+            RETURNING id
+        ");
+
+        $stmt->execute([
+            ':uid' => $userId,
+            ':uname' => $username,
+            ':mod' => $moduleName,
+            ':fname' => $fileName,
+            ':fsize' => $fileSize,
+            ':total' => $totalRecords,
+            ':inserted' => $inserted,
+            ':failed' => $failed,
+            ':status' => $uploadStatus,
+            ':reason' => $errorReason,
+            ':ip' => $ipAddress,
+            ':job_id' => $jobId,
+        ]);
+
+        return (int)$stmt->fetchColumn();
+    }
+
+    private function failedResult(string $reason, int $total): array
+    {
+        return [
+            'status' => 'Failed',
+            'reason' => $reason,
+            'total' => $total,
+            'inserted' => 0,
+            'failed' => $total,
+            'skipped' => 0,
+            'errors' => [$reason],
+        ];
+    }
+
+    private function fetchProductionPreview(?string $tableName, ?string $targetPhone, string $uploadStatus): array
+    {
+        if ($tableName !== 'cdatpcsuspect' || empty($targetPhone)) {
+            return [];
+        }
+        if (!in_array($uploadStatus, ['Success', 'Processing', 'Partial'], true)) {
+            return [];
         }
 
-        return [
-            'status' => 'Success',
-            'total' => $totalRecords,
-            'inserted' => $totalRecords,
-            'failed' => 0,
-            'skipped' => 0,
-            'errors' => []
-        ];
+        try {
+            $stmt = $this->db->prepare("
+                SELECT ucid AS staging_id, phone, other, starttime, duration, incoming,
+                       NULL::varchar AS operator, asondate AS imported_at
+                FROM cdatpcsuspect
+                WHERE phone = :phone
+                ORDER BY asondate DESC NULLS LAST, ucid DESC
+                LIMIT 10
+            ");
+            $stmt->execute([':phone' => $targetPhone]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Throwable $e) {
+            return [];
+        }
     }
 }

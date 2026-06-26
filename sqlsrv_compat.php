@@ -67,7 +67,12 @@ function sqlsrv_connect($serverName, array $connectionInfo = [])
         $pdo = new PDO($dsn, $cfg['user'], $cfg['password'], [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_TIMEOUT => 10,
         ]);
+        // Prevent runaway scans from wedging PHP-FPM workers.
+        $pdo->exec("SET statement_timeout = '120s'");
+        $pdo->exec("SET idle_in_transaction_session_timeout = '60s'");
+        $pdo->exec("SET lock_timeout = '30s'");
         $id = 'sqlsrv_' . (++$GLOBALS['__sqlsrv_conn_seq']);
         $GLOBALS['__sqlsrv_connections'][$id] = $pdo;
         return $id;
@@ -118,6 +123,29 @@ function __sqlsrv_translate(string $sql): string
     );
     $q = preg_replace('/^\s*SET\s+DATEFORMAT\s+\w+\s*/i', '', $q);
     $q = preg_replace('/\bWITH\s*\(\s*NOLOCK\s*\)/i', '', $q);
+
+    // FDW views over Citus must filter by phone inside a LATERAL subquery; otherwise
+    // postgres_fdw pulls every eff_to_date IS NULL row (~hundreds of millions).
+    $q = preg_replace_callback(
+        '/LEFT\s+JOIN\s+(cdataddress|address_other_state)\s+([A-Za-z_][A-Za-z0-9_]*)\s+ON\s+([A-Za-z_][A-Za-z0-9_]*)\.PHONE\s*=\s*\2\.PHONE\s+AND\s+\2\.EFF_TO_DATE\s+IS\s+NULL/i',
+        static function ($m) {
+            $table = strtolower($m[1]);
+            $alias = $m[2];
+            $outer = $m[3];
+            return "LEFT JOIN LATERAL (SELECT * FROM $table WHERE phone = ($outer).phone AND eff_to_date IS NULL LIMIT 1) $alias ON true";
+        },
+        $q
+    );
+
+    $q = preg_replace_callback(
+        '/LEFT\s+JOIN\s+cdatcelltowerareanew\s+([A-Za-z_][A-Za-z0-9_]*)\s+ON\s+([A-Za-z_][A-Za-z0-9_]*)\.CELLTOWERID\s*=\s*\1\.CELLTOWERID/i',
+        static function ($m) {
+            $alias = $m[1];
+            $outer = $m[2];
+            return "LEFT JOIN LATERAL (SELECT * FROM cdatcelltowerareanew WHERE celltowerid = ($outer).celltowerid ORDER BY lastupdate DESC NULLS LAST LIMIT 1) $alias ON true";
+        },
+        $q
+    );
 
     $q = preg_replace_callback(
         '/\bCONVERT\s*\(\s*VARCHAR\s*\(\s*\d+\s*\)\s*,\s*([^,\)]+)\s*,\s*106\s*\)/i',

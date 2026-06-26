@@ -1,12 +1,21 @@
 <?php
-require_once("dbcontroller.php");
+session_start();
+error_reporting(0);
+require_once('dbcontroller.php');
 $db_handle = new DBController();
-if(isset($_POST['login'])) 
-  {
-    $username=$_POST['username'];
-    $password=$_POST['password'];
-    $query ="SELECT ID FROM tbladmin WHERE UserName='$username' and Password='$password'";
-$results = $db_handle->runQuery($query);
+$login_error = '';
+if (isset($_POST['login'])) {
+    $username = $_POST['username'];
+    $password = md5($_POST['password']);
+    $query = "SELECT id FROM tbladmin WHERE username='$username' AND password='$password'";
+    $results = $db_handle->runQuery($query);
+    if (!empty($results)) {
+        $_SESSION['cpmsaid'] = $results[0]['id'];
+        header('location:dashboard.php');
+        exit;
+    }
+    $login_error = 'Invalid username or password.';
+}
 ?>
 
 <!DOCTYPE html>
@@ -65,6 +74,9 @@ $results = $db_handle->runQuery($query);
                                 <input type="submit" value="Login" class="btn btn-lg btn-success btn-block" name="login" >
                             </fieldset>
                         </form>
+                        <?php if ($login_error !== '') { ?>
+                        <p class="text-danger text-center"><?php echo htmlspecialchars($login_error); ?></p>
+                        <?php } ?>
                     </div>
                 </div>
             </div>

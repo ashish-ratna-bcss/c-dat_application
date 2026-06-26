@@ -4,7 +4,7 @@ from pathlib import Path
 from cdr_import.config import load_db_config
 BASE_DIR = Path(__file__).resolve().parent.parent
 MSSQL_CONTAINER = os.environ.get('MSSQL_CONTAINER', 'mssql')
-MSSQL_SA_PASSWORD = os.environ.get('MSSQL_SA_PASSWORD', 'CatProject@123')
+MSSQL_SA_PASSWORD = os.environ.get('MSSQL_SA_PASSWORD', '')
 MSSQL_DATABASE = os.environ.get('SDR_MSSQL_DATABASE', 'address_db')
 MSSQL_DATA_HOST_DIR = Path(os.environ.get('MSSQL_DATA_HOST_DIR', '/mnt/storage1/mssql/data'))
 MSSQL_DATA_CONTAINER_DIR = Path(os.environ.get('MSSQL_DATA_CONTAINER_DIR', '/var/opt/mssql/data'))
