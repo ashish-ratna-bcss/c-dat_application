@@ -14,7 +14,11 @@ private $conn;
 	}
 	
 	function runQuery($query) {
+		$resultset = array();
 		$result = sqlsrv_query($this->conn,$query);
+		if ($result === false) {
+			return null;
+		}
 		while($row = sqlsrv_fetch_array( $result ,SQLSRV_FETCH_ASSOC)) {
 			$resultset[] = $row;
 		}		

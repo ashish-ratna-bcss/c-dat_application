@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Generator, Iterable, Optional
 import psycopg2
 import psycopg2.extras
-from .config import JOBS_TABLE, STAGING_TABLE, load_db_config
+from .config import JOBS_TABLE, STAGING_TABLE, PRODUCTION_INSERT_COLUMNS, load_db_config
 
 def file_sha256(path: Path) -> str:
     h = hashlib.sha256()
@@ -51,10 +51,13 @@ def insert_staging_batch(conn, rows: Iterable[dict]) -> None:
     rows = list(rows)
     if not rows:
         return
+    table = STAGING_TABLE
+    if table == 'cdatpcsuspect':
+        rows = [{k: row[k] for k in PRODUCTION_INSERT_COLUMNS if k in row} for row in rows]
     cols = list(rows[0].keys())
     values = [[row[c] for c in cols] for row in rows]
     with conn.cursor() as cur:
-        psycopg2.extras.execute_values(cur, f'\n            INSERT INTO {STAGING_TABLE} ({', '.join(cols)})\n            VALUES %s\n            ', values, page_size=len(values))
+        psycopg2.extras.execute_values(cur, f'\n            INSERT INTO {table} ({', '.join(cols)})\n            VALUES %s\n            ', values, page_size=len(values))
 
 def utcnow() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
