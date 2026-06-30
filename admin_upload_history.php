@@ -5,7 +5,7 @@
  * Filterable, paginated audit list with date range restrictions.
  */
 require_once __DIR__ . '/activity_logger.php';
-audit_require_admin();
+audit_require_uploader();
 
 $config = require __DIR__ . '/cdr_upload_config.php';
 $configs = $config;
@@ -21,6 +21,7 @@ try {
 }
 
 // 2. Read query parameters
+$type = trim($_GET['type'] ?? 'standard'); // default to standard if not specified
 $filterUser = trim($_GET['filter_user'] ?? '');
 $filterModule = trim($_GET['filter_module'] ?? '');
 $filterStatus = trim($_GET['filter_status'] ?? '');
@@ -43,6 +44,12 @@ if (strtotime($fromDate) > strtotime($toDate)) {
 // 3. Build Query
 $where = [];
 $params = [];
+
+if ($type === 'custom') {
+    $where[] = "module_name LIKE 'Custom:%'";
+} else {
+    $where[] = "module_name NOT LIKE 'Custom:%'";
+}
 
 if ($filterUser !== '') {
     $where[] = 'username = :username';
@@ -110,7 +117,7 @@ try {
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>Upload Logs History - CDR Dashboard</title>
+<title><?= $type === 'custom' ? 'Custom Table Upload Logs' : 'Standard Upload Logs' ?> - CDR Dashboard</title>
 <script src="SpryAssets/SpryMenuBar.js" type="text/javascript"></script>
 <link href="SpryAssets/SpryMenuBarHorizontal.css" rel="stylesheet" type="text/css" />
 <link href="SpryAssets/SpryMenuBarVertical.css" rel="stylesheet" type="text/css" />
@@ -335,7 +342,7 @@ try {
         <table width="1307" height="347" border="0" align="center">
           <tr>
             <td height="24" align="center" valign="top">
-              <p align="center" class="FONT"> DATA UPLOADS </p>
+              <p align="center" class="FONT"> <?= $type === 'custom' ? 'CUSTOM TABLE UPLOADS HISTORY' : 'STANDARD UPLOADS HISTORY' ?> </p>
             </td>
           </tr>
           <tr>
@@ -346,6 +353,7 @@ try {
                 <!-- Filter Bar -->
                 <div class="filter-bar">
                   <form action="admin_upload_history.php" method="get" id="filterForm">
+                    <input type="hidden" name="type" value="<?= htmlspecialchars($type) ?>" />
                     <div class="filter-grid">
                       <div class="filter-group">
                         <label for="filter_user">Uploaded By</label>
@@ -357,6 +365,7 @@ try {
                         </select>
                       </div>
 
+                      <?php if ($type !== 'custom'): ?>
                       <div class="filter-group">
                         <label for="filter_module">Module</label>
                         <select name="filter_module" id="filter_module">
@@ -366,6 +375,7 @@ try {
                           <?php endforeach; ?>
                         </select>
                       </div>
+                      <?php endif; ?>
 
                       <div class="filter-group">
                         <label for="filter_status">Status</label>
@@ -389,14 +399,14 @@ try {
 
                       <div class="filter-group" style="flex-direction: row; gap: 8px;">
                         <input type="submit" class="btn-filter" value="Filter" style="flex: 1;" />
-                        <a href="admin_upload_history.php" class="btn-reset" style="flex: 1;">Reset</a>
+                        <a href="admin_upload_history.php?type=<?= urlencode($type) ?>" class="btn-reset" style="flex: 1;">Reset</a>
                       </div>
                     </div>
                   </form>
                 </div>
 
                 <div style="text-align: right; margin-bottom: 10px;">
-                  <a href="admin_upload.php" class="btn-action" style="text-decoration: none; display: inline-block; font-size: 13px; padding: 6px 12px;">New File Upload</a>
+                  <a href="admin_upload.php?tab=<?= $type === 'custom' ? 'custom' : 'legacy' ?>" class="btn-action" style="text-decoration: none; display: inline-block; font-size: 13px; padding: 6px 12px;">Back to Upload Panel</a>
                 </div>
 
                 <!-- Logs Table -->
@@ -405,19 +415,27 @@ try {
                     <tr>
                       <th>Uploaded At</th>
                       <th>File Name</th>
-                      <th>Module Name</th>
+                      <?php if ($type === 'custom'): ?>
+                        <th>Database</th>
+                        <th>Target Table</th>
+                        <th>Newly Created?</th>
+                      <?php else: ?>
+                        <th>Module Name</th>
+                      <?php endif; ?>
                       <th>Uploaded By</th>
                       <th>IP Address</th>
-                      <th>Total</th>
+                      <th>Total Rows</th>
                       <th>Inserted</th>
-                      <th>Failed</th>
+                      <?php if ($type !== 'custom'): ?>
+                        <th>Failed</th>
+                      <?php endif; ?>
                       <th>Status</th>
                     </tr>
                   </thead>
                   <tbody>
                     <?php if (empty($logs)): ?>
                       <tr>
-                        <td colspan="9" style="text-align: center; padding: 20px; color: #ccc;">No upload records matching filters were found.</td>
+                        <td colspan="<?= $type === 'custom' ? 10 : 9 ?>" style="text-align: center; padding: 20px; color: #ccc;">No upload records matching filters were found.</td>
                       </tr>
                     <?php else: ?>
                       <?php foreach ($logs as $log): ?>
@@ -427,12 +445,24 @@ try {
                             <?= htmlspecialchars($log['file_name']) ?>
                             <div style="font-size: 10px; color: #ccc;"><?= number_format($log['file_size'] / 1024, 2) ?> KB</div>
                           </td>
-                          <td><?= htmlspecialchars($log['module_name']) ?></td>
+                          <?php if ($type === 'custom'): ?>
+                            <td style="color: #FFA500; font-weight: bold;"><?= htmlspecialchars($log['db_name'] ?? '') ?></td>
+                            <td style="color: #FFD700; font-weight: bold;"><?= htmlspecialchars($log['table_name'] ?? '') ?></td>
+                            <td>
+                              <span class="badge-status" style="background: <?= strtolower($log['is_new_table'] ?? '') === 'yes' ? '#28a745' : 'rgba(255,255,255,0.1)' ?>; padding: 2px 6px; border-radius: 3px; font-size: 10px;">
+                                <?= htmlspecialchars($log['is_new_table'] ?? 'No') ?>
+                              </span>
+                            </td>
+                          <?php else: ?>
+                            <td><?= htmlspecialchars($log['module_name']) ?></td>
+                          <?php endif; ?>
                           <td><?= htmlspecialchars($log['username']) ?></td>
                           <td><?= htmlspecialchars($log['ip_address']) ?></td>
                           <td><?= (int)$log['total_records'] ?></td>
                           <td style="color: #90EE90; font-weight: bold;"><?= (int)$log['inserted_records'] ?></td>
-                          <td style="color: #FFB6C1; font-weight: bold;"><?= (int)$log['failed_records'] ?></td>
+                          <?php if ($type !== 'custom'): ?>
+                            <td style="color: #FFB6C1; font-weight: bold;"><?= (int)$log['failed_records'] ?></td>
+                          <?php endif; ?>
                           <td>
                             <span class="badge-status status-<?= strtolower($log['upload_status']) ?>">
                               <?= htmlspecialchars($log['upload_status']) ?>
@@ -448,17 +478,17 @@ try {
                 <?php if ($totalPages > 1): ?>
                   <div class="pagination">
                     <?php if ($page > 1): ?>
-                      <a href="?page=<?= $page - 1 ?>&filter_user=<?= urlencode($filterUser) ?>&filter_module=<?= urlencode($filterModule) ?>&filter_status=<?= urlencode($filterStatus) ?>&from_date=<?= urlencode($fromDate) ?>&to_date=<?= urlencode($toDate) ?>" class="pagination-link">&laquo; Prev</a>
+                      <a href="?page=<?= $page - 1 ?>&type=<?= urlencode($type) ?>&filter_user=<?= urlencode($filterUser) ?>&filter_module=<?= urlencode($filterModule) ?>&filter_status=<?= urlencode($filterStatus) ?>&from_date=<?= urlencode($fromDate) ?>&to_date=<?= urlencode($toDate) ?>" class="pagination-link">&laquo; Prev</a>
                     <?php endif; ?>
 
                     <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-                      <a href="?page=<?= $i ?>&filter_user=<?= urlencode($filterUser) ?>&filter_module=<?= urlencode($filterModule) ?>&filter_status=<?= urlencode($filterStatus) ?>&from_date=<?= urlencode($fromDate) ?>&to_date=<?= urlencode($toDate) ?>" class="pagination-link <?= ($page === $i) ? 'active' : '' ?>">
+                      <a href="?page=<?= $i ?>&type=<?= urlencode($type) ?>&filter_user=<?= urlencode($filterUser) ?>&filter_module=<?= urlencode($filterModule) ?>&filter_status=<?= urlencode($filterStatus) ?>&from_date=<?= urlencode($fromDate) ?>&to_date=<?= urlencode($toDate) ?>" class="pagination-link <?= ($page === $i) ? 'active' : '' ?>">
                         <?= $i ?>
                       </a>
                     <?php endfor; ?>
 
                     <?php if ($page < $totalPages): ?>
-                      <a href="?page=<?= $page + 1 ?>&filter_user=<?= urlencode($filterUser) ?>&filter_module=<?= urlencode($filterModule) ?>&filter_status=<?= urlencode($filterStatus) ?>&from_date=<?= urlencode($fromDate) ?>&to_date=<?= urlencode($toDate) ?>" class="pagination-link">Next &raquo;</a>
+                      <a href="?page=<?= $page + 1 ?>&type=<?= urlencode($type) ?>&filter_user=<?= urlencode($filterUser) ?>&filter_module=<?= urlencode($filterModule) ?>&filter_status=<?= urlencode($filterStatus) ?>&from_date=<?= urlencode($fromDate) ?>&to_date=<?= urlencode($toDate) ?>" class="pagination-link">Next &raquo;</a>
                     <?php endif; ?>
                   </div>
                 <?php endif; ?>

@@ -173,6 +173,16 @@ function audit_require_admin(): void
     }
 }
 
+function audit_require_uploader(): void
+{
+    audit_require_session();
+    $role = $_SESSION['audit_role'] ?? '';
+    if ($role !== 'admin' && $role !== 'poweruser') {
+        http_response_code(403);
+        die('<h2 style="color:red;font-family:verdana">ACCESS DENIED: Insufficient permissions.</h2>');
+    }
+}
+
 // ─────────────────────────────────────────────
 // Internal helpers
 // ─────────────────────────────────────────────

@@ -8,8 +8,9 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 header('Content-Type: application/json');
 
-$isAdmin = (isset($_SESSION['audit_username']) && ($_SESSION['audit_role'] ?? '') === 'admin');
+$role = $_SESSION['audit_role'] ?? '';
 
 echo json_encode([
-    'is_admin' => $isAdmin
+    'is_admin' => ($role === 'admin'),
+    'role' => $role
 ]);
