@@ -229,3 +229,8 @@ CREATE TABLE upload_activity_logs (
 -- Index for fast audit listing page loads (admin_upload_history.php)
 CREATE INDEX idx_upload_logs_uploaded_at ON upload_activity_logs(uploaded_at DESC);
 CREATE INDEX idx_upload_logs_username ON upload_activity_logs(username);
+
+-- Additional columns for tracking database and table names
+ALTER TABLE upload_activity_logs ADD COLUMN IF NOT EXISTS db_name VARCHAR(100);
+ALTER TABLE upload_activity_logs ADD COLUMN IF NOT EXISTS table_name VARCHAR(100);
+ALTER TABLE upload_activity_logs ADD COLUMN IF NOT EXISTS is_new_table VARCHAR(10) DEFAULT 'No';
