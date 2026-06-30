@@ -767,8 +767,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
                         <option value="ALL">All Networks</option>
                         <option value="Airtel">Airtel</option>
                         <option value="Jio">Jio</option>
-                        <option value="Idea">Idea</option>
-                        <option value="Vodafone">Vodafone</option>
+                        <option value="VI">VI</option>
                         <option value="BSNL">BSNL</option>
                       </select>
                     </div>
@@ -868,9 +867,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
                         
                         <div class="form-row">
                             <div class="form-col">
-                                <label class="form-label" for="custom-db-select">Select Database</label>
+                                <label class="form-label" for="custom-db-select">Tower Database</label>
                                 <select id="custom-db-select" class="form-select" onchange="loadCustomTables()">
-                                    <option value="">-- Select Database --</option>
+                                    <option value="">-- Tower Database --</option>
                                     <option value="FORMS">FORMS</option>
                                     <option value="CDAT">CDAT</option>
                                     <option value="JRMS">JRMS</option>
@@ -892,8 +891,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
                                     <option value="ALL">All Networks</option>
                                     <option value="Airtel">Airtel</option>
                                     <option value="Jio">Jio</option>
-                                    <option value="Idea">Idea</option>
-                                    <option value="Vodafone">Vodafone</option>
+                                    <option value="VI">VI</option>
                                     <option value="BSNL">BSNL</option>
                                 </select>
                             </div>
