@@ -779,16 +779,26 @@ Spry.Widget.MenuBar.setOptions = function(obj, optionsObj, ignoreUndefinedProps)
         fetch(url)
             .then(function(r) { return r.json(); })
             .then(function(data) {
-                if (!data.is_admin) {
-                    var links = document.getElementsByTagName('a');
-                    for (var i = 0; i < links.length; i++) {
-                        var href = links[i].getAttribute('href') || '';
-                        var hrefLower = href.toLowerCase();
-                        if (hrefLower === 'admin_activity_log.php' || hrefLower === 'admin_sql_console.php' || hrefLower === 'admin_create_user.php' || hrefLower === 'admin_upload.php' || hrefLower === 'admin_upload_history.php') {
-                            var parentLi = links[i].parentNode;
-                            if (parentLi && parentLi.tagName.toLowerCase() === 'li') {
-                                parentLi.style.display = 'none';
-                            }
+                var role = data.role || '';
+                var links = document.getElementsByTagName('a');
+                for (var i = 0; i < links.length; i++) {
+                    var href = links[i].getAttribute('href') || '';
+                    var hrefLower = href.toLowerCase();
+                    
+                    var isAdminOnly = (hrefLower === 'admin_activity_log.php' || hrefLower === 'admin_sql_console.php' || hrefLower === 'admin_create_user.php');
+                    var isUploaderOnly = (hrefLower === 'admin_upload.php' || hrefLower === 'admin_upload_history.php');
+                    
+                    var shouldHide = false;
+                    if (role === 'user' || role === '') {
+                        shouldHide = isAdminOnly || isUploaderOnly;
+                    } else if (role === 'poweruser') {
+                        shouldHide = isAdminOnly;
+                    }
+                    
+                    if (shouldHide) {
+                        var parentLi = links[i].parentNode;
+                        if (parentLi && parentLi.tagName.toLowerCase() === 'li') {
+                            parentLi.style.display = 'none';
                         }
                     }
                 }

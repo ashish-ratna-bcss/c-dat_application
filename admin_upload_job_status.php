@@ -9,7 +9,7 @@ require_once __DIR__ . '/document_processing_client.php';
 header('Content-Type: application/json');
 
 try {
-    audit_require_admin();
+    audit_require_uploader();
 
     $jobId = (int)($_GET['job_id'] ?? 0);
     if ($jobId <= 0) {

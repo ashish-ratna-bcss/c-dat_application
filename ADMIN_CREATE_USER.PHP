@@ -222,6 +222,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label for="role">ROLE</label>
                     <select name="role" id="role">
                       <option value="user">User (Standard Access)</option>
+                      <option value="poweruser">Power User (User + Bulk Upload Access)</option>
                       <option value="admin">Admin (All Access)</option>
                     </select>
                   </div>
