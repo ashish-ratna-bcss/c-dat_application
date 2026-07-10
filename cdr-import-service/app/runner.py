@@ -44,8 +44,8 @@ def _run_job(job_id: int) -> None:
         with _lock:
             _running.discard(job_id)
 
-def submit_background_document(file_path: Path, *, module: str, batch_size: int, dry_run: bool=False) -> dict:
-    queued = enqueue_document(file_path, module=module, batch_size=batch_size, dry_run=dry_run)
+def submit_background_document(file_path: Path, *, module: str, batch_size: int, dry_run: bool=False, operator: Optional[str]=None) -> dict:
+    queued = enqueue_document(file_path, module=module, batch_size=batch_size, dry_run=dry_run, operator=operator)
     job_id = queued.get('job_id')
     if job_id and (not dry_run):
         _executor.submit(_run_job, int(job_id))
@@ -55,8 +55,8 @@ def resume_background_job(job_id: int) -> dict:
     _executor.submit(_run_job, job_id)
     return get_document_job_status(job_id)
 
-def validate_upload(file_path: Path, module: str) -> dict:
-    return validate_document(file_path, module)
+def validate_upload(file_path: Path, module: str, operator: Optional[str]=None) -> dict:
+    return validate_document(file_path, module, operator=operator)
 
 def fetch_jobs(*, module: str | None=None, limit: int=50, offset: int=0) -> list[dict]:
     with db_connection() as conn:

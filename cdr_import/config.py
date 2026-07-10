@@ -16,7 +16,7 @@ PRODUCTION_INSERT_COLUMNS = (
 )
 DEFAULT_BATCH_SIZE = int(os.environ.get('CDR_IMPORT_BATCH_SIZE', '500'))
 WORKER_POLL_SECONDS = int(os.environ.get('CDR_WORKER_POLL_SECONDS', '10'))
-PROVIDER_KEYS = {'airtel': int(os.environ.get('CDR_PROVIDER_KEY_AIRTEL', '1')), 'bsnl': int(os.environ.get('CDR_PROVIDER_KEY_BSNL', '2')), 'vi': int(os.environ.get('CDR_PROVIDER_KEY_VI', '3')), 'jio': int(os.environ.get('CDR_PROVIDER_KEY_JIO', '4'))}
+PROVIDER_KEYS = {'airtel': int(os.environ.get('CDR_PROVIDER_KEY_AIRTEL', '2')), 'bsnl': int(os.environ.get('CDR_PROVIDER_KEY_BSNL', '4')), 'vi': int(os.environ.get('CDR_PROVIDER_KEY_VI', '12')), 'jio': int(os.environ.get('CDR_PROVIDER_KEY_JIO', '15'))}
 
 def load_db_config() -> dict[str, str]:
     cfg = {'host': os.environ.get('CDR_DB_HOST', '127.0.0.1'), 'port': os.environ.get('CDR_DB_PORT', '5432'), 'database': os.environ.get('CDR_DB_NAME', 'postgres'), 'user': os.environ.get('CDR_DB_USER', 'postgres'), 'password': os.environ.get('CDR_DB_PASSWORD', '')}

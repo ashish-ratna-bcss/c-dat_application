@@ -28,25 +28,25 @@ def create_app() -> FastAPI:
         return HealthResponse()
 
     @app.post(f'{API_PREFIX}/documents/validate', response_model=DocumentValidateResponse, tags=['documents'], dependencies=[Depends(verify_api_key)] if API_KEY else [])
-    async def validate_document(module: ModuleName=Form(..., description='Processing module: cdr or sdr'), file: UploadFile=File(...)) -> DocumentValidateResponse:
+    async def validate_document(module: ModuleName=Form(..., description='Processing module: cdr or sdr'), file: UploadFile=File(...), operator: Optional[str]=Form(None, description='Operator override name')) -> DocumentValidateResponse:
         content = await file.read()
         if not content:
             raise HTTPException(status_code=400, detail='Empty file upload')
         path = save_upload(file.filename or 'upload', content, module=module)
         try:
-            preview = validate_upload(path, module)
+            preview = validate_upload(path, module, operator=operator)
         except DocumentProcessingError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         return DocumentValidateResponse(message=preview.get('message') or f'Validated {preview.get('total_records', 0)} records.', preview=DocumentPreview(**preview))
 
     @app.post(f'{API_PREFIX}/documents', response_model=DocumentSubmitResponse, status_code=202, tags=['documents'], dependencies=[Depends(verify_api_key)] if API_KEY else [])
-    async def submit_document(module: ModuleName=Form(..., description='Processing module: cdr or sdr'), file: UploadFile=File(...), batch_size: int=Query(DEFAULT_BATCH_SIZE, ge=1, le=50000), dry_run: bool=Query(False, description='Validate only; do not restore/import')) -> DocumentSubmitResponse:
+    async def submit_document(module: ModuleName=Form(..., description='Processing module: cdr or sdr'), file: UploadFile=File(...), batch_size: int=Query(DEFAULT_BATCH_SIZE, ge=1, le=50000), dry_run: bool=Query(False, description='Validate only; do not restore/import'), operator: Optional[str]=Form(None, description='Operator override name')) -> DocumentSubmitResponse:
         content = await file.read()
         if not content:
             raise HTTPException(status_code=400, detail='Empty file upload')
         path = save_upload(file.filename or 'upload', content, module=module)
         try:
-            queued = submit_background_document(path, module=module, batch_size=batch_size, dry_run=dry_run)
+            queued = submit_background_document(path, module=module, batch_size=batch_size, dry_run=dry_run, operator=operator)
         except DocumentProcessingError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         preview = DocumentPreview(module=queued.get('module', module), operator=queued.get('operator'), target_phone=queued.get('target_phone'), mssql_database=queued.get('mssql_database'), total_records=int(queued.get('total_records') or 0), warnings=queued.get('warnings', []), basename=queued['basename'], message=queued.get('message'))
@@ -74,12 +74,12 @@ def create_app() -> FastAPI:
         return JobListResponse(jobs=jobs, count=len(jobs))
 
     @app.post(f'{API_PREFIX}/imports/validate', response_model=ImportValidateResponse, tags=['imports'], dependencies=[Depends(verify_api_key)] if API_KEY else [])
-    async def validate_import(file: UploadFile=File(...)) -> ImportValidateResponse:
-        return await validate_document(module='cdr', file=file)
+    async def validate_import(file: UploadFile=File(...), operator: Optional[str]=Form(None)) -> ImportValidateResponse:
+        return await validate_document(module='cdr', file=file, operator=operator)
 
     @app.post(f'{API_PREFIX}/imports', response_model=ImportSubmitResponse, status_code=202, tags=['imports'], dependencies=[Depends(verify_api_key)] if API_KEY else [])
-    async def submit_import(file: UploadFile=File(...), batch_size: int=Query(DEFAULT_BATCH_SIZE, ge=1, le=5000)) -> ImportSubmitResponse:
-        return await submit_document(module='cdr', file=file, batch_size=batch_size, dry_run=False)
+    async def submit_import(file: UploadFile=File(...), batch_size: int=Query(DEFAULT_BATCH_SIZE, ge=1, le=5000), operator: Optional[str]=Form(None)) -> ImportSubmitResponse:
+        return await submit_document(module='cdr', file=file, batch_size=batch_size, dry_run=False, operator=operator)
 
     @app.get(f'{API_PREFIX}/imports/{{job_id}}', response_model=JobStatusResponse, tags=['imports'], dependencies=[Depends(verify_api_key)] if API_KEY else [])
     def get_import_job(job_id: int) -> JobStatusResponse:
