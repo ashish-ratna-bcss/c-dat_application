@@ -19,7 +19,7 @@ class DocumentProcessingClient
         $this->maxPollSeconds = (int)($apiConfig['max_poll_seconds'] ?? 1800);
     }
 
-    public function submitDocument(string $module, string $filePath, string $fileName, int $batchSize): array
+    public function submitDocument(string $module, string $filePath, string $fileName, int $batchSize, ?string $operator = null): array
     {
         if (!is_readable($filePath)) {
             throw new RuntimeException('Uploaded file is not readable.');
@@ -30,6 +30,10 @@ class DocumentProcessingClient
             'module' => $module,
             'file' => new CURLFile($filePath, $mime, $fileName),
         ];
+
+        if ($operator !== null) {
+            $fields['operator'] = $operator;
+        }
 
         $url = $this->baseUrl . '/api/v1/documents?batch_size=' . max(1, $batchSize);
         $response = $this->request('POST', $url, $fields);

@@ -203,6 +203,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
 
                         $parser = new CdrUploadParser();
                         $ipAddress = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+
+                        $selectedNetwork = $_POST['network'] ?? 'ALL';
+                        $operatorMap = [
+                            '2' => 'airtel',
+                            '15' => 'jio',
+                            '12' => 'vi',
+                            '4' => 'bsnl'
+                        ];
+                        $operator = $operatorMap[$selectedNetwork] ?? null;
+
                         $results = $parser->processUpload(
                             $selectedModule,
                             $destFile,
@@ -210,7 +220,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
                             $fileSize,
                             $fileExt,
                             [],
-                            $ipAddress
+                            $ipAddress,
+                            $operator
                         );
 
                         if ($results['status'] === 'Failed') {
@@ -765,10 +776,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
                       <label for="standard-network-select">Select Network</label>
                       <select name="network" id="standard-network-select">
                         <option value="ALL">All Networks</option>
-                        <option value="Airtel">Airtel</option>
-                        <option value="Jio">Jio</option>
-                        <option value="VI">VI</option>
-                        <option value="BSNL">BSNL</option>
+                        <option value="2">Airtel</option>
+                        <option value="15">Jio</option>
+                        <option value="12">VI</option>
+                        <option value="4">BSNL</option>
                       </select>
                     </div>
 
@@ -889,10 +900,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
                                 <label class="form-label" for="custom-network-select">Select Network</label>
                                 <select id="custom-network-select" class="form-select">
                                     <option value="ALL">All Networks</option>
-                                    <option value="Airtel">Airtel</option>
-                                    <option value="Jio">Jio</option>
-                                    <option value="VI">VI</option>
-                                    <option value="BSNL">BSNL</option>
+                                    <option value="2">Airtel</option>
+                                    <option value="15">Jio</option>
+                                    <option value="12">VI</option>
+                                    <option value="4">BSNL</option>
                                 </select>
                             </div>
                         </div>

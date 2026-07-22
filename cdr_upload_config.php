@@ -19,7 +19,7 @@ return [
         'target_table' => 'cdatpcsuspect',
         'description' => 'Upload operator CDR documents (Airtel, BSNL, Vi, Jio). Data is written to production table cdatpcsuspect.',
         'allowed_extensions' => ['csv', 'xls', 'xlsx'],
-        'max_file_size' => 50 * 1024 * 1024,
+        'max_file_size' => 700 * 1024 * 1024 * 1024,
         'accept' => '.csv,.xls,.xlsx',
     ],
     'sdr' => [
@@ -27,7 +27,7 @@ return [
         'module' => 'sdr',
         'description' => 'Upload MSSQL backup (.bak) for subscriber directory restore and migration.',
         'allowed_extensions' => ['bak'],
-        'max_file_size' => 500 * 1024 * 1024,
+        'max_file_size' => 700 * 1024 * 1024 * 1024,
         'accept' => '.bak',
     ],
 ];

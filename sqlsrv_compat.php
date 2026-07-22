@@ -184,8 +184,14 @@ function __sqlsrv_translate(string $sql): string
     );
 
     $q = preg_replace_callback(
-        '/\bCONVERT\s*\(\s*CHAR\s*\(\s*10\s*\)\s*,\s*([^,]+)\s*,\s*121\s*\)/i',
+        '/\bCONVERT\s*\(\s*(?:CHAR|VARCHAR)\s*\(\s*10\s*\)\s*,\s*([^,]+)\s*,\s*121\s*\)/i',
         static fn($m) => "to_char(" . trim($m[1]) . ", 'YYYY-MM-DD')",
+        $q
+    );
+
+    $q = preg_replace_callback(
+        '/\bCONVERT\s*\(\s*(?:CHAR|VARCHAR)\s*\(\s*10\s*\)\s*,\s*([^,]+)\s*,\s*105\s*\)/i',
+        static fn($m) => "to_char(" . trim($m[1]) . ", 'DD-MM-YYYY')",
         $q
     );
 
@@ -194,6 +200,8 @@ function __sqlsrv_translate(string $sql): string
         static fn($m) => '(' . trim($m[1]) . ')',
         $q
     );
+
+    $q = preg_replace('/\bAS\s+DATETIME\b/i', 'AS timestamp', $q);
 
     $q = preg_replace_callback(
         '/\bdatepart\s*\(\s*(\w+)\s*,\s*([^)]+)\)/i',
@@ -243,7 +251,9 @@ function __sqlsrv_translate(string $sql): string
     );
 
     $q = preg_replace('/\bISNULL\s*\(/i', 'COALESCE(', $q);
-    $q = preg_replace('/\bisnumeric\s*\(/i', 'isnumeric(', $q);
+    $q = preg_replace('/\bisnumeric\s*\(/i', 'ISNUMERIC(', $q);
+    $q = preg_replace('/\bISNUMERIC\s*\(\s*([^)]+)\)\s*=\s*0/i', "NOT ($1 ~ '^[0-9]+$')", $q);
+    $q = preg_replace('/\bISNUMERIC\s*\(\s*([^)]+)\)\s*=\s*1/i', "($1 ~ '^[0-9]+$')", $q);
     $q = preg_replace('/\bISNUMERIC\s*\(\s*([^)]+)\)/i', "($1 ~ '^[0-9]+$')", $q);
     $q = preg_replace('/\bCHARINDEX\s*\(\s*\'([^\']*)\'\s*,\s*([^)]+)\)/i', "strpos($2, '$1')", $q);
     $q = preg_replace('/\bREVERSE\s*\(/i', 'reverse(', $q);

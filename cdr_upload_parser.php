@@ -28,7 +28,8 @@ class CdrUploadParser
         int $fileSize,
         string $ext,
         array $columnMapping,
-        string $ipAddress
+        string $ipAddress,
+        ?string $operator = null
     ): array {
         if (!isset($this->modules[$moduleKey])) {
             return $this->failedResult('Invalid module specified.', 0);
@@ -47,7 +48,7 @@ class CdrUploadParser
 
         try {
             $client = new DocumentProcessingClient($apiConfig);
-            $submit = $client->submitDocument($apiModule, $filePath, $fileName, $batchSize);
+            $submit = $client->submitDocument($apiModule, $filePath, $fileName, $batchSize, $operator);
             $jobId = (int)$submit['job_id'];
             $preview = $submit['preview'] ?? [];
             $totalRecords = (int)($preview['total_records'] ?? 0);
