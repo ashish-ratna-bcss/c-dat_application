@@ -11,13 +11,13 @@ class DocumentProcessingError(Exception):
     pass
 SUPPORTED_MODULES = {'cdr', 'sdr'}
 
-def validate_document(file_path: Path, module: str) -> dict:
+def validate_document(file_path: Path, module: str, operator: Optional[str] = None) -> dict:
     module = module.lower().strip()
     if module not in SUPPORTED_MODULES:
         raise DocumentProcessingError(f'Unsupported module: {module}')
     if module == 'cdr':
         try:
-            analysis = analyze_file(file_path)
+            analysis = analyze_file(file_path, operator=operator)
         except (CdrImportError, ValueError) as exc:
             raise DocumentProcessingError(str(exc)) from exc
         return {'module': 'cdr', 'operator': analysis['operator'], 'target_phone': analysis['target_phone'], 'total_records': analysis['total_records'], 'warnings': analysis['warnings'], 'basename': analysis['basename']}
@@ -25,14 +25,14 @@ def validate_document(file_path: Path, module: str) -> dict:
     analysis = analyze_sdr_upload(file_path)
     return {'module': 'sdr', 'basename': analysis['basename'], 'mssql_database': analysis['mssql_database'], 'message': analysis['message'], 'total_records': 0, 'warnings': []}
 
-def enqueue_document(file_path: Path, *, module: str, batch_size: int, dry_run: bool=False) -> dict:
+def enqueue_document(file_path: Path, *, module: str, batch_size: int, dry_run: bool=False, operator: Optional[str] = None) -> dict:
     module = module.lower().strip()
     if module == 'cdr':
         try:
             if dry_run:
-                analysis = analyze_file(file_path)
+                analysis = analyze_file(file_path, operator=operator)
                 return {'job_id': None, 'module': 'cdr', 'status': 'validated', 'operator': analysis['operator'], 'target_phone': analysis['target_phone'], 'total_records': analysis['total_records'], 'warnings': analysis['warnings'], 'basename': analysis['basename'], 'dry_run': True}
-            queued = enqueue_import(file_path, batch_size=batch_size)
+            queued = enqueue_import(file_path, batch_size=batch_size, operator=operator)
         except (CdrImportError, ValueError) as exc:
             raise DocumentProcessingError(str(exc)) from exc
         queued['module'] = 'cdr'

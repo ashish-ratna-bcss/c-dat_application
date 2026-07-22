@@ -56,6 +56,53 @@ class JobStatusResponse(BaseModel):
 class JobListResponse(BaseModel):
     jobs: list[JobStatusResponse]
     count: int
+
+class ResumableUploadInitRequest(BaseModel):
+    filename: str
+    file_size: int = Field(gt=0)
+    file_key: str = Field(min_length=8)
+    chunk_size: Optional[int] = Field(default=None, ge=1024 * 1024, le=64 * 1024 * 1024)
+
+class ResumableUploadSessionResponse(BaseModel):
+    upload_id: str
+    module: str
+    filename: str
+    file_size: int
+    chunk_size: int
+    offset: int
+    bytes_received: int
+    progress_percent: float
+    status: str
+    resumed: bool
+    complete: bool
+
+class ResumableUploadCompleteResponse(BaseModel):
+    upload_id: str
+    job_id: Optional[int] = None
+    module: str
+    status: str
+    message: str
+    basename: str
+
+class StagingRowsResponse(BaseModel):
+    job_id: int
+    batch_id: int
+    module: str
+    table_key: str
+    table: str
+    total: int
+    duplicate_count: int
+    valid_count: int
+    rows: list[dict[str, Any]]
+
+class StagingActionResponse(BaseModel):
+    ok: bool = True
+    job_id: Optional[int] = None
+    batch_id: Optional[int] = None
+    inserted: Optional[int] = None
+    status: Optional[str] = None
+    message: Optional[str] = None
+
 ImportPreview = DocumentPreview
 ImportSubmitResponse = DocumentSubmitResponse
 ImportValidateResponse = DocumentValidateResponse

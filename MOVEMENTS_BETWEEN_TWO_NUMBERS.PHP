@@ -4,6 +4,7 @@
 <body bgcolor="#0C5D90">
 <li><a href="MOVEMENTS_BETWEEN_TWO_NUMBERS.HTML">Back</a></li>
 <?php
+require_once __DIR__ . '/cdr_enrichment_sql.php';
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"CDATDUPL");
 $conn = sqlsrv_connect( $serverName, $connectionInfo );
@@ -22,24 +23,7 @@ $sql1 ="SELECT DISTINCT PHONE,OTHER,CONVERT(VARCHAR,STARTTIME,20) AS STARTTIME,D
 CASE WHEN INCOMING='1' THEN 'IN' ELSE 'OUT' END AS TYPE,
 IMEINUMBER,CELLTOWERID,STATE_KEY,PROVIDER_KEY  INTO #TT FROM CDATDUPL.DBO.CDATPCSUSPECT WHERE PHONE='$number' AND OTHER='$number1'";
 
-$sql2 ="SELECT DISTINCT A.PHONE,OTHER,CASE WHEN other in (select phone from CDATDUPL.DBO.cdatsuspect) THEN nickname  ELSE ' ' END   as  NICKNAME,
-STARTTIME,DURATION,TYPE,A.IMEINUMBER,A.CELLTOWERID,OPERATOR,
-(CASE WHEN A.CELLTOWERID=B.CELLTOWERID THEN MAX(SITEADDRESS) ELSE '' END +', LAST_UPDATE:'+CONVERT(VARCHAR,LASTUPDATE,20)) AS AREADESCRIPTION,LAT,LONG,AZIMUTH AS AZM INTO #TTP FROM #TT A
-INNER JOIN CDATDUPL.DBO.CDATCELLTOWERAREANEW B ON A.CELLTOWERID=B.CELLTOWERID AND A.STATE_KEY=B.STATE_KEY AND A.PROVIDER_KEY=B.PROVIDER_KEY
-left join CDATDUPL.DBO.cdatsuspect c on a.other=c.phone   
-WHERE b.lastupdate=(select distinct max(lastupdate) from cdatdupl..cdatcelltowerareanew x where x.CELLTOWERID=B.CELLTOWERID 
-and x.PROVIDER_KEY=b.PROVIDER_KEY AND X.STATE_KEY=b.state_KEY)
-GROUP BY A.PHONE,OTHER,NICKNAME,STARTTIME,DURATION,TYPE,A.IMEINUMBER,A.CELLTOWERID,B.CELLTOWERID,LASTUPDATE,OPERATOR,A.STATE_KEY,B.STATE_KEY,
-A.PROVIDER_KEY,B.PROVIDER_KEY,LAT,LONG,AZIMUTH";
-
-$sql3 ="SELECT A.PHONE,OTHER,CASE WHEN other in (select phone from CDATDUPL.DBO.cdatsuspect) THEN nickname  ELSE ' ' END   as  NICKNAME,
-STARTTIME,DURATION,TYPE,A.IMEINUMBER,CELLTOWERID,' ' AS OPT,' ' AREADESCRIPTION,' 'LAT,' 'LONG,' 'AZM INTO #TTPP FROM #TT A 
-left join CDATDUPL.DBO.cdatsuspect c on a.other=c.phone   
-WHERE STARTTIME NOT IN(SELECT DISTINCT STARTTIME FROM #TTP)";
-
-$sql4="SELECT * into #temp_cdrs FROM #TTP
-UNION
-SELECT * FROM #TTPP";
+$sql2 = cdr_sql_enrich_tt('', '', ['with_last_update' => true, 'with_lat_long' => true]);
 
 $sql5="SELECT PHONE,OTHER,NICKNAME,STARTTIME,DURATION,TYPE,IMEINUMBER,CELLTOWERID,OPERATOR,AREADESCRIPTION,LAT,LONG,AZM from #temp_cdrs  ORDER BY STARTTIME";
 
@@ -48,8 +32,6 @@ $sql6="select 'CALL DETAILS OF MOBILE NO. '+'$number' + 'AND OTHER NO. '+'$numbe
 
 $st1 = sqlsrv_query( $conn, $sql1 );
 $st2 = sqlsrv_query( $conn, $sql2 );
-$st3 = sqlsrv_query( $conn, $sql3 );
-$st4 = sqlsrv_query( $conn, $sql4 );
 $st5 = sqlsrv_query( $conn, $sql5 );
 $st6 = sqlsrv_query( $conn, $sql6 );
 

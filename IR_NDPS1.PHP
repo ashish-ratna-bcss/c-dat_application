@@ -130,7 +130,7 @@ echo "<tr>";
 echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana ><center>". $row['NAME'] ."<center></font></td>";
 echo "<td width=150px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['FATHER_NAME'] ."<center></font></td>";
 echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['CCNO'] ."<center></font></td>";
-echo "<td height=200px width=200px>";?> <?php echo '<img onmouseover="bigImg(this)" onmouseout="normalImg(this)" height="200" width="220" src="data:image; base64,'.$row["IMAGE"].'"></img>' ?> <?php "</td>";
+echo "<td height=200px width=200px>";?> <?php echo '<img onmouseover="bigImg(this)" onmouseout="normalImg(this)" height="200" width="220" src="'.cdat_base64_image_src($row['IMAGE']).'"></img>' ?> <?php "</td>";
 echo "</tr>";
 }
 echo "</table>";

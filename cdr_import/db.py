@@ -6,7 +6,8 @@ from pathlib import Path
 from typing import Generator, Iterable, Optional
 import psycopg2
 import psycopg2.extras
-from .config import JOBS_TABLE, STAGING_TABLE, PRODUCTION_INSERT_COLUMNS, load_db_config
+from .config import JOBS_TABLE, PRODUCTION_INSERT_COLUMNS, load_db_config
+from document_processing.staging import create_cdr_staging_table
 
 def file_sha256(path: Path) -> str:
     h = hashlib.sha256()
@@ -16,9 +17,12 @@ def file_sha256(path: Path) -> str:
     return h.hexdigest()
 
 @contextmanager
-def db_connection():
+def db_connection(*, fast_staging: bool = False):
     cfg = load_db_config()
     conn = psycopg2.connect(host=cfg['host'], port=cfg['port'], dbname=cfg['database'], user=cfg['user'], password=cfg['password'])
+    if fast_staging:
+        with conn.cursor() as cur:
+            cur.execute('SET synchronous_commit TO OFF')
     try:
         yield conn
         conn.commit()
@@ -34,6 +38,19 @@ def ensure_schema(conn) -> None:
 
 def get_or_create_job(conn, *, source_file: str, file_path: str, file_hash: str, operator: str, target_phone: Optional[str], dry_run: bool, batch_size: int) -> tuple[int, int, str]:
     with conn.cursor() as cur:
+        cur.execute(
+            f"SELECT job_id, rows_committed, status FROM {JOBS_TABLE} "
+            f"WHERE module = 'cdr' AND file_sha256 = %s "
+            f"ORDER BY (status IN ('completed', 'pending_verification')) DESC, job_id DESC LIMIT 1",
+            (file_hash,),
+        )
+        existing = cur.fetchone()
+        if existing and existing[2] in ('pending_verification', 'running'):
+            cur.execute(
+                f"UPDATE {JOBS_TABLE} SET updated_at = NOW(), file_path = %s WHERE job_id = %s",
+                (file_path, existing[0]),
+            )
+            return (int(existing[0]), int(existing[1]), existing[2])
         cur.execute(f"\n            INSERT INTO {JOBS_TABLE} (\n                module, source_file, source_basename, file_path, file_sha256,\n                operator, target_phone, status, phase, dry_run, batch_size\n            ) VALUES ('cdr', %s, %s, %s, %s, %s, %s, 'pending', 'import', %s, %s)\n            ON CONFLICT (module, source_file, file_sha256) DO UPDATE\n            SET updated_at = NOW(),\n                file_path = EXCLUDED.file_path\n            RETURNING job_id, rows_committed, status\n            ", (source_file, Path(source_file).name, file_path, file_hash, operator, target_phone, dry_run, batch_size))
         job_id, rows_committed, status = cur.fetchone()
         return (int(job_id), int(rows_committed), status)
@@ -47,17 +64,31 @@ def next_ucids(conn, count: int) -> list[int]:
         cur.execute("SELECT nextval('cdr_import_ucid_seq') FROM generate_series(1, %s)", (count,))
         return [int(row[0]) for row in cur.fetchall()]
 
-def insert_staging_batch(conn, rows: Iterable[dict]) -> None:
+_job_staging_tables: dict[int, str] = {}
+
+
+def ensure_job_staging_table(conn, job_id: int) -> str:
+    if job_id not in _job_staging_tables:
+        _job_staging_tables[job_id] = create_cdr_staging_table(conn, job_id)
+    return _job_staging_tables[job_id]
+
+
+def insert_staging_batch(conn, rows: Iterable[dict], *, job_id: int) -> None:
     rows = list(rows)
     if not rows:
         return
-    table = STAGING_TABLE
-    if table == 'cdatpcsuspect':
-        rows = [{k: row[k] for k in PRODUCTION_INSERT_COLUMNS if k in row} for row in rows]
-    cols = list(rows[0].keys())
-    values = [[row[c] for c in cols] for row in rows]
+    table = ensure_job_staging_table(conn, job_id)
+    base_cols = [c for c in PRODUCTION_INSERT_COLUMNS if c in rows[0]]
+    extra_cols = ['operator', 'source_file', 'source_row_number', 'import_job_id']
+    cols = base_cols + [c for c in extra_cols if c in rows[0]]
+    values = [[row.get(c) for c in cols] for row in rows]
     with conn.cursor() as cur:
-        psycopg2.extras.execute_values(cur, f'\n            INSERT INTO {table} ({', '.join(cols)})\n            VALUES %s\n            ', values, page_size=len(values))
+        psycopg2.extras.execute_values(
+            cur,
+            f"INSERT INTO {table} ({', '.join(cols)}) VALUES %s",
+            values,
+            page_size=min(len(values), 2000),
+        )
 
 def utcnow() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)

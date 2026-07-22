@@ -20,6 +20,92 @@ try {
     $client = new DocumentProcessingClient($config['api']);
     $job = $client->getJobStatus($jobId);
 
+    // Sync upload log when background CDR job progresses or finishes staging.
+    try {
+        $db = audit_db();
+        $status = strtolower((string)($job['status'] ?? ''));
+        if ($status === 'pending_verification') {
+            $stmt = $db->prepare('SELECT batch_id FROM upload_staging_batches WHERE document_job_id = :jid');
+            $stmt->execute([':jid' => $jobId]);
+            $batchId = $stmt->fetchColumn();
+            if ($batchId) {
+                $db->prepare('
+                    UPDATE upload_activity_logs
+                    SET upload_status = \'Pending Verification\',
+                        verification_status = \'pending\',
+                        staging_batch_id = :bid,
+                        total_records = :total,
+                        inserted_records = :ins,
+                        failed_records = GREATEST(:total - :ins, 0),
+                        error_reason = NULL
+                    WHERE document_job_id = :jid
+                ')->execute([
+                    ':bid' => (int)$batchId,
+                    ':total' => (int)($job['total_records'] ?? 0),
+                    ':ins' => (int)($job['rows_committed'] ?? 0),
+                    ':jid' => $jobId,
+                ]);
+            }
+        } elseif (in_array($status, ['running', 'queued'], true)) {
+            $db->prepare('
+                UPDATE upload_activity_logs
+                SET total_records = :total,
+                    inserted_records = :ins,
+                    failed_records = GREATEST(:total - :ins, 0)
+                WHERE document_job_id = :jid AND upload_status = \'Processing\'
+            ')->execute([
+                ':total' => (int)($job['total_records'] ?? 0),
+                ':ins' => (int)($job['rows_committed'] ?? 0),
+                ':jid' => $jobId,
+            ]);
+        } elseif (in_array($status, ['completed', 'validated'], true)) {
+            $db->prepare('
+                UPDATE upload_activity_logs
+                SET upload_status = \'Success\',
+                    total_records = :total,
+                    inserted_records = :ins,
+                    failed_records = GREATEST(:total - :ins, 0),
+                    error_reason = NULL
+                WHERE document_job_id = :jid AND upload_status = \'Processing\'
+            ')->execute([
+                ':total' => (int)($job['total_records'] ?? 0),
+                ':ins' => (int)($job['rows_committed'] ?? 0),
+                ':jid' => $jobId,
+            ]);
+        } elseif ($status === 'failed') {
+            $db->prepare('
+                UPDATE upload_activity_logs
+                SET upload_status = \'Failed\',
+                    error_reason = :err,
+                    inserted_records = :ins,
+                    failed_records = GREATEST(:total - :ins, 0)
+                WHERE document_job_id = :jid
+            ')->execute([
+                ':err' => $job['error_message'] ?? 'Processing failed.',
+                ':ins' => (int)($job['rows_committed'] ?? 0),
+                ':total' => (int)($job['total_records'] ?? 0),
+                ':jid' => $jobId,
+            ]);
+        }
+    } catch (Throwable $syncEx) {
+        // non-fatal
+    }
+
+    $verifyUrl = null;
+    if (in_array($job['status'] ?? '', ['pending_verification', 'running', 'queued'], true)) {
+        try {
+            $db = $db ?? audit_db();
+            $logStmt = $db->prepare('SELECT id FROM upload_activity_logs WHERE document_job_id = :jid ORDER BY id DESC LIMIT 1');
+            $logStmt->execute([':jid' => $jobId]);
+            $logId = $logStmt->fetchColumn();
+            if ($logId) {
+                $verifyUrl = 'admin_upload_verify.php?log_id=' . (int)$logId;
+            }
+        } catch (Throwable $e) {
+            $verifyUrl = null;
+        }
+    }
+
     echo json_encode([
         'ok' => true,
         'job_id' => $jobId,
@@ -31,6 +117,7 @@ try {
         'rows_committed' => $job['rows_committed'] ?? null,
         'progress_percent' => $job['progress_percent'] ?? null,
         'error_message' => $job['error_message'] ?? null,
+        'verify_url' => $verifyUrl,
     ]);
 } catch (Throwable $e) {
     http_response_code(400);

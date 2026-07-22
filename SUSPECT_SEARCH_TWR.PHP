@@ -110,7 +110,7 @@ echo "<td width=0px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['M
 echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['LAST_UPDATED'] ."<center></font></td>";
 echo "<td width=500px bgcolor=#AED1F1><font size=1 face=verdana>". $row['ADDRESS'] ."</font></td>";
 echo "<td width=125px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['INC_OFFICER'] ."<center></font></td>";
-echo "<td>";?> <?php echo '<img height="100" width="100" src="qrcode\php\qr_img.php?d='.'PHONE NO:'.$PHONE_NO.'  '.'ADDRESS: '. preg_replace('/[^A-Za-z0-9\-:]/',' ',$row["ADDRESS"]) .'"></img>'; ?> <?php "</td>";
+echo "<td>";?> <?php echo '<img height="100" width="100" src="qrcode/php/qr_img.php?d='.'PHONE NO:'.$PHONE_NO.'  '.'ADDRESS: '. preg_replace('/[^A-Za-z0-9\-:]/',' ',$row["ADDRESS"]) .'"></img>'; ?> <?php "</td>";
 echo "</tr>";
 }
 

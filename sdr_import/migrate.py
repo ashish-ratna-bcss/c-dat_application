@@ -90,7 +90,7 @@ def count_mssql_rows(mssql_conn, table_name: str) -> int:
     cur.execute(f'SELECT COUNT(*) FROM {table_name}')
     return int(cur.fetchone()[0])
 
-def migrate_table(*, mssql_database: str, mssql_table: str, pg_table: str, key_column: str, last_key: int=0, batch_size: int=SDR_BATCH_SIZE, on_batch=None) -> dict:
+def migrate_table(*, mssql_database: str, mssql_table: str, pg_table: str, key_column: str, last_key: int=0, batch_size: int=SDR_BATCH_SIZE, on_batch=None, job_id: int | None=None, use_staging: bool=False) -> dict:
     mssql = pyodbc.connect(mssql_conn_str(mssql_database), autocommit=True)
     pg = psycopg2.connect(**pg_conn_kwargs())
     try:
@@ -98,7 +98,15 @@ def migrate_table(*, mssql_database: str, mssql_table: str, pg_table: str, key_c
         columns = fetch_mssql_columns(m_cur, mssql_table)
         if not columns:
             raise SdrMigrateError(f'No columns found for MSSQL table {mssql_table}')
-        pg_cols = ensure_pg_table(pg, pg_table, columns)
+        if use_staging:
+            if job_id is None:
+                raise SdrMigrateError('job_id is required when use_staging=True')
+            from document_processing.staging import create_sdr_staging_table
+            qualified = create_sdr_staging_table(pg, job_id, pg_table, columns)
+            pg_cols = [c['pg_name'] for c in columns]
+        else:
+            pg_cols = ensure_pg_table(pg, pg_table, columns)
+            qualified = pg_table
         mssql_names = [c['mssql_name'] for c in columns]
         bracketed_key = f'[{key_column}]' if ' ' in key_column else key_column
         select_cols = ', '.join((f'[{c}]' if ' ' in c else c for c in mssql_names))
@@ -114,15 +122,15 @@ def migrate_table(*, mssql_database: str, mssql_table: str, pg_table: str, key_c
                 break
             adapted = [tuple((adapt_value(v) for v in row)) for row in rows]
             with pg.cursor() as p_cur:
-                psycopg2.extras.execute_batch(p_cur, f'INSERT INTO {pg_table} ({insert_cols}) VALUES ({placeholders})', adapted, page_size=min(len(adapted), 1000))
+                psycopg2.extras.execute_batch(p_cur, f'INSERT INTO {qualified} ({insert_cols}) VALUES ({placeholders})', adapted, page_size=min(len(adapted), 1000))
             pg.commit()
             key_idx = mssql_names.index(key_column)
             current_key = int(rows[-1][key_idx])
             total_inserted += len(rows)
             if on_batch:
                 on_batch(rows_committed=total_inserted, last_key=current_key)
-            logger.info('Migrated %s rows to %s (last %s=%s)', total_inserted, pg_table, key_column, current_key)
-        return {'table': pg_table, 'rows_inserted': total_inserted, 'last_key': current_key}
+            logger.info('Migrated %s rows to %s (last %s=%s)', total_inserted, qualified, key_column, current_key)
+        return {'table': qualified, 'logical_table': pg_table, 'rows_inserted': total_inserted, 'last_key': current_key}
     finally:
         mssql.close()
         pg.close()

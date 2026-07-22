@@ -2,7 +2,7 @@
 <head>
 </head>
 <body bgcolor="#0C5D90">
-<p><a  'href="CDATCNTS.html"><font color='#FDEFEF'>BACK</a></p>
+<p><a href="CDATCNTS.html"><font color='#FDEFEF'>BACK</a></p>
 <style type="text/css">
 a:link , a:visited{
 text-decoration: none;
@@ -87,12 +87,12 @@ left join cdatdupl.dbo.cdatphonearea d on case when len(other)=10 then other els
 group by a.PHONE, other,[IN],[OUT],calls,dur, FIRST_CALL,
 LAST_CALL,FULLNAME,b.FULLADDRESS, A.nickname,CATEGORY_type,MO,CATEGORY, INC_OFFICER";
 
-$sql7 = "SELECT DISTINCT  A.PHONE,OTHER,NICKNAME,MO,A.CATEGORY AS CAT,[IN],[OUT],CALLS,DUR,FIRST_CALL,LAST_CALL,
+$sql7 = "SELECT DISTINCT  A.PHONE,A.OTHER,A.NICKNAME,A.MO,A.CATEGORY AS CAT,[IN],[OUT],CALLS,DUR,FIRST_CALL,LAST_CALL,
 CASE WHEN A.OTHER=B.PHONE THEN ISNULL(B.FULLNAME,'')+','+ISNULL(B.FULLADDRESS,'')+','+
 ISNULL(CATEGORY_TYPE,'')+','+CONVERT(CHAR(10),CAST(DOA AS DATETIME),105)  ELSE A.ADDRESS END AS ADDRESS, 
-INC_OFFICER,CASE WHEN C.MOBILE LIKE '%'+OTHER+'%' THEN 'IR AVAILABLE CLICK HERE TO VIEW IR' ELSE '' END AS FORMS INTO #WITHADDRESS1 FROM #WITHADDRESS A
+A.INC_OFFICER,CASE WHEN C.MOBILE LIKE '%'+A.OTHER+'%' THEN 'IR AVAILABLE CLICK HERE TO VIEW IR' ELSE '' END AS FORMS INTO #WITHADDRESS1 FROM #WITHADDRESS A
 LEFT JOIN CDATDUPL.DBO.ADDRESS_OTHER_STATE B ON A.OTHER=B.PHONE AND B.EFF_TO_DATE IS NULL 
-LEFT JOIN FORMS.DBO.IR_PARTICULARS C ON C.MOBILE LIKE '%'+OTHER+'%'";
+LEFT JOIN FORMS.DBO.IR_PARTICULARS C ON C.MOBILE LIKE '%'+A.OTHER+'%'";
 
 $sql71="Select A.*,CASE WHEN B.MOBILE=A.OTHER THEN B.IMAGE ELSE (SELECT IMAGE FROM SUSPECT_IMAGE_TABLE WHERE IRKEY='113769') END AS IMAGE FROM #WITHADDRESS1 A LEFT JOIN 
 SUSPECT_IMAGE_TABLE B ON B.MOBILE=A.OTHER AND A.OTHER!='' ORDER BY CALLS DESC,OTHER";
@@ -138,7 +138,7 @@ echo "<table border=1 cellspacing=0 cellpadding=5>
 while( $row = sqlsrv_fetch_array( $st21, SQLSRV_FETCH_ASSOC) ) {
 echo "<tr>";
 echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['PHONE'] ."<center></font></td>";
-echo "<td>";?> <?php echo '<img  height="100" width="100" src="data:image; base64,'.$row["IMAGE"].'"></img>' ?> <?php "</td>";
+echo "<td>";?> <?php echo '<img  height="100" width="100" src="'.cdat_base64_image_src($row['IMAGE']).'"></img>' ?> <?php "</td>";
 echo "<td width=150px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['FIRST_CALL'] ."<center></font></td>";
 echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['LAST_CALL'] ."<center></font></td>";
 echo "<td width=125px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['NICKNAME'] ."<center></font></td>";
@@ -175,7 +175,7 @@ while( $row = sqlsrv_fetch_array( $st71, SQLSRV_FETCH_ASSOC) ) {
 echo "<tr>";
 echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['PHONE'] ."<center></font></td>";
 echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><a href=".'CDATCNTS2.PHP?PHONE_NO='.($row['OTHER']).">".$row['OTHER']."<center></font></td>";
-echo "<td>";?> <?php echo '<img  height="100" width="100" src="data:image; base64,'.$row["IMAGE"].'"></img>' ?> <?php "</td>";
+echo "<td>";?> <?php echo '<img  height="100" width="100" src="'.cdat_base64_image_src($row['IMAGE']).'"></img>' ?> <?php "</td>";
 echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['NICKNAME'] ."<center></font></td>";
 echo "<td width=0px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['MO'] ."<center></font></td>";
 echo "<td width=0px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['CAT'] ."<center></font></td>";

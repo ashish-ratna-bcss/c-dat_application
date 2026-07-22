@@ -207,7 +207,7 @@ echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['
 echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['ADDR_DURING_RELEASE'] ."<center></font></td>";
 echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['JAILNAME'] ."<center></font></td>";
 echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana>". $row['ADD_TO_JAIL'] ."</font></td>";
-echo "<td>";?> <?php echo '<img  height="100" width="100" src="data:image; base64,'.$row["PHOTO"].'"></img>' ?> <?php "</td>";
+echo "<td>";?> <?php echo '<img  height="100" width="100" src="'.cdat_base64_image_src($row['PHOTO']).'"></img>' ?> <?php "</td>";
 echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center><a href=".'IR.PHP?IRKEY='.($row['IRKEY']).">". $row['IRFORM'] ."</font></td>";
 echo "</tr>";
 }

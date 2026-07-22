@@ -6,6 +6,7 @@
 
 require_once __DIR__ . '/activity_logger.php';
 require_once __DIR__ . '/document_processing_client.php';
+require_once __DIR__ . '/excel_converter.php';
 
 class CdrUploadParser
 {
@@ -28,7 +29,8 @@ class CdrUploadParser
         int $fileSize,
         string $ext,
         array $columnMapping,
-        string $ipAddress
+        string $ipAddress,
+        ?string $operator = null
     ): array {
         if (!isset($this->modules[$moduleKey])) {
             return $this->failedResult('Invalid module specified.', 0);
@@ -47,37 +49,75 @@ class CdrUploadParser
 
         try {
             $client = new DocumentProcessingClient($apiConfig);
-            $submit = $client->submitDocument($apiModule, $filePath, $fileName, $batchSize);
+            $submit = $client->submitDocument($apiModule, $filePath, $fileName, $batchSize, $operator);
             $jobId = (int)$submit['job_id'];
             $preview = $submit['preview'] ?? [];
             $totalRecords = (int)($preview['total_records'] ?? 0);
 
-            $job = $client->waitForJob($jobId);
-            $timedOut = !empty($job['timed_out']);
-            $jobStatus = strtolower((string)($job['status'] ?? ''));
-            $rowsCommitted = (int)($job['rows_committed'] ?? 0);
-            $totalRecords = (int)($job['total_records'] ?? $totalRecords);
+            // CDR jobs run asynchronously on the API; check once for already-finished jobs.
+            $job = [];
+            $timedOut = false;
+            if ($apiModule === 'cdr') {
+                $job = $client->getJobStatus($jobId);
+                $jobStatus = strtolower((string)($job['status'] ?? ''));
+                $rowsCommitted = (int)($job['rows_committed'] ?? 0);
+                $totalRecords = (int)($job['total_records'] ?? $totalRecords);
 
-            if ($timedOut) {
-                $uploadStatus = 'Processing';
-                $errorReason = 'Document job #' . $jobId . ' is still running. Refresh upload history later for final status.';
-                $inserted = $rowsCommitted;
-                $failed = max(0, $totalRecords - $rowsCommitted);
-            } elseif ($jobStatus === 'completed' || $jobStatus === 'validated') {
-                $uploadStatus = 'Success';
-                $errorReason = null;
-                $inserted = $rowsCommitted > 0 ? $rowsCommitted : $totalRecords;
-                $failed = max(0, $totalRecords - $inserted);
-            } elseif ($jobStatus === 'failed') {
-                $uploadStatus = 'Failed';
-                $errorReason = $job['error_message'] ?? 'Document processing failed.';
-                $inserted = $rowsCommitted;
-                $failed = max(0, $totalRecords - $inserted);
+                if ($jobStatus === 'pending_verification') {
+                    $uploadStatus = 'Pending Verification';
+                    $errorReason = null;
+                    $inserted = $rowsCommitted;
+                    $failed = 0;
+                } elseif ($jobStatus === 'completed' || $jobStatus === 'validated') {
+                    $uploadStatus = 'Success';
+                    $errorReason = null;
+                    $inserted = $rowsCommitted > 0 ? $rowsCommitted : $totalRecords;
+                    $failed = max(0, $totalRecords - $inserted);
+                } elseif ($jobStatus === 'failed') {
+                    $uploadStatus = 'Failed';
+                    $errorReason = $job['error_message'] ?? 'Document processing failed.';
+                    $inserted = $rowsCommitted;
+                    $failed = max(0, $totalRecords - $inserted);
+                } else {
+                    $uploadStatus = 'Processing';
+                    $errorReason = 'Document job #' . $jobId . ' is processing. Status updates automatically below.';
+                    $inserted = $rowsCommitted;
+                    $failed = max(0, $totalRecords - $rowsCommitted);
+                    $timedOut = true;
+                }
             } else {
-                $uploadStatus = 'Processing';
-                $errorReason = 'Document job #' . $jobId . ' ended with status: ' . $jobStatus;
-                $inserted = $rowsCommitted;
-                $failed = max(0, $totalRecords - $inserted);
+                $job = $client->waitForJob($jobId);
+                $timedOut = !empty($job['timed_out']);
+                $jobStatus = strtolower((string)($job['status'] ?? ''));
+                $rowsCommitted = (int)($job['rows_committed'] ?? 0);
+                $totalRecords = (int)($job['total_records'] ?? $totalRecords);
+
+                if ($timedOut) {
+                    $uploadStatus = 'Processing';
+                    $errorReason = 'Document job #' . $jobId . ' is still running. Refresh upload history later for final status.';
+                    $inserted = $rowsCommitted;
+                    $failed = max(0, $totalRecords - $rowsCommitted);
+                } elseif ($jobStatus === 'pending_verification') {
+                    $uploadStatus = 'Pending Verification';
+                    $errorReason = null;
+                    $inserted = $rowsCommitted;
+                    $failed = 0;
+                } elseif ($jobStatus === 'completed' || $jobStatus === 'validated') {
+                    $uploadStatus = 'Success';
+                    $errorReason = null;
+                    $inserted = $rowsCommitted > 0 ? $rowsCommitted : $totalRecords;
+                    $failed = max(0, $totalRecords - $inserted);
+                } elseif ($jobStatus === 'failed') {
+                    $uploadStatus = 'Failed';
+                    $errorReason = $job['error_message'] ?? 'Document processing failed.';
+                    $inserted = $rowsCommitted;
+                    $failed = max(0, $totalRecords - $inserted);
+                } else {
+                    $uploadStatus = 'Processing';
+                    $errorReason = 'Document job #' . $jobId . ' ended with status: ' . $jobStatus;
+                    $inserted = $rowsCommitted;
+                    $failed = max(0, $totalRecords - $inserted);
+                }
             }
 
             $logId = $this->insertUploadLog(
@@ -94,6 +134,8 @@ class CdrUploadParser
                 $ipAddress,
                 $jobId
             );
+
+            $stagingBatchId = $this->linkStagingBatch($jobId, $logId, $uploadStatus);
 
             audit_log('Data Upload', 'Upload File', [
                 'module' => $moduleName,
@@ -123,12 +165,10 @@ class CdrUploadParser
                 'progress_percent' => $job['progress_percent'] ?? null,
                 'warnings' => $preview['warnings'] ?? [],
                 'log_id' => $logId,
-                'pending' => $timedOut,
-                'staging_rows' => $this->fetchProductionPreview(
-                    $moduleConfig['target_table'] ?? null,
-                    $job['target_phone'] ?? ($preview['target_phone'] ?? null),
-                    $uploadStatus
-                ),
+                'staging_batch_id' => $stagingBatchId,
+                'verify_url' => $stagingBatchId ? ('admin_upload_verify.php?log_id=' . $logId) : null,
+                'pending' => $timedOut || $uploadStatus === 'Processing',
+                'staging_rows' => $this->fetchStagingPreview($jobId, $uploadStatus),
             ];
         } catch (Throwable $e) {
             $this->insertUploadLog(
@@ -213,6 +253,65 @@ class CdrUploadParser
             'skipped' => 0,
             'errors' => [$reason],
         ];
+    }
+
+    private function linkStagingBatch(int $jobId, int $logId, string $uploadStatus): ?int
+    {
+        if ($uploadStatus !== 'Pending Verification') {
+            return null;
+        }
+        try {
+            $stmt = $this->db->prepare('SELECT batch_id FROM upload_staging_batches WHERE document_job_id = :jid');
+            $stmt->execute([':jid' => $jobId]);
+            $batchId = $stmt->fetchColumn();
+            if (!$batchId) {
+                return null;
+            }
+            $batchId = (int)$batchId;
+            $upd = $this->db->prepare('
+                UPDATE upload_staging_batches SET upload_log_id = :lid WHERE batch_id = :bid
+            ');
+            $upd->execute([':lid' => $logId, ':bid' => $batchId]);
+            $upd2 = $this->db->prepare('
+                UPDATE upload_activity_logs
+                SET staging_batch_id = :bid, verification_status = \'pending\'
+                WHERE id = :lid
+            ');
+            $upd2->execute([':bid' => $batchId, ':lid' => $logId]);
+            return $batchId;
+        } catch (Throwable $e) {
+            return null;
+        }
+    }
+
+    private function fetchStagingPreview(int $jobId, string $uploadStatus): array
+    {
+        if ($uploadStatus !== 'Pending Verification') {
+            return [];
+        }
+        try {
+            $stmt = $this->db->prepare('SELECT staging_tables FROM upload_staging_batches WHERE document_job_id = :jid');
+            $stmt->execute([':jid' => $jobId]);
+            $json = $stmt->fetchColumn();
+            if (!$json) {
+                return [];
+            }
+            $tables = json_decode($json, true) ?: [];
+            $cdrTable = $tables['cdr'] ?? null;
+            if (!$cdrTable || !preg_match('/^upload_staging\.[a-z][a-z0-9_]*$/', $cdrTable)) {
+                return [];
+            }
+            $q = $this->db->query("
+                SELECT staging_row_id, phone, other, starttime, duration, incoming, operator,
+                       is_duplicate, duplicate_reason
+                FROM {$cdrTable}
+                ORDER BY staging_row_id
+                LIMIT 10
+            ");
+            return $q->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Throwable $e) {
+            return [];
+        }
     }
 
     private function fetchProductionPreview(?string $tableName, ?string $targetPhone, string $uploadStatus): array

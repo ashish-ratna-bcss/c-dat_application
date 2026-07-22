@@ -124,8 +124,34 @@ function __sqlsrv_translate(string $sql): string
     $q = preg_replace('/^\s*SET\s+DATEFORMAT\s+\w+\s*/i', '', $q);
     $q = preg_replace('/\bWITH\s*\(\s*NOLOCK\s*\)/i', '', $q);
 
+    // Date-range filters: convert(char(10), starttime, 121) BETWEEN ... → index-friendly ::date compare
+    $q = preg_replace_callback(
+        '/convert\s*\(\s*char\s*\(\s*10\s*\)\s*,\s*([^,]+)\s*,\s*121\s*\)\s+between\s*\'([^\']+)\'\s+and\s*\'([^\']+)\'/i',
+        static function ($m) {
+            $col = trim($m[1]);
+            $from = str_replace("'", "''", trim($m[2]));
+            $to = str_replace("'", "''", trim($m[3]));
+            return "({$col})::date BETWEEN '{$from}'::date AND '{$to}'::date";
+        },
+        $q
+    );
+
     // FDW views over Citus must filter by phone inside a LATERAL subquery; otherwise
-    // postgres_fdw pulls every eff_to_date IS NULL row (~hundreds of millions).
+    // postgres_fdw pulls the full remote table. Handles joins on phone OR other columns,
+    // with or without an explicit eff_to_date IS NULL predicate (we always apply it).
+    $q = preg_replace_callback(
+        '/LEFT\s+JOIN\s+(cdataddress|address_other_state)\s+([A-Za-z_][A-Za-z0-9_]*)\s+ON\s+([A-Za-z_][A-Za-z0-9_]*)\.(\w+)\s*=\s*\2\.PHONE(?:\s+AND\s+\2\.EFF_TO_DATE\s+IS\s+NULL)?/i',
+        static function ($m) {
+            $table = strtolower($m[1]);
+            $alias = $m[2];
+            $outer = $m[3];
+            $outerCol = $m[4];
+            return "LEFT JOIN LATERAL (SELECT * FROM $table WHERE phone = ($outer).$outerCol AND eff_to_date IS NULL LIMIT 1) $alias ON true";
+        },
+        $q
+    );
+
+    // Legacy form: ON outer.PHONE = alias.PHONE AND alias.EFF_TO_DATE IS NULL
     $q = preg_replace_callback(
         '/LEFT\s+JOIN\s+(cdataddress|address_other_state)\s+([A-Za-z_][A-Za-z0-9_]*)\s+ON\s+([A-Za-z_][A-Za-z0-9_]*)\.PHONE\s*=\s*\2\.PHONE\s+AND\s+\2\.EFF_TO_DATE\s+IS\s+NULL/i',
         static function ($m) {
@@ -137,13 +163,39 @@ function __sqlsrv_translate(string $sql): string
         $q
     );
 
+    $towerLateral = static function (string $alias, string $outer, bool $useKeys): string {
+        $keyFilter = $useKeys
+            ? " AND (COALESCE(($outer).state_key::text, '') = '' OR (state_key IS NOT DISTINCT FROM ($outer).state_key AND provider_key IS NOT DISTINCT FROM ($outer).provider_key))"
+            : '';
+        $shortId = "regexp_replace(($outer).celltowerid::text, '^[^-]+-[^-]+-', '')";
+        return "LEFT JOIN LATERAL (SELECT * FROM cdatcelltowerareanew WHERE (celltowerid = {$shortId} OR celltowerid = ($outer).celltowerid OR bts_id = ($outer).celltowerid){$keyFilter} ORDER BY lastupdate DESC NULLS LAST LIMIT 1) $alias ON true";
+    };
+
     $q = preg_replace_callback(
-        '/LEFT\s+JOIN\s+cdatcelltowerareanew\s+([A-Za-z_][A-Za-z0-9_]*)\s+ON\s+([A-Za-z_][A-Za-z0-9_]*)\.CELLTOWERID\s*=\s*\1\.CELLTOWERID/i',
-        static function ($m) {
-            $alias = $m[1];
-            $outer = $m[2];
-            return "LEFT JOIN LATERAL (SELECT * FROM cdatcelltowerareanew WHERE celltowerid = ($outer).celltowerid ORDER BY lastupdate DESC NULLS LAST LIMIT 1) $alias ON true";
+        '/INNER\s+JOIN\s+cdatcelltowerareanew\s+([A-Za-z_][A-Za-z0-9_]*)\s+ON\s+([A-Za-z_][A-Za-z0-9_]*)\.CELLTOWERID\s*=\s*\1\.CELLTOWERID(?:\s+AND\s+\2\.STATE_KEY\s*=\s*\1\.STATE_KEY\s+AND\s+\2\.PROVIDER_KEY\s*=\s*\1\.PROVIDER_KEY)?/i',
+        static function ($m) use ($towerLateral) {
+            return $towerLateral($m[1], $m[2], stripos($m[0], 'state_key') !== false);
         },
+        $q
+    );
+
+    $q = preg_replace_callback(
+        '/LEFT\s+JOIN\s+cdatcelltowerareanew\s+([A-Za-z_][A-Za-z0-9_]*)\s+ON\s+([A-Za-z_][A-Za-z0-9_]*)\.CELLTOWERID\s*=\s*\1\.CELLTOWERID(?:\s+AND\s+\2\.STATE_KEY\s*=\s*\1\.STATE_KEY\s+AND\s+\2\.PROVIDER_KEY\s*=\s*\1\.PROVIDER_KEY)?/i',
+        static function ($m) use ($towerLateral) {
+            return $towerLateral($m[1], $m[2], stripos($m[0], 'state_key') !== false);
+        },
+        $q
+    );
+
+    $q = preg_replace('/\bWHERE\s+OPERATOR\s*=\s*\'\'\s+AND\s+B\.STATE\s*=\s*\'\'/i', '', $q);
+    $q = preg_replace('/\bWHERE\s+OPERATOR\s*=\s*\'\'\s+AND\s+B\.STATE\s*=\s*\'\'\s+and\b/i', 'WHERE ', $q);
+    $q = preg_replace('/\bAND\s+OPERATOR\s*=\s*\'\'\s*/i', '', $q);
+    $q = preg_replace('/\bWHERE\s+OPERATOR\s*=\s*\'\'\s*/i', '', $q);
+    $q = preg_replace('/\bAND\s+B\.STATE\s*=\s*\'\'\s*/i', '', $q);
+    $q = preg_replace('/\bWHERE\s+B\.STATE\s*=\s*\'\'\s*/i', '', $q);
+    $q = preg_replace(
+        '/\band\s+b\.lastupdate\s*=\s*\(\s*select\s+distinct\s+max\s*\(\s*lastupdate\s*\)\s+from\s+cdatcelltowerareanew\s+x(?:\s+with\s*\(\s*nolock\s*\))?\s+where\s+x\.celltowerid\s*=\s*b\.celltowerid[^)]+\)/i',
+        '',
         $q
     );
 
@@ -184,8 +236,19 @@ function __sqlsrv_translate(string $sql): string
     );
 
     $q = preg_replace_callback(
-        '/\bCONVERT\s*\(\s*CHAR\s*\(\s*10\s*\)\s*,\s*([^,]+)\s*,\s*121\s*\)/i',
+        '/\bCONVERT\s*\(\s*CHAR\s*\(\s*8\s*\)\s*,\s*([^,]+)\s*,\s*108\s*\)/i',
+        static fn($m) => '(' . trim($m[1]) . ')::time',
+        $q
+    );
+    $q = preg_replace_callback(
+        '/\bCONVERT\s*\(\s*(?:CHAR|VARCHAR)\s*\(\s*10\s*\)\s*,\s*([^,]+)\s*,\s*121\s*\)/i',
         static fn($m) => "to_char(" . trim($m[1]) . ", 'YYYY-MM-DD')",
+        $q
+    );
+
+    $q = preg_replace_callback(
+        '/\bCONVERT\s*\(\s*(?:CHAR|VARCHAR)\s*\(\s*10\s*\)\s*,\s*([^,]+)\s*,\s*105\s*\)/i',
+        static fn($m) => "to_char(" . trim($m[1]) . ", 'DD-MM-YYYY')",
         $q
     );
 
@@ -194,6 +257,8 @@ function __sqlsrv_translate(string $sql): string
         static fn($m) => '(' . trim($m[1]) . ')',
         $q
     );
+
+    $q = preg_replace('/\bAS\s+DATETIME\b/i', 'AS timestamp', $q);
 
     $q = preg_replace_callback(
         '/\bdatepart\s*\(\s*(\w+)\s*,\s*([^)]+)\)/i',
@@ -243,7 +308,9 @@ function __sqlsrv_translate(string $sql): string
     );
 
     $q = preg_replace('/\bISNULL\s*\(/i', 'COALESCE(', $q);
-    $q = preg_replace('/\bisnumeric\s*\(/i', 'isnumeric(', $q);
+    $q = preg_replace('/\bisnumeric\s*\(/i', 'ISNUMERIC(', $q);
+    $q = preg_replace('/\bISNUMERIC\s*\(\s*([^)]+)\)\s*=\s*0/i', "NOT ($1 ~ '^[0-9]+$')", $q);
+    $q = preg_replace('/\bISNUMERIC\s*\(\s*([^)]+)\)\s*=\s*1/i', "($1 ~ '^[0-9]+$')", $q);
     $q = preg_replace('/\bISNUMERIC\s*\(\s*([^)]+)\)/i', "($1 ~ '^[0-9]+$')", $q);
     $q = preg_replace('/\bCHARINDEX\s*\(\s*\'([^\']*)\'\s*,\s*([^)]+)\)/i', "strpos($2, '$1')", $q);
     $q = preg_replace('/\bREVERSE\s*\(/i', 'reverse(', $q);
@@ -277,19 +344,61 @@ function __sqlsrv_translate(string $sql): string
         $q
     );
 
+    $q = preg_replace('/\bDBO\.CALCULATEDISTANCE\s*\(\s*([^,]+)\s*,\s*([^,]+)\s*,\s*([^,]+)\s*,\s*([^)]+)\)/i', 'calculatedistance($1, $2, $3, $4)', $q);
+    $q = preg_replace('/\bDBO\.GETBEARING\s*\(\s*([^,]+)\s*,\s*([^,]+)\s*,\s*([^,]+)\s*,\s*([^)]+)\)/i', 'getbearing($1, $2, $3, $4)', $q);
+    $q = preg_replace('/\bISNUMERIC\s*\(\s*([^)]+)\s*\)/i', "($1 ~ '^-?[0-9]+(\\.[0-9]+)?$')", $q);
+    $q = preg_replace('/\bdbo\.celltowerfiltered\b/i', 'celltowerfiltered', $q);
+    $q = preg_replace('/\bdbo\.CELLTOWERfiltered\b/i', 'celltowerfiltered', $q);
+
+    if (preg_match_all('/\bset\s+@([a-z_][a-z0-9_]*)\s*=\s*\'([^\']*)\'/i', $q, $vars, PREG_SET_ORDER)) {
+        $replacements = [];
+        foreach ($vars as $var) {
+            $replacements['@' . strtolower($var[1])] = $var[2];
+        }
+        $q = preg_replace('/declare\s+@[^;]+;/i', '', $q);
+        $q = preg_replace('/\bset\s+@[^;]+;/i', '', $q);
+        foreach ($replacements as $name => $value) {
+            $safe = is_numeric($value) ? $value : "'" . str_replace("'", "''", $value) . "'";
+            $q = preg_replace('/' . preg_quote($name, '/') . '\b/i', $safe, $q);
+        }
+    }
+
     $q = preg_replace_callback(
         '/\bOUTER\s+APPLY\s*\(\s*SELECT\s+TOP\s+1\s+(.*?)\s+FROM\s+(.*?)\s+WHERE\s+(.*?)\s*\)\s*([A-Za-z0-9_]+)/is',
-        function($m) {
+        function ($m) {
             $cols = trim($m[1]);
             $from = trim($m[2]);
             $where = trim($m[3]);
             $alias = trim($m[4]);
+            if (stripos($from, 'cdatcelltowerareanew') !== false) {
+                if (stripos($where, 'bts_id') !== false) {
+                    $where = "T.celltowerid = regexp_replace(A.CELLTOWERID::text, '^[^-]+-[^-]+-', '') OR T.celltowerid = A.CELLTOWERID";
+                } elseif (stripos($where, 'celltowerid') !== false) {
+                    $where = preg_replace(
+                        '/([A-Za-z0-9_]+)\.CELLTOWERID\s*=\s*A\.CELLTOWERID/i',
+                        '(\\1.celltowerid = regexp_replace(A.CELLTOWERID::text, \'^[^-]+-[^-]+-\', \'\') OR \\1.celltowerid = A.CELLTOWERID)',
+                        $where
+                    );
+                }
+                return "LEFT JOIN LATERAL (SELECT $cols FROM $from WHERE $where ORDER BY lastupdate DESC NULLS LAST LIMIT 1) $alias ON TRUE";
+            }
             return "LEFT JOIN LATERAL (SELECT $cols FROM $from WHERE $where LIMIT 1) $alias ON TRUE";
         },
         $q
     );
 
     $q = preg_replace('/\bOFFSET\s+(\S+)\s+ROWS\s+FETCH\s+NEXT\s+(\S+)\s+ROWS\s+ONLY/i', 'OFFSET $1 LIMIT $2', $q);
+
+    $q = preg_replace_callback(
+        '/\bSELECT\s+TOP\s+(\d+)\s+(.*?)\s+ORDER\s+BY\s+(.*)$/is',
+        static fn($m) => 'SELECT ' . trim($m[2]) . ' ORDER BY ' . trim($m[3]) . ' LIMIT ' . trim($m[1]),
+        $q
+    );
+    $q = preg_replace_callback(
+        '/\bSELECT\s+TOP\s+(\d+)\s+(.*)$/is',
+        static fn($m) => 'SELECT ' . trim($m[2]) . ' LIMIT ' . trim($m[1]),
+        $q
+    );
 
     // Replace MS SQL + string concatenation with PostgreSQL || operator
     // safely replacing only outside of string literals
@@ -355,6 +464,23 @@ function sqlsrv_errors($errorsOrWarnings = null)
     return $GLOBALS['__sqlsrv_last_error'];
 }
 
+/**
+ * Render a visible error banner when sqlsrv_query() returns false.
+ * Call after each query on legacy report pages for diagnostics.
+ */
+function sqlsrv_render_query_error($stmt, string $context = ''): void
+{
+    if ($stmt !== false) {
+        return;
+    }
+    $errs = sqlsrv_errors();
+    $msg = $errs[0]['message'] ?? 'Unknown database error';
+    $label = $context !== '' ? htmlspecialchars($context) : 'Query';
+    echo '<div style="background:#5c1a1a;color:#ffb3b3;padding:12px;margin:10px 0;border:1px solid #dc3545;border-radius:4px;font-family:Verdana,sans-serif;font-size:12px;">';
+    echo '<strong>' . $label . ' failed:</strong> ' . htmlspecialchars($msg);
+    echo '</div>';
+}
+
 function sqlsrv_close($conn)
 {
     unset($GLOBALS['__sqlsrv_connections'][$conn]);
@@ -374,4 +500,43 @@ function sqlsrv_prepare($conn, $query, array $params = [], array $options = [])
 function sqlsrv_execute($stmt)
 {
     return true;
+}
+
+/**
+ * Build an <img src> value for base64 image columns from SQL Server/PostgreSQL.
+ * Returns a data URI when image data exists, otherwise a static placeholder.
+ */
+function cdat_base64_image_src($data, string $fallback = 'IMAGES/emp.png'): string
+{
+    if ($data === null) {
+        return $fallback;
+    }
+
+    $data = trim((string) $data);
+    if ($data === '') {
+        return $fallback;
+    }
+
+    if (stripos($data, 'data:image') === 0) {
+        $fixed = preg_replace('/^data:image;\s*base64,/i', 'data:image/jpeg;base64,', $data, 1);
+        return $fixed !== '' ? $fixed : $fallback;
+    }
+
+    if (preg_match('/^data:image\/[^;]+;base64,(.+)$/is', $data, $matches)) {
+        $data = $matches[1];
+    }
+
+    $data = preg_replace('/\s+/', '', $data);
+    if ($data === '') {
+        return $fallback;
+    }
+
+    $mime = 'image/jpeg';
+    if (str_starts_with($data, 'iVBORw0KGgo')) {
+        $mime = 'image/png';
+    } elseif (str_starts_with($data, 'R0lGOD')) {
+        $mime = 'image/gif';
+    }
+
+    return 'data:' . $mime . ';base64,' . $data;
 }

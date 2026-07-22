@@ -6,6 +6,7 @@
 	</br>
 <li><a href="HOME_IMEI.HTML"><font color=#FDEFEF>HOME</a></li>
 <?php
+require_once __DIR__ . '/cdr_enrichment_sql.php';
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"CDATDUPL");
 $conn = sqlsrv_connect( $serverName, $connectionInfo );
@@ -18,19 +19,7 @@ $number = $_POST['PHONE_NO'];
 $sql1 ="SELECT * INTO #TEMP FROM LOSTREPORT_HAWKEYE..LOST_REPORT_CDR_DATA WHERE 
 PHONE='$number'";
 
-$sql2 ="SELECT DISTINCT PHONE,OTHER,STARTTIME,DURATION,
-CASE WHEN INCOMING='1' THEN 'IN' ELSE 'OUT' END AS TYPE,
-IMEINUMBER,A.CELLTOWERID,CASE WHEN A.CELLTOWERID in(
-SELECT DISTINCT CELLTOWERID FROM CDATDUPL.DBO.CDATCELLTOWERAREANEW b WHERE a.state_key=b.state_key AND a.provider_key=b.provider_key) 
-THEN SITEADDRESS ELSE '' END AS AREADESCRIPTION,LAT,LONG,AZIMUTH  INTO #TT FROM #TEMP A
-LEFT JOIN CDATDUPL.DBO.CDATCELLTOWERAREANEW B ON A.CELLTOWERID=B.CELLTOWERID and a.state_key=b.state_key and a.provider_key=b.provider_key";
-
-$sql3 ="SELECT DISTINCT PHONE,OTHER,STARTTIME,DURATION,
-CASE WHEN INCOMING='1' THEN 'IN' ELSE 'OUT' END AS TYPE,
-IMEINUMBER,CELLTOWERID,''SITEADDRESS,''LAT,''LONG,''AZM INTO #TT1 FROM #TEMP WHERE STARTTIME NOT IN(
-SELECT DISTINCT STARTTIME FROM #TT) 
-UNION
-SELECT * FROM #TT ORDER BY STARTTIME";
+$sql2 = cdr_sql_enrich_location_temp('#TEMP', '#TT1');
 
 $sql4="SELECT DISTINCT PHONE,CELLTOWERID,COUNT(CELLTOWERID) AS CALLS,
 SITEADDRESS AS AREADESCRIPTION,LAT,LONG,AZM INTO #T FROM #TT1
@@ -44,7 +33,6 @@ $sql6="SELECT 'MAXSPENT LOCATION OF MOBILE NO: '+'$number' as PHONE1";
 
 $st1 = sqlsrv_query( $conn, $sql1 );
 $st2 = sqlsrv_query( $conn, $sql2 );
-$st3 = sqlsrv_query( $conn, $sql3 );
 $st4 = sqlsrv_query( $conn, $sql4 );
 $st5 = sqlsrv_query( $conn, $sql5 );
 $st6 = sqlsrv_query( $conn, $sql6 );

@@ -7,10 +7,104 @@
 require_once __DIR__ . '/activity_logger.php';
 audit_require_uploader();
 
+function mapNetworkToOperator(?string $network): ?string
+{
+    $map = [
+        '2' => 'airtel',
+        '15' => 'jio',
+        '12' => 'vi',
+        '4' => 'bsnl',
+        'Airtel' => 'airtel',
+        'Jio' => 'jio',
+        'BSNL' => 'bsnl',
+        'Vodafone' => 'vi',
+        'Idea' => 'vi',
+        'Vi' => 'vi',
+        'VI' => 'vi',
+    ];
+    $network = trim((string)$network);
+    if ($network === '' || strcasecmp($network, 'ALL') === 0) {
+        return null;
+    }
+    return $map[$network] ?? strtolower($network);
+}
 
-// ═════════════════════════════════════════════════════════════════════════════
-// BACKEND AJAX ENDPOINTS (For Custom Table Upload)
-// ═════════════════════════════════════════════════════════════════════════════
+function normalizeUploadedFiles(array $files): array
+{
+    if (!is_array($files['name'] ?? null)) {
+        return [$files];
+    }
+    $normalized = [];
+    foreach ($files['name'] as $index => $name) {
+        $normalized[] = [
+            'name' => $name,
+            'type' => $files['type'][$index] ?? '',
+            'tmp_name' => $files['tmp_name'][$index] ?? '',
+            'error' => $files['error'][$index] ?? UPLOAD_ERR_NO_FILE,
+            'size' => $files['size'][$index] ?? 0,
+        ];
+    }
+    return $normalized;
+}
+
+
+if (isset($_POST['ajax_action']) && $_POST['ajax_action'] === 'preview_cdr') {
+    header('Content-Type: application/json');
+    require_once __DIR__ . '/excel_converter.php';
+
+    try {
+        if (empty($_FILES['preview_file']['tmp_name']) || ($_FILES['preview_file']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+            throw new RuntimeException('No file received for preview.');
+        }
+
+        $originalName = (string)($_FILES['preview_file']['name'] ?? 'upload.csv');
+        $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+        if (!in_array($ext, ['csv', 'xls', 'xlsx'], true)) {
+            throw new RuntimeException('Preview supports CSV, XLS, and XLSX only.');
+        }
+
+        $tmpDir = sys_get_temp_dir();
+        $workPath = $tmpDir . '/cdr_preview_' . bin2hex(random_bytes(8)) . '_' . preg_replace('/[^A-Za-z0-9._ -]+/', '_', $originalName);
+        if (!move_uploaded_file($_FILES['preview_file']['tmp_name'], $workPath)) {
+            throw new RuntimeException('Could not read the uploaded file.');
+        }
+
+        $csvPath = convert_excel_upload_to_csv($workPath, $ext);
+        $operator = mapNetworkToOperator($_POST['network'] ?? null);
+        $operatorArg = $operator !== null ? $operator : 'auto';
+
+        $script = __DIR__ . '/scripts/cdr_preview.py';
+        $cmd = sprintf(
+            'python3 %s %s %s 150 2>&1',
+            escapeshellarg($script),
+            escapeshellarg($csvPath),
+            escapeshellarg($operatorArg)
+        );
+        $output = [];
+        $code = 0;
+        exec($cmd, $output, $code);
+        $json = json_decode(implode("\n", $output), true);
+        if ($code !== 0 || !is_array($json)) {
+            throw new RuntimeException('Preview parse failed: ' . implode("\n", $output));
+        }
+        if (empty($json['ok'])) {
+            throw new RuntimeException($json['error'] ?? 'Preview parse failed.');
+        }
+
+        echo json_encode($json);
+    } catch (Throwable $e) {
+        echo json_encode(['ok' => false, 'error' => $e->getMessage()]);
+    } finally {
+        if (isset($workPath) && is_file($workPath)) {
+            @unlink($workPath);
+        }
+        if (isset($csvPath) && is_file($csvPath) && $csvPath !== ($workPath ?? '')) {
+            @unlink($csvPath);
+        }
+    }
+    exit;
+}
+
 if (isset($_POST['ajax_action'])) {
     header('Content-Type: application/json');
     require_once __DIR__ . '/sqlsrv_compat.php';
@@ -43,7 +137,6 @@ if (isset($_POST['ajax_action'])) {
             exit;
         }
         
-        // Automatic columns creation in the backend
         $sql = "CREATE TABLE IF NOT EXISTS $tableName (
             id SERIAL PRIMARY KEY,
             phone VARCHAR(100),
@@ -56,7 +149,6 @@ if (isset($_POST['ajax_action'])) {
         
         $stmt = sqlsrv_query($conn, $sql);
         if ($stmt) {
-            // Log to general user activity log
             audit_log('Data Upload', 'Create Table', ['table_name' => $tableName]);
             
             echo json_encode(['ok' => true, 'table_name' => $tableName]);
@@ -78,13 +170,47 @@ if (isset($_POST['ajax_action'])) {
         $network = trim($_POST['network'] ?? 'ALL');
         $dbName = trim($_POST['db'] ?? '');
         $isNewTable = trim($_POST['is_new_table'] ?? 'No');
+        $contentFingerprint = trim($_POST['content_fingerprint'] ?? '');
+        $batchIndex = (int)($_POST['batch_index'] ?? 0);
+
+        if ($batchIndex === 0 && $contentFingerprint !== '') {
+            try {
+                $auditDb = audit_db();
+                $dupStmt = $auditDb->prepare("
+                    SELECT id FROM upload_activity_logs
+                    WHERE table_name = :tbl
+                      AND content_fingerprint = :fp
+                      AND upload_status = 'Success'
+                    LIMIT 1
+                ");
+                $dupStmt->execute([':tbl' => $tableName, ':fp' => $contentFingerprint]);
+                if ($dupStmt->fetchColumn()) {
+                    echo json_encode([
+                        'ok' => false,
+                        'error' => 'This sheet was already imported into this table. Duplicate import blocked.',
+                    ]);
+                    exit;
+                }
+            } catch (Exception $e) {
+                error_log('Duplicate import check failed: ' . $e->getMessage());
+            }
+        }
+
         $insertedCount = 0;
+        $skippedCount = 0;
         foreach ($rows as $row) {
             $phone = trim($row['phone'] ?? '');
             $imei = trim($row['imei'] ?? '');
             $callTime = trim($row['call_time'] ?? '');
             $duration = trim($row['duration'] ?? '');
             $location = trim($row['location'] ?? '');
+
+            $dupSql = "SELECT 1 FROM $tableName WHERE phone = ? AND COALESCE(imei, '') = ? AND COALESCE(call_time, '') = ? LIMIT 1";
+            $dupStmt = sqlsrv_query($conn, $dupSql, [$phone, $imei, $callTime]);
+            if ($dupStmt && sqlsrv_fetch_array($dupStmt, SQLSRV_FETCH_ASSOC)) {
+                $skippedCount++;
+                continue;
+            }
             
             $sql = "INSERT INTO $tableName (phone, imei, call_time, duration, location, network) VALUES (?, ?, ?, ?, ?, ?)";
             $stmt = sqlsrv_query($conn, $sql, [$phone, $imei, $callTime, $duration, $location, $network]);
@@ -93,12 +219,20 @@ if (isset($_POST['ajax_action'])) {
             }
         }
         
-        // Log custom upload activity
+        echo json_encode(['ok' => true, 'inserted' => $insertedCount, 'skipped' => $skippedCount]);
+        exit;
+    }
+
+    if ($ajaxAction === 'finalize_custom_import') {
+        $tableName = preg_replace('/[^a-zA-Z0-9_]/', '', $_POST['table_name'] ?? '');
+        $contentFingerprint = trim($_POST['content_fingerprint'] ?? '');
+        $dbName = trim($_POST['db'] ?? '');
+        $isNewTable = trim($_POST['is_new_table'] ?? 'No');
         try {
             $db = audit_db();
             $stmtLog = $db->prepare("
-                INSERT INTO upload_activity_logs (user_id, username, module_name, file_name, file_size, upload_status, total_records, inserted_records, failed_records, ip_address, db_name, table_name, is_new_table, uploaded_at)
-                VALUES (:uid, :uname, :module, :file, :size, :status, :total, :inserted, :failed, :ip, :db_name, :table_name, :is_new_table, NOW())
+                INSERT INTO upload_activity_logs (user_id, username, module_name, file_name, file_size, upload_status, total_records, inserted_records, failed_records, ip_address, db_name, table_name, is_new_table, content_fingerprint, uploaded_at)
+                VALUES (:uid, :uname, :module, :file, :size, :status, :total, :inserted, :failed, :ip, :db_name, :table_name, :is_new_table, :fp, NOW())
             ");
             $stmtLog->execute([
                 ':uid' => $_SESSION['audit_user_id'] ?? 0,
@@ -107,32 +241,79 @@ if (isset($_POST['ajax_action'])) {
                 ':file' => trim($_POST['file_name'] ?? 'custom_upload.csv'),
                 ':size' => (int)($_POST['file_size'] ?? 0),
                 ':status' => 'Success',
-                ':total' => $insertedCount,
-                ':inserted' => $insertedCount,
-                ':failed' => 0,
+                ':total' => (int)($_POST['total_rows'] ?? 0),
+                ':inserted' => (int)($_POST['inserted_total'] ?? 0),
+                ':failed' => (int)($_POST['skipped_total'] ?? 0),
                 ':ip' => $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1',
                 ':db_name' => $dbName,
                 ':table_name' => $tableName,
-                ':is_new_table' => $isNewTable
+                ':is_new_table' => $isNewTable,
+                ':fp' => $contentFingerprint !== '' ? $contentFingerprint : null,
             ]);
-        } catch (Exception $e) {
-            error_log("Failed to log custom upload activity: " . $e->getMessage());
-        }
-        
-        // Also log to the general user activity log
-        audit_log(
-            'Data Upload',
-            'Custom Upload',
-            [
+            audit_log('Data Upload', 'Custom Upload', [
                 'database' => $dbName,
                 'table' => $tableName,
-                'is_new_table' => $isNewTable,
-                'inserted_records' => $insertedCount,
-                'file_name' => trim($_POST['file_name'] ?? 'custom_upload.csv')
-            ]
-        );
-        
-        echo json_encode(['ok' => true, 'inserted' => $insertedCount]);
+                'inserted_records' => (int)($_POST['inserted_total'] ?? 0),
+                'skipped_duplicates' => (int)($_POST['skipped_total'] ?? 0),
+                'file_name' => trim($_POST['file_name'] ?? 'custom_upload.csv'),
+            ]);
+            echo json_encode(['ok' => true]);
+        } catch (Exception $e) {
+            echo json_encode(['ok' => false, 'error' => $e->getMessage()]);
+        }
+        exit;
+    }
+
+    if ($ajaxAction === 'log_sdr_resumable') {
+        try {
+            $db = audit_db();
+            $jobId = (int)($_POST['job_id'] ?? 0);
+            $fileName = trim($_POST['file_name'] ?? 'sdr_upload.bak');
+            $fileSize = (int)($_POST['file_size'] ?? 0);
+            $uploadId = trim($_POST['upload_id'] ?? '');
+            $logId = (int)($_POST['log_id'] ?? 0);
+
+            if ($logId > 0 && $jobId > 0) {
+                $stmt = $db->prepare('
+                    UPDATE upload_activity_logs
+                    SET document_job_id = :job_id, upload_status = \'Processing\', file_size = :fsize
+                    WHERE id = :id
+                ');
+                $stmt->execute([':job_id' => $jobId, ':fsize' => $fileSize, ':id' => $logId]);
+                echo json_encode(['ok' => true, 'log_id' => $logId]);
+                exit;
+            }
+
+            $stmtLog = $db->prepare("
+                INSERT INTO upload_activity_logs (
+                    user_id, username, module_name, file_name, file_size,
+                    total_records, inserted_records, failed_records,
+                    upload_status, ip_address, document_job_id, uploaded_at
+                ) VALUES (
+                    :uid, :uname, 'SDR', :fname, :fsize,
+                    0, 0, 0, 'Processing', :ip, :job_id, NOW()
+                )
+                RETURNING id
+            ");
+            $stmtLog->execute([
+                ':uid' => $_SESSION['audit_user_id'] ?? 0,
+                ':uname' => $_SESSION['audit_username'] ?? 'Admin',
+                ':fname' => $fileName,
+                ':fsize' => $fileSize,
+                ':ip' => $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1',
+                ':job_id' => $jobId > 0 ? $jobId : null,
+            ]);
+            $newLogId = (int)$stmtLog->fetchColumn();
+            audit_log('Data Upload', 'SDR Resumable Upload', [
+                'file_name' => $fileName,
+                'upload_id' => $uploadId,
+                'job_id' => $jobId,
+                'log_id' => $newLogId,
+            ]);
+            echo json_encode(['ok' => true, 'log_id' => $newLogId]);
+        } catch (Exception $e) {
+            echo json_encode(['ok' => false, 'error' => $e->getMessage()]);
+        }
         exit;
     }
     
@@ -140,9 +321,6 @@ if (isset($_POST['ajax_action'])) {
     exit;
 }
 
-// ═════════════════════════════════════════════════════════════════════════════
-// SECTION 1: LEGACY STANDARD UPLOAD FORM HANDLING
-// ═════════════════════════════════════════════════════════════════════════════
 require_once __DIR__ . '/cdr_upload_parser.php';
 $config = require __DIR__ . '/cdr_upload_config.php';
 $modules = $config;
@@ -156,115 +334,143 @@ $selectedModule = '';
 $fileName = '';
 $fileSize = 0;
 $results = null;
+$bulkResults = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
     $action = $_POST['action'] ?? '';
 
     if ($action === 'upload_file') {
         $selectedModule = $_POST['module'] ?? '';
+        $operator = mapNetworkToOperator($_POST['network'] ?? null);
+        $errMap = [
+            UPLOAD_ERR_INI_SIZE => 'File exceeds server upload limit.',
+            UPLOAD_ERR_FORM_SIZE => 'File exceeds form size limit.',
+            UPLOAD_ERR_PARTIAL => 'File was only partially uploaded.',
+            UPLOAD_ERR_NO_FILE => 'No file was selected.',
+            UPLOAD_ERR_NO_TMP_DIR => 'Server missing temporary folder.',
+            UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk.',
+            UPLOAD_ERR_EXTENSION => 'Upload blocked by a PHP extension.',
+        ];
+
         if (!isset($modules[$selectedModule])) {
             $error = 'Please select a valid module (CDR or SDR).';
-        } elseif (!isset($_FILES['cdr_file']) || $_FILES['cdr_file']['error'] !== UPLOAD_ERR_OK) {
-            $uploadErr = $_FILES['cdr_file']['error'] ?? UPLOAD_ERR_NO_FILE;
-            $errMap = [
-                UPLOAD_ERR_INI_SIZE => 'File exceeds server upload limit.',
-                UPLOAD_ERR_FORM_SIZE => 'File exceeds form size limit.',
-                UPLOAD_ERR_PARTIAL => 'File was only partially uploaded.',
-                UPLOAD_ERR_NO_FILE => 'No file was selected.',
-                UPLOAD_ERR_NO_TMP_DIR => 'Server missing temporary folder.',
-                UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk.',
-                UPLOAD_ERR_EXTENSION => 'Upload blocked by a PHP extension.',
-            ];
-            $error = $errMap[$uploadErr] ?? 'Please select a valid file to upload.';
+        } elseif (!isset($_FILES['cdr_file'])) {
+            $error = 'Please select a valid file to upload.';
         } else {
             $moduleConfig = $modules[$selectedModule];
-            $file = $_FILES['cdr_file'];
-            $fileName = basename($file['name']);
-            $fileSize = $file['size'];
-            $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
             $allowedExt = $moduleConfig['allowed_extensions'];
             $maxSize = (int)$moduleConfig['max_file_size'];
+            $uploadDir = __DIR__ . '/uploads';
+            $parser = new CdrUploadParser();
+            $ipAddress = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+            $files = normalizeUploadedFiles($_FILES['cdr_file']);
+            $hadValidFile = false;
 
-            if (!in_array($fileExt, $allowedExt, true)) {
-                $error = 'Unsupported file format for ' . $moduleConfig['name']
-                    . '. Allowed: ' . implode(', ', $allowedExt) . '.';
-            } elseif ($fileSize > $maxSize) {
-                $error = 'File size exceeds the ' . round($maxSize / (1024 * 1024)) . 'MB limit.';
-            } else {
-                $uploadDir = __DIR__ . '/uploads';
+            foreach ($files as $file) {
+                if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+                    if (!$hadValidFile && count($files) === 1) {
+                        $error = $errMap[$file['error']] ?? 'Please select a valid file to upload.';
+                    }
+                    continue;
+                }
+                $hadValidFile = true;
+                $fileName = basename($file['name']);
+                $fileSize = (int)$file['size'];
+                $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+
+                if (!in_array($fileExt, $allowedExt, true)) {
+                    $bulkResults[] = ['status' => 'Failed', 'file_name' => $fileName, 'reason' => 'Unsupported file format.'];
+                    continue;
+                }
+                if ($fileSize > $maxSize) {
+                    $limitLabel = $selectedModule === 'sdr'
+                        ? round($maxSize / (1024 * 1024 * 1024)) . ' GB'
+                        : round($maxSize / (1024 * 1024)) . ' MB';
+                    $bulkResults[] = ['status' => 'Failed', 'file_name' => $fileName, 'reason' => "File exceeds the {$limitLabel} limit."];
+                    continue;
+                }
                 if (!is_dir($uploadDir) && !@mkdir($uploadDir, 0775, true)) {
                     $error = 'Upload directory is missing and could not be created. Contact administrator.';
-                } elseif (!is_writable($uploadDir)) {
+                    break;
+                }
+                if (!is_writable($uploadDir)) {
                     $error = 'Upload directory is not writable by the web server.';
-                } else {
-                    $destFile = $uploadDir . '/' . time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $fileName);
-                    if (move_uploaded_file($file['tmp_name'], $destFile)) {
-                        set_time_limit(0);
+                    break;
+                }
 
-                        $parser = new CdrUploadParser();
-                        $ipAddress = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
-                        $results = $parser->processUpload(
-                            $selectedModule,
-                            $destFile,
-                            $fileName,
-                            $fileSize,
-                            $fileExt,
-                            [],
-                            $ipAddress
-                        );
+                $destFile = $uploadDir . '/' . time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $fileName);
+                if (!move_uploaded_file($file['tmp_name'], $destFile)) {
+                    $bulkResults[] = ['status' => 'Failed', 'file_name' => $fileName, 'reason' => 'Failed to save the uploaded file on the server.'];
+                    continue;
+                }
 
-                        if ($results['status'] === 'Failed') {
-                            $error = 'Processing failed: ' . ($results['reason'] ?? 'Unknown error');
+                if ($selectedModule === 'cdr' && in_array($fileExt, ['xls', 'xlsx'], true)) {
+                    try {
+                        $csvFile = convert_excel_upload_to_csv($destFile, $fileExt);
+                        if ($csvFile !== $destFile) {
                             @unlink($destFile);
-                            
-                            // Log failure to general user activity log
-                            audit_log(
-                                'Data Upload',
-                                'Standard Upload Failed',
-                                [
-                                    'module' => $selectedModule,
-                                    'file_name' => $fileName,
-                                    'reason' => $results['reason'] ?? 'Unknown error'
-                                ]
-                            );
-                        } else {
-                            if ($results['status'] === 'Success') {
-                                $success = 'Document processing completed successfully.';
-                            } elseif ($results['status'] === 'Processing') {
-                                $success = 'Document submitted. Job is still running in the background.';
-                            } else {
-                                $success = 'Upload logged with status: ' . $results['status'];
-                            }
-                            
-                            // Log success to general user activity log
-                            audit_log(
-                                'Data Upload',
-                                'Standard Upload',
-                                [
-                                    'module' => $selectedModule,
-                                    'file_name' => $fileName,
-                                    'status' => $results['status'],
-                                    'total_records' => $results['total_records'] ?? 0
-                                ]
-                            );
-                            
-                            $step = 2;
+                            $destFile = $csvFile;
+                            $fileExt = 'csv';
+                            $fileName = preg_replace('/\.[^.]+$/', '.csv', $fileName);
                         }
-                    } else {
-                        $uploadErr = $file['error'] ?? UPLOAD_ERR_OK;
-                        $errMap = [
-                            UPLOAD_ERR_INI_SIZE => 'File exceeds server upload limit (check PHP upload_max_filesize).',
-                            UPLOAD_ERR_FORM_SIZE => 'File exceeds form size limit.',
-                            UPLOAD_ERR_PARTIAL => 'File was only partially uploaded.',
-                            UPLOAD_ERR_NO_FILE => 'No file was uploaded.',
-                            UPLOAD_ERR_NO_TMP_DIR => 'Server missing temporary folder.',
-                            UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk.',
-                            UPLOAD_ERR_EXTENSION => 'Upload blocked by a PHP extension.',
-                        ];
-                        $error = 'Failed to save the uploaded file on the server.'
-                            . (isset($errMap[$uploadErr]) ? ' ' . $errMap[$uploadErr] : '');
+                    } catch (Throwable $convEx) {
+                        $bulkResults[] = ['status' => 'Failed', 'file_name' => $fileName, 'reason' => $convEx->getMessage()];
+                        @unlink($destFile);
+                        continue;
                     }
                 }
+
+                set_time_limit(0);
+                $fileResult = $parser->processUpload(
+                    $selectedModule,
+                    $destFile,
+                    $fileName,
+                    $fileSize,
+                    $fileExt,
+                    [],
+                    $ipAddress,
+                    $operator
+                );
+                $fileResult['file_name'] = $fileName;
+                $bulkResults[] = $fileResult;
+
+                if ($fileResult['status'] === 'Failed') {
+                    @unlink($destFile);
+                }
+            }
+
+            if ($error === '' && !$hadValidFile) {
+                $error = 'Please select a valid file to upload.';
+            } elseif ($error === '' && !empty($bulkResults)) {
+                $results = count($bulkResults) === 1 ? $bulkResults[0] : null;
+                $failedCount = count(array_filter($bulkResults, fn($r) => ($r['status'] ?? '') === 'Failed'));
+                $successCount = count($bulkResults) - $failedCount;
+
+                if ($successCount > 0 && $failedCount === 0) {
+                    if (count($bulkResults) === 1) {
+                        $r = $bulkResults[0];
+                        if ($r['status'] === 'Success') {
+                            $success = 'Document processing completed successfully.';
+                        } elseif ($r['status'] === 'Pending Verification') {
+                            $verifyUrl = $r['verify_url'] ?? null;
+                            $success = 'Data loaded into staging. Please review and approve before production load.';
+                            if ($verifyUrl) {
+                                $success .= ' <a href="' . htmlspecialchars($verifyUrl) . '" style="color:#FFD700;font-weight:bold;">Open Verification Screen</a>';
+                            }
+                        } elseif ($r['status'] === 'Processing') {
+                            $success = 'Upload accepted and processing in the background. Refresh <a href="admin_upload_history.php" style="color:#FFD700;font-weight:bold;">Upload History</a> for status.';
+                        } else {
+                            $success = 'Upload logged with status: ' . $r['status'];
+                        }
+                    } else {
+                        $success = "Processed {$successCount} file(s) successfully.";
+                    }
+                } elseif ($failedCount > 0 && $successCount === 0) {
+                    $error = 'All uploads failed. ' . ($bulkResults[0]['reason'] ?? '');
+                } else {
+                    $success = "Processed {$successCount} file(s); {$failedCount} failed.";
+                }
+                $step = 2;
             }
         }
     }
@@ -283,6 +489,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="js/sdr_resumable_upload.js" type="text/javascript"></script>
 
 <style type="text/css">
 .FONT {
@@ -598,6 +805,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
     position: sticky;
     top: 0;
 }
+.preview-table td.preview-readonly {
+    background: rgba(255, 255, 255, 0.05);
+}
 .preview-table td[contenteditable="true"] {
     background: rgba(255, 255, 255, 0.05);
     outline: none;
@@ -743,10 +953,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
 
                 <?php if ($step === 1): ?>
                   <div class="staging-banner">
-                    <strong>Production mode:</strong> CDR uploads are written to PostgreSQL table
+                    <strong>Staging workflow:</strong> CDR uploads are loaded into staging tables for manual verification before promotion to
                     <code style="color:#fff;">cdatpcsuspect</code>.
+                    <strong>SDR backups</strong> (.bak, up to 700 GB) use <em>resumable chunked upload</em> — if interrupted, re-select the same file to continue.
                   </div>
-                  <form action="admin_upload.php" method="post" enctype="multipart/form-data">
+                  <div id="sdr-pending-banner" class="staging-banner" style="display:none; border-color:#FFA500; margin-bottom:12px;"></div>
+                  <form action="admin_upload.php" method="post" enctype="multipart/form-data" id="standard-upload-form" onsubmit="return handleStandardUploadSubmit(event)">
                     <input type="hidden" name="action" value="upload_file" />
                     
                     <div class="form-group">
@@ -765,31 +977,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
                       <label for="standard-network-select">Select Network</label>
                       <select name="network" id="standard-network-select">
                         <option value="ALL">All Networks</option>
-                        <option value="Airtel">Airtel</option>
-                        <option value="Jio">Jio</option>
-                        <option value="VI">VI</option>
-                        <option value="BSNL">BSNL</option>
+                        <option value="2">Airtel</option>
+                        <option value="15">Jio</option>
+                        <option value="12">VI</option>
+                        <option value="4">BSNL</option>
                       </select>
                     </div>
 
                     <div class="form-group">
-                      <label for="cdr_file" id="file-label">Select Upload File</label>
-                      <input type="file" name="cdr_file" id="cdr_file" accept=".csv,.xls,.xlsx" required="required" />
+                      <label for="cdr_file" id="file-label">Select Upload File(s)</label>
+                      <input type="file" name="cdr_file[]" id="cdr_file" accept=".csv,.xls,.xlsx" multiple="multiple" required="required" />
                     </div>
 
                     <div style="text-align: right; margin-top: 20px;">
                       <a href="admin_upload_history.php?type=standard" class="btn-secondary"><i class="fa-solid fa-clock-rotate-left"></i> Upload History</a>
                       <button type="button" class="btn-secondary" id="standard-preview-btn" onclick="generateStandardPreview()" style="display: none; margin-right: 10px;"><i class="fa-solid fa-table-list"></i> Preview Data</button>
-                      <input type="submit" class="btn-action" value="Upload & Process File" />
+                      <input type="submit" class="btn-action" id="standard-submit-btn" value="Upload & Process File" />
                     </div>
                   </form>
+
+                  <!-- SDR resumable upload progress -->
+                  <div id="sdr-upload-progress" style="display:none; margin-top:20px; text-align:left;">
+                    <div class="wizard-card" style="background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.15); padding:15px; border-radius:6px;">
+                      <div class="wizard-title" style="color:#FFA500; margin-bottom:10px;"><i class="fa-solid fa-cloud-arrow-up"></i> SDR Resumable Upload</div>
+                      <div id="sdr-upload-filename" style="font-weight:bold; margin-bottom:8px;"></div>
+                      <div class="progress-bar-wrap">
+                        <div class="progress-bar-fill" id="sdr-upload-progress-bar">0%</div>
+                      </div>
+                      <div id="sdr-upload-stats" style="font-size:11px; color:#ccc; margin:8px 0;"></div>
+                      <div id="sdr-upload-log" style="font-size:11px; color:#ddd; max-height:120px; overflow-y:auto; background:rgba(0,0,0,0.2); padding:8px; border-radius:4px;"></div>
+                      <div style="margin-top:12px; text-align:right;">
+                        <button type="button" class="btn-secondary" id="sdr-upload-pause-btn" onclick="pauseSdrUpload()">Pause</button>
+                        <button type="button" class="btn-secondary" id="sdr-upload-cancel-btn" onclick="cancelSdrUpload()" style="margin-left:8px;">Cancel</button>
+                      </div>
+                    </div>
+                  </div>
 
                   <!-- Standard Sheet Preview & Data Grid Section -->
                   <div id="standard-preview-container" style="display:none; margin-top: 25px;">
                       <div class="wizard-card" style="background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.15);">
                           <div class="wizard-title" style="color: #FFA500;"><i class="fa-solid fa-eye"></i> 3. Preview Uploaded Sheet Data</div>
                           <p style="font-size:12px; color:#ccc; margin-bottom:12px; text-align: left;">
-                              Below is the preview of the data in your selected file.
+                              Below is a read-only preview of parsed CDR data (normalized the same way as the import pipeline). Your original file is not changed.
                           </p>
                           
                           <div class="preview-table-wrapper" style="max-height: 300px; border: 1px solid rgba(255, 255, 255, 0.15); background: rgba(0,0,0,0.3);">
@@ -802,9 +1031,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
                   </div>
                 <?php endif; ?>
 
-                <?php if ($step === 2 && $results): ?>
+                <?php if ($step === 2 && ($results || !empty($bulkResults))): ?>
                   <div style="text-align: left; margin-bottom: 20px;">
                     <h3>Upload Summary Details</h3>
+                    <?php if (count($bulkResults) > 1): ?>
+                    <table class="preview-table" style="margin-bottom:15px;">
+                      <thead><tr><th>File</th><th>Status</th><th>Job</th><th>Note</th></tr></thead>
+                      <tbody>
+                      <?php foreach ($bulkResults as $br): ?>
+                        <tr>
+                          <td><?= htmlspecialchars($br['file_name'] ?? '') ?></td>
+                          <td><?= htmlspecialchars($br['status'] ?? '') ?></td>
+                          <td><?= !empty($br['job_id']) ? (int)$br['job_id'] : '—' ?></td>
+                          <td><?= htmlspecialchars($br['reason'] ?? ($br['verify_url'] ? 'Pending verification' : '')) ?></td>
+                        </tr>
+                      <?php endforeach; ?>
+                      </tbody>
+                    </table>
+                    <?php elseif ($results): ?>
                     <p style="font-size: 13px; line-height: 1.8;">
                       <strong>Uploaded by:</strong> <?= htmlspecialchars($_SESSION['audit_username'] ?? 'Admin') ?><br/>
                       <strong>Module:</strong> <?= htmlspecialchars($modules[$selectedModule]['name']) ?><br/>
@@ -843,6 +1087,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
 
                     <?php if (!empty($results['reason'])): ?>
                     <p style="font-size: 12px; color: #FFB6C1;"><strong>Note:</strong> <?= htmlspecialchars($results['reason']) ?></p>
+                    <?php endif; ?>
                     <?php endif; ?>
                   </div>
 
@@ -889,10 +1134,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
                                 <label class="form-label" for="custom-network-select">Select Network</label>
                                 <select id="custom-network-select" class="form-select">
                                     <option value="ALL">All Networks</option>
-                                    <option value="Airtel">Airtel</option>
-                                    <option value="Jio">Jio</option>
-                                    <option value="VI">VI</option>
-                                    <option value="BSNL">BSNL</option>
+                                    <option value="2">Airtel</option>
+                                    <option value="15">Jio</option>
+                                    <option value="12">VI</option>
+                                    <option value="4">BSNL</option>
                                 </select>
                             </div>
                         </div>
@@ -1013,15 +1258,151 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
 // Initialize Navigation horizontal menu
 var MenuBar1 = new Spry.Widget.MenuBar("MenuBar1", {imgDown:"SpryAssets/SpryMenuBarDownHover.gif", imgRight:"SpryAssets/SpryMenuBarRightHover.gif"});
 
-// Original Standard Upload Config
 var moduleConfig = <?= json_encode($modules, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+var apiConfig = <?= json_encode($config['api'] ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+var activeSdrUploader = null;
+var activeSdrUploadMeta = { uploadId: null, fileKey: null };
+
+function sdrLog(msg) {
+    var log = document.getElementById('sdr-upload-log');
+    if (!log) return;
+    log.innerHTML += '<div>' + msg + '</div>';
+    log.scrollTop = log.scrollHeight;
+}
+
+function showSdrProgress(show) {
+    var el = document.getElementById('sdr-upload-progress');
+    if (el) el.style.display = show ? 'block' : 'none';
+    var btn = document.getElementById('standard-submit-btn');
+    if (btn) btn.disabled = !!show;
+}
+
+function refreshSdrPendingBanner() {
+    var banner = document.getElementById('sdr-pending-banner');
+    if (!banner || !window.sdrUploadHelpers) return;
+    var pending = sdrUploadHelpers.loadSavedSessions();
+    var keys = Object.keys(pending);
+    if (!keys.length) {
+        banner.style.display = 'none';
+        return;
+    }
+    var lines = keys.map(function(k) {
+        var p = pending[k];
+        return (p.filename || k) + ' — ' + sdrUploadHelpers.formatBytes(p.offset || 0) + ' uploaded';
+    });
+    banner.innerHTML = '<strong>Interrupted SDR upload(s) detected.</strong> Re-select the same .bak file(s) and click Upload to resume.<br/>' + lines.join('<br/>');
+    banner.style.display = 'block';
+}
+
+async function logSdrResumableUpload(result, file, logId) {
+    var fd = new FormData();
+    fd.append('ajax_action', 'log_sdr_resumable');
+    fd.append('job_id', result.job_id || '');
+    fd.append('file_name', file.name);
+    fd.append('file_size', file.size);
+    fd.append('upload_id', result.upload_id || '');
+    if (logId) fd.append('log_id', logId);
+    try {
+        var resp = await fetch('admin_upload.php', { method: 'POST', body: fd });
+        var data = await resp.json();
+        return data.log_id || logId || null;
+    } catch (e) {
+        return logId || null;
+    }
+}
+
+async function startSdrActivityLog(file) {
+    return logSdrResumableUpload({ job_id: '', upload_id: '' }, file, null);
+}
+
+async function handleStandardUploadSubmit(event) {
+    var moduleVal = document.getElementById('module').value;
+    if (moduleVal !== 'sdr') {
+        return true;
+    }
+    event.preventDefault();
+
+    var files = document.getElementById('cdr_file').files;
+    if (!files || files.length === 0) {
+        alert('Please select at least one .bak file.');
+        return false;
+    }
+
+    if (typeof SdrResumableUploader === 'undefined') {
+        alert('Resumable upload module failed to load. Refresh the page.');
+        return false;
+    }
+
+    activeSdrUploader = new SdrResumableUploader(apiConfig);
+    showSdrProgress(true);
+    document.getElementById('sdr-upload-log').innerHTML = '';
+    document.getElementById('sdr-upload-progress-bar').style.width = '0%';
+    document.getElementById('sdr-upload-progress-bar').innerText = '0%';
+
+    try {
+        for (var i = 0; i < files.length; i++) {
+            var file = files[i];
+            if (!file.name.toLowerCase().endsWith('.bak')) {
+                alert(file.name + ' is not a .bak file.');
+                continue;
+            }
+            document.getElementById('sdr-upload-filename').innerText = 'Uploading: ' + file.name + ' (' + sdrUploadHelpers.formatBytes(file.size) + ')';
+            activeSdrUploadMeta.fileKey = sdrUploadHelpers.fileKey(file);
+
+            var sdrLogId = await startSdrActivityLog(file);
+
+            var result = await activeSdrUploader.uploadFile(file, {
+                onStatus: sdrLog,
+                onProgress: function(p) {
+                    var bar = document.getElementById('sdr-upload-progress-bar');
+                    bar.style.width = p.percent.toFixed(1) + '%';
+                    bar.innerText = p.percent.toFixed(1) + '%';
+                    var speed = sdrUploadHelpers.formatBytes(p.speedBps) + '/s';
+                    var eta = sdrUploadHelpers.formatDuration(p.etaSeconds);
+                    document.getElementById('sdr-upload-stats').innerText =
+                        sdrUploadHelpers.formatBytes(p.offset) + ' / ' + sdrUploadHelpers.formatBytes(p.total) +
+                        '  |  ' + speed + '  |  ETA ' + eta;
+                }
+            });
+
+            await logSdrResumableUpload(result, file, sdrLogId);
+            sdrLog('Completed: job #' + result.job_id);
+        }
+        refreshSdrPendingBanner();
+        alert('SDR backup uploaded. Processing runs in the background — check Upload History for status.');
+        window.location.href = 'admin_upload_history.php?type=standard';
+    } catch (err) {
+        sdrLog('[ERROR] ' + (err.message || err));
+        alert('Upload stopped: ' + (err.message || err) + '\n\nRe-select the same file to resume from where it left off.');
+        refreshSdrPendingBanner();
+    } finally {
+        showSdrProgress(false);
+        activeSdrUploader = null;
+    }
+    return false;
+}
+
+function pauseSdrUpload() {
+    if (!activeSdrUploader) return;
+    activeSdrUploader.paused = !activeSdrUploader.paused;
+    var btn = document.getElementById('sdr-upload-pause-btn');
+    btn.innerText = activeSdrUploader.paused ? 'Resume' : 'Pause';
+    sdrLog(activeSdrUploader.paused ? 'Paused by user.' : 'Resumed by user.');
+}
+
+function cancelSdrUpload() {
+    if (!activeSdrUploader) return;
+    if (!confirm('Cancel this upload? Partial data on the server will be removed.')) return;
+    activeSdrUploader.abort(activeSdrUploadMeta.uploadId, activeSdrUploadMeta.fileKey);
+    sdrLog('Upload cancelled.');
+    showSdrProgress(false);
+}
 
 function updateModuleHint(moduleVal) {
     var hint = document.getElementById('module-hint');
     var fileInput = document.getElementById('cdr_file');
     var fileLabel = document.getElementById('file-label');
     
-    // Toggle network group
     var netGroup = document.getElementById('standard-network-group');
     if (netGroup) {
         if (moduleVal === 'cdr') {
@@ -1040,168 +1421,149 @@ function updateModuleHint(moduleVal) {
     hint.style.display = 'block';
     fileInput.accept = conf.accept || '';
     var exts = (conf.allowed_extensions || []).join(', ').toUpperCase();
-    var maxMb = Math.round((conf.max_file_size || 0) / (1024 * 1024));
-    fileLabel.textContent = 'Select Upload File (' + exts + ', max ' + maxMb + 'MB)';
+    if (moduleVal === 'sdr') {
+        var maxGb = Math.round((conf.max_file_size || 0) / (1024 * 1024 * 1024));
+        fileLabel.textContent = 'Select .bak file(s) (max ' + maxGb + ' GB each, resumable upload)';
+        fileInput.removeAttribute('multiple');
+    } else {
+        var maxMb = Math.round((conf.max_file_size || 0) / (1024 * 1024));
+        fileLabel.textContent = 'Select Upload File(s) (' + exts + ', max ' + maxMb + ' MB each)';
+        fileInput.setAttribute('multiple', 'multiple');
+    }
+
+    var previewBtn = document.getElementById('standard-preview-btn');
+    if (previewBtn) {
+        var showPreview = moduleVal === 'cdr' && fileInput.files && fileInput.files.length > 0;
+        previewBtn.style.display = showPreview ? 'inline-block' : 'none';
+    }
 }
 
-// Monitor file input selection to show/hide standard preview button
 document.addEventListener('DOMContentLoaded', function() {
+    refreshSdrPendingBanner();
     var cdrFile = document.getElementById('cdr_file');
+    var moduleSelect = document.getElementById('module');
+    function syncPreviewButton() {
+        var btn = document.getElementById('standard-preview-btn');
+        if (!btn) return;
+        var isCdr = moduleSelect && moduleSelect.value === 'cdr';
+        var hasFile = cdrFile && cdrFile.files && cdrFile.files.length > 0;
+        btn.style.display = (isCdr && hasFile) ? 'inline-block' : 'none';
+    }
     if (cdrFile) {
-        cdrFile.addEventListener('change', function(e) {
-            var btn = document.getElementById('standard-preview-btn');
-            if (btn) {
-                if (e.target.files.length > 0) {
-                    btn.style.display = 'inline-block';
-                } else {
-                    btn.style.display = 'none';
-                }
-            }
-        });
+        cdrFile.addEventListener('change', syncPreviewButton);
     }
-
-    // Intercept form submission to include the edited preview data
-    var form = document.querySelector('#tab-content-legacy form');
-    if (form) {
-        form.addEventListener('submit', function(e) {
-            var tableEl = document.getElementById("standard-preview-table");
-            var containerEl = document.getElementById("standard-preview-container");
-            
-            // Only intercept and build if the preview table is visible and has rows
-            if (tableEl && containerEl && containerEl.style.display !== 'none' && tableEl.querySelectorAll('tbody tr').length > 0) {
-                var ths = Array.from(tableEl.querySelectorAll("thead th"));
-                var trs = Array.from(tableEl.querySelectorAll("tbody tr"));
-                
-                var headers = ths.map(function(th) { return th.innerText.trim(); });
-                var dataRows = [];
-                
-                trs.forEach(function(tr) {
-                    var tds = Array.from(tr.querySelectorAll("td"));
-                    var rowData = {};
-                    headers.forEach(function(h, idx) {
-                        rowData[h] = idx < tds.length ? tds[idx].innerText.trim() : "";
-                    });
-                    dataRows.push(rowData);
-                });
-                
-                // Convert to CSV
-                var csv = Papa.unparse(dataRows);
-                
-                // Get original file name and change extension to .csv if it was excel
-                var fileInput = document.getElementById("cdr_file");
-                var originalName = fileInput.files[0] ? fileInput.files[0].name : "edited_upload.csv";
-                var baseName = originalName.substring(0, originalName.lastIndexOf('.')) || originalName;
-                var newName = baseName + "_edited.csv";
-                
-                // Create a new File object
-                var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-                var file = new File([blob], newName, { type: 'text/csv' });
-                
-                // Set the file input files using DataTransfer
-                var dataTransfer = new DataTransfer();
-                dataTransfer.items.add(file);
-                fileInput.files = dataTransfer.files;
-            }
-        });
+    if (moduleSelect) {
+        moduleSelect.addEventListener('change', syncPreviewButton);
+        if (moduleSelect.value) {
+            updateModuleHint(moduleSelect.value);
+        }
     }
+    syncPreviewButton();
 });
 
-function generateStandardPreview() {
+function renderStandardPreviewTable(data) {
+    var tableEl = document.getElementById("standard-preview-table");
+    var noteEl = document.getElementById("standard-preview-note");
+    if (!tableEl) return;
+
+    var columns = data.columns || [];
+    var rows = data.rows || [];
+    var headerHTML = "<thead><tr>";
+    columns.forEach(function(col) {
+        headerHTML += "<th>" + col.replace(/_/g, ' ') + "</th>";
+    });
+    headerHTML += "</tr></thead>";
+
+    var bodyHTML = "<tbody>";
+    if (!rows.length) {
+        bodyHTML += '<tr><td colspan="' + Math.max(columns.length, 1) + '">No parseable CDR rows found.</td></tr>';
+    } else {
+        rows.forEach(function(row) {
+            bodyHTML += "<tr>";
+            columns.forEach(function(col) {
+                var val = row[col];
+                bodyHTML += '<td class="preview-readonly">' + (val !== undefined && val !== null ? String(val) : "") + '</td>';
+            });
+            bodyHTML += "</tr>";
+        });
+    }
+    bodyHTML += "</tbody>";
+    tableEl.innerHTML = headerHTML + bodyHTML;
+
+    if (noteEl) {
+        var parts = [];
+        if (data.operator) parts.push('Operator: <strong>' + data.operator + '</strong>');
+        if (data.target_phone) parts.push('Target phone: <strong>' + data.target_phone + '</strong>');
+        if (data.total_records != null) parts.push('Records in file: <strong>' + data.total_records + '</strong>');
+        if (data.truncated) {
+            parts.push('Showing first <strong>' + rows.length + '</strong> normalized rows.');
+        }
+        if (data.parse_errors) {
+            parts.push('<span style="color:#ffb3b3;">' + data.parse_errors + ' row(s) could not be parsed.</span>');
+        }
+        if (data.warnings && data.warnings.length) {
+            parts.push('Warnings: ' + data.warnings.slice(0, 3).map(function(w) { return w.replace(/</g, '&lt;'); }).join('; '));
+        }
+        noteEl.innerHTML = parts.join(' &nbsp;|&nbsp; ');
+        noteEl.style.display = parts.length ? "block" : "none";
+    }
+
+    document.getElementById("standard-preview-container").style.display = "block";
+    document.getElementById("standard-preview-container").scrollIntoView({ behavior: 'smooth' });
+}
+
+async function generateStandardPreview() {
     var fileInput = document.getElementById("cdr_file");
+    var moduleSelect = document.getElementById("module");
     if (!fileInput || fileInput.files.length === 0) {
         alert("Please select a file first!");
         return;
     }
-    
+    if (moduleSelect && moduleSelect.value !== 'cdr') {
+        alert("Preview is available for CDR uploads only.");
+        return;
+    }
+
     var file = fileInput.files[0];
     var ext = file.name.split('.').pop().toLowerCase();
-    
     if (ext !== 'csv' && ext !== 'xls' && ext !== 'xlsx') {
         alert("Unsupported file format! Please select a CSV or Excel file.");
         return;
     }
-    
-    var reader = new FileReader();
-    
-    reader.onload = function(e) {
-        var headers = [];
-        var rows = [];
-        
-        if (ext === 'csv') {
-            var text = e.target.result;
-            var parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
-            if (parsed.data && parsed.data.length > 0) {
-                headers = Object.keys(parsed.data[0]);
-                rows = parsed.data;
-            }
-        } else {
-            var data = new Uint8Array(e.target.result);
-            var workbook = XLSX.read(data, { type: 'array' });
-            var firstSheet = workbook.SheetNames[0];
-            var json = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheet], { defval: "" });
-            if (json.length > 0) {
-                headers = Object.keys(json[0]);
-                rows = json;
-            }
-        }
-        
-        if (rows.length === 0) {
-            alert("The selected file is empty!");
+
+    var btn = document.getElementById('standard-preview-btn');
+    var prevLabel = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Parsing…';
+    }
+
+    var fd = new FormData();
+    fd.append('ajax_action', 'preview_cdr');
+    fd.append('preview_file', file);
+    var networkSelect = document.getElementById('standard-network-select');
+    if (networkSelect) {
+        fd.append('network', networkSelect.value || 'ALL');
+    }
+
+    try {
+        var resp = await fetch('admin_upload.php', { method: 'POST', body: fd });
+        var data = await resp.json();
+        if (!data.ok) {
+            alert(data.error || 'Preview failed.');
             return;
         }
-        
-        var tableEl = document.getElementById("standard-preview-table");
-        tableEl.innerHTML = "";
-        
-        // Set headers
-        var headerHTML = "<thead><tr>";
-        headers.forEach(function(h) {
-            headerHTML += "<th>" + h + "</th>";
-        });
-        headerHTML += "</tr></thead>";
-        
-        // Render rows with contenteditable="true" (limit to 150 rows for performance)
-        var bodyHTML = "<tbody>";
-        var previewRows = rows.slice(0, 150);
-        previewRows.forEach(function(row) {
-            bodyHTML += "<tr>";
-            headers.forEach(function(h) {
-                var val = row[h];
-                bodyHTML += '<td contenteditable="true">' + (val !== undefined ? val : "") + '</td>';
-            });
-            bodyHTML += "</tr>";
-        });
-        bodyHTML += "</tbody>";
-        
-        tableEl.innerHTML = headerHTML + bodyHTML;
-        
-        // Update note if there are more rows
-        var noteEl = document.getElementById("standard-preview-note");
-        if (noteEl) {
-            if (rows.length > 150) {
-                noteEl.innerHTML = "Showing first 150 of " + rows.length + " rows in the file. You can edit any cell before uploading.";
-                noteEl.style.display = "block";
-            } else {
-                noteEl.innerHTML = "You can double-click or click any cell to edit its value before uploading.";
-                noteEl.style.display = "block";
-            }
+        renderStandardPreviewTable(data);
+    } catch (err) {
+        alert('Preview failed: ' + (err.message || err));
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = prevLabel || '<i class="fa-solid fa-table-list"></i> Preview Data';
         }
-        
-        // Show the preview container
-        document.getElementById("standard-preview-container").style.display = "block";
-        document.getElementById("standard-preview-container").scrollIntoView({ behavior: 'smooth' });
-    };
-    
-    if (ext === 'csv') {
-        reader.readAsText(file);
-    } else {
-        reader.readAsArrayBuffer(file);
     }
 }
 
-// ═════════════════════════════════════════════════════════════════════════════
-// TAB SWITCHING LOGIC
-// ═════════════════════════════════════════════════════════════════════════════
 function switchTab(tab) {
     document.getElementById("tab-btn-legacy").classList.remove("active");
     document.getElementById("tab-btn-custom").classList.remove("active");
@@ -1217,10 +1579,8 @@ function switchTab(tab) {
     }
 }
 
-// ═════════════════════════════════════════════════════════════════════════════
-// CUSTOM TABLE UPLOAD SCRIPTS
-// ═════════════════════════════════════════════════════════════════════════════
 let customParsedData = null;
+let customContentFingerprint = '';
 let newlyCreatedTableName = '';
 setupCustomDragAndDrop();
 
@@ -1250,7 +1610,6 @@ function setupCustomDragAndDrop() {
     });
 }
 
-// Load Tables List via AJAX based on Database selection
 function loadCustomTables(selectValue = '') {
     const db = document.getElementById("custom-db-select").value;
     const tableSelect = document.getElementById("custom-table-select");
@@ -1292,7 +1651,6 @@ function loadCustomTables(selectValue = '') {
     });
 }
 
-// Handle Custom Table Dropdown Change
 function handleCustomTableChange() {
     const tableSelect = document.getElementById("custom-table-select");
     const creatorSection = document.getElementById("custom-table-creator-section");
@@ -1303,7 +1661,6 @@ function handleCustomTableChange() {
     }
 }
 
-// Create New Table with Predefined Columns
 function createCustomTable() {
     const db = document.getElementById("custom-db-select").value;
     const tableName = document.getElementById("custom-new-table-name").value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_');
@@ -1343,7 +1700,12 @@ function createCustomTable() {
     });
 }
 
-// File Selection Parser
+async function computeCustomFingerprint(headers, rows) {
+    const payload = JSON.stringify({headers: headers, rows: rows});
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(payload));
+    return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 function handleCustomFile(files) {
     if (files.length === 0) return;
     const file = files[0];
@@ -1384,6 +1746,10 @@ function handleCustomFile(files) {
             headers: headers,
             rows: rows
         };
+
+        computeCustomFingerprint(headers, rows).then(function(fp) {
+            customContentFingerprint = fp;
+        });
         
         document.getElementById("custom-filename").innerText = file.name;
         document.getElementById("custom-filesize").innerText = Math.round(file.size / 1024) + " KB";
@@ -1397,7 +1763,6 @@ function handleCustomFile(files) {
     }
 }
 
-// Generate the Preview Grid showing the ENTIRE sheet
 function generatePreviewGrid() {
     const db = document.getElementById("custom-db-select").value;
     const tbl = document.getElementById("custom-table-select").value;
@@ -1419,10 +1784,8 @@ function generatePreviewGrid() {
     const tableEl = document.getElementById("custom-preview-table");
     tableEl.innerHTML = "";
     
-    // Get all headers from the uploaded sheet
     const sheetHeaders = customParsedData.headers;
     
-    // Set headers: Render all sheet headers + location
     let headerHTML = "<thead><tr>";
     sheetHeaders.forEach(h => {
         headerHTML += `<th>${h}</th>`;
@@ -1430,7 +1793,6 @@ function generatePreviewGrid() {
     headerHTML += "<th style='background: rgba(255, 165, 0, 0.2); color:#FFA500;'>location</th>";
     headerHTML += "</tr></thead>";
     
-    // Render all rows with all sheet columns + location value
     let bodyHTML = "<tbody>";
     customParsedData.rows.forEach(row => {
         bodyHTML += "<tr>";
@@ -1438,7 +1800,6 @@ function generatePreviewGrid() {
             const val = row[h];
             bodyHTML += `<td contenteditable="true">${val !== undefined ? val : ""}</td>`;
         });
-        // Location column
         bodyHTML += `<td contenteditable="true" style='background: rgba(255, 165, 0, 0.05); font-weight:bold;'>${locVal}</td>`;
         bodyHTML += "</tr>";
     });
@@ -1446,19 +1807,16 @@ function generatePreviewGrid() {
     
     tableEl.innerHTML = headerHTML + bodyHTML;
     
-    // Show the preview container
     document.getElementById("custom-preview-container").style.display = "block";
     document.getElementById("custom-preview-container").scrollIntoView({ behavior: 'smooth' });
 }
 
-// Bulk insert rows from the editable preview table via AJAX
 function insertCustomData() {
     const tableEl = document.getElementById("custom-preview-table");
     const ths = Array.from(tableEl.querySelectorAll("thead th"));
     const tbody = tableEl.querySelector("tbody");
     if (!tbody || ths.length === 0) return;
     
-    // Find column indices by matching header text (case-insensitive)
     const findHeaderIndex = (keywords) => {
         return ths.findIndex(th => {
             const txt = th.innerText.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -1472,7 +1830,6 @@ function insertCustomData() {
     let durationIdx = findHeaderIndex(["dur", "sec", "length"]);
     let locationIdx = ths.length - 1; // The last column is always location
     
-    // If not found, use default sequential fallbacks
     if (phoneIdx === -1) phoneIdx = 0;
     if (imeiIdx === -1 && ths.length > 1) imeiIdx = 1;
     if (callTimeIdx === -1 && ths.length > 2) callTimeIdx = 2;
@@ -1521,26 +1878,42 @@ function insertCustomData() {
     printCustomLog(`[INFO] Initializing transaction pipeline for table [${tbl}]...`);
     printCustomLog(`[INFO] Preparing to insert ${rows.length} rows...`);
     
-    // Send in batches of 100 rows to simulate insertion progress bar
     const batchSize = 100;
     let index = 0;
     let insertedTotal = 0;
+    let skippedTotal = 0;
+    let batchIndex = 0;
     
     function sendNextBatch() {
         if (index >= rows.length) {
-            // Completed
-            printCustomLog(`[SUCCESS] Completed insertion of ${insertedTotal} rows successfully!`);
+            const finalize = new FormData();
+            finalize.append("ajax_action", "finalize_custom_import");
+            finalize.append("db", db);
+            finalize.append("table_name", tbl);
+            finalize.append("is_new_table", (tbl === newlyCreatedTableName) ? 'Yes' : 'No');
+            finalize.append("file_name", customParsedData.name);
+            finalize.append("file_size", customParsedData.size);
+            finalize.append("content_fingerprint", customContentFingerprint || '');
+            finalize.append("total_rows", String(rows.length));
+            finalize.append("inserted_total", String(insertedTotal));
+            finalize.append("skipped_total", String(skippedTotal));
+            fetch("admin_upload.php", { method: "POST", body: finalize })
+                .finally(showCustomSuccess);
+            return;
+        }
+
+        function showCustomSuccess() {
+            const skippedMsg = skippedTotal > 0 ? ` (${skippedTotal} duplicate rows skipped)` : '';
+            printCustomLog(`[SUCCESS] Completed insertion of ${insertedTotal} rows successfully!${skippedMsg}`);
             setTimeout(() => {
                 document.getElementById("custom-progress-section").style.display = "none";
                 document.getElementById("custom-success-section").style.display = "block";
-                
                 document.getElementById("success-custom-db").innerText = db;
                 document.getElementById("success-custom-table").innerText = tbl;
                 document.getElementById("success-custom-file").innerText = customParsedData.name;
                 document.getElementById("success-custom-location").innerText = document.getElementById("custom-location-input").value;
                 document.getElementById("success-custom-rows").innerText = insertedTotal + " records";
             }, 800);
-            return;
         }
         
         const batch = rows.slice(index, index + batchSize);
@@ -1553,6 +1926,8 @@ function insertCustomData() {
         formData.append("network", document.getElementById("custom-network-select").value);
         formData.append("file_name", customParsedData.name);
         formData.append("file_size", customParsedData.size);
+        formData.append("content_fingerprint", customContentFingerprint || '');
+        formData.append("batch_index", String(batchIndex));
         formData.append("rows", JSON.stringify(batch));
         
         fetch("admin_upload.php", {
@@ -1563,12 +1938,15 @@ function insertCustomData() {
         .then(data => {
             if (data.ok) {
                 insertedTotal += data.inserted;
+                skippedTotal += data.skipped || 0;
                 index += batchSize;
+                batchIndex++;
                 
                 const percent = Math.min(100, Math.round((index / rows.length) * 100));
                 progressBar.style.width = percent + "%";
                 progressBar.innerText = percent + "%";
-                printCustomLog(`[BATCH] Mapped and inserted rows ${index - batch.length + 1} - ${Math.min(index, rows.length)} successfully.`);
+                const skipNote = (data.skipped || 0) > 0 ? ` (${data.skipped} duplicates skipped)` : '';
+                printCustomLog(`[BATCH] Mapped and inserted rows ${index - batch.length + 1} - ${Math.min(index, rows.length)} successfully.${skipNote}`);
                 
                 setTimeout(sendNextBatch, 300); // 300ms pause for visual updates
             } else {
@@ -1605,17 +1983,32 @@ window.onload = function() {
     }
 };
 
-// ═════════════════════════════════════════════════════════════════════════════
-// ORIGINAL STANDARD UPLOAD STATUS POLLING
-// ═════════════════════════════════════════════════════════════════════════════
 <?php if ($step === 2 && !empty($results['pending']) && !empty($results['job_id'])): ?>
 (function pollJob() {
     var jobId = <?= (int)$results['job_id'] ?>;
-    var interval = setInterval(function() {
+    var delay = 5000;
+    var timer = null;
+    var stopped = false;
+
+    function stopPolling() {
+        stopped = true;
+        if (timer) clearTimeout(timer);
+    }
+
+    function scheduleNext() {
+        if (stopped) return;
+        timer = setTimeout(pollOnce, delay);
+        delay = Math.min(Math.round(delay * 1.4), 15000);
+    }
+
+    function pollOnce() {
         fetch('admin_upload_job_status.php?job_id=' + jobId)
             .then(function(r) { return r.json(); })
             .then(function(data) {
-                if (!data.ok) return;
+                if (!data.ok) {
+                    scheduleNext();
+                    return;
+                }
                 var status = (data.status || '').toLowerCase();
                 var statusEl = document.getElementById('job-status');
                 var bar = document.getElementById('progress-bar');
@@ -1625,22 +2018,35 @@ window.onload = function() {
                         bar.textContent = data.progress_percent + '%';
                     }
                 }
-                if (status === 'completed' || status === 'validated') {
+                if (status === 'pending_verification') {
+                    statusEl.textContent = 'Pending Verification';
+                    statusEl.style.backgroundColor = '#ffc107';
+                    stopPolling();
+                    var msg = document.getElementById('pending-message');
+                    if (msg) {
+                        msg.innerHTML = 'Data loaded into staging. '
+                            + (data.verify_url ? '<a href="' + data.verify_url + '" style="color:#FFD700;font-weight:bold;">Open Verification</a>' : 'Refresh Upload History.');
+                    }
+                } else if (status === 'completed' || status === 'validated') {
                     statusEl.textContent = 'Success';
                     statusEl.style.backgroundColor = '#28a745';
-                    clearInterval(interval);
+                    stopPolling();
                     var msg = document.getElementById('pending-message');
                     if (msg) msg.textContent = 'Processing completed.';
                 } else if (status === 'failed') {
                     statusEl.textContent = 'Failed';
                     statusEl.style.backgroundColor = '#dc3545';
-                    clearInterval(interval);
+                    stopPolling();
                     var msgFail = document.getElementById('pending-message');
                     if (msgFail) msgFail.textContent = data.error_message || 'Processing failed.';
+                } else {
+                    scheduleNext();
                 }
             })
-            .catch(function() {});
-    }, 3000);
+            .catch(function() { scheduleNext(); });
+    }
+
+    pollOnce();
 })();
 <?php endif; ?>
 </script>

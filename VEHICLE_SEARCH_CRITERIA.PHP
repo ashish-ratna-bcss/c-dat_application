@@ -59,7 +59,7 @@ echo "<td width=200px bgcolor=#AED1F1><font size=1 face=verdana>". $row['VEHICLE
 echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana>". $row['ENG_NO'] ."</font></td>";
 echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana>". $row['CHAS_NO'] ."</font></td>";
 echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana>". $row['ISSUED_DATE'] ."</font></td>";
-echo "<td>";?> <?php echo '<img height="100" width="100" src="qrcode\php\qr_img.php?d='.'REGNNO: '.$row["REGN_NO"].' NAME:'. preg_replace('/[^A-Za-z0-9\-:]/',' ',$row["NAME"]).' FATHERNAME:'.$row["FATHER_NAME"]. ' PHONE:'.$row["PHONE_NO"].' ADDRESS:'. preg_replace('/[^A-Za-z0-9\-:]/',' ',$row["ADDRESS"]).' VEH_TYPE: '.$row["VEHICLE_TYPE"].' ENG_NO: '.$row["ENG_NO"].' CHAS_NO: '.$row["CHAS_NO"].'"></img>'; ?> <?php "</td>";
+echo "<td>";?> <?php echo '<img height="100" width="100" src="qrcode/php/qr_img.php?d='.'REGNNO: '.$row["REGN_NO"].' NAME:'. preg_replace('/[^A-Za-z0-9\-:]/',' ',$row["NAME"]).' FATHERNAME:'.$row["FATHER_NAME"]. ' PHONE:'.$row["PHONE_NO"].' ADDRESS:'. preg_replace('/[^A-Za-z0-9\-:]/',' ',$row["ADDRESS"]).' VEH_TYPE: '.$row["VEHICLE_TYPE"].' ENG_NO: '.$row["ENG_NO"].' CHAS_NO: '.$row["CHAS_NO"].'"></img>'; ?> <?php "</td>";
 echo "</tr>";
 }
 

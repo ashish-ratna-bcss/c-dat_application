@@ -31,7 +31,7 @@ if(sqlsrv_query($conn,$sql1))
 $result=sqlsrv_query($conn,$sql1);
 while($row = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC) ) 
 {
-echo '<img height="300" width="300" src="data:image; base64,'.$row["IMAGE"].'">';
+echo '<img height="300" width="300" src="'.cdat_base64_image_src($row['IMAGE']).'">';
 }
 }
 ?>

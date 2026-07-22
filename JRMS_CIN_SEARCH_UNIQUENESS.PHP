@@ -18,7 +18,8 @@ $sql1 ="SET DATEFORMAT DMY SELECT DISTINCT  CIN,UNIQUE_KEY,IRKEY,PRISONERNO,PSAR
 MOBILENO PHONE,
 CASE WHEN LEN(RIGHT(NAME,CHARINDEX('/',REVERSE(NAME))))>1 THEN RIGHT(NAME,CHARINDEX('/',REVERSE(NAME))-1) ELSE '' END IDPROOF,
 ADDR_DURINGRELEASE ADDR_DURING_RELEASE,GENDER,JAILNAME,
-CONVERT(VARCHAR(20),CONVERT(DATE,ADMISSION_TO_JAIL)) ADD_TO_JAIL,CONVERT(VARCHAR(20),CONVERT(DATE,RELEASEDT)) RELEASE_DATE,PHOTO INTO #TEMP FROM JRMS..JRMS_TOTAL_2012_TO_2017
+CONVERT(VARCHAR(20),CONVERT(DATE,ADMISSION_TO_JAIL)) ADD_TO_JAIL,CONVERT(VARCHAR(20),CONVERT(DATE,RELEASEDT)) RELEASE_DATE,PHOTO INTO #TEMP FROM 
+JRMS..JRMS_TOTAL_2012_TO_2017
 WHERE  (CIN BETWEEN '$f_cin' AND '$t_cin')";
 
 
@@ -74,7 +75,7 @@ echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['
 echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['JAILNAME'] ."<center></font></td>";
 echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana>". $row['ADD_TO_JAIL'] ."</font></td>";
 echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana>". $row['RELEASE_DATE'] ."</font></td>";
-echo "<td>";?> <?php echo '<img  height="100" width="100" src="data:image; base64,'.$row["PHOTO"].'"></img>' ?> <?php "</td>";
+echo "<td>";?> <?php echo '<img  height="100" width="100" src="'.cdat_base64_image_src($row['PHOTO']).'"></img>' ?> <?php "</td>";
 echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center><a href=".'IR.PHP?IRKEY='.($row['IRKEY']).">". $row['IRFORM'] ."</font></td>";
 echo "</tr>";
 

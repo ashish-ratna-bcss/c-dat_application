@@ -4,6 +4,7 @@
 <body bgcolor="#0C5D90">
 <li><a href="MOVEMENTS_BETWEEN_TWO_NUMBERS_COMPARISION.HTML">Back</a></li>
 <?php
+require_once __DIR__ . '/cdr_enrichment_sql.php';
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"CDATDUPL");
 $conn = sqlsrv_connect( $serverName, $connectionInfo );
@@ -22,24 +23,11 @@ $sql1 ="SELECT DISTINCT PHONE,OTHER,CONVERT(VARCHAR,STARTTIME,20) AS STARTTIME,D
 CASE WHEN INCOMING='1' THEN 'IN' ELSE 'OUT' END AS TYPE,
 IMEINUMBER,CELLTOWERID,STATE_KEY,PROVIDER_KEY  INTO #TT FROM CDATDUPL.DBO.CDATPCSUSPECT WHERE PHONE IN ('$number','$number1')";
 
-$sql2 ="SELECT DISTINCT A.PHONE,OTHER,CASE WHEN other in (select phone from CDATDUPL.DBO.cdatsuspect) THEN nickname  ELSE ' ' END   as  NICKNAME,
-STARTTIME,DURATION,TYPE,A.IMEINUMBER,A.CELLTOWERID,OPERATOR,
-(CASE WHEN A.CELLTOWERID=B.CELLTOWERID THEN MAX(SITEADDRESS) ELSE '' END +', LAST_UPDATE:'+CONVERT(VARCHAR,LASTUPDATE,20)) AS AREADESCRIPTION,LAT,LONG,AZIMUTH AS AZM INTO #TTP FROM #TT A
-INNER JOIN CDATDUPL.DBO.CDATCELLTOWERAREANEW B ON A.CELLTOWERID=B.CELLTOWERID AND A.STATE_KEY=B.STATE_KEY AND A.PROVIDER_KEY=B.PROVIDER_KEY
-left join CDATDUPL.DBO.cdatsuspect c on a.other=c.phone   
-WHERE b.lastupdate=(select distinct max(lastupdate) from cdatdupl..cdatcelltowerareanew x where x.CELLTOWERID=B.CELLTOWERID 
-and x.PROVIDER_KEY=b.PROVIDER_KEY AND X.STATE_KEY=b.state_KEY)
-GROUP BY A.PHONE,OTHER,NICKNAME,STARTTIME,DURATION,TYPE,A.IMEINUMBER,A.CELLTOWERID,B.CELLTOWERID,LASTUPDATE,OPERATOR,A.STATE_KEY,B.STATE_KEY,
-A.PROVIDER_KEY,B.PROVIDER_KEY,LAT,LONG,AZIMUTH";
-
-$sql3 ="SELECT A.PHONE,OTHER,CASE WHEN other in (select phone from CDATDUPL.DBO.cdatsuspect) THEN nickname  ELSE ' ' END   as  NICKNAME,
-STARTTIME,DURATION,TYPE,A.IMEINUMBER,CELLTOWERID,' ' AS OPT,' ' AREADESCRIPTION,' 'LAT,' 'LONG,' 'AZM INTO #TTPP FROM #TT A 
-left join CDATDUPL.DBO.cdatsuspect c on a.other=c.phone   
-WHERE STARTTIME NOT IN(SELECT DISTINCT STARTTIME FROM #TTP)";
-
-$sql4="SELECT * into #ttppp FROM #TTP
-UNION
-SELECT * FROM #TTPP";
+$sql2 = cdr_sql_enrich_tt('', '', [
+    'with_last_update' => true,
+    'with_lat_long' => true,
+    'output_table' => '#ttppp',
+]);
 
 $sql5="select distinct A.PHONE,A.STARTTIME STARTTIME,A.DURATION ,''''+A.CELLTOWERID PHONE_CELLTOWERID,
 A.AREADESCRIPTION PHONE_AREADESCRIPTION,A.LAT PHONE_LAT,A.LONG PHONE_LONG,A.AZM PHONE_AZM,
@@ -47,7 +35,8 @@ A.OTHER,''''+B.CELLTOWERID OTHER_CELLTOWERID,
 B.AREADESCRIPTION OTHER_AREADESCRIPTION,B.LAT OTHER_LAT,B.LONG OTHER_LONG,B.AZM OTHER_AZM
 into #ttpppp from #ttppp A INNER JOIN
 #TTPPP B ON A.OTHER=B.PHONE AND A.PHONE =B.OTHER AND CONVERT(DATE,A.STARTTIME)=CONVERT(DATE,B.STARTTIME) 
-and datepart(hh,convert(datetime,A.STARTTIME))=datepart(hh,convert(datetime,b.STARTTIME)) and datepart(mm,convert(datetime,A.STARTTIME))=datepart(mm,convert(datetime,b.STARTTIME)) 
+and datepart(hh,convert(datetime,A.STARTTIME))=datepart(hh,convert(datetime,b.STARTTIME)) and 
+datepart(mm,convert(datetime,A.STARTTIME))=datepart(mm,convert(datetime,b.STARTTIME)) 
 AND datediff(ss,convert(datetime,A.STARTTIME),convert(datetime,b.STARTTIME))<'4'
 WHERE A.PHONE='$number'
 ORDER BY A.STARTTIME";
@@ -63,8 +52,6 @@ $sql6="select 'MOVEMENTS COMPARISION  OF MOBILE NO. '+'$number' + 'AND OTHER NO.
 
 $st1 = sqlsrv_query( $conn, $sql1 );
 $st2 = sqlsrv_query( $conn, $sql2 );
-$st3 = sqlsrv_query( $conn, $sql3 );
-$st4 = sqlsrv_query( $conn, $sql4 );
 $st5 = sqlsrv_query( $conn, $sql5 );
 $st6 = sqlsrv_query( $conn, $sql6 );
 $st7 = sqlsrv_query( $conn, $sql7 );

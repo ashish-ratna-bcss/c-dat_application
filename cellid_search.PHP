@@ -72,12 +72,21 @@ if( $conn === false ) {
     die( print_r( sqlsrv_errors(), true));
 }
 
-$cellid 	= $_POST['CELLID'];
-$operator	= $_POST['OPERATOR'];
-$state		= $_POST['STATE'];
+$cellid 	= trim($_POST['CELLID'] ?? '');
+$operator	= trim($_POST['OPERATOR'] ?? '');
+$state		= trim($_POST['STATE'] ?? '');
 
-$sql1 ="select DISTINCT CELLTOWERID,BTS_ID,AREADESCRIPTION,SITEADDRESS /* ', LAST_UPDATE:'+CONVERT(VARCHAR,LASTUPDATE,20) */ SITEADDRESS,LAT,LONG,AZIMUTH,OPERATOR,STATE, OTYPE 
-from cdatdupl.dbo.CDATCELLTOWERAREANEW  WHERE CELLTOWERID LIKE '%'+'$cellid' AND OPERATOR='$operator' AND STATE='$state'";
+$cellidEsc = str_replace("'", "''", $cellid);
+$likePattern = (strpos($cellid, '%') !== false || strpos($cellid, '_') !== false)
+    ? $cellidEsc
+    : $cellidEsc . '%';
+$opFilter = $operator !== '' ? "AND OPERATOR='".str_replace("'", "''", $operator)."'" : '';
+$stateFilter = $state !== '' ? "AND STATE='".str_replace("'", "''", $state)."'" : '';
+
+$sql1 ="select DISTINCT CELLTOWERID,BTS_ID,AREADESCRIPTION,SITEADDRESS,LAT,LONG,AZIMUTH,OPERATOR,STATE, OTYPE 
+from cdatdupl.dbo.CDATCELLTOWERAREANEW
+WHERE CELLTOWERID LIKE '{$likePattern}' {$opFilter} {$stateFilter}
+ORDER BY LASTUPDATE DESC";
 
 $st1 = sqlsrv_query( $conn, $sql1 );
 
@@ -108,7 +117,7 @@ echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['
 echo "<td width=100px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['OPERATOR'] ."<center></font></td>";
 echo "<td width=100px bgcolor=#AED1F1><font size=1 face=verdana>". $row['STATE'] ."</font></td>";
 echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana>". $row['OTYPE'] ."</font></td>";
-echo "<td>";?> <?php echo '<img height="100" width="100" src="qrcode\php\qr_img.php?d='.'CELLTOWERID: '.$row["CELLTOWERID"].' SITEADDRESS:'. preg_replace('/[^A-Za-z0-9\-:]/',' ',$row["SITEADDRESS"]).' LAT:'.$row["LAT"].' '.'LONG:'.$row["LONG"].' AZIMUTH: '.$row["AZIMUTH"].'"></img>'; ?> <?php "</td>";
+echo "<td>";?> <?php echo '<img height="100" width="100" src="qrcode/php/qr_img.php?d='.'CELLTOWERID: '.$row["CELLTOWERID"].' SITEADDRESS:'. preg_replace('/[^A-Za-z0-9\-:]/',' ',$row["SITEADDRESS"]).' LAT:'.$row["LAT"].' '.'LONG:'.$row["LONG"].' AZIMUTH: '.$row["AZIMUTH"].'"></img>'; ?> <?php "</td>";
 echo "</tr>";
 }
 echo"</table>";

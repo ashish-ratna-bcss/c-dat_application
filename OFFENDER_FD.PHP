@@ -80,7 +80,7 @@ echo "<table width=815px border=1 cellspacing=0 cellpadding=5>
 while( $row = sqlsrv_fetch_array( $st0, SQLSRV_FETCH_ASSOC) ) {
 echo "<tr>";
 echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana ><center>". $row['ACC_NAME'] ."<center></font></td>";
-echo "<td height=200px width=200px>";?> <center><?php echo '<img onmouseover="bigImg(this)" onmouseout="normalImg(this)" height="200" width="220" src="data:image; base64,'.$row["IMAGE"].'"></img>' ?></center> <?php "</td>";
+echo "<td height=200px width=200px>";?> <center><?php echo '<img onmouseover="bigImg(this)" onmouseout="normalImg(this)" height="200" width="220" src="'.cdat_base64_image_src($row['IMAGE']).'"></img>' ?></center> <?php "</td>";
 echo "</tr>";
 }
 echo "</table>";

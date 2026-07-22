@@ -1,6 +1,7 @@
 from __future__ import annotations
 import os
 import re
+import shutil
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
@@ -145,7 +146,11 @@ def stage_bak_on_host(source_bak: Path) -> tuple[Path, str]:
     MSSQL_DATA_HOST_DIR.mkdir(parents=True, exist_ok=True)
     dest = MSSQL_DATA_HOST_DIR / source_bak.name
     if source_bak.resolve() != dest.resolve():
-        dest.write_bytes(source_bak.read_bytes())
+        try:
+            os.link(source_bak, dest)
+        except OSError:
+            with source_bak.open('rb') as src, dest.open('wb') as out:
+                shutil.copyfileobj(src, out, length=64 * 1024 * 1024)
     container_path = str(MSSQL_DATA_CONTAINER_DIR / dest.name)
     return (dest, container_path)
 

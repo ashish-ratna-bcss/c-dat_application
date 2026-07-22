@@ -53,7 +53,7 @@ echo "<table border=1 cellspacing=0 cellpadding=5>
 while( $row = sqlsrv_fetch_array( $st10, SQLSRV_FETCH_ASSOC) ) {
 echo "<tr>";
 echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center><a href=".'IR.PHP?IRKEY='.($row['IRKEY']).">". $row['IRKEY'] ."<center></font></td>";
-echo "<td height=100px width=100px>";?> <?php echo '<img onmouseover="bigImg(this)" onmouseout="normalImg(this)" height="100" width="100" src="data:image; base64,'.$row["IMAGE"].'"></img>' ?> <?php "</td>";
+echo "<td height=100px width=100px>";?> <?php echo '<img onmouseover="bigImg(this)" onmouseout="normalImg(this)" height="100" width="100" src="'.cdat_base64_image_src($row['IMAGE']).'"></img>' ?> <?php "</td>";
 echo "</tr>";
 }
 
