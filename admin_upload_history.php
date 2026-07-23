@@ -98,7 +98,16 @@ if ($page > $totalPages) {
 // Fetch logs
 $logs = [];
 try {
-    $selectQuery = "SELECT * FROM upload_activity_logs WHERE {$whereClause} ORDER BY uploaded_at DESC LIMIT :limit OFFSET :offset";
+    $selectQuery = "
+        SELECT l.*, b.verified_by, b.verification_status AS batch_verification_status
+        FROM upload_activity_logs l
+        LEFT JOIN upload_staging_batches b
+            ON b.batch_id = l.staging_batch_id
+            OR (l.staging_batch_id IS NULL AND b.document_job_id = l.document_job_id)
+        WHERE {$whereClause}
+        ORDER BY l.uploaded_at DESC
+        LIMIT :limit OFFSET :offset
+    ";
     $selectStmt = $db->prepare($selectQuery);
     
     // Bind all filters
@@ -111,6 +120,38 @@ try {
     $logs = $selectStmt->fetchAll();
 } catch (Exception $e) {
     // Fail silently
+}
+
+function renderApprovalStatus(array $log): array
+{
+    $uploadStatus = (string)($log['upload_status'] ?? '');
+    $verificationStatus = strtolower((string)($log['verification_status'] ?? $log['batch_verification_status'] ?? ''));
+    $verifiedBy = trim((string)($log['verified_by'] ?? ''));
+
+    if ($verificationStatus === 'approved' || ($uploadStatus === 'Success' && $verifiedBy !== '')) {
+        return [
+            'text' => 'Approved by ' . htmlspecialchars($verifiedBy),
+            'class' => 'approval-approved',
+        ];
+    }
+    if ($verificationStatus === 'pending' || $uploadStatus === 'Pending Verification') {
+        return [
+            'text' => 'Awaiting Approval',
+            'class' => 'approval-awaiting',
+        ];
+    }
+    if ($verificationStatus === 'rejected' || $uploadStatus === 'Rejected') {
+        $by = $verifiedBy !== '' ? htmlspecialchars($verifiedBy) : '—';
+        return [
+            'text' => 'Rejected by ' . $by,
+            'class' => 'approval-rejected',
+        ];
+    }
+
+    return [
+        'text' => '—',
+        'class' => 'approval-na',
+    ];
 }
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -230,6 +271,15 @@ try {
 .status-success { background-color: #28a745; }
 .status-partial { background-color: #ffc107; color: #333; }
 .status-failed { background-color: #dc3545; }
+.status-pending { background-color: #17a2b8; }
+.status-processing { background-color: #007bff; }
+.status-rejected { background-color: #6c757d; }
+.approval-awaiting { color: #ff6b6b; font-weight: bold; }
+.approval-approved { color: #90EE90; font-weight: bold; }
+.approval-rejected { color: #ccc; font-weight: bold; }
+.approval-na { color: #aaa; }
+.history-row-link { color: #fff; text-decoration: underline; cursor: pointer; }
+.history-row-link:hover { color: #FFD700; }
 
 .pagination {
     margin-top: 20px;
@@ -381,7 +431,10 @@ try {
                         <label for="filter_status">Status</label>
                         <select name="filter_status" id="filter_status">
                           <option value="">-- All Status --</option>
+                          <option value="Processing" <?= ($filterStatus === 'Processing') ? 'selected="selected"' : '' ?>>Processing</option>
                           <option value="Success" <?= ($filterStatus === 'Success') ? 'selected="selected"' : '' ?>>Success</option>
+                          <option value="Pending Verification" <?= ($filterStatus === 'Pending Verification') ? 'selected="selected"' : '' ?>>Pending Verification</option>
+                          <option value="Rejected" <?= ($filterStatus === 'Rejected') ? 'selected="selected"' : '' ?>>Rejected</option>
                           <option value="Partial" <?= ($filterStatus === 'Partial') ? 'selected="selected"' : '' ?>>Partial</option>
                           <option value="Failed" <?= ($filterStatus === 'Failed') ? 'selected="selected"' : '' ?>>Failed</option>
                         </select>
@@ -430,16 +483,24 @@ try {
                         <th>Failed</th>
                       <?php endif; ?>
                       <th>Status</th>
+                      <?php if ($type !== 'custom'): ?>
+                      <th>Approval</th>
+                      <th>Action</th>
+                      <?php endif; ?>
                     </tr>
                   </thead>
                   <tbody>
                     <?php if (empty($logs)): ?>
                       <tr>
-                        <td colspan="<?= $type === 'custom' ? 10 : 9 ?>" style="text-align: center; padding: 20px; color: #ccc;">No upload records matching filters were found.</td>
+                        <td colspan="<?= $type === 'custom' ? 10 : 11 ?>" style="text-align: center; padding: 20px; color: #ccc;">No upload records matching filters were found.</td>
                       </tr>
                     <?php else: ?>
                       <?php foreach ($logs as $log): ?>
-                        <tr>
+                        <?php
+                          $isProcessing = ($log['upload_status'] ?? '') === 'Processing' && !empty($log['document_job_id']);
+                          $rowJobId = $isProcessing ? (int)$log['document_job_id'] : 0;
+                        ?>
+                        <tr<?= $rowJobId > 0 ? ' data-processing-job="' . $rowJobId . '" data-log-id="' . (int)$log['id'] . '"' : '' ?>>
                           <td><?= date('d-m-Y H:i A', strtotime($log['uploaded_at'])) ?></td>
                           <td style="font-weight: bold; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<?= htmlspecialchars($log['file_name']) ?>">
                             <?= htmlspecialchars($log['file_name']) ?>
@@ -464,10 +525,33 @@ try {
                             <td style="color: #FFB6C1; font-weight: bold;"><?= (int)$log['failed_records'] ?></td>
                           <?php endif; ?>
                           <td>
-                            <span class="badge-status status-<?= strtolower($log['upload_status']) ?>">
+                            <?php
+                              $statusClass = strtolower(str_replace(' ', '-', $log['upload_status']));
+                              if (!in_array($statusClass, ['success','partial','failed','pending-verification','rejected','processing'], true)) {
+                                  $statusClass = 'partial';
+                              }
+                            ?>
+                            <span class="badge-status status-<?= htmlspecialchars($statusClass) ?>" data-upload-status="<?= $rowJobId > 0 ? (int)$log['id'] : '' ?>">
                               <?= htmlspecialchars($log['upload_status']) ?>
                             </span>
                           </td>
+                          <?php if ($type !== 'custom'): ?>
+                          <?php $approval = renderApprovalStatus($log); ?>
+                          <td>
+                            <span class="<?= htmlspecialchars($approval['class']) ?>">
+                              <?= $approval['text'] ?>
+                            </span>
+                          </td>
+                          <td>
+                            <?php if (!empty($log['staging_batch_id']) || ($log['upload_status'] === 'Pending Verification' && !empty($log['document_job_id']))): ?>
+                              <a class="history-row-link" href="admin_upload_verify.php?log_id=<?= (int)$log['id'] ?>">
+                                <?= ($log['upload_status'] === 'Pending Verification') ? 'Verify' : 'View' ?>
+                              </a>
+                            <?php else: ?>
+                              —
+                            <?php endif; ?>
+                          </td>
+                          <?php endif; ?>
                         </tr>
                       <?php endforeach; ?>
                     <?php endif; ?>
@@ -557,6 +641,69 @@ document.getElementById('filterForm').addEventListener('submit', function(e) {
         }
     }
 });
+</script>
+<script type="text/javascript">
+(function pollProcessingUploads() {
+    var rows = document.querySelectorAll('tr[data-processing-job]');
+    if (!rows.length) return;
+    var jobIds = [];
+    rows.forEach(function(row) {
+        var id = parseInt(row.getAttribute('data-processing-job'), 10);
+        if (id > 0) jobIds.push(id);
+    });
+    if (!jobIds.length) return;
+
+    var delay = 8000;
+
+    function statusClassFor(label) {
+        var cls = (label || '').toLowerCase().replace(/\s+/g, '-');
+        if (['success','partial','failed','pending-verification','rejected','processing'].indexOf(cls) === -1) {
+            cls = 'partial';
+        }
+        return cls;
+    }
+
+    function updateRow(row, job) {
+        var logId = row.getAttribute('data-log-id');
+        var badge = logId ? document.querySelector('[data-upload-status="' + logId + '"]') : null;
+        var uploadStatus = job.upload_status || '';
+        if (badge && uploadStatus) {
+            badge.textContent = uploadStatus;
+            badge.className = 'badge-status status-' + statusClassFor(uploadStatus);
+        }
+        if (uploadStatus && uploadStatus !== 'Processing') {
+            row.removeAttribute('data-processing-job');
+        }
+    }
+
+    function sync() {
+        fetch('admin_upload_sync_jobs.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ job_ids: jobIds })
+        }).then(function(r) { return r.json(); }).then(function(data) {
+            if (!data.ok || !data.jobs) return;
+            var stillProcessing = false;
+            data.jobs.forEach(function(job) {
+                if (!job.job_id) return;
+                var row = document.querySelector('tr[data-processing-job="' + job.job_id + '"]');
+                if (!row) return;
+                updateRow(row, job);
+                if ((job.upload_status || '') === 'Processing') {
+                    stillProcessing = true;
+                }
+            });
+            if (stillProcessing) {
+                delay = Math.min(Math.round(delay * 1.25), 20000);
+                setTimeout(sync, delay);
+            }
+        }).catch(function() {
+            setTimeout(sync, delay);
+        });
+    }
+
+    sync();
+})();
 </script>
 </body>
 </html>

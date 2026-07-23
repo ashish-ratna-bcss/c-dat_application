@@ -30,13 +30,17 @@ class DocumentProcessingClient
             'module' => $module,
             'file' => new CURLFile($filePath, $mime, $fileName),
         ];
+        if ($operator !== null && $operator !== '' && strtolower($operator) !== 'all') {
+            $fields['operator'] = $operator;
+        }
 
         if ($operator !== null) {
             $fields['operator'] = $operator;
         }
 
         $url = $this->baseUrl . '/api/v1/documents?batch_size=' . max(1, $batchSize);
-        $response = $this->request('POST', $url, $fields);
+        $timeout = $module === 'sdr' ? 86400 : 3600;
+        $response = $this->request('POST', $url, $fields, $timeout);
 
         if (!isset($response['job_id'])) {
             throw new RuntimeException($response['detail'] ?? $response['message'] ?? 'Document service did not return a job ID.');
@@ -59,7 +63,7 @@ class DocumentProcessingClient
         while (time() < $deadline) {
             $last = $this->getJobStatus($jobId);
             $status = strtolower((string)($last['status'] ?? ''));
-            if (in_array($status, ['completed', 'failed', 'validated'], true)) {
+            if (in_array($status, ['completed', 'failed', 'validated', 'pending_verification'], true)) {
                 return $last;
             }
             sleep($this->pollInterval);
@@ -69,7 +73,7 @@ class DocumentProcessingClient
         return $last;
     }
 
-    private function request(string $method, string $url, ?array $postFields = null): array
+    private function request(string $method, string $url, ?array $postFields = null, int $timeout = 300): array
     {
         $ch = curl_init($url);
         $headers = ['Accept: application/json'];
@@ -81,7 +85,7 @@ class DocumentProcessingClient
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_CUSTOMREQUEST => $method,
             CURLOPT_HTTPHEADER => $headers,
-            CURLOPT_TIMEOUT => 300,
+            CURLOPT_TIMEOUT => $timeout,
             CURLOPT_CONNECTTIMEOUT => 10,
         ]);
 

@@ -87,29 +87,73 @@ class BaseCdrParser(ABC):
         self.provider_key = provider_key
 
     def parse(self) -> ParseResult:
-        lines = self.file_path.read_text(encoding='utf-8', errors='replace').splitlines()
-        header_idx, header = self.find_header(lines)
         records: list[CdrRecord] = []
         warnings: list[str] = []
-        row_no = 0
-        for line in lines[header_idx + 1:]:
-            if not line.strip():
-                continue
-            row = next(csv.reader([line]))
-            if is_separator_row(row):
-                continue
-            if self.should_skip_row(row):
-                continue
-            if self.is_skippable_data_row(row, header):
-                continue
-            row_no += 1
-            try:
-                record = self.map_row(row, header, row_no)
-                if record is not None:
-                    records.append(record)
-            except Exception as exc:
-                warnings.append(f'Row {row_no}: {exc}')
+        header_idx = 0
+        header: list[str] = []
+        for record, row_warnings, hdr in self.iter_records():
+            if not header:
+                header_idx, header = hdr
+            records.append(record)
+            warnings.extend(row_warnings)
         return ParseResult(operator=self.operator, target_phone=self.target_phone, header_line_no=header_idx + 1, records=records, warnings=warnings)
+
+    def iter_records(self):
+        """Stream records line-by-line to avoid holding the full file in memory."""
+        warnings: list[str] = []
+        header_idx: Optional[int] = None
+        header: list[str] = []
+        row_no = 0
+        with self.file_path.open(encoding='utf-8', errors='replace') as handle:
+            for i, line in enumerate(handle):
+                if header_idx is None:
+                    if self.header_marker() in line:
+                        header_idx = i
+                        header = next(csv.reader([line]))
+                    continue
+                if not line.strip():
+                    continue
+                row = next(csv.reader([line]))
+                if is_separator_row(row):
+                    continue
+                if self.should_skip_row(row):
+                    continue
+                if self.is_skippable_data_row(row, header):
+                    continue
+                row_no += 1
+                try:
+                    record = self.map_row(row, header, row_no)
+                    if record is not None:
+                        yield record, [], (header_idx, header)
+                except Exception as exc:
+                    warnings.append(f'Row {row_no}: {exc}')
+        if header_idx is None:
+            raise ValueError(f'{self.operator}: header row not found in {self.file_path.name}')
+
+    def count_data_rows(self) -> tuple[int, int, list[str]]:
+        """Count parseable rows after header without building full record list."""
+        total = 0
+        header_idx: Optional[int] = None
+        header: list[str] = []
+        warnings: list[str] = []
+        with self.file_path.open(encoding='utf-8', errors='replace') as handle:
+            for i, line in enumerate(handle):
+                if header_idx is None:
+                    if self.header_marker() in line:
+                        header_idx = i
+                        header = next(csv.reader([line]))
+                    continue
+                if not line.strip():
+                    continue
+                row = next(csv.reader([line]))
+                if is_separator_row(row) or self.should_skip_row(row):
+                    continue
+                if self.is_skippable_data_row(row, header):
+                    continue
+                total += 1
+        if header_idx is None:
+            raise ValueError(f'{self.operator}: header row not found in {self.file_path.name}')
+        return header_idx, total, warnings
 
     def find_header(self, lines: list[str]) -> tuple[int, list[str]]:
         for i, line in enumerate(lines):

@@ -125,7 +125,7 @@ while( $row = sqlsrv_fetch_array( $st0, SQLSRV_FETCH_ASSOC) ) {
 echo "<tr>";
 echo "<td width=150px bgcolor=#AED1F1><font size=3 face=Times New Roman ><center>". $row['NAME'] ."<center></font></td>";
 echo "<td width=150px bgcolor=#C2E0FB><font size=3 face=Times New Roman><center>". $row['FATHER_NAME'] ."<center></font></td>";
-echo "<td height=450px width=450px>";?> <?php echo '<img onmouseover="bigImg(this)" onmouseout="normalImg(this)" height="450" width="450" src="data:image; base64,'.$row["IMAGE"].'"></img>' ?> <?php "</td>";
+echo "<td height=450px width=450px>";?> <?php echo '<img onmouseover="bigImg(this)" onmouseout="normalImg(this)" height="450" width="450" src="'.cdat_base64_image_src($row['IMAGE']).'"></img>' ?> <?php "</td>";
 echo "</tr>";
 }
 echo "</table>";

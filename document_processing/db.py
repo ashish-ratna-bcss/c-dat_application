@@ -9,7 +9,12 @@ import psycopg2
 import psycopg2.extras
 from cdr_import.config import load_db_config
 JOBS_TABLE = 'document_jobs'
-SCHEMA_FILES = (Path(__file__).resolve().parent.parent / 'sql' / 'document_processing_schema.sql', Path(__file__).resolve().parent.parent / 'sql' / 'cdr_import_schema.sql')
+SCHEMA_FILES = (
+    Path(__file__).resolve().parent.parent / 'sql' / 'document_processing_schema.sql',
+    Path(__file__).resolve().parent.parent / 'sql' / 'cdr_import_schema.sql',
+    Path(__file__).resolve().parent.parent / 'sql' / 'upload_staging_schema.sql',
+    Path(__file__).resolve().parent.parent / 'sql' / 'upload_approval_queue_schema.sql',
+)
 
 def file_sha256(path: Path) -> str:
     digest = hashlib.sha256()
@@ -42,6 +47,20 @@ def utcnow() -> datetime:
 def fetch_document_job(conn, job_id: int) -> Optional[dict[str, Any]]:
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute(f'SELECT * FROM {JOBS_TABLE} WHERE job_id = %s', (job_id,))
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+def find_job_by_hash(conn, *, module: str, file_hash: str) -> Optional[dict[str, Any]]:
+    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        cur.execute(
+            f"""
+            SELECT * FROM {JOBS_TABLE}
+            WHERE module = %s AND file_sha256 = %s
+            ORDER BY (status IN ('completed', 'pending_verification')) DESC, job_id DESC
+            LIMIT 1
+            """,
+            (module, file_hash),
+        )
         row = cur.fetchone()
         return dict(row) if row else None
 

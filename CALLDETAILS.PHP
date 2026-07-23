@@ -2,40 +2,27 @@
 <head>
 </head>
 <body bgcolor="#0C5D90">
-<li><a href="CALLS_TOT.HTML">Back</a></li>
+<li><a href="CALLS_TOT.html">Back</a></li>
 <?php
+require_once __DIR__ . '/activity_logger.php';
+require_once __DIR__ . '/sql_safe.php';
+require_once __DIR__ . '/cdr_enrichment_sql.php';
+audit_require_session();
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"CDATDUPL");
 $conn = sqlsrv_connect( $serverName, $connectionInfo );
 if( $conn === false ) {
     die( print_r( sqlsrv_errors(), true));
 }
-$number 	= $_POST['PHONE_NO'];
-$operator	= $_POST['OPERATOR'];
-$state		= $_POST['STATE'];
+$number 	= sql_safe_phone($_POST['PHONE_NO'] ?? '');
+$operator	= sql_safe_alnum($_POST['OPERATOR'] ?? '', 50);
+$state		= sql_safe_alnum($_POST['STATE'] ?? '', 50);
 
 $sql1 ="SELECT DISTINCT PHONE,OTHER,CONVERT(VARCHAR,STARTTIME,20) AS STARTTIME,DURATION,
 CASE WHEN INCOMING='1' THEN 'IN' ELSE 'OUT' END AS TYPE,
-IMEINUMBER,CELLTOWERID  INTO #TT FROM CDATDUPL.DBO.CDATPCSUSPECT WHERE PHONE='$number' ";
+IMEINUMBER,CELLTOWERID,STATE_KEY,PROVIDER_KEY  INTO #TT FROM CDATDUPL.DBO.CDATPCSUSPECT WHERE PHONE='$number' ";
 
-$sql2 ="SELECT DISTINCT A.PHONE,OTHER,CASE WHEN other in (select phone from CDATDUPL.DBO.cdatsuspect) THEN nickname  ELSE ' ' END   as  NICKNAME,
-STARTTIME,DURATION,TYPE,A.IMEINUMBER,A.CELLTOWERID,OPERATOR,
-(CASE WHEN A.CELLTOWERID=B.CELLTOWERID THEN MAX(SITEADDRESS) ELSE '' END +', LAST_UPDATE:'+CONVERT(VARCHAR,LASTUPDATE,20)) AS AREADESCRIPTION INTO #TTP FROM #TT A
-INNER JOIN CDATDUPL.DBO.CDATCELLTOWERAREANEW B ON A.CELLTOWERID=B.CELLTOWERID 
-left join CDATDUPL.DBO.cdatsuspect c on a.other=c.phone   
-WHERE OPERATOR='$operator' AND B.STATE ='$state'
-and b.lastupdate=(select distinct max(lastupdate) from cdatdupl..cdatcelltowerareanew x where x.CELLTOWERID=B.CELLTOWERID 
-and x.OPERATOR=b.operator AND x.STATE =b.state)
-GROUP BY A.PHONE,OTHER,NICKNAME,STARTTIME,DURATION,TYPE,A.IMEINUMBER,A.CELLTOWERID,B.CELLTOWERID,LASTUPDATE,OPERATOR";
-
-$sql3 ="SELECT A.PHONE,OTHER,CASE WHEN other in (select phone from CDATDUPL.DBO.cdatsuspect) THEN nickname  ELSE ' ' END   as  NICKNAME,
-STARTTIME,DURATION,TYPE,A.IMEINUMBER,CELLTOWERID,'$operator' AS OPT,' ' AREADESCRIPTION INTO #TTPP FROM #TT A 
-left join CDATDUPL.DBO.cdatsuspect c on a.other=c.phone   
-WHERE STARTTIME NOT IN(SELECT DISTINCT STARTTIME FROM #TTP)";
-
-$sql4="SELECT * into #temp_cdrs FROM #TTP
-UNION
-SELECT * FROM #TTPP";
+$sql2 = cdr_sql_enrich_tt($operator, $state, ['with_last_update' => true]);
 
 $sql5="SELECT PHONE,OTHER,NICKNAME,STARTTIME,DURATION,TYPE,IMEINUMBER,CELLTOWERID,OPERATOR,AREADESCRIPTION from #temp_cdrs  ORDER BY STARTTIME";
 
@@ -43,14 +30,16 @@ $sql6="select 'CALL DETAILS OF MOBILE NO. '+'$number'as PHONE";
 
 
 $st1 = sqlsrv_query( $conn, $sql1 );
+sqlsrv_render_query_error($st1, 'Call details base');
 $st2 = sqlsrv_query( $conn, $sql2 );
-$st3 = sqlsrv_query( $conn, $sql3 );
-$st4 = sqlsrv_query( $conn, $sql4 );
+sqlsrv_render_query_error($st2, 'Tower enrichment');
 $st5 = sqlsrv_query( $conn, $sql5 );
+sqlsrv_render_query_error($st5, 'Call details ordering');
 $st6 = sqlsrv_query( $conn, $sql6 );
+sqlsrv_render_query_error($st6, 'Call details result');
 
 while( $row = sqlsrv_fetch_array( $st6, SQLSRV_FETCH_ASSOC) ) {
-echo "<font size=4 face=verdana color='#F9FBFC'><td><center><b>". $row['PHONE'] ."<center></td></font></br>";
+echo "<font size=4 face=verdana color='#F9FBFC'><td><center><b>". h($row['PHONE'] ?? '') ."<center></td></font></br>";
 }
 
 echo "<table border=1 cellspacing=0 cellpadding=5>
@@ -69,16 +58,16 @@ echo "<table border=1 cellspacing=0 cellpadding=5>
 
 while( $row = sqlsrv_fetch_array( $st5, SQLSRV_FETCH_ASSOC) ) {
 echo "<tr>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['PHONE'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana>". $row['OTHER'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['NICKNAME'] ."<center></font></td>";
-echo "<td width=125px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['STARTTIME'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['DURATION'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['TYPE'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['IMEINUMBER'] ."<center></font></td>";
-echo "<td width=100px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['CELLTOWERID'] ."<center></font></td>";
-echo "<td width=100px bgcolor=#AED1F1><font size=1 face=verdana>". $row['OPERATOR'] ."</font></td>";
-echo "<td width=450px bgcolor=#C2E0FB><font size=1 face=verdana>". $row['AREADESCRIPTION'] ."</font></td>";
+echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". h($row['PHONE'] ?? '') ."<center></font></td>";
+echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana>". h($row['OTHER'] ?? '') ."<center></font></td>";
+echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". h($row['NICKNAME'] ?? '') ."<center></font></td>";
+echo "<td width=125px bgcolor=#C2E0FB><font size=1 face=verdana><center>". h($row['STARTTIME'] ?? '') ."<center></font></td>";
+echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". h($row['DURATION'] ?? '') ."<center></font></td>";
+echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". h($row['TYPE'] ?? '') ."<center></font></td>";
+echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". h($row['IMEINUMBER'] ?? '') ."<center></font></td>";
+echo "<td width=100px bgcolor=#C2E0FB><font size=1 face=verdana><center>". h($row['CELLTOWERID'] ?? '') ."<center></font></td>";
+echo "<td width=100px bgcolor=#AED1F1><font size=1 face=verdana>". h($row['OPERATOR'] ?? '') ."</font></td>";
+echo "<td width=450px bgcolor=#C2E0FB><font size=1 face=verdana>". h($row['AREADESCRIPTION'] ?? '') ."</font></td>";
 echo "</tr>";
 
 }

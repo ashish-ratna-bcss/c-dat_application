@@ -2,16 +2,19 @@
 <head>
 </head>
 <body bgcolor="#0C5D90">
-<li><a href="NEAR BY CELLTOWERIDS.HTML">Back</a></li>
+<li><a href="NEAR_BY_CELLTOWERIDS.HTML">Back</a></li>
 <?php
+require_once __DIR__ . '/activity_logger.php';
+require_once __DIR__ . '/sql_safe.php';
+audit_require_session();
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"CDATDUPL");
 $conn = sqlsrv_connect( $serverName, $connectionInfo );
 if( $conn === false ) {
     die( print_r( sqlsrv_errors(), true));
 }
-$LAT = $_POST['LAT'];
-$LONG = $_POST['LONG'];
+$LAT = sql_safe_float($_POST['LAT'] ?? '0');
+$LONG = sql_safe_float($_POST['LONG'] ?? '0');
 
 
 
@@ -40,11 +43,14 @@ where rank<3  and otype not like '%cdma%'
 order by otype,operator,CATEGORY";
 
 $st1 = sqlsrv_query( $conn, $sql1 );
+sqlsrv_render_query_error($st1, 'Title query');
 $st2 = sqlsrv_query( $conn, $sql2 );
+sqlsrv_render_query_error($st2, 'Nearest towers');
 $st3 = sqlsrv_query( $conn, $sql3 );
+sqlsrv_render_query_error($st3, 'Tower ranking');
 
 while( $row = sqlsrv_fetch_array( $st1, SQLSRV_FETCH_ASSOC) ) {
-echo "<font size=4 face=verdana color='#F9FBFC'><td><center><b>". $row['PHONE1'] ."<center></td></font></br>";
+echo "<font size=4 face=verdana color='#F9FBFC'><td><center><b>". h($row['PHONE1'] ?? '') ."<center></td></font></br>";
 }
 
 echo "<table border=1 cellspacing=0 cellpadding=5>
@@ -60,12 +66,12 @@ echo "<table border=1 cellspacing=0 cellpadding=5>
 
 while( $row = sqlsrv_fetch_array( $st3, SQLSRV_FETCH_ASSOC) ) {
 echo "<tr>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['CELLTOWERID'] ."<center></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['CATEGORY'] ."<center></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['DIST'] ."<center></td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['BR'] ."<center></td>";
-echo "<td width=100px bgcolor=#C2E0FB><font size=1 face=verdana>". $row['OPERATOR'] ."<center></td>";
-echo "<td width=100px bgcolor=#C2E0FB><font size=1 face=verdana>". $row['OTYPE'] ."<center></td>";
+echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". h($row['CELLTOWERID'] ?? '') ."<center></td>";
+echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". h($row['CATEGORY'] ?? '') ."<center></td>";
+echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". h($row['DIST'] ?? '') ."<center></td>";
+echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". h($row['BR'] ?? '') ."<center></td>";
+echo "<td width=100px bgcolor=#C2E0FB><font size=1 face=verdana>". h($row['OPERATOR'] ?? '') ."<center></td>";
+echo "<td width=100px bgcolor=#C2E0FB><font size=1 face=verdana>". h($row['OTYPE'] ?? '') ."<center></td>";
 echo "</tr>";
 
 } 

@@ -4,13 +4,14 @@
 <body bgcolor="#0C5D90">
 <li><a href="IMEISINPHONE.HTML"><font color=#FDEFEF>Back</a></li>
 <?php
+require_once __DIR__ . '/sql_safe.php';
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"CDATDUPL");
 $conn = sqlsrv_connect( $serverName, $connectionInfo );
 if( $conn === false ) {
     die( print_r( sqlsrv_errors(), true));
 }
-$number = $_POST['PHONE_NO'];
+$number = sql_safe_phone($_POST['PHONE_NO'] ?? '');
 
 
 $sql1 ="SELECT * INTO #T FROM CDATDUPL.DBO.CDATPCSUSPECT WHERE PHONE= '$number'";
@@ -21,22 +22,25 @@ SUM(DURATION) AS DUR, CONVERT(VARCHAR,MIN(STARTTIME),20) AS FIRST_CALL, CONVERT(
 GROUP BY PHONE, IMEINUMBER ORDER BY LAST_CALL";
 
 $sql3 ="SELECT A.PHONE, IMEINUMBER, [IN], [OUT], CALLS, DUR, FIRST_CALL, LAST_CALL, 
-CASE WHEN A.PHONE IN(SELECT DISTINCT PHONE FROM CDATDUPL.DBO.CDATADDRESS) 
-THEN ISNULL(C.FULLNAME+', '+C.FULLADDRESS,'')+' '+ISNULL(C.CATEGORY_TYPE,'')
-WHEN A.PHONE IN(SELECT DISTINCT PHONE FROM CDATDUPL.DBO.ADDRESS_OTHER_STATE) 
-THEN ISNULL(D.FULLNAME+', '+D.FULLADDRESS,'')+' '+ISNULL(D.CATEGORY_TYPE,'')
+CASE WHEN C.PHONE IS NOT NULL
+THEN COALESCE(C.FULLNAME+', '+C.FULLADDRESS,'')||' '||COALESCE(C.CATEGORY_TYPE,'')
+WHEN D.PHONE IS NOT NULL
+THEN COALESCE(D.FULLNAME+', '+D.FULLADDRESS,'')||' '||COALESCE(D.CATEGORY_TYPE,'')
 ELSE AREADESCRIPTION END AS ADDRESS FROM #TT A
 LEFT JOIN CDATDUPL.DBO.CDATADDRESS C ON A.PHONE=C.PHONE AND C.EFF_TO_DATE IS NULL
 LEFT JOIN CDATDUPL.DBO.ADDRESS_OTHER_STATE D ON A.PHONE=D.PHONE AND D.EFF_TO_DATE IS NULL
-LEFT JOIN CDATDUPL.DBO.CDATPHONEAREA E ON  A.PHONE LIKE PHONEPREFIX+'%'
+LEFT JOIN CDATDUPL.DBO.CDATPHONEAREA E ON A.PHONE LIKE PHONEPREFIX+'%'
 ORDER BY LAST_CALL";
 
 
 $sql4="SELECT 'LIST OF IMEIS USED IN PHONE NO: '+'$number' as PHONE1";
 
 $st1 = sqlsrv_query( $conn, $sql1 );
+sqlsrv_render_query_error($st1, 'Phone CDR lookup');
 $st2 = sqlsrv_query( $conn, $sql2 );
+sqlsrv_render_query_error($st2, 'IMEI aggregation');
 $st3 = sqlsrv_query( $conn, $sql3 );
+sqlsrv_render_query_error($st3, 'Address join');
 $st4 = sqlsrv_query( $conn, $sql4 );
 
 while( $row = sqlsrv_fetch_array( $st4, SQLSRV_FETCH_ASSOC) ) {

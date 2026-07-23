@@ -65,7 +65,7 @@ echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['
 echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['Caste'] ."<center></font></td>";
 echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana>". $row['Present_Add'] ."</font></td>";
 echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana>". $row['Premenant_Add'] ."</font></td>";
-echo "<td height=100 width=100px>";?> <?php echo '<img onmouseover="bigImg(this)" onmouseout="normalImg(this)" height="100" width="100" src="data:image; base64,'.$row["image"].'"></img>' ?> <?php "</td>";
+echo "<td height=100 width=100px>";?> <?php echo '<img onmouseover="bigImg(this)" onmouseout="normalImg(this)" height="100" width="100" src="'.cdat_base64_image_src($row['image']).'"></img>' ?> <?php "</td>";
 
 }
 echo"</table>";

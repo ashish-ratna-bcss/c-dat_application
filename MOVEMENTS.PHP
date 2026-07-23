@@ -129,7 +129,7 @@ function filterTable(col)
 <body>
 
 <div class="back">
-<a href="MOVEMENTS.HTML">
+<a href="MOVEMENTS.html">
 <font color="white"><b>Back</b></font>
 </a>
 </div>
@@ -138,6 +138,7 @@ function filterTable(col)
 
 set_time_limit(0);
 require_once __DIR__ . '/activity_logger.php';
+require_once __DIR__ . '/cdr_enrichment_sql.php';
 
 /*
 ==================================================
@@ -225,60 +226,9 @@ SELECT DISTINCT
 
     A.IMEINUMBER,
 
-    A.CELLTOWERID,
-
-    ISNULL(COALESCE(B1.OPERATOR,B2.OPERATOR),'') AS OPERATOR,
-
-    ISNULL(COALESCE(B1.STATE,B2.STATE),'') AS STATE,
-
-    ISNULL(COALESCE(B1.SITEADDRESS,B2.SITEADDRESS),'') AS AREADESCRIPTION,
-
-    ISNULL(COALESCE(B1.LAT,B2.LAT),'') AS LAT,
-
-    ISNULL(COALESCE(B1.LONG,B2.LONG),'') AS LONG,
-
-    ISNULL(COALESCE(B1.AZIMUTH,B2.AZIMUTH),'') AS AZM
+    A.CELLTOWERID
 
 FROM CDATDUPL.dbo.CDATPCSUSPECT A WITH (NOLOCK)
-
-/*
-==================================================
-FIRST MATCH CELLTOWERID
-==================================================
-*/
-
-OUTER APPLY
-(
-    SELECT TOP 1 *
-    FROM CDATDUPL.dbo.CDATCELLTOWERAREANEW X WITH (NOLOCK)
-    WHERE
-        X.CELLTOWERID = A.CELLTOWERID
-        AND X.STATE_KEY = A.STATE_KEY
-        AND X.PROVIDER_KEY = A.PROVIDER_KEY
-) B1
-
-/*
-==================================================
-IF NOT FOUND MATCH BTS_ID
-==================================================
-*/
-
-OUTER APPLY
-(
-    SELECT TOP 1 *
-    FROM CDATDUPL.dbo.CDATCELLTOWERAREANEW Y WITH (NOLOCK)
-    WHERE
-        B1.CELLTOWERID IS NULL
-        AND Y.BTS_ID = A.CELLTOWERID
-        AND Y.STATE_KEY = A.STATE_KEY
-        AND Y.PROVIDER_KEY = A.PROVIDER_KEY
-) B2
-
-/*
-==================================================
-NICKNAME TABLE
-==================================================
-*/
 
 LEFT JOIN CDATDUPL.dbo.CDATSUSPECT C WITH (NOLOCK)
 
@@ -410,8 +360,24 @@ FETCH DATA
 ==================================================
 */
 
-while($row = sqlsrv_fetch_array($st,SQLSRV_FETCH_ASSOC))
+$rows = [];
+while ($row = sqlsrv_fetch_array($st, SQLSRV_FETCH_ASSOC)) {
+    $rows[] = $row;
+}
+
+$towerMap = cdat_fetch_tower_map($conn, array_column($rows, 'CELLTOWERID'));
+
+foreach ($rows as $row)
 {
+    $tower = $towerMap[$row['CELLTOWERID']] ?? [
+        'operator' => '',
+        'state' => '',
+        'areadescription' => '',
+        'lat' => '',
+        'long' => '',
+        'azimuth' => '',
+    ];
+
     echo "<tr>";
 
     echo "<td bgcolor='#AED1F1'>".$row['PHONE']."</td>";
@@ -424,12 +390,12 @@ while($row = sqlsrv_fetch_array($st,SQLSRV_FETCH_ASSOC))
     echo "<td bgcolor='#C2E0FB'>".$row['TYPE']."</td>";
     echo "<td bgcolor='#AED1F1'>".$row['IMEINUMBER']."</td>";
     echo "<td bgcolor='#C2E0FB'>".$row['CELLTOWERID']."</td>";
-    echo "<td bgcolor='#AED1F1'>".$row['OPERATOR']."</td>";
-    echo "<td bgcolor='#AED1F1'>".$row['STATE']."</td>";
-    echo "<td bgcolor='#C2E0FB' class='area-col'>".$row['AREADESCRIPTION']."</td>";
-    echo "<td bgcolor='#C2E0FB'>".$row['LAT']."</td>";
-    echo "<td bgcolor='#C2E0FB'>".$row['LONG']."</td>";
-    echo "<td bgcolor='#C2E0FB'>".$row['AZM']."</td>";
+    echo "<td bgcolor='#AED1F1'>".htmlspecialchars($tower['operator'])."</td>";
+    echo "<td bgcolor='#AED1F1'>".htmlspecialchars($tower['state'])."</td>";
+    echo "<td bgcolor='#C2E0FB' class='area-col'>".htmlspecialchars($tower['areadescription'])."</td>";
+    echo "<td bgcolor='#C2E0FB'>".htmlspecialchars($tower['lat'])."</td>";
+    echo "<td bgcolor='#C2E0FB'>".htmlspecialchars($tower['long'])."</td>";
+    echo "<td bgcolor='#C2E0FB'>".htmlspecialchars($tower['azimuth'])."</td>";
 
     echo "</tr>";
 }

@@ -63,7 +63,8 @@ SELECT
     bts_id,
     lat,
     long,
-    azimuth
+    azimuth,
+    otype
 FROM dist.cellids;
 
 -- RTA / DL views (idempotent)

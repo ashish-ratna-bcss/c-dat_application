@@ -17,5 +17,31 @@ def list_jobs(conn, *, limit: int=50, offset: int=0) -> list[dict[str, Any]]:
 
 def create_queued_job(conn, *, source_file: str, file_path: str, file_hash: str, operator: str, target_phone: Optional[str], batch_size: int, total_rows_estimated: int, header_line_no: int, dry_run: bool=False) -> int:
     with conn.cursor() as cur:
-        cur.execute(f"\n            INSERT INTO {JOBS_TABLE} (\n                module, source_file, source_basename, file_path, file_sha256,\n                operator, target_phone, status, phase, dry_run, batch_size,\n                total_rows_estimated\n            ) VALUES ('cdr', %s, %s, %s, %s, %s, %s, 'queued', 'import', %s, %s, %s)\n            ON CONFLICT (module, source_file, file_sha256) DO UPDATE\n            SET updated_at = NOW(),\n                file_path = EXCLUDED.file_path,\n                status = CASE\n                    WHEN {JOBS_TABLE}.status = 'completed' THEN {JOBS_TABLE}.status\n                    ELSE 'queued'\n                END\n            RETURNING job_id\n            ", (source_file, Path(source_file).name, file_path, file_hash, operator, target_phone, dry_run, batch_size, total_rows_estimated))
+        cur.execute(
+            f"""
+            INSERT INTO {JOBS_TABLE} (
+                module, source_file, source_basename, file_path, file_sha256,
+                operator, target_phone, status, phase, dry_run, batch_size,
+                total_rows_estimated
+            ) VALUES ('cdr', %s, %s, %s, %s, %s, %s, 'queued', 'import', %s, %s, %s)
+            ON CONFLICT (module, source_file, file_sha256) DO UPDATE
+            SET updated_at = NOW(),
+                file_path = EXCLUDED.file_path,
+                status = CASE
+                    WHEN {JOBS_TABLE}.status IN ('completed', 'failed', 'pending_verification') THEN 'queued'
+                    ELSE {JOBS_TABLE}.status
+                END,
+                phase = 'import',
+                rows_committed = CASE
+                    WHEN {JOBS_TABLE}.status IN ('completed', 'failed', 'pending_verification') THEN 0
+                    ELSE {JOBS_TABLE}.rows_committed
+                END,
+                error_message = CASE
+                    WHEN {JOBS_TABLE}.status IN ('completed', 'failed', 'pending_verification') THEN NULL
+                    ELSE {JOBS_TABLE}.error_message
+                END
+            RETURNING job_id
+            """,
+            (source_file, Path(source_file).name, file_path, file_hash, operator, target_phone, dry_run, batch_size, total_rows_estimated),
+        )
         return int(cur.fetchone()[0])

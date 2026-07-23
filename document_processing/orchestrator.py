@@ -11,7 +11,7 @@ class DocumentProcessingError(Exception):
     pass
 SUPPORTED_MODULES = {'cdr', 'sdr'}
 
-def validate_document(file_path: Path, module: str, operator: Optional[str]=None) -> dict:
+def validate_document(file_path: Path, module: str, operator: Optional[str] = None) -> dict:
     module = module.lower().strip()
     if module not in SUPPORTED_MODULES:
         raise DocumentProcessingError(f'Unsupported module: {module}')
@@ -25,7 +25,7 @@ def validate_document(file_path: Path, module: str, operator: Optional[str]=None
     analysis = analyze_sdr_upload(file_path)
     return {'module': 'sdr', 'basename': analysis['basename'], 'mssql_database': analysis['mssql_database'], 'message': analysis['message'], 'total_records': 0, 'warnings': []}
 
-def enqueue_document(file_path: Path, *, module: str, batch_size: int, dry_run: bool=False, operator: Optional[str]=None) -> dict:
+def enqueue_document(file_path: Path, *, module: str, batch_size: int, dry_run: bool=False, operator: Optional[str] = None) -> dict:
     module = module.lower().strip()
     if module == 'cdr':
         try:

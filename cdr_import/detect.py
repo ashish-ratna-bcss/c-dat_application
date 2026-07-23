@@ -62,10 +62,6 @@ def detect_operator(file_path: str | Path) -> str:
     from_content = detect_operator_from_content(file_path)
     if from_content:
         return from_content
-    # raise ValueError(
-    #     f"Cannot detect operator for '{name}'. Expected a jio, bsnl, vi or airtel "
-    #     f"export (operator must appear in the filename or the file's header)."
-    # )
     return 'airtel'
 
 def extract_phone_from_filename(file_path: str | Path) -> str | None:

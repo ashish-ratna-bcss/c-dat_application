@@ -2,7 +2,7 @@
 <head>
 </head>
 <body bgcolor="#0C5D90">
-<li><a href="FP_LIST.HTML"><font color=#FDEFEF>Back</a></li>
+<li><a href="IR_MODULE.html"><font color=#FDEFEF>Back</a></li>
 <script>
 function bigImg(x) { 
 x.style.height="450px";
@@ -70,7 +70,7 @@ echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['
 echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['DATE_OF_IDENTITY'] ."<center></font></td>";
 echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['LOSS_OF_PROPERTY'] ."<center></font></td>";
 echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['NAME_AND_PARTICULARS'] ."<center></font></td>";
-echo "<td height=200px width=200px>";?> <?php echo '<img onmouseover="bigImg(this)" onmouseout="normalImg(this)" height="200" width="220" src="data:image; base64,'.$row["IMAGE"].'"></img>' ?> <?php "</td>";
+echo "<td height=200px width=200px>";?> <?php echo '<img onmouseover="bigImg(this)" onmouseout="normalImg(this)" height="200" width="220" src="'.cdat_base64_image_src($row['IMAGE']).'"></img>' ?> <?php "</td>";
 echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center><a href=".'IR.PHP?IRKEY='.($row['IRKEY']).">". $row['IRKEY'] ."<center></font></td>";
 echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['CCNO'] ."<center></font></td>";
 echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['DOA'] ."<center></font></td>";

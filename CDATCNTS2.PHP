@@ -138,7 +138,7 @@ echo "<table border=1 cellspacing=0 cellpadding=5>
 while( $row = sqlsrv_fetch_array( $st21, SQLSRV_FETCH_ASSOC) ) {
 echo "<tr>";
 echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['PHONE'] ."<center></font></td>";
-echo "<td>";?> <?php echo '<img  height="100" width="100" src="data:image; base64,'.$row["IMAGE"].'"></img>' ?> <?php "</td>";
+echo "<td>";?> <?php echo '<img  height="100" width="100" src="'.cdat_base64_image_src($row['IMAGE']).'"></img>' ?> <?php "</td>";
 echo "<td width=150px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['FIRST_CALL'] ."<center></font></td>";
 echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['LAST_CALL'] ."<center></font></td>";
 echo "<td width=125px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['NICKNAME'] ."<center></font></td>";
@@ -175,7 +175,7 @@ while( $row = sqlsrv_fetch_array( $st71, SQLSRV_FETCH_ASSOC) ) {
 echo "<tr>";
 echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['PHONE'] ."<center></font></td>";
 echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><a href=".'CDATCNTS2.PHP?PHONE_NO='.($row['OTHER']).">".$row['OTHER']."<center></font></td>";
-echo "<td>";?> <?php echo '<img  height="100" width="100" src="data:image; base64,'.$row["IMAGE"].'"></img>' ?> <?php "</td>";
+echo "<td>";?> <?php echo '<img  height="100" width="100" src="'.cdat_base64_image_src($row['IMAGE']).'"></img>' ?> <?php "</td>";
 echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['NICKNAME'] ."<center></font></td>";
 echo "<td width=0px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['MO'] ."<center></font></td>";
 echo "<td width=0px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['CAT'] ."<center></font></td>";

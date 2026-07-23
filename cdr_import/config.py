@@ -6,7 +6,7 @@ UPLOAD_INBOX_DIR = Path(os.environ.get('CDR_UPLOAD_INBOX', '/mnt/storage1/cdr_do
 UPLOAD_PROCESSING_DIR = Path(os.environ.get('CDR_UPLOAD_PROCESSING', '/mnt/storage1/cdr_documents/processing'))
 UPLOAD_DONE_DIR = Path(os.environ.get('CDR_UPLOAD_DONE', '/mnt/storage1/cdr_documents/done'))
 UPLOAD_FAILED_DIR = Path(os.environ.get('CDR_UPLOAD_FAILED', '/mnt/storage1/cdr_documents/failed'))
-STAGING_TABLE = os.environ.get('CDR_STAGING_TABLE', 'cdatpcsuspect')
+STAGING_TABLE = os.environ.get('CDR_STAGING_TABLE', 'cdatpcsuspect_staging')
 JOBS_TABLE = os.environ.get('CDR_JOBS_TABLE', 'document_jobs')
 TARGET_TABLE = os.environ.get('CDR_TARGET_TABLE', 'cdatpcsuspect')
 PRODUCTION_INSERT_COLUMNS = (
@@ -14,7 +14,8 @@ PRODUCTION_INSERT_COLUMNS = (
     'celltowerid', 'otherinfo', 'tower_key', 'provider_key', 'state_key', 'first_cellid',
     'last_cellid', 'roaming_nw', 'call_type', 'calling_no', 'called_no', 'asondate',
 )
-DEFAULT_BATCH_SIZE = int(os.environ.get('CDR_IMPORT_BATCH_SIZE', '500'))
+DEFAULT_BATCH_SIZE = int(os.environ.get('CDR_IMPORT_BATCH_SIZE', '5000'))
+PROGRESS_UPDATE_EVERY_BATCHES = int(os.environ.get('CDR_PROGRESS_UPDATE_EVERY', '5'))
 WORKER_POLL_SECONDS = int(os.environ.get('CDR_WORKER_POLL_SECONDS', '10'))
 PROVIDER_KEYS = {'airtel': int(os.environ.get('CDR_PROVIDER_KEY_AIRTEL', '2')), 'bsnl': int(os.environ.get('CDR_PROVIDER_KEY_BSNL', '4')), 'vi': int(os.environ.get('CDR_PROVIDER_KEY_VI', '12')), 'jio': int(os.environ.get('CDR_PROVIDER_KEY_JIO', '15'))}
 

@@ -176,7 +176,7 @@ echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['
 echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana>". $row['PD_ACT_PS'] ."</font></td>";
 echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana>". $row['CRIME_HEAD_SEARCH'] ."</font></td>";
 echo "<td width=10px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['DATE_OF_PDACT'] ."<center></font></td>";
-echo "<td>";?> <?php echo '<img  height="100" width="100" src="data:image; base64,'.$row["IMAGE"].'"></img>' ?> <?php "</td>";
+echo "<td>";?> <?php echo '<img  height="100" width="100" src="'.cdat_base64_image_src($row['IMAGE']).'"></img>' ?> <?php "</td>";
 echo "</tr>";
 }
 ?> 

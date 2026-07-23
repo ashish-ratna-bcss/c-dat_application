@@ -66,7 +66,7 @@ echo "<td width=50px bgcolor=#F5DEB3><font size=1 face=verdana>". $row['WING_NAM
 echo "<td width=50px bgcolor=#FFEFD5><font size=1 face=verdana>". $row['ZONE_NAME'] ."</font></td>";
 echo "<td width=50px bgcolor=#F5DEB3><font size=1 face=verdana>". $row['DIVISION_NAME'] ."</font></td>";
 echo "<td width=50px bgcolor=#FFEFD5><font size=1 face=verdana>". $row['POLICE_STATION'] ."</font></td>";
-echo "<td>";?> <?php echo '<img height="100" width="100" src="qrcode\php\qr_img.php?d='.'EMP_ID: '.$row["EMPLOYEE_ID"].' NAME:'. preg_replace('/[^A-Za-z0-9\-:]/',' ',$row["NAME"]).' RANK:'.$row["RANK"]. ' ROLE:'.$row["ROLE"].' GEN_NO:'. preg_replace('/[^A-Za-z0-9\-:]/',' ',$row["GENERAL_NO"]).' PS: '.$row["POLICE_STATION"].'"></img>'; ?> <?php "</td>";
+echo "<td>";?> <?php echo '<img height="100" width="100" src="qrcode/php/qr_img.php?d='.'EMP_ID: '.$row["EMPLOYEE_ID"].' NAME:'. preg_replace('/[^A-Za-z0-9\-:]/',' ',$row["NAME"]).' RANK:'.$row["RANK"]. ' ROLE:'.$row["ROLE"].' GEN_NO:'. preg_replace('/[^A-Za-z0-9\-:]/',' ',$row["GENERAL_NO"]).' PS: '.$row["POLICE_STATION"].'"></img>'; ?> <?php "</td>";
 echo "</tr>";
 }
 echo "</table>";
@@ -105,7 +105,7 @@ echo "<td width=50px bgcolor=#FFEFD5><font size=1 face=verdana>". $row['POLICE_S
 echo "<td width=50px bgcolor=#F5DEB3><font size=1 face=verdana>". $row['COURSE_NAME'] ."</font></td>";
 echo "<td width=50px bgcolor=#FFEFD5><font size=1 face=verdana>". $row['START_DATE'] ."</font></td>";
 echo "<td width=50px bgcolor=#FFEFD5><font size=1 face=verdana>". $row['END_DATE'] ."</font></td>";
-echo "<td>";?> <?php echo '<img height="100" width="100" src="qrcode\php\qr_img.php?d='.'EMP_ID: '.$row["EMPLOYEE_ID"].' NAME:'. preg_replace('/[^A-Za-z0-9\-:]/',' ',$row["NAME"]).' RANK:'.$row["RANK"].' GEN_NO:'. preg_replace('/[^A-Za-z0-9\-:]/',' ',$row["GENERAL_NO"]).' PS: '.$row["POLICE_STATION"].'"></img>'; ?> <?php "</td>";
+echo "<td>";?> <?php echo '<img height="100" width="100" src="qrcode/php/qr_img.php?d='.'EMP_ID: '.$row["EMPLOYEE_ID"].' NAME:'. preg_replace('/[^A-Za-z0-9\-:]/',' ',$row["NAME"]).' RANK:'.$row["RANK"].' GEN_NO:'. preg_replace('/[^A-Za-z0-9\-:]/',' ',$row["GENERAL_NO"]).' PS: '.$row["POLICE_STATION"].'"></img>'; ?> <?php "</td>";
 echo "</tr>";
 }
 

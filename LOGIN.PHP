@@ -12,10 +12,18 @@ if ($conn === false) {
 $USERNAME = trim($_POST['USERNAME'] ?? '');
 $PASSWORD = trim($_POST['PASSWORD'] ?? '');
 
-$sql = "SELECT * FROM LOGINS WHERE USERNAME='$USERNAME' AND PASSWORD='$PASSWORD'";
-$st1 = sqlsrv_query($conn, $sql);
-$row = sqlsrv_fetch_array($st1, SQLSRV_FETCH_ASSOC);
-$count = sqlsrv_has_rows($st1);
+if ($USERNAME === '' || $PASSWORD === '') {
+    echo "<font size=4 face=verdana color='#921215'>USERNAME AND PASSWORD REQUIRED</font></br>";
+    exit;
+}
+
+$st1 = sqlsrv_query(
+    $conn,
+    "SELECT * FROM LOGINS WHERE USERNAME = ? AND PASSWORD = ?",
+    [$USERNAME, $PASSWORD]
+);
+$row = $st1 ? sqlsrv_fetch_array($st1, SQLSRV_FETCH_ASSOC) : false;
+$count = $st1 && sqlsrv_has_rows($st1);
 
 if ($count == 1) {
     $_SESSION['audit_role'] = strtolower($row['ROLE'] ?? 'user');
