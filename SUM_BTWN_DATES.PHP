@@ -2,7 +2,7 @@
 <head>
 </head>
 <body bgcolor="#0C5D90">
-<li><a href="SUM_BETWEEN_DATES.HTML"><font color=#FDEFEF>Back</a></li>
+<li><a href="SUM_BETWEEN_DATES.html"><font color=#FDEFEF>Back</a></li>
 <?php
 require_once __DIR__ . '/activity_logger.php';
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";

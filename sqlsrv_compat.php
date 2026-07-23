@@ -216,7 +216,7 @@ function __sqlsrv_translate(string $sql): string
     );
     $q = preg_replace_callback(
         '/\bCONVERT\s*\(\s*VARCHAR\s*,\s*([^,]+)\s*,\s*20\s*\)/i',
-        static fn($m) => "to_char(" . trim($m[1]) . ", 'YYYY-MM-DD HH24:MI:SS')",
+        static fn($m) => "to_char((" . trim($m[1]) . ")::timestamp, 'YYYY-MM-DD HH24:MI:SS')",
         $q
     );
     $q = preg_replace_callback(
@@ -231,7 +231,7 @@ function __sqlsrv_translate(string $sql): string
     );
     $q = preg_replace_callback(
         '/\bCONVERT\s*\(\s*VARCHAR\s*,\s*([^,]+)\s*,\s*(\d+)\s*\)/i',
-        static fn($m) => "to_char(" . trim($m[1]) . ", 'YYYY-MM-DD HH24:MI:SS')",
+        static fn($m) => "to_char((" . trim($m[1]) . ")::timestamp, 'YYYY-MM-DD HH24:MI:SS')",
         $q
     );
 
@@ -242,13 +242,13 @@ function __sqlsrv_translate(string $sql): string
     );
     $q = preg_replace_callback(
         '/\bCONVERT\s*\(\s*(?:CHAR|VARCHAR)\s*\(\s*10\s*\)\s*,\s*([^,]+)\s*,\s*121\s*\)/i',
-        static fn($m) => "to_char(" . trim($m[1]) . ", 'YYYY-MM-DD')",
+        static fn($m) => "to_char((" . trim($m[1]) . ")::timestamp, 'YYYY-MM-DD')",
         $q
     );
 
     $q = preg_replace_callback(
         '/\bCONVERT\s*\(\s*(?:CHAR|VARCHAR)\s*\(\s*10\s*\)\s*,\s*([^,]+)\s*,\s*105\s*\)/i',
-        static fn($m) => "to_char(" . trim($m[1]) . ", 'DD-MM-YYYY')",
+        static fn($m) => "to_char((" . trim($m[1]) . ")::timestamp, 'DD-MM-YYYY')",
         $q
     );
 
@@ -330,7 +330,7 @@ function __sqlsrv_translate(string $sql): string
 
     $q = preg_replace_callback(
         '/\bCONVERT\s*\(\s*VARCHAR\s*\(\s*\d+\s*\)\s*,\s*([^,]+)\s*,\s*120\s*\)/i',
-        static fn($m) => "to_char(" . trim($m[1]) . ", 'YYYY-MM-DD')",
+        static fn($m) => "to_char((" . trim($m[1]) . ")::timestamp, 'YYYY-MM-DD')",
         $q
     );
     $q = preg_replace_callback(
@@ -340,7 +340,7 @@ function __sqlsrv_translate(string $sql): string
     );
     $q = preg_replace_callback(
         '/\bCONVERT\s*\(\s*VARCHAR\s*,\s*([^,]+)\s*,\s*120\s*\)/i',
-        static fn($m) => "to_char(" . trim($m[1]) . ", 'YYYY-MM-DD HH24:MI:SS')",
+        static fn($m) => "to_char((" . trim($m[1]) . ")::timestamp, 'YYYY-MM-DD HH24:MI:SS')",
         $q
     );
 

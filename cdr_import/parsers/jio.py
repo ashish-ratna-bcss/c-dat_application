@@ -27,21 +27,31 @@ class JioParser(BaseCdrParser):
 
     def map_row(self, row, header, source_row_number):
         d = self.row_dict(row, header)
-        calling = to_phone(d.get('Calling Party Telephone Number'))
-        called = to_phone(d.get('Called Party Telephone Number'))
+        calling_raw = clean(d.get('Calling Party Telephone Number'))
+        called_raw = clean(d.get('Called Party Telephone Number'))
+        # Keep alphanumeric sender IDs (e.g. A2P SMS senders like JA-JIONEW)
+        # when the value is not a phone number.
+        calling = to_phone(calling_raw) or (calling_raw or None)
+        called = to_phone(called_raw) or (called_raw or None)
         subscriber = to_phone(self._subscriber) or self.target_phone
         call_type = clean(d.get('Call Type')).lower()
-        incoming = 1 if call_type.endswith('_in') or call_type == 'in' else 0
-        if subscriber and calling and called:
-            if calling.endswith(subscriber) or calling == subscriber:
-                phone, other = (calling, called)
-            elif called.endswith(subscriber) or called == subscriber:
-                phone, other = (called, calling)
-            else:
-                phone, other = (subscriber, called if incoming else calling)
+        # Direction: handle *_IN/*_OUT and SMSIN/SMSOUT suffixes.
+        if call_type.endswith('out'):
+            incoming = 0
+        elif call_type.endswith('in'):
+            incoming = 1
         else:
-            phone = subscriber or calling or called
-            other = called if phone == calling else calling
+            incoming = 0
+        if subscriber and calling and (calling.endswith(subscriber) or calling == subscriber):
+            phone, other = (calling, called)
+        elif subscriber and called and (called.endswith(subscriber) or called == subscriber):
+            phone, other = (called, calling)
+        elif incoming:
+            # Subscriber received the call/SMS -> they are the called party.
+            phone, other = (subscriber or called), calling
+        else:
+            # Outgoing -> subscriber is the calling party.
+            phone, other = (subscriber or calling), called
         starttime = parse_datetime(d.get('Call Date', ''), d.get('Call Time', ''))
         duration = to_int(d.get('Call Duration'))
         first_cell = clean(d.get('First Cell ID')).strip("'") or None

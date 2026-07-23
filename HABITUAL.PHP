@@ -82,5 +82,4 @@ sqlsrv_free_stmt( $st9);
 
 ?>
 </body>
-</html>dy>
 </html>

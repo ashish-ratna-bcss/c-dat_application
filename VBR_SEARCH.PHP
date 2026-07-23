@@ -2,7 +2,7 @@
 <head>
 </head>
 <body bgcolor="#0C5D90">
-<li><a href="VBR_SEARCH.HTML"><font color=#FDEFEF>Back</a></li>
+<li><a href="VBR_SEARCH.html"><font color=#FDEFEF>Back</a></li>
 <?php
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"ALL_ILD_DATA_2012");

@@ -63,7 +63,7 @@ $("document").ready(function() {
           <th height="25" align="center" valign="middle" background="IMAGES/BORDER.jpg" scope="col">ACCUSED SEARCH IN CIS DATA</th>
         </tr>
         <tr>
-          <th width="782" align="center" valign="middle" background="IMAGES/BORDER.jpg" scope="col"><form id="form1" name="form1" method="post" action="CIS_DATA_NAME_SEARCH_PHP.php">
+          <th width="782" align="center" valign="middle" background="IMAGES/BORDER.jpg" scope="col"><form id="form1" name="form1" method="post" action="CIS_DATA_NAME_SEARCH_PHP.PHP">
             <p>
               <label for="SUM" font face="verdana"> NAME:</label>
               <input type="text" name="NAME" id="NAME" placeholder="Enter Name" required="required"/>

@@ -30,11 +30,14 @@ def detect_operator_from_content(file_path: str | Path) -> str | None:
     cause false positives.
     """
     path = Path(file_path)
+    head: list[str] = []
     try:
         with path.open('r', encoding='utf-8', errors='replace') as fh:
-            head = [next(fh) for _ in range(_CONTENT_SCAN_LINES)]
-    except StopIteration:
-        head = locals().get('head', [])
+            for _ in range(_CONTENT_SCAN_LINES):
+                line = fh.readline()
+                if not line:
+                    break
+                head.append(line)
     except OSError:
         return None
     blob = '\n'.join(head)

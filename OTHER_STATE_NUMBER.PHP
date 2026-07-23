@@ -73,7 +73,7 @@ $("document").ready(function() {
           <th height="25" align="center" valign="middle" background="IMAGES/BORDER.jpg" scope="col">OTHER STATE NUMBERS IN TOWER DUMP</th>
         </tr>
         <tr>
-          <th width="782" align="center" valign="middle" background="IMAGES/BORDER.jpg" scope="col"><form id="form1" name="form1" method="post" action="OTHER_STATE_NUMBER_TWR.php">
+          <th width="782" align="center" valign="middle" background="IMAGES/BORDER.jpg" scope="col"><form id="form1" name="form1" method="post" action="OTHER_STATE_NUMBER_TWR.PHP">
             <p>
             <label for="SUM" font face="verdana"> Police Station:</label>
               <select name="Police_station" id="Police_station" class"demoInputbox" onChange="getps(this.value);">

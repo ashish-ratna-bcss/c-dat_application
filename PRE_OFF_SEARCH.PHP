@@ -73,7 +73,7 @@ $("document").ready(function() {
           <th height="25" align="center" valign="middle" background="IMAGES/BORDER.jpg" scope="col">PREVIOUS OFFENDERS IN TOWER DUMP</th>
         </tr>
         <tr>
-          <th width="782" align="center" valign="middle" background="IMAGES/BORDER.jpg" scope="col"><form id="form1" name="form1" method="post" action="PRE_OFF_SEARCH_TWR.php">
+          <th width="782" align="center" valign="middle" background="IMAGES/BORDER.jpg" scope="col"><form id="form1" name="form1" method="post" action="PRE_OFF_SEARCH_TWR.PHP">
             <p>              
 		<label for="SUM" font face="verdana"> Police Station:</label>
               <select name="Police_station" id="Police_station" class"demoInputbox" onChange="getps(this.value);">

@@ -130,7 +130,7 @@ $DISTRICT=$row['DISTRICT'];
 }
 ?>
 
-<form action="JRMS_UNIQUENESS_UPDATE_PHP.php" Method="post">
+<form action="JRMS_UNIQUENESS_UPDATE_PHP.PHP" Method="post">
 <div>RECORD_KEY:</div><SELECT name="AUTO_KEY" required="required">
 <option value="<?php echo $AUTO_KEY ?>"><?php echo $AUTO_KEY ?></option>
 </SELECT><br/><br/>

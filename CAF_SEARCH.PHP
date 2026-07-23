@@ -8,7 +8,7 @@ a:link , a:visited{
 text-decoration: none;
 }
 </style>
-<form action ='CAF_SEARCH.php'method='post'>
+<form action ='CAF_SEARCH.PHP'method='post'>
 <b><font size=4 face=verdana color='#F9FBFC'><center>ENTER MOBILE NO: <input type='text' name='PHONE_NO' value='' placeholder='Enter Phone No' required='required'/></b>
 <input type ='submit' name='submit' value='Submit'></p>
 <?php

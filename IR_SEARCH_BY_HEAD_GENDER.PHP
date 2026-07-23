@@ -3,7 +3,7 @@
 </head>
 <body bgcolor="#0C5D90">
 <li><a href="IR_SEARCH_BY_HEAD_GENDER.HTML"><font color=#FDEFEF>Back</a></li>
-<form action ='IR_SEARCH_BY_HEAD_GENDER.php'method='post'>
+<form action ='IR_SEARCH_BY_HEAD_GENDER.PHP'method='post'>
 <b><font size=3 face=verdana color='#F9FBFC'>GENDER : </b>
 <select name="GENDER" placeholder="PLZ Select Gender">
 <option value=""></option>
