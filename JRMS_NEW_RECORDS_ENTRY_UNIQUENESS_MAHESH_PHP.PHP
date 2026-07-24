@@ -77,7 +77,7 @@ div {
           <th width="1126" align="center" scope="col">JRMS</th>
         </tr>
 </table>
-<form action="JRMS_NEW_RECORDS_ENTRY_UNIQUENESS.php" Method="post">
+<form action="JRMS_NEW_RECORDS_ENTRY_UNIQUENESS.PHP" Method="post">
 <div>NAME:</div><textarea type="text" required="required"name="NAME"></textarea><br/><br/>
 
 <div>FATHER_NAME:</div><textarea type="text" required="required"name="FATHER_NAME"></textarea><br/><br/>

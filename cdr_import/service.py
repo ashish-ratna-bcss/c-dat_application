@@ -3,11 +3,33 @@ import logging
 from pathlib import Path
 from typing import Optional
 from .db import db_connection, ensure_schema, file_sha256
-from .detect import detect_operator, extract_phone_from_filename
+from .detect import detect_operator, detect_operator_from_content, extract_phone_from_filename
 from .importer import CdrImportError
 from .jobs import create_queued_job, fetch_job
 from .enrichment import normalize_record, resolve_operator
 from .parsers import get_parser
+from .parsers.base import clean
+_OP_LABELS = {'jio': 'Jio', 'airtel': 'Airtel', 'bsnl': 'BSNL', 'vi': 'Vi'}
+
+
+def _friendly_header_error(path, selected_op: str, exc: Exception) -> CdrImportError:
+    """Turn a raw '<op>: header row not found in <tempfile>' into a clean message
+    that names the file's actual operator and tells the user which Network to pick."""
+    if 'header row not found' not in str(exc).lower():
+        return CdrImportError(str(exc))
+    sel = _OP_LABELS.get(selected_op, str(selected_op).upper())
+    detected = detect_operator_from_content(path)
+    if detected and detected != selected_op:
+        det = _OP_LABELS.get(detected, detected.upper())
+        return CdrImportError(
+            f"This looks like a {det} file, but you selected {sel}. "
+            f"Please choose {det} as the Network and try again."
+        )
+    return CdrImportError(
+        f"This file doesn't match the {sel} format. Please make sure it is a "
+        f"{sel} CDR export, or pick the correct Network."
+    )
+
 
 def analyze_file(file_path: str | Path, *, operator: Optional[str]=None, target_phone: Optional[str]=None) -> dict:
     path = Path(file_path).resolve()
@@ -17,7 +39,10 @@ def analyze_file(file_path: str | Path, *, operator: Optional[str]=None, target_
     phone = target_phone or extract_phone_from_filename(path)
     digest = file_sha256(path)
     parser = get_parser(op, path, phone)
-    header_line_no, total, warnings = parser.count_data_rows()
+    try:
+        header_line_no, total, warnings = parser.count_data_rows()
+    except ValueError as exc:
+        raise _friendly_header_error(path, op, exc) from exc
     return {'file': str(path), 'basename': path.name, 'operator': op, 'target_phone': parser.target_phone or phone, 'header_line_no': header_line_no + 1, 'total_records': total, 'file_sha256': digest, 'warnings': warnings}
 
 def run_import(file_path: str | Path, *, dry_run: bool=True, batch_size: int=500, operator: Optional[str]=None, target_phone: Optional[str]=None, resume: bool=True) -> dict:
@@ -111,14 +136,26 @@ def preview_file(file_path: str | Path, *, operator: Optional[str] = None, targe
     op = resolve_operator(operator, detect_operator(path)) if operator else detect_operator(path)
     phone = target_phone or extract_phone_from_filename(path)
     parser = get_parser(op, path, phone)
-    header_line_no, total, warnings = parser.count_data_rows()
+    try:
+        header_line_no, total, warnings = parser.count_data_rows()
+    except ValueError as exc:
+        raise _friendly_header_error(path, op, exc) from exc
     rows: list[dict] = []
+    columns: list[str] = ['row']
     parse_errors = 0
     for record, row_warnings, _hdr in parser.iter_records():
         warnings.extend(row_warnings)
         try:
-            normalize_record(record)
-            rows.append(_record_to_preview_dict(record))
+            # Raw preview: show the original file's columns in their original
+            # order, with surrounding single/double quotes stripped. record.raw
+            # is the row keyed by original (cleaned) column name, in header order.
+            raw = record.raw or {}
+            if len(columns) == 1:
+                columns = ['row'] + [str(k) for k in raw.keys()]
+            row = {'row': record.source_row_number}
+            for key, value in raw.items():
+                row[str(key)] = clean(value)
+            rows.append(row)
         except Exception as exc:
             parse_errors += 1
             warnings.append(f'Row {record.source_row_number}: {exc}')
@@ -133,6 +170,6 @@ def preview_file(file_path: str | Path, *, operator: Optional[str] = None, targe
         'parse_errors': parse_errors,
         'truncated': total > len(rows),
         'warnings': warnings[:25],
-        'columns': PREVIEW_COLUMNS,
+        'columns': columns,
         'rows': rows,
     }

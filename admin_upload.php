@@ -75,7 +75,8 @@ if (isset($_POST['ajax_action']) && $_POST['ajax_action'] === 'preview_cdr') {
 
         $script = __DIR__ . '/scripts/cdr_preview.py';
         $cmd = sprintf(
-            'python3 %s %s %s 150 2>&1',
+            '%s %s %s %s 150 2>&1',
+            cdr_python_bin(),
             escapeshellarg($script),
             escapeshellarg($csvPath),
             escapeshellarg($operatorArg)
@@ -84,11 +85,11 @@ if (isset($_POST['ajax_action']) && $_POST['ajax_action'] === 'preview_cdr') {
         $code = 0;
         exec($cmd, $output, $code);
         $json = json_decode(implode("\n", $output), true);
-        if ($code !== 0 || !is_array($json)) {
+        if (!is_array($json) || !array_key_exists('ok', $json)) {
             throw new RuntimeException('Preview parse failed: ' . implode("\n", $output));
         }
         if (empty($json['ok'])) {
-            throw new RuntimeException($json['error'] ?? 'Preview parse failed.');
+            throw new RuntimeException($json['error'] ?? 'Preview failed.');
         }
 
         echo json_encode($json);
@@ -101,6 +102,52 @@ if (isset($_POST['ajax_action']) && $_POST['ajax_action'] === 'preview_cdr') {
         if (isset($csvPath) && is_file($csvPath) && $csvPath !== ($workPath ?? '')) {
             @unlink($csvPath);
         }
+    }
+    exit;
+}
+
+// Promote a staged upload straight into the live table (uploader self-insert, no separate admin step).
+if (isset($_POST['ajax_action']) && $_POST['ajax_action'] === 'approve_staging') {
+    header('Content-Type: application/json');
+    try {
+        $jobId = (int)($_POST['job_id'] ?? 0);
+        if ($jobId <= 0) {
+            throw new RuntimeException('Missing job id.');
+        }
+        $cfg = require __DIR__ . '/cdr_upload_config.php';
+        $base = rtrim($cfg['api']['base_url'] ?? 'http://127.0.0.1:8088', '/');
+        $user = $_SESSION['audit_username'] ?? 'user';
+        $url = $base . '/api/v1/documents/' . $jobId . '/staging/approve?username=' . rawurlencode($user);
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => '',
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 300,
+        ]);
+        if (!empty($cfg['api']['api_key'])) {
+            curl_setopt($ch, CURLOPT_HTTPHEADER, ['X-API-Key: ' . $cfg['api']['api_key']]);
+        }
+        $resp = curl_exec($ch);
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlErr = curl_error($ch);
+        curl_close($ch);
+        if ($resp === false) {
+            throw new RuntimeException('Could not reach the upload service (is it running on port 8088?): ' . $curlErr);
+        }
+        $json = json_decode($resp, true);
+        if ($code >= 400 || !is_array($json)) {
+            $msg = is_array($json) ? ($json['detail'] ?? $json['message'] ?? 'Insert failed.') : ('Service error (HTTP ' . $code . ').');
+            throw new RuntimeException(is_array($msg) ? json_encode($msg) : (string)$msg);
+        }
+        echo json_encode([
+            'ok' => true,
+            'inserted' => $json['inserted'] ?? null,
+            'status' => $json['status'] ?? 'completed',
+            'message' => $json['message'] ?? 'Data inserted into the live table.',
+        ]);
+    } catch (Throwable $e) {
+        echo json_encode(['ok' => false, 'error' => $e->getMessage()]);
     }
     exit;
 }
@@ -335,6 +382,31 @@ $fileName = '';
 $fileSize = 0;
 $results = null;
 $bulkResults = [];
+
+// View a past upload's "2. Results & Log" screen (opened from Upload History -> Action).
+// Rebuilds $results from the audit log so the same insert-to-live UI appears without re-uploading.
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['view'] ?? '') === 'results') {
+    $viewLogId = (int)($_GET['log_id'] ?? 0);
+    if ($viewLogId > 0) {
+        try {
+            $vstmt = audit_db()->prepare('SELECT * FROM upload_activity_logs WHERE id = :id');
+            $vstmt->execute([':id' => $viewLogId]);
+            $vlog = $vstmt->fetch(PDO::FETCH_ASSOC);
+        } catch (Throwable $e) {
+            $vlog = null;
+        }
+        if ($vlog && stripos((string)($vlog['module_name'] ?? ''), 'custom') === false) {
+            $selectedModule = (stripos((string)($vlog['module_name'] ?? ''), 'sdr') !== false) ? 'sdr' : 'cdr';
+            $fileName = (string)($vlog['file_name'] ?? '');
+            $results = [
+                'status'    => (string)($vlog['upload_status'] ?? ''),
+                'job_id'    => (int)($vlog['document_job_id'] ?? 0),
+                'file_name' => $fileName,
+            ];
+            $step = 2;
+        }
+    }
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
     $action = $_POST['action'] ?? '';
@@ -857,7 +929,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
                 <li><a href="HOME.html">Home</a>              </li>
                 <li><a href="HOME.html" class="MenuBarItemSubmenu">Summary</a>
                   <ul>
-                    <li><a href="SUM_HOME.HTML">Summary Total</a></li>
+                    <li><a href="SUM_HOME.html">Summary Total</a></li>
                     <li><a href="SUM_BETWEEN_DATES.html">Summary Between Dates</a></li>
                     <li><a href="SUM_ISD_CNTS.html">Summary of ISD Contacts</a></li>
                     <li><a href="SUM_NEW_NOS.html">Summary of New Contacts</a></li>
@@ -875,15 +947,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
                 </li>
                 <li><a href="HOME.html" class="MenuBarItemSubmenu">Cdat</a>
                   <ul>
-                    <li><a href="CDATCNTS.HTML">Cdat Cnts</a></li>
+                    <li><a href="CDATCNTS.html">Cdat Cnts</a></li>
         		    <li><a href="BULK_CDAT_CONTACTS.HTML">Bulk Cdat Contacts</a></li>
-        		    <li><a href="OTHERSCDAT.HTML">Others Cdat</a></li>
+        		    <li><a href="OTHERSCDAT.html">Others Cdat</a></li>
                   </ul>
                 </li>
                 <li><a href="HOME.html" class="MenuBarItemSubmenu">Imei Search</a>
                   <ul>
-                    <li><a href="IMEISEARCH.HTML">Phones used in Imei</a></li>
-                    <li><a href="IMEISINPHONE.HTML">Imeis used in phone</a></li>
+                    <li><a href="IMEISEARCH.html">Phones used in Imei</a></li>
+                    <li><a href="IMEISINPHONE.html">Imeis used in phone</a></li>
                   </ul>
                 </li>
                 <li><a href="HOME.html" class="MenuBarItemSubmenu">Address</a>
@@ -905,7 +977,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
                 </li>
                 <li><a href="#" class="MenuBarItemSubmenu">Others</a>
                   <ul>
-                    <li><a href="CELLID_SEARCH.HTML">Cellid Search</a></li>
+                    <li><a href="CELLID_SEARCH.html">Cellid Search</a></li>
                     <li><a href="VEHICLE_SEARCH.HTML">Vehicle Search</a></li>
                     <li><a href="COMMON_CNTS.HTML">Common Cnts</a></li>
                     <li><a href="ADMIN_ACTIVITY_LOG.PHP">User Activity</a></li>
@@ -1018,15 +1090,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
                       <div class="wizard-card" style="background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.15);">
                           <div class="wizard-title" style="color: #FFA500;"><i class="fa-solid fa-eye"></i> 3. Preview Uploaded Sheet Data</div>
                           <p style="font-size:12px; color:#ccc; margin-bottom:12px; text-align: left;">
-                              Below is a read-only preview of parsed CDR data (normalized the same way as the import pipeline). Your original file is not changed.
+                              Below is a read-only preview of each uploaded file's columns exactly as uploaded &mdash; same columns, same order, with surrounding quotes removed. Your original files are not changed.
                           </p>
-                          
-                          <div class="preview-table-wrapper" style="max-height: 300px; border: 1px solid rgba(255, 255, 255, 0.15); background: rgba(0,0,0,0.3);">
-                              <table class="preview-table" id="standard-preview-table">
-                                  <!-- Sheet columns and rows will load here -->
-                              </table>
-                          </div>
-                          <div id="standard-preview-note" style="margin-top: 8px; font-size: 11px; color: #FFA500; text-align: left; display: none;"></div>
+
+                          <div id="standard-preview-summary" style="font-size:12px;color:#9fd0e6;margin-bottom:12px;text-align:left;display:none;"></div>
+                          <div id="standard-preview-pager" style="display:none;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:14px;"></div>
+                          <div id="standard-preview-files"><!-- current file's table (page-wise) --></div>
                       </div>
                   </div>
                 <?php endif; ?>
@@ -1035,19 +1104,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
                   <div style="text-align: left; margin-bottom: 20px;">
                     <h3>Upload Summary Details</h3>
                     <?php if (count($bulkResults) > 1): ?>
+                    <?php $anyPending = count(array_filter($bulkResults, fn($r) => ($r['status'] ?? '') === 'Pending Verification' && !empty($r['job_id']))); ?>
                     <table class="preview-table" style="margin-bottom:15px;">
-                      <thead><tr><th>File</th><th>Status</th><th>Job</th><th>Note</th></tr></thead>
+                      <thead><tr><th>File</th><th>Status</th><th>Job</th><th>Note</th><th>Action</th></tr></thead>
                       <tbody>
                       <?php foreach ($bulkResults as $br): ?>
+                        <?php $isPending = (($br['status'] ?? '') === 'Pending Verification') && !empty($br['job_id']); ?>
                         <tr>
                           <td><?= htmlspecialchars($br['file_name'] ?? '') ?></td>
-                          <td><?= htmlspecialchars($br['status'] ?? '') ?></td>
+                          <td class="pv-status"><?= htmlspecialchars($br['status'] ?? '') ?></td>
                           <td><?= !empty($br['job_id']) ? (int)$br['job_id'] : '—' ?></td>
-                          <td><?= htmlspecialchars($br['reason'] ?? ($br['verify_url'] ? 'Pending verification' : '')) ?></td>
+                          <td class="pv-note"><?= htmlspecialchars($br['reason'] ?? ($br['verify_url'] ? 'Pending verification' : '')) ?></td>
+                          <td>
+                            <?php if ($isPending): ?>
+                              <button type="button" onclick="insertToLive(<?= (int)$br['job_id'] ?>, this)"
+                                style="background:#FFA500;color:#10222b;border:0;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:bold;cursor:pointer;">
+                                <i class="fa-solid fa-database"></i> Insert Data</button>
+                            <?php else: ?>&mdash;<?php endif; ?>
+                          </td>
                         </tr>
                       <?php endforeach; ?>
                       </tbody>
                     </table>
+                    <?php if ($anyPending > 1): ?>
+                    <button type="button" onclick="insertAllToLive(this)"
+                      style="background:#FFA500;color:#10222b;border:0;border-radius:8px;padding:9px 22px;font-size:13px;font-weight:bold;cursor:pointer;margin-bottom:12px;">
+                      <i class="fa-solid fa-database"></i> Insert ALL to Live Tables</button>
+                    <?php endif; ?>
                     <?php elseif ($results): ?>
                     <p style="font-size: 13px; line-height: 1.8;">
                       <strong>Uploaded by:</strong> <?= htmlspecialchars($_SESSION['audit_username'] ?? 'Admin') ?><br/>
@@ -1064,6 +1147,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
                         <?= htmlspecialchars($results['status']) ?>
                       </span>
                     </p>
+                    <?php if (($results['status'] ?? '') === 'Pending Verification' && !empty($results['job_id'])): ?>
+                    <div id="single-insert-wrap" style="margin:6px 0 14px;">
+                      <button type="button" onclick="insertToLive(<?= (int)$results['job_id'] ?>, this)"
+                        style="background:#FFA500;color:#10222b;border:0;border-radius:8px;padding:9px 22px;font-size:13px;font-weight:bold;cursor:pointer;">
+                        <i class="fa-solid fa-database"></i> Insert Data to Live Table</button>
+                      <div style="font-size:11px;color:#9fd0e6;margin-top:5px;">Data is in staging. Click to insert it into the live table.</div>
+                    </div>
+                    <?php endif; ?>
 
                     <!-- Removed records count card as requested in previous turns -->
 
@@ -1461,107 +1552,243 @@ document.addEventListener('DOMContentLoaded', function() {
     syncPreviewButton();
 });
 
-function renderStandardPreviewTable(data) {
-    var tableEl = document.getElementById("standard-preview-table");
-    var noteEl = document.getElementById("standard-preview-note");
-    if (!tableEl) return;
+function previewEscapeHtml(s) {
+    return String(s).replace(/[&<>"]/g, function(c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+}
 
+function buildPreviewTableHTML(data) {
     var columns = data.columns || [];
     var rows = data.rows || [];
-    var headerHTML = "<thead><tr>";
-    columns.forEach(function(col) {
-        headerHTML += "<th>" + col.replace(/_/g, ' ') + "</th>";
-    });
-    headerHTML += "</tr></thead>";
-
-    var bodyHTML = "<tbody>";
+    var html = '<div class="preview-table-wrapper" style="max-height:300px;border:1px solid rgba(255,255,255,0.15);background:rgba(0,0,0,0.3);">'
+             + '<table class="preview-table"><thead><tr>';
+    columns.forEach(function(col) { html += '<th>' + previewEscapeHtml(String(col).replace(/_/g, ' ')) + '</th>'; });
+    html += '</tr></thead><tbody>';
     if (!rows.length) {
-        bodyHTML += '<tr><td colspan="' + Math.max(columns.length, 1) + '">No parseable CDR rows found.</td></tr>';
+        html += '<tr><td colspan="' + Math.max(columns.length, 1) + '">No parseable CDR rows found.</td></tr>';
     } else {
         rows.forEach(function(row) {
-            bodyHTML += "<tr>";
+            html += '<tr>';
             columns.forEach(function(col) {
                 var val = row[col];
-                bodyHTML += '<td class="preview-readonly">' + (val !== undefined && val !== null ? String(val) : "") + '</td>';
+                html += '<td class="preview-readonly">' + (val !== undefined && val !== null ? previewEscapeHtml(String(val)) : '') + '</td>';
             });
-            bodyHTML += "</tr>";
+            html += '</tr>';
         });
     }
-    bodyHTML += "</tbody>";
-    tableEl.innerHTML = headerHTML + bodyHTML;
-
-    if (noteEl) {
-        var parts = [];
-        if (data.operator) parts.push('Operator: <strong>' + data.operator + '</strong>');
-        if (data.target_phone) parts.push('Target phone: <strong>' + data.target_phone + '</strong>');
-        if (data.total_records != null) parts.push('Records in file: <strong>' + data.total_records + '</strong>');
-        if (data.truncated) {
-            parts.push('Showing first <strong>' + rows.length + '</strong> normalized rows.');
-        }
-        if (data.parse_errors) {
-            parts.push('<span style="color:#ffb3b3;">' + data.parse_errors + ' row(s) could not be parsed.</span>');
-        }
-        if (data.warnings && data.warnings.length) {
-            parts.push('Warnings: ' + data.warnings.slice(0, 3).map(function(w) { return w.replace(/</g, '&lt;'); }).join('; '));
-        }
-        noteEl.innerHTML = parts.join(' &nbsp;|&nbsp; ');
-        noteEl.style.display = parts.length ? "block" : "none";
-    }
-
-    document.getElementById("standard-preview-container").style.display = "block";
-    document.getElementById("standard-preview-container").scrollIntoView({ behavior: 'smooth' });
+    html += '</tbody></table></div>';
+    return html;
 }
+
+function buildPreviewNoteHTML(data) {
+    var rows = data.rows || [];
+    var parts = [];
+    if (data.operator) parts.push('Operator: <strong>' + previewEscapeHtml(data.operator) + '</strong>');
+    if (data.target_phone) parts.push('Target phone: <strong>' + previewEscapeHtml(data.target_phone) + '</strong>');
+    if (data.total_records != null) parts.push('Records: <strong>' + data.total_records + '</strong>');
+    if (data.truncated) parts.push('showing first <strong>' + rows.length + '</strong>');
+    if (data.parse_errors) parts.push('<span style="color:#ffb3b3;">' + data.parse_errors + ' row(s) unparseable</span>');
+    return parts.join(' &nbsp;|&nbsp; ');
+}
+
+function showPreviewNotice(message) {
+    var old = document.getElementById('preview-notice-overlay');
+    if (old) old.remove();
+    var overlay = document.createElement('div');
+    overlay.id = 'preview-notice-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);display:flex;'
+        + 'align-items:center;justify-content:center;z-index:99999;';
+    var card = document.createElement('div');
+    card.style.cssText = 'max-width:460px;width:90%;background:#123c4f;color:#eaf3f8;'
+        + 'border:2px solid #FFA500;border-radius:12px;padding:26px 26px 22px;'
+        + 'box-shadow:0 18px 50px rgba(0,0,0,0.55);font-family:Verdana,Arial,sans-serif;text-align:center;';
+    card.innerHTML =
+        '<div style="font-size:38px;line-height:1;margin-bottom:12px;">⚠️</div>'
+        + '<div style="font-size:16px;font-weight:bold;margin-bottom:10px;color:#FFA500;">Cannot preview this file</div>'
+        + '<div style="font-size:13.5px;line-height:1.6;color:#eaf3f8;margin-bottom:22px;"></div>'
+        + '<button type="button" style="background:#FFA500;color:#10222b;border:0;border-radius:8px;'
+        + 'padding:10px 34px;font-size:14px;font-weight:bold;cursor:pointer;">OK</button>';
+    card.querySelector('div:nth-child(3)').textContent = message;
+    var btn = card.querySelector('button');
+    btn.onclick = function () { overlay.remove(); };
+    overlay.onclick = function (e) { if (e.target === overlay) overlay.remove(); };
+    document.addEventListener('keydown', function esc(ev) {
+        if (ev.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', esc); }
+    });
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+    btn.focus();
+}
+
+var previewState = { files: [], cache: {}, current: 0, network: 'ALL' };
 
 async function generateStandardPreview() {
     var fileInput = document.getElementById("cdr_file");
     var moduleSelect = document.getElementById("module");
     if (!fileInput || fileInput.files.length === 0) {
-        alert("Please select a file first!");
+        showPreviewNotice("Please select at least one file first!");
         return;
     }
     if (moduleSelect && moduleSelect.value !== 'cdr') {
-        alert("Preview is available for CDR uploads only.");
+        showPreviewNotice("Preview is available for CDR uploads only.");
         return;
     }
 
-    var file = fileInput.files[0];
-    var ext = file.name.split('.').pop().toLowerCase();
-    if (ext !== 'csv' && ext !== 'xls' && ext !== 'xlsx') {
-        alert("Unsupported file format! Please select a CSV or Excel file.");
-        return;
+    var files = Array.prototype.slice.call(fileInput.files);
+    for (var i = 0; i < files.length; i++) {
+        var ext = files[i].name.split('.').pop().toLowerCase();
+        if (ext !== 'csv' && ext !== 'xls' && ext !== 'xlsx') {
+            showPreviewNotice('Unsupported file: ' + files[i].name + '. Only CSV, XLS, XLSX are allowed.');
+            return;
+        }
     }
 
-    var btn = document.getElementById('standard-preview-btn');
-    var prevLabel = btn ? btn.innerHTML : '';
-    if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Parsing…';
-    }
-
-    var fd = new FormData();
-    fd.append('ajax_action', 'preview_cdr');
-    fd.append('preview_file', file);
     var networkSelect = document.getElementById('standard-network-select');
-    if (networkSelect) {
-        fd.append('network', networkSelect.value || 'ALL');
+    previewState = { files: files, cache: {}, current: 0, network: networkSelect ? (networkSelect.value || 'ALL') : 'ALL' };
+
+    var container = document.getElementById('standard-preview-container');
+    var summaryEl = document.getElementById('standard-preview-summary');
+    container.style.display = 'block';
+    container.scrollIntoView({ behavior: 'smooth' });
+    if (summaryEl) {
+        summaryEl.style.display = 'block';
+        summaryEl.innerHTML = '<strong>' + files.length + '</strong> file(s) selected'
+            + (files.length > 1 ? ' — use the page buttons below to review each file.' : '.');
     }
+
+    renderPreviewPager();
+    await showPreviewPage(0);
+}
+
+function renderPreviewPager() {
+    var pager = document.getElementById('standard-preview-pager');
+    if (!pager) return;
+    var n = previewState.files.length;
+    if (n <= 1) { pager.style.display = 'none'; pager.innerHTML = ''; return; }
+    pager.style.display = 'flex';
+    var base = 'border:1px solid #FFA500;border-radius:6px;padding:5px 11px;font-size:12px;cursor:pointer;font-family:inherit;';
+    var html = '<button type="button" data-pv="prev" style="' + base + 'background:transparent;color:#FFA500;">&laquo; Prev</button>';
+    for (var i = 0; i < n; i++) {
+        var active = (i === previewState.current);
+        html += '<button type="button" data-pv="' + i + '" style="' + base
+            + (active ? 'background:#FFA500;color:#10222b;font-weight:bold;' : 'background:transparent;color:#eaf3f8;')
+            + '">' + (i + 1) + '</button>';
+    }
+    html += '<button type="button" data-pv="next" style="' + base + 'background:transparent;color:#FFA500;">Next &raquo;</button>';
+    pager.innerHTML = html;
+    pager.querySelectorAll('button').forEach(function(b) {
+        b.onclick = function() {
+            var v = b.getAttribute('data-pv');
+            var target = previewState.current;
+            if (v === 'prev') target = Math.max(0, previewState.current - 1);
+            else if (v === 'next') target = Math.min(n - 1, previewState.current + 1);
+            else target = parseInt(v, 10);
+            showPreviewPage(target);
+        };
+    });
+}
+
+async function showPreviewPage(idx) {
+    var n = previewState.files.length;
+    if (idx < 0 || idx >= n) return;
+    previewState.current = idx;
+    renderPreviewPager();
+
+    var filesArea = document.getElementById('standard-preview-files');
+    var file = previewState.files[idx];
+    var label = 'File ' + (idx + 1) + ' of ' + n + ': ' + previewEscapeHtml(file.name);
+
+    if (previewState.cache[idx]) {
+        renderPreviewBlock(filesArea, label, previewState.cache[idx]);
+        return;
+    }
+
+    filesArea.innerHTML = '<div style="font-weight:bold;color:#FFA500;font-size:13px;text-align:left;">'
+        + '<i class="fa-solid fa-file-csv"></i> ' + label
+        + ' <span style="color:#9fd0e6;font-weight:normal;"><i class="fa-solid fa-spinner fa-spin"></i> loading…</span></div>';
 
     try {
+        var fd = new FormData();
+        fd.append('ajax_action', 'preview_cdr');
+        fd.append('preview_file', file);
+        fd.append('network', previewState.network);
+        var resp = await fetch('admin_upload.php', { method: 'POST', body: fd });
+        var data = await resp.json();
+        previewState.cache[idx] = data;
+        if (previewState.current === idx) renderPreviewBlock(filesArea, label, data);
+    } catch (err) {
+        var errData = { ok: false, error: 'Preview failed: ' + (err.message || err) };
+        previewState.cache[idx] = errData;
+        if (previewState.current === idx) renderPreviewBlock(filesArea, label, errData);
+    }
+}
+
+function renderPreviewBlock(filesArea, label, data) {
+    var html;
+    if (!data || !data.ok) {
+        html = '<div style="font-weight:bold;color:#ffb3b3;font-size:13px;margin-bottom:6px;text-align:left;">'
+             + '<i class="fa-solid fa-triangle-exclamation"></i> ' + label + '</div>'
+             + '<div style="background:rgba(146,18,21,0.30);border:1px solid #FFA500;border-radius:8px;padding:10px 12px;'
+             + 'color:#ffd9a0;font-size:12.5px;text-align:left;">⚠️ ' + previewEscapeHtml((data && data.error) || 'Preview failed.') + '</div>';
+    } else {
+        var note = buildPreviewNoteHTML(data);
+        html = '<div style="font-weight:bold;color:#FFA500;font-size:13px;margin-bottom:6px;text-align:left;">'
+             + '<i class="fa-solid fa-file-csv" style="color:#7CFC00;"></i> ' + label
+             + (note ? ' <span style="color:#9fd0e6;font-weight:normal;font-size:11px;">— ' + note + '</span>' : '') + '</div>'
+             + buildPreviewTableHTML(data);
+    }
+    filesArea.innerHTML = html;
+}
+
+async function _insertStaging(jobId, btn) {
+    var orig = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Inserting…';
+    try {
+        var fd = new FormData();
+        fd.append('ajax_action', 'approve_staging');
+        fd.append('job_id', jobId);
         var resp = await fetch('admin_upload.php', { method: 'POST', body: fd });
         var data = await resp.json();
         if (!data.ok) {
-            alert(data.error || 'Preview failed.');
-            return;
+            showPreviewNotice(data.error || 'Insert failed.');
+            btn.disabled = false; btn.innerHTML = orig;
+            return false;
         }
-        renderStandardPreviewTable(data);
+        var row = btn.closest('tr');
+        if (row) {
+            var st = row.querySelector('.pv-status'); if (st) { st.textContent = 'Inserted'; st.style.color = '#7CFC00'; }
+            var nt = row.querySelector('.pv-note'); if (nt) nt.textContent = (data.inserted != null ? data.inserted + ' row(s) inserted' : 'Inserted to live');
+        } else {
+            var badge = document.getElementById('job-status');
+            if (badge) { badge.textContent = 'Inserted'; badge.style.backgroundColor = '#28a745'; }
+        }
+        btn.outerHTML = '<span style="color:#7CFC00;font-weight:bold;"><i class="fa-solid fa-check"></i> Inserted'
+            + (data.inserted != null ? ' (' + data.inserted + ')' : '') + '</span>';
+        return true;
     } catch (err) {
-        alert('Preview failed: ' + (err.message || err));
-    } finally {
-        if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = prevLabel || '<i class="fa-solid fa-table-list"></i> Preview Data';
-        }
+        showPreviewNotice('Insert failed: ' + (err.message || err));
+        btn.disabled = false; btn.innerHTML = orig;
+        return false;
     }
+}
+
+function insertToLive(jobId, btn) {
+    if (!confirm("Insert this file's staged data into the LIVE table?\nThis cannot be undone.")) return;
+    _insertStaging(jobId, btn);
+}
+
+async function insertAllToLive(btn) {
+    if (!confirm('Insert ALL staged files into the LIVE table?\nThis cannot be undone.')) return;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Inserting all…';
+    var buttons = Array.prototype.slice.call(document.querySelectorAll('button[onclick^="insertToLive("]'));
+    for (var i = 0; i < buttons.length; i++) {
+        var m = /insertToLive\((\d+)/.exec(buttons[i].getAttribute('onclick') || '');
+        if (m) { await _insertStaging(parseInt(m[1], 10), buttons[i]); }
+    }
+    btn.outerHTML = '<span style="color:#7CFC00;font-weight:bold;"><i class="fa-solid fa-check"></i> All inserted to live</span>';
 }
 
 function switchTab(tab) {

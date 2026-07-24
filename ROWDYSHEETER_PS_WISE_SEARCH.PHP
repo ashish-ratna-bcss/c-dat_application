@@ -48,7 +48,7 @@ $results = $db_handle->runQuery($query);
             <li><a href="HOME.html">Home</a>              </li>
             <li><a href="#" class="MenuBarItemSubmenu">Summary</a>
               <ul>
-                <li><a href="SUM_HOME.HTML">Summary Total</a></li>
+                <li><a href="SUM_HOME.html">Summary Total</a></li>
                 <li><a href="SUM_BETWEEN_DATES.html">Summary Between Dates</a></li>
                 <li><a href="SUM_ISD_CNTS.html">Summary of ISD Contacts</a></li>
                 <li><a href="SUM_NEW_NOS.html">Summary of New Contacts</a></li>
@@ -68,15 +68,15 @@ $results = $db_handle->runQuery($query);
             </li>
             <li><a href="#" class="MenuBarItemSubmenu">Cdat</a>
               <ul>
-                <li><a href="CDATCNTS.HTML">Cdat Cnts</a></li>
+                <li><a href="CDATCNTS.html">Cdat Cnts</a></li>
 		<li><a href="BULK_CDAT_CONTACTS.HTML">Bulk Cdat Contacts</a></li>
-		<li><a href="OTHERSCDAT.HTML">Others Cdat</a></li>
+		<li><a href="OTHERSCDAT.html">Others Cdat</a></li>
               </ul>
             </li>
             <li><a href="#" class="MenuBarItemSubmenu">Imei Search</a>
               <ul>
-                <li><a href="IMEISEARCH.HTML">Phones used in Imei</a></li>
-                <li><a href="IMEISINPHONE.HTML">Imeis used in phone</a></li>
+                <li><a href="IMEISEARCH.html">Phones used in Imei</a></li>
+                <li><a href="IMEISINPHONE.html">Imeis used in phone</a></li>
               </ul>
             </li>
             <li><a href="#" class="MenuBarItemSubmenu">Address</a>
@@ -98,7 +98,7 @@ $results = $db_handle->runQuery($query);
                 </li>
             <li><a href="#" class="MenuBarItemSubmenu">Others</a>
               <ul>
-                <li><a href="CELLID_SEARCH.HTML">Cellid Search</a></li>
+                <li><a href="CELLID_SEARCH.html">Cellid Search</a></li>
                 <li><a href="VEHICLE_SEARCH.HTML">Vehicle Search</a></li>
                 <li><a href="COMMON_CNTS.HTML">Common Cnts</a></li>
                 </ul>
@@ -113,7 +113,7 @@ $results = $db_handle->runQuery($query);
           <th height="31" align="center" valign="middle" background="IMAGES/BORDER.jpg" scope="col">ROWDYSHEET SEARCH BY POLICE STATION</th>
         </tr>
         <tr>
-          <th width="782" align="center" valign="middle" background="IMAGES/BORDER.jpg" scope="col"><form id="form1" name="form1" method="post" action="ROWDYSHEETER_PS_WISE_SEARCH_PHP.php">
+          <th width="782" align="center" valign="middle" background="IMAGES/BORDER.jpg" scope="col"><form id="form1" name="form1" method="post" action="ROWDYSHEETER_PS_WISE_SEARCH_PHP.PHP">
                      
              POLICE_STATION: <select name="POLICE_STATION">
 <option value="">Select Police Station</option>

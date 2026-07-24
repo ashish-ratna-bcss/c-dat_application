@@ -321,7 +321,7 @@ function renderApprovalStatus(array $log): array
                 <li><a href="HOME.html">Home</a>              </li>
                 <li><a href="HOME.html" class="MenuBarItemSubmenu">Summary</a>
                   <ul>
-                    <li><a href="SUM_HOME.HTML">Summary Total</a></li>
+                    <li><a href="SUM_HOME.html">Summary Total</a></li>
                     <li><a href="SUM_BETWEEN_DATES.html">Summary Between Dates</a></li>
                     <li><a href="SUM_ISD_CNTS.html">Summary of ISD Contacts</a></li>
                     <li><a href="SUM_NEW_NOS.html">Summary of New Contacts</a></li>
@@ -339,15 +339,15 @@ function renderApprovalStatus(array $log): array
                 </li>
                 <li><a href="HOME.html" class="MenuBarItemSubmenu">Cdat</a>
                   <ul>
-                    <li><a href="CDATCNTS.HTML">Cdat Cnts</a></li>
+                    <li><a href="CDATCNTS.html">Cdat Cnts</a></li>
         		    <li><a href="BULK_CDAT_CONTACTS.HTML">Bulk Cdat Contacts</a></li>
-        		    <li><a href="OTHERSCDAT.HTML">Others Cdat</a></li>
+        		    <li><a href="OTHERSCDAT.html">Others Cdat</a></li>
                   </ul>
                 </li>
                 <li><a href="HOME.html" class="MenuBarItemSubmenu">Imei Search</a>
                   <ul>
-                    <li><a href="IMEISEARCH.HTML">Phones used in Imei</a></li>
-                    <li><a href="IMEISINPHONE.HTML">Imeis used in phone</a></li>
+                    <li><a href="IMEISEARCH.html">Phones used in Imei</a></li>
+                    <li><a href="IMEISINPHONE.html">Imeis used in phone</a></li>
                   </ul>
                 </li>
                 <li><a href="HOME.html" class="MenuBarItemSubmenu">Address</a>
@@ -369,7 +369,7 @@ function renderApprovalStatus(array $log): array
                 </li>
                 <li><a href="#" class="MenuBarItemSubmenu">Others</a>
                   <ul>
-                    <li><a href="CELLID_SEARCH.HTML">Cellid Search</a></li>
+                    <li><a href="CELLID_SEARCH.html">Cellid Search</a></li>
                     <li><a href="VEHICLE_SEARCH.HTML">Vehicle Search</a></li>
                     <li><a href="COMMON_CNTS.HTML">Common Cnts</a></li>
                     <li><a href="ADMIN_ACTIVITY_LOG.PHP">User Activity</a></li>
@@ -484,7 +484,9 @@ function renderApprovalStatus(array $log): array
                       <?php endif; ?>
                       <th>Status</th>
                       <?php if ($type !== 'custom'): ?>
+                      <?php if (false): // Approval column hidden - admin-approval step removed ?>
                       <th>Approval</th>
+                      <?php endif; ?>
                       <th>Action</th>
                       <?php endif; ?>
                     </tr>
@@ -492,7 +494,7 @@ function renderApprovalStatus(array $log): array
                   <tbody>
                     <?php if (empty($logs)): ?>
                       <tr>
-                        <td colspan="<?= $type === 'custom' ? 10 : 11 ?>" style="text-align: center; padding: 20px; color: #ccc;">No upload records matching filters were found.</td>
+                        <td colspan="10" style="text-align: center; padding: 20px; color: #ccc;">No upload records matching filters were found.</td>
                       </tr>
                     <?php else: ?>
                       <?php foreach ($logs as $log): ?>
@@ -536,16 +538,18 @@ function renderApprovalStatus(array $log): array
                             </span>
                           </td>
                           <?php if ($type !== 'custom'): ?>
+                          <?php if (false): // Approval column hidden - admin-approval step removed ?>
                           <?php $approval = renderApprovalStatus($log); ?>
                           <td>
                             <span class="<?= htmlspecialchars($approval['class']) ?>">
                               <?= $approval['text'] ?>
                             </span>
                           </td>
+                          <?php endif; ?>
                           <td>
-                            <?php if (!empty($log['staging_batch_id']) || ($log['upload_status'] === 'Pending Verification' && !empty($log['document_job_id']))): ?>
-                              <a class="history-row-link" href="admin_upload_verify.php?log_id=<?= (int)$log['id'] ?>">
-                                <?= ($log['upload_status'] === 'Pending Verification') ? 'Verify' : 'View' ?>
+                            <?php if (!empty($log['document_job_id'])): ?>
+                              <a class="history-row-link" href="admin_upload.php?view=results&amp;log_id=<?= (int)$log['id'] ?>">
+                                <?= ($log['upload_status'] === 'Pending Verification') ? 'Insert Data' : 'View' ?>
                               </a>
                             <?php else: ?>
                               —

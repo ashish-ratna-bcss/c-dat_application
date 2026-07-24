@@ -3,7 +3,7 @@
 </head>
 <body bgcolor="#0C5D90">
 <li><a href="IR_SEARCH.HTML"><font color=#FDEFEF>Back</a></li>
-<form action ='NAME_SEARCH.php'method='post'>
+<form action ='NAME_SEARCH.PHP'method='post'>
 <b><font size=3 face=verdana color='#F9FBFC'>NAME OF THE OFFENDER : </b>
 <input type='text' name='NAME' value=''>
 <b><font size=3 face=verdana color='#F9FBFC'>CRIME_HEAD : </b>

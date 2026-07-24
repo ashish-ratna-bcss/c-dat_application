@@ -2,7 +2,7 @@
 <head>
 </head>
 <body bgcolor="#0C5D90">
-<li><a href="MOVEMENTS_BETWEEN_TWO_NUMBERS_COMPARISION.HTML">Back</a></li>
+<li><a href="MOVEMENTS_BETWEEN_TWO_NUMBERS_COMPARISION.html">Back</a></li>
 <?php
 require_once __DIR__ . '/cdr_enrichment_sql.php';
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";

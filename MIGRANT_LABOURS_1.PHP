@@ -81,7 +81,7 @@ div {
         </tr>
 </table>
 
-<form action="MIGRANT_LABOURS_2.php" Method="post">
+<form action="MIGRANT_LABOURS_2.PHP" Method="post">
 <div>POLICE_STATION:</div>
 <select name="POLICE_STATION" id="Police_station" class="demoInputbox" onChange="getdiv(this.value);" required>
 <option value="" required>Select PS</option>

@@ -38,7 +38,7 @@ div {
 
 
 <li><a href="NAMESEARCH.HTML">Back</a></li></p>
-<form action ='NAMESEARCH.php'method='post'>
+<form action ='NAMESEARCH.PHP'method='post'>
 <b><font size=4 face=verdana text-align:'center' color='#ffb84d'>ENTER NAME & ADDRESS : </b>
  <div class="form-group">
     <label class="sr-only" for="exampleInputEmail3"></label>

@@ -3,7 +3,7 @@
 </head>
 <body bgcolor="#0C5D90">
 <li><a href="VEHICLE_SEARCH.HTML"><font color=#FDEFEF>Back</a></li></p>
-<form action ='VEHICLE_SEARCH.php'method='post'>
+<form action ='VEHICLE_SEARCH.PHP'method='post'>
 <b><font size=4 face=verdana color='#F9FBFC'>ENTER VEHICLE NO : </b>
 <input type='text' name='VEHICLE_NO' value='' placeholder='Enter Vehicle No' required='required'>
 <input type ='submit' value='Submit'/>

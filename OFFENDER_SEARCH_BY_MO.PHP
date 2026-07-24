@@ -3,7 +3,7 @@
 </head>
 <body bgcolor="#0C5D90">
 <li><a href="OFFENDER_SEARCH_BY_MO.HTML"><font color=#FDEFEF>Back</a></li>
-<form action ='OFFENDER_SEARCH_BY_MO.php' method='post'>
+<form action ='OFFENDER_SEARCH_BY_MO.PHP' method='post'>
 <b><font size=3 face=verdana color='#F9FBFC'>MO SUB CLASSIFICATION: </b>
 <input type='text' name='MO' value=''>
 <input type ='submit' value='Submit'/>
