@@ -383,6 +383,31 @@ $fileSize = 0;
 $results = null;
 $bulkResults = [];
 
+// View a past upload's "2. Results & Log" screen (opened from Upload History -> Action).
+// Rebuilds $results from the audit log so the same insert-to-live UI appears without re-uploading.
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['view'] ?? '') === 'results') {
+    $viewLogId = (int)($_GET['log_id'] ?? 0);
+    if ($viewLogId > 0) {
+        try {
+            $vstmt = audit_db()->prepare('SELECT * FROM upload_activity_logs WHERE id = :id');
+            $vstmt->execute([':id' => $viewLogId]);
+            $vlog = $vstmt->fetch(PDO::FETCH_ASSOC);
+        } catch (Throwable $e) {
+            $vlog = null;
+        }
+        if ($vlog && stripos((string)($vlog['module_name'] ?? ''), 'custom') === false) {
+            $selectedModule = (stripos((string)($vlog['module_name'] ?? ''), 'sdr') !== false) ? 'sdr' : 'cdr';
+            $fileName = (string)($vlog['file_name'] ?? '');
+            $results = [
+                'status'    => (string)($vlog['upload_status'] ?? ''),
+                'job_id'    => (int)($vlog['document_job_id'] ?? 0),
+                'file_name' => $fileName,
+            ];
+            $step = 2;
+        }
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
     $action = $_POST['action'] ?? '';
 

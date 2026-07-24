@@ -484,7 +484,9 @@ function renderApprovalStatus(array $log): array
                       <?php endif; ?>
                       <th>Status</th>
                       <?php if ($type !== 'custom'): ?>
+                      <?php if (false): // Approval column hidden - admin-approval step removed ?>
                       <th>Approval</th>
+                      <?php endif; ?>
                       <th>Action</th>
                       <?php endif; ?>
                     </tr>
@@ -492,7 +494,7 @@ function renderApprovalStatus(array $log): array
                   <tbody>
                     <?php if (empty($logs)): ?>
                       <tr>
-                        <td colspan="<?= $type === 'custom' ? 10 : 11 ?>" style="text-align: center; padding: 20px; color: #ccc;">No upload records matching filters were found.</td>
+                        <td colspan="10" style="text-align: center; padding: 20px; color: #ccc;">No upload records matching filters were found.</td>
                       </tr>
                     <?php else: ?>
                       <?php foreach ($logs as $log): ?>
@@ -536,16 +538,18 @@ function renderApprovalStatus(array $log): array
                             </span>
                           </td>
                           <?php if ($type !== 'custom'): ?>
+                          <?php if (false): // Approval column hidden - admin-approval step removed ?>
                           <?php $approval = renderApprovalStatus($log); ?>
                           <td>
                             <span class="<?= htmlspecialchars($approval['class']) ?>">
                               <?= $approval['text'] ?>
                             </span>
                           </td>
+                          <?php endif; ?>
                           <td>
-                            <?php if (!empty($log['staging_batch_id']) || ($log['upload_status'] === 'Pending Verification' && !empty($log['document_job_id']))): ?>
-                              <a class="history-row-link" href="admin_upload_verify.php?log_id=<?= (int)$log['id'] ?>">
-                                <?= ($log['upload_status'] === 'Pending Verification') ? 'Verify' : 'View' ?>
+                            <?php if (!empty($log['document_job_id'])): ?>
+                              <a class="history-row-link" href="admin_upload.php?view=results&amp;log_id=<?= (int)$log['id'] ?>">
+                                <?= ($log['upload_status'] === 'Pending Verification') ? 'Insert Data' : 'View' ?>
                               </a>
                             <?php else: ?>
                               —
