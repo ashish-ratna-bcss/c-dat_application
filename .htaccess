@@ -1,0 +1,8 @@
+# Case-insensitive PHP routing for Apache (if used).
+# Prefer lowercase .php URLs; map .PHP to .php when available.
+RewriteEngine On
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_URI} ^(.*)\.PHP$ [NC]
+RewriteCond %{DOCUMENT_ROOT}%1.php -f
+RewriteRule ^(.*)\.PHP$ $1.php [L]

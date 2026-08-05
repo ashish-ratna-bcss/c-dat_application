@@ -1,0 +1,1 @@
+control-record.svg

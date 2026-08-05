@@ -1,0 +1,1 @@
+layout-media-center.svg

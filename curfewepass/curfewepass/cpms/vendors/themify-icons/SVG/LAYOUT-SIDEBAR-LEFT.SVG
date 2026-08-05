@@ -1,0 +1,1 @@
+layout-sidebar-left.svg

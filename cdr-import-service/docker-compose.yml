@@ -1,0 +1,22 @@
+services:
+  cdr-import-api:
+    build:
+      context: ..
+      dockerfile: cdr-import-service/Dockerfile
+    ports:
+      - "8088:8088"
+    environment:
+      CDR_DB_HOST: host.docker.internal
+      CDR_DB_PORT: "5432"
+      CDR_DB_NAME: postgres
+      CDR_DB_USER: postgres
+      CDR_DB_PASSWORD: ${CDR_DB_PASSWORD}
+      CDR_API_KEY: ${CDR_API_KEY:-}
+      CDR_CORS_ORIGINS: "*"
+      CDR_API_UPLOAD_DIR: /data/inbox
+    volumes:
+      - cdr_uploads:/data/inbox
+    restart: unless-stopped
+
+volumes:
+  cdr_uploads:

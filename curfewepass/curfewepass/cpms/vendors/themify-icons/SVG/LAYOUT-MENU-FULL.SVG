@@ -1,0 +1,1 @@
+layout-menu-full.svg

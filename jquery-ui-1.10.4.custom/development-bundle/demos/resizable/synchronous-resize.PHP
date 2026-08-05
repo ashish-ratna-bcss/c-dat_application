@@ -1,0 +1,1 @@
+synchronous-resize.html

@@ -1,0 +1,90 @@
+<html>
+<head>
+<title> IMAGE FORM </title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="jquery-ui-1.10.4.custom/css/dark-hive/jquery-ui-1.10.4.custom.min.css">
+<script type="text/javascript" src="jquery-ui-1.10.4.custom/js/jquery-1.10.2.js"></script>
+<script type="text/javascript" src="jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.js"></script>
+<script type="text/javascript" src="jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.min.js"></script>
+<script type="text/javascript">
+$("document").ready(function() {
+	$("#datepickerID").datepicker({dateFormat: "yy-mm-dd",
+		changeYear: true,
+		changeMonth: true,
+	}) 
+	$("#datepickerID1").datepicker({dateFormat: "yy-mm-dd",
+		changeYear: true,
+		changeMonth: true,
+	})    
+	
+});
+</script>
+<script src="SpryAssets/SpryMenuBar.js" type="text/javascript"></script>
+<link href="SpryAssets/SpryMenuBarHorizontal.css" rel="stylesheet" type="text/css" />
+<link rel="stylesheet" href="style.css" >
+<style>
+input[type=text], select {
+    width: 25%;
+    padding: 3px 10px;
+    margin: 4px 0;
+    display: inline-block;
+    border: 1px solid #ccc;
+    border-radius: 2px;
+    box-sizing: border-box;
+}
+
+input[type=submit] {
+    width: 15%;
+    background-color: ORANGE;
+    color: white;
+    padding: 4px 15px;
+    margin: 4px 0;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 25px;
+}
+
+div {
+    border-radius: 5px;
+    background-color: #f2f2f2;
+    padding: 5px;
+    width: 40%;
+    border-radius: 4px;
+    float:left;
+    width:200px;
+    text-align: left;
+        }
+       textarea{
+       width: 25%;
+       height: 25px;
+       }
+</style>
+<style type="test/css">
+div{
+float:left;
+width:200px;
+text-align=left;
+}
+</style>
+</head>
+<body bgcolor="#80800">
+<table>
+    <tr>
+    <th width="1126" align="center" scope="col">IMAGE LIST</th>
+    </tr>
+</table>
+<form action="IMAGE_LIST.PHP" Method="post" enctype="multipart/form-data">
+<div>IRKEY:</div><textarea type="text"  name="IRKEY"></textarea>
+    <br/><br/>
+<div>CATEGORY:</div><textarea type="text"  name="CATEGORY"></textarea>
+    <br/><br/>
+<div>CCNO:</div><textarea type="text"  name="CCNO"></textarea>
+    <br/><br/>
+<input type="file" name="image"/>
+	<br/><br/>
+<input type="submit" value="insert">
+    <br/><br/>
+     </form>
+</body>
+</html>

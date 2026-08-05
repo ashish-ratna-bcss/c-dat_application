@@ -1,0 +1,24 @@
+[Unit]
+Description=CDAT cdatpcsuspect IMEINUMBER index build (CONCURRENTLY)
+After=postgresql.service
+
+[Service]
+Type=simple
+User=hyd-cat
+WorkingDirectory=/mnt/storage1/cdat-web
+Environment=PYTHONUNBUFFERED=1
+# Credentials (DIST_PG_PASSWORD) are provided via an untracked env file.
+# See scripts/systemd/cdat-migration.env.example.
+EnvironmentFile=-/etc/cdat/cdat-migration.env
+Environment=CDAT_PG_DATABASE=postgres
+ExecStart=/mnt/storage1/cdat-web/scripts/run_distributed_migrate.sh imei-index
+Restart=on-failure
+RestartSec=120
+Nice=15
+CPUQuota=30%
+MemoryMax=1G
+StandardOutput=append:/mnt/storage1/ITCell_DL_RTA_Data/distributed_migrate_logs/imei_index_service.log
+StandardError=append:/mnt/storage1/ITCell_DL_RTA_Data/distributed_migrate_logs/imei_index_service.log
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,1 @@
+high_tatras4_min.jpg

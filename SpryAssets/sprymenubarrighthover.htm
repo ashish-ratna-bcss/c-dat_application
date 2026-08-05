@@ -1,0 +1,1 @@
+SpryMenuBarRightHover.gif

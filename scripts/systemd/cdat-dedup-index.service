@@ -1,0 +1,19 @@
+[Unit]
+Description=CDAT one-time build of cdatpcsuspect dedup composite index (phone, other, starttime)
+After=network.target postgresql.service
+Wants=postgresql.service
+OnSuccess=cdat-report-indexes.service
+
+[Service]
+Type=oneshot
+User=hyd-cat
+WorkingDirectory=/mnt/storage1/cdat-web
+# CONCURRENTLY build on a 200GB+ table can run for hours; no timeout.
+TimeoutStartSec=0
+ExecStart=/mnt/storage1/cdat-web/scripts/build_dedup_index.sh
+RemainAfterExit=yes
+StandardOutput=append:/tmp/cdatpcsuspect_index.log
+StandardError=append:/tmp/cdatpcsuspect_index.log
+
+[Install]
+WantedBy=multi-user.target

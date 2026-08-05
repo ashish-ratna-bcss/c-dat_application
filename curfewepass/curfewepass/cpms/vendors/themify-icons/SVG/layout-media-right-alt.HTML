@@ -1,0 +1,1 @@
+layout-media-right-alt.svg
