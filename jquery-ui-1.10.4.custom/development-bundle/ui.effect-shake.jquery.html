@@ -1,0 +1,1 @@
+ui.effect-shake.jquery.json

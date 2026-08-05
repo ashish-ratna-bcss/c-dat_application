@@ -1,0 +1,197 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>ABSTRACT OF CDR ANALYSIS WING</title>
+<link rel="stylesheet" type="text/css" href="jquery-ui-1.10.4.custom/css/dark-hive/jquery-ui-1.10.4.custom.min.css">
+<script type="text/javascript" src="jquery-ui-1.10.4.custom/js/jquery-1.10.2.js"></script>
+<script type="text/javascript" src="jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.js"></script>
+<script type="text/javascript" src="jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.min.js"></script>
+<script type="text/javascript">
+$("document").ready(function() {
+	$("#datepickerID").datepicker({dateFormat: "yy-mm-dd",
+		changeYear: true,
+		changeMonth: true,
+	}) 
+	$("#datepickerID1").datepicker({dateFormat: "yy-mm-dd",
+		changeYear: true,
+		changeMonth: true,
+	})    
+	
+});
+</script>
+<script src="SpryAssets/SpryMenuBar.js" type="text/javascript"></script>
+<link href="SpryAssets/SpryMenuBarHorizontal.css" rel="stylesheet" type="text/css" />
+<style>
+input[type=text], select {
+    width: 25%;
+    padding: 3px 10px;
+    margin: 4px 0;
+    display: inline-block;
+    border: 1px solid #ccc;
+    border-radius: 2px;
+    box-sizing: border-box;
+}
+
+input[type=submit] {
+    width: 15%;
+    background-color: ORANGE;
+    color: white;
+    padding: 4px 15px;
+    margin: 4px 0;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 25px;
+}
+
+div {
+    border-radius: 5px;
+    background-color: #f2f2f2;
+    padding: 5px;
+    width: 40%;
+    border-radius: 4px;
+    float:left;
+    width:200px;
+    text-align: left;
+        }
+       textarea{
+       width: 25%;
+       height: 25px;
+       }
+</style>
+</head>
+<body bgcolor="#461045">
+<table>
+        <tr>
+          <th width="1126" align="center" scope="col"><font size='5' color='#AED1F1'>ABSTRACT</font></th>
+        </tr>
+</table>
+<form action="ANALYSIS_ABSTRACT.PHP" Method="post" valign='center'>
+<div>TYPE_OF_DATA:</div><select name="TYPE_OF_DATA" style="float:center;">
+<option value=""></option>
+<option value="CDRS">CDRS</option>
+<option value="TOWER_DUMP">TOWER_DUMP</option>
+<option value="PASSPORT">PASSPORT</option>
+<option value="RTA">RTA</option>
+<option value="CELLID EXTRACTOR">CELLID EXTRACTOR</option>
+<option value="OTHER">OTHER</option>
+</select>
+     <br/>
+     <br/>
+<div>SOURCE:</div><select name="SOURCE">
+<option value=""></option>
+<option value="GMAIL">GMAIL</option>
+<option value="INDIVIDUAL">INDIVIDUAL</option>
+</select>
+     <br/>
+     <br/>
+<div>NO_OF_CDRS_OR_PLACES:</div><textarea type="TEXT" name="NO_OF_CDRS_OR_PLACES"></textarea>
+     <br/>
+     <br/>
+<div>NUMBERS:</div><textarea type="text" name="NUMBERS"></textarea>
+     <br/>
+     <br/>
+<div>CRIME_NO:</div><textarea type="TEXT" name="CRIME_NO"></textarea>
+     <br/>
+     <br/>
+<div>YEAR:</div><textarea type="text" name="YEAR"></textarea>
+     <br/>
+     <br/>
+<div>CRIME_HEAD:</div><textarea type="text" name="CRIME_HEAD"></textarea>
+     <br/>
+     <br/>
+<div>SEC_OF_LAW:</div><textarea type="text" name="SEC_OF_LAW"></textarea>
+     <br/>
+     <br/>
+<div>POLICE_STATION:</div><input type="text" list="POLICE_STATION" NAME="POLICE_STATION"/>
+<DATALIST ID="POLICE_STATION">
+<option value=""></option>
+<option value="Abids">Abids</option>
+<option value="Begum Bazar">Begum Bazar</option>
+<option value="Narayanaguda">Narayanaguda</option>
+<option value="Chikkadpally">Chikkadpally</option>
+<option value="Gandhi Nagar">Gandhi Nagar</option>
+<option value="Musheerabad">Musheerabad</option>
+<option value="Nampally">Nampally</option>
+<option value="Ramgopalpet">Ramgopalpet</option>
+<option value="Saifabad">Saifabad</option>
+<option value="Kachiguda">Kachiguda</option>
+<option value="Nallakunta">Nallakunta</option>
+<option value="O.U.Sity">O.U.Sity</option>
+<option value="Amberpet">Amberpet</option>
+<option value="Malakpet">Malakpet</option>
+<option value="Saidabad">Saidabad</option>
+<option value="Afzalgunj">Afzalgunj</option>
+<option value="Chaderghat">Chaderghat</option>
+<option value="Sultanbazar">Sultanbazar</option>
+<option value="Begumpet">Begumpet</option>
+<option value="Bollaram">Bollaram</option>
+<option value="Bowenpally">Bowenpally</option>
+<option value="Tirumalgherry">Tirumalgherry</option>
+<option value="WPS Begumpet">WPS Begumpet</option>
+<option value="Chilkalguda">Chilkalguda</option>
+<option value="Gopalpuram">Gopalpuram</option>
+<option value="Lalaguda">Lalaguda</option>
+<option value="Tukkaramgate">Tukkaramgate</option>
+<option value="Karkhana">Karkhana</option>
+<option value="Mahankali">Mahankali</option>
+<option value="Market">Market</option>
+<option value="Marredpally">Marredpally</option>
+<option value="Bahadurpura">Bahadurpura</option>
+<option value="Charminar">Charminar</option>
+<option value="Hussainialam">Hussainialam</option>
+<option value="Kalapattar">Kalapattar</option>
+<option value="Kamatipura">Kamatipura</option>
+<option value="WPS South Zone">WPS South Zone</option>
+<option value="Chandrayangutta">Chandrayangutta</option>
+<option value="Chatrinaka">Chatrinaka</option>
+<option value="Falaknuma">Falaknuma</option>
+<option value="Shalialibanda">Shalialibanda</option>
+<option value="Dabeerpura">Dabeerpura</option>
+<option value="Mirchowk">Mirchowk</option>
+<option value="Moghalpura">Moghalpura</option>
+<option value="Reinbazar">Reinbazar</option>
+<option value="BhavaniNagar">BhavaniNagar</option>
+<option value="Kanchanbagh">Kanchanbagh</option>
+<option value="Madannapet">Madannapet</option>
+<option value="SantoshNagar">SantoshNagar</option>
+<option value="Asif Nagar">Asif Nagar</option>
+<option value="Golconda">Golconda</option>
+<option value="Humayunnagar">Humayunnagar</option>
+<option value="Langerhouz">Langerhouz</option>
+<option value="Tappachabutra">Tappachabutra</option>
+<option value="BanjaraHills">BanjaraHills</option>
+<option value="Jubille Hills">Jubille Hills</option>
+<option value="Habeebnagar">Habeebnagar</option>
+<option value="Kulsumpura">Kulsumpura</option>
+<option value="Mangalhat">Mangalhat</option>
+<option value="Shahinayathgunj">Shahinayathgunj</option>
+<option value="Panjagutta">Panjagutta</option>
+<option value="S.R.Nagar">S.R.Nagar</option>
+<option value="CCS">CCS</option>
+<option value="CYBER CRIME PS">CYBER CRIMES</option>
+<option value="TASK FORCE EAST ZONE">TASK FORCE EAST ZONE</option>
+<option value="TASK FORCE WEST ZONE">TASK FORCE WEST ZONE</option>
+<option value="TASK FORCE NORTH ZONE">TASK FORCE NORHT ZONE</option>
+<option value="TASK FORCE SOUTH ZONE">TASK FORCE SOUTH ZONE</option>
+</DATALIST>
+     <br/>
+     <br/>
+<div>IO:</div><textarea type="text" name="IO"></textarea>
+     <br/>
+     <br/>
+<div>PHONE NO OF IO:</div><textarea type="text" name="PHONE_IO"></textarea>
+     <br/>
+     <br/>
+<div>BRIEF_FACTS:</div><textarea type="text" name="BRIEF_FACTS"></textarea>
+     <br/>
+     <br/>
+<div>DATE:</div><input type="TEXT" name="DATE" id="datepickerID" size="10" placeholder="yyyy-mm-dd" required="required"/>
+     <br/>
+     <br/>
+<input type="submit" value="Insert">
+     <br/>
+ </form>
+ </body>
+</html>

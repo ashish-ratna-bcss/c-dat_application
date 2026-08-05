@@ -1,0 +1,102 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Untitled Document</title>
+<link rel="stylesheet" type="text/css" href="jquery-ui-1.10.4.custom/css/dark-hive/jquery-ui-1.10.4.custom.min.css">
+<script type="text/javascript" src="jquery-ui-1.10.4.custom/js/jquery-1.10.2.js"></script>
+<script type="text/javascript" src="jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.js"></script>
+<script type="text/javascript" src="jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.min.js"></script>
+<script type="text/javascript">
+$("document").ready(function() {
+	$("#datepickerID").datepicker({dateFormat: "hh:mm:ss",
+		changehours: true,
+		changeminutes: true,
+	}) 
+	$("#datepickerID1").datepicker({dateFormat: "hh:mm:ss",
+		changehours: true,
+		changeminutes: true,
+	})    
+	
+});
+</script>
+<script src="SpryAssets/SpryMenuBar.js" type="text/javascript"></script>
+<link href="SpryAssets/SpryMenuBarHorizontal.css" rel="stylesheet" type="text/css" />
+<style type="text/css">
+
+body,td,th {
+	font-family: Arial, Helvetica, sans-serif;
+}
+</style>
+
+</head>
+
+<body bgcolor="#5195BA">
+<div align="center">
+  <table width="1323" height="603" border="2">
+    <tr>
+      <td width="1349" height="595" align="left" valign="top"><table width="1313" height="148">
+        <tr>
+          <td width="1265" height="134" align="center" valign="bottom" background="IMAGES/TOPBORDER.jpg"><ul id="MenuBar1" class="MenuBarHorizontal">
+            </td>
+        </tr>
+      </table>
+      <p>&nbsp;</p>
+      <table width="862" height="158" align="center">
+        <tr>
+          <th height="25" align="center" valign="middle" background="IMAGES/BORDER.jpg" scope="col">SUSPECT NUMBER SEARCH IN TOWER DUMP</th>
+        </tr>
+        <tr>
+          <th width="782" align="center" valign="middle" background="IMAGES/BORDER.jpg" scope="col"><form id="form1" name="form1" method="post" action="SUSPECT_SEARCH_TWR.PHP">
+            <p>
+              <label for="SUM" font face="verdana"> Police Station:</label>
+              <input type="text" name="PS" id="PS" placeholder="Select the PS" required="required"/>
+              <label for="SUM" font face="verdana"> Crime No:</label>
+              <select>  
+             <option value=""></option>
+<option><?php
+$serverName = "CPHYDERABAD1\DAU_HYD_2023";
+$connectionInfo = array( "Database"=>"TWRMDB");
+$conn = sqlsrv_connect( $serverName, $connectionInfo );
+if( $conn === false ) {
+    die( print_r( sqlsrv_errors(), true));
+}
+ $sql="select distinct crime_no from offence_details";
+ $st1 = sqlsrv_query( $conn, $sql);
+?>
+<select>
+<?php while( $row = sqlsrv_fetch_array( $st1, SQLSRV_FETCH_ASSOC) ) {
+?>
+<option><?php echo $row["crime_no"] ; ?></option>
+<?php
+}
+?>
+</select></option>
+
+              <label for="SUM" font face="verdana"> YEAR:</label>
+              <input type="text" name="Y" id="SUM" placeholder="Enter Mobile No" required="required"/>
+             
+              </p>
+          </form>
+            <div align="justify">
+              <table width="734" height="25">
+                <tr>
+                  <th width="40" scope="col">&nbsp;</th>
+                  <th width="8" scope="col">&nbsp;</th>
+                  <th width="79" scope="col">&nbsp;</th>
+                  <th width="368" scope="col">&nbsp;</th>
+                  </tr>
+              </table>
+            </div></th>
+        </tr>
+      </table>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p></td>
+    </tr>
+  </table>
+</div>
+<script type="text/javascript">
+var MenuBar1 = new Spry.Widget.MenuBar("MenuBar1", {imgDown:"SpryAssets/SpryMenuBarDownHover.gif", imgRight:"SpryAssets/SpryMenuBarRightHover.gif"});
+</script>
+</body>
+</html>

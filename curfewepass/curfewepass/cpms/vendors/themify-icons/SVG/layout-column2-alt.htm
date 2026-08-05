@@ -1,0 +1,1 @@
+layout-column2-alt.svg

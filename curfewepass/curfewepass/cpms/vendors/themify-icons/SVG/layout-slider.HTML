@@ -1,0 +1,1 @@
+layout-slider.svg

@@ -1,0 +1,1 @@
+demo-spindown-open.gif

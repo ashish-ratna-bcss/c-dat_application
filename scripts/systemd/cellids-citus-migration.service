@@ -1,0 +1,27 @@
+[Unit]
+Description=CDAT CELLIDS migration to distributed_db (Citus)
+After=network.target docker.service postgresql.service
+Wants=docker.service
+
+[Service]
+Type=simple
+User=hyd-cat
+WorkingDirectory=/mnt/storage1/cdat-web
+Environment=PYTHONUNBUFFERED=1
+# Credentials (MSSQL_SA_PASSWORD, DIST_PG_PASSWORD) are provided via an untracked
+# env file. See scripts/systemd/cdat-migration.env.example.
+EnvironmentFile=-/etc/cdat/cdat-migration.env
+Environment=DIST_MIGRATE_BATCH_SIZE=50000
+ExecStart=/mnt/storage1/cdat-web/scripts/run_distributed_migrate.sh cellids
+Restart=always
+RestartSec=30
+Nice=10
+CPUQuota=40%
+MemoryMax=3G
+MemoryHigh=2560M
+LimitNOFILE=65536
+StandardOutput=append:/mnt/storage1/ITCell_DL_RTA_Data/distributed_migrate_logs/cellids_service.log
+StandardError=append:/mnt/storage1/ITCell_DL_RTA_Data/distributed_migrate_logs/cellids_service.log
+
+[Install]
+WantedBy=multi-user.target

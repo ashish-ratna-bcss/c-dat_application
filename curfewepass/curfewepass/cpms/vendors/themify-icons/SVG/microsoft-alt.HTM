@@ -1,0 +1,1 @@
+microsoft-alt.svg

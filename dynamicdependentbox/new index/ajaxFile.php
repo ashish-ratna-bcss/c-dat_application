@@ -1,0 +1,25 @@
+<?php
+
+require_once("dbcontroller.php");
+
+
+$db_handle = new DBController();
+if(!empty($_POST["countryId"]))
+{
+    
+$query = "SELECT * FROM states WHERE country_id = '".$_POST["countryId"]."' ORDER BY state_name";
+
+$results = $db_handle->runQuery($query);  
+    
+?>  
+            
+<option value="">Select State</option>
+<?php
+	foreach($results as $state) {
+?>
+	<option value="<?php echo $state["state_id"]; ?>"><?php echo $state["state_name"]; ?></option>
+<?php
+	}
+}
+?>
+

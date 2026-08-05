@@ -1,0 +1,1 @@
+control-pause.svg

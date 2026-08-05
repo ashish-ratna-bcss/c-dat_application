@@ -1,0 +1,1 @@
+jquery.waypoints.min.js

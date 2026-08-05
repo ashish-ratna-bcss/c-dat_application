@@ -1,0 +1,1 @@
+jquery.ui.datepicker-fr-CH.min.js

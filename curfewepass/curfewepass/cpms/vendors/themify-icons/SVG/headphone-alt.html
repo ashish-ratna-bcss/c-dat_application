@@ -1,0 +1,1 @@
+headphone-alt.svg

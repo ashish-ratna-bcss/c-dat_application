@@ -1,0 +1,4 @@
+-- Report-query indexes on cdatpcsuspect (~890M rows).
+-- Built by scripts/build_report_indexes.sh via cdat-report-indexes.service
+-- (runs after cdat-dedup-index.service completes).
+-- Do NOT run manually while another CONCURRENTLY build is active on cdatpcsuspect.

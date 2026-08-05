@@ -1,0 +1,1 @@
+layout-accordion-list.svg

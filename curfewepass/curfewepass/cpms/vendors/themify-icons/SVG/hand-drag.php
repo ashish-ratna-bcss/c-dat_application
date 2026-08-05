@@ -1,0 +1,1 @@
+hand-drag.svg

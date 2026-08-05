@@ -1,0 +1,1 @@
+layout-grid2-thumb.svg
