@@ -82,7 +82,8 @@ class CdrUploadParser
                     $uploadStatus = 'Processing';
                     $errorReason = 'Document job #' . $jobId . ' is processing. Status updates automatically below.';
                     $inserted = $rowsCommitted;
-                    $failed = max(0, $totalRecords - $rowsCommitted);
+                    // Do not treat remaining rows as failed while the job is still running.
+                    $failed = 0;
                     $timedOut = true;
                 }
             } else {
@@ -96,7 +97,7 @@ class CdrUploadParser
                     $uploadStatus = 'Processing';
                     $errorReason = 'Document job #' . $jobId . ' is still running. Refresh upload history later for final status.';
                     $inserted = $rowsCommitted;
-                    $failed = max(0, $totalRecords - $rowsCommitted);
+                    $failed = 0;
                 } elseif ($jobStatus === 'pending_verification') {
                     $uploadStatus = 'Pending Verification';
                     $errorReason = null;

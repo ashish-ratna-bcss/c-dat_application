@@ -8,6 +8,9 @@ class HealthResponse(BaseModel):
     service: str = 'document-processing-service'
     version: str = '0.2.0'
     modules: list[str] = Field(default_factory=lambda: ['cdr', 'sdr'])
+    workers_max: int = 0
+    workers_running: int = 0
+    running_job_ids: list[int] = Field(default_factory=list)
 
 class DocumentPreview(BaseModel):
     module: str

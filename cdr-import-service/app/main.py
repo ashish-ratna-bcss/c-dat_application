@@ -4,7 +4,7 @@ from typing import Literal, Optional
 from fastapi import Body, Depends, FastAPI, File, Form, Header, HTTPException, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from .runner import DEFAULT_BATCH_SIZE, DocumentProcessingError, ensure_runtime_dirs, fetch_jobs, get_job_status, resume_background_job, save_upload, save_upload_stream, submit_background_document, submit_background_import, validate_upload
+from .runner import DEFAULT_BATCH_SIZE, DocumentProcessingError, ensure_runtime_dirs, fetch_jobs, get_job_status, resume_background_job, save_upload, save_upload_stream, submit_background_document, submit_background_import, validate_upload, worker_stats
 from .schemas import DocumentPreview, DocumentSubmitResponse, DocumentValidateResponse, HealthResponse, ImportSubmitResponse, ImportValidateResponse, JobListResponse, JobStatusResponse, ResumableUploadCompleteResponse, ResumableUploadInitRequest, ResumableUploadSessionResponse, StagingActionResponse, StagingRowsResponse, job_to_response
 from document_processing.resumable_upload import ResumableUploadError, append_chunk, cancel_upload, complete_upload, get_upload_status, init_upload
 from document_processing.verification import VerificationError, approve_staging_batch, fetch_staging_rows, reject_staging_batch
@@ -37,7 +37,12 @@ def create_app() -> FastAPI:
     @app.get('/health', response_model=HealthResponse, tags=['system'])
     @app.get(f'{API_PREFIX}/health', response_model=HealthResponse, tags=['system'])
     def health() -> HealthResponse:
-        return HealthResponse()
+        stats = worker_stats()
+        return HealthResponse(
+            workers_max=stats['workers_max'],
+            workers_running=stats['workers_running'],
+            running_job_ids=stats['running_job_ids'],
+        )
 
     @app.post(f'{API_PREFIX}/documents/validate', response_model=DocumentValidateResponse, tags=['documents'], dependencies=[Depends(verify_api_key)])
     async def validate_document(module: ModuleName=Form(..., description='Processing module: cdr or sdr'), file: UploadFile=File(...), operator: Optional[str]=Form(default=None, description='Operator override: airtel, bsnl, vi, jio')) -> DocumentValidateResponse:

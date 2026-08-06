@@ -48,6 +48,16 @@ def run_import(file_path: str | Path, *, dry_run: bool=True, batch_size: int=500
     from .importer import import_file
     return import_file(file_path, dry_run=dry_run, batch_size=batch_size, operator=operator, target_phone=target_phone, resume=resume)
 
+def _job_source_path_exists(job: dict) -> bool:
+    raw = job.get('file_path') or job.get('source_file')
+    if not raw:
+        return False
+    try:
+        return Path(raw).is_file()
+    except OSError:
+        return False
+
+
 def enqueue_import(file_path: str | Path, *, batch_size: int=500, operator: Optional[str]=None, target_phone: Optional[str]=None) -> dict:
     analysis = analyze_file(file_path, operator=operator, target_phone=target_phone)
     path = Path(analysis['file'])
@@ -55,10 +65,10 @@ def enqueue_import(file_path: str | Path, *, batch_size: int=500, operator: Opti
     with db_connection() as conn:
         ensure_schema(conn)
         from document_processing.locks import content_lock
-        from document_processing.db import find_job_by_hash
+        from document_processing.db import find_job_by_hash, update_document_job
         with content_lock(conn, 'cdr', digest):
             existing = find_job_by_hash(conn, module='cdr', file_hash=digest)
-            if existing and existing['status'] in ('pending_verification', 'running', 'queued'):
+            if existing and existing['status'] in ('pending_verification', 'running'):
                 return {
                     'job_id': existing['job_id'],
                     'status': existing['status'],
@@ -70,6 +80,31 @@ def enqueue_import(file_path: str | Path, *, batch_size: int=500, operator: Opti
                     'basename': existing.get('source_basename') or analysis['basename'],
                     'message': 'Reusing existing CDR job for identical file content.',
                 }
+            # Stuck queued jobs with a missing/old path (e.g. local Mac path on server DB)
+            # must be rebound to the new upload file and re-queued.
+            if existing and existing['status'] == 'queued' and _job_source_path_exists(existing):
+                return {
+                    'job_id': existing['job_id'],
+                    'status': existing['status'],
+                    'operator': existing.get('operator') or analysis['operator'],
+                    'target_phone': existing.get('target_phone') or analysis['target_phone'],
+                    'total_records': existing.get('total_rows_estimated') or analysis['total_records'],
+                    'warnings': analysis['warnings'],
+                    'file': existing.get('file_path') or analysis['file'],
+                    'basename': existing.get('source_basename') or analysis['basename'],
+                    'message': 'Reusing existing CDR job for identical file content.',
+                }
+            if existing and existing['status'] == 'queued' and not _job_source_path_exists(existing):
+                update_document_job(
+                    conn,
+                    int(existing['job_id']),
+                    file_path=str(path),
+                    source_file=str(path),
+                    source_basename=path.name,
+                    status='queued',
+                    phase='import',
+                    error_message=None,
+                )
             job_id = create_queued_job(conn, source_file=str(path), file_path=str(path), file_hash=digest, operator=analysis['operator'], target_phone=analysis['target_phone'], batch_size=batch_size, total_rows_estimated=analysis['total_records'], header_line_no=analysis['header_line_no'])
     return {'job_id': job_id, 'status': 'queued', 'operator': analysis['operator'], 'target_phone': analysis['target_phone'], 'total_records': analysis['total_records'], 'warnings': analysis['warnings'], 'file': analysis['file'], 'basename': analysis['basename']}
 
@@ -82,10 +117,14 @@ def execute_queued_job(job_id: int, *, resume: bool=True) -> dict:
         return _job_response(job, message='Job already completed.')
     path = job.get('file_path') or job['source_file']
     try:
+        if not path or not Path(path).is_file():
+            raise CdrImportError(f'File not found: {path}')
         result = run_import(path, dry_run=False, batch_size=job['batch_size'], operator=job['operator'], target_phone=job['target_phone'], resume=resume)
         return result
     except CdrImportError as exc:
         with db_connection() as conn:
+            from document_processing.db import update_document_job
+            update_document_job(conn, job_id, status='failed', error_message=str(exc), phase='import')
             job = fetch_job(conn, job_id)
         if job:
             return _job_response(job, message=str(exc))

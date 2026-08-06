@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import logging
 import os
 import sys
@@ -6,21 +7,46 @@ import threading
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from typing import Optional
+
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
+
 from cdr_import.config import DEFAULT_BATCH_SIZE, UPLOAD_INBOX_DIR
 from document_processing.db import db_connection, ensure_schema, list_document_jobs
-from document_processing.orchestrator import DocumentProcessingError, enqueue_document, execute_document_job, get_document_job_status, validate_document
+from document_processing.orchestrator import (
+    DocumentProcessingError,
+    enqueue_document,
+    execute_document_job,
+    get_document_job_status,
+    validate_document,
+)
+
 logger = logging.getLogger(__name__)
-_executor = ThreadPoolExecutor(max_workers=int(os.environ.get('CDR_IMPORT_WORKERS', '4')))
+
+# Parallel background import workers. Different file hashes run concurrently.
+MAX_WORKERS = max(1, int(os.environ.get('CDR_IMPORT_WORKERS', '8')))
+_executor = ThreadPoolExecutor(max_workers=MAX_WORKERS, thread_name_prefix='cdat-doc')
 _lock = threading.Lock()
 _running: set[int] = set()
 UPLOAD_DIR = Path(os.environ.get('CDR_API_UPLOAD_DIR', str(UPLOAD_INBOX_DIR)))
 
+
+def worker_stats() -> dict:
+    with _lock:
+        running = sorted(_running)
+    return {
+        'workers_max': MAX_WORKERS,
+        'workers_running': len(running),
+        'running_job_ids': running,
+    }
+
+
 def ensure_runtime_dirs() -> None:
     UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
     from document_processing.resumable_upload import ensure_sessions_dir
+
     ensure_sessions_dir()
     # Schema is normally already applied; don't block API startup on lock contention.
     try:
@@ -32,6 +58,10 @@ def ensure_runtime_dirs() -> None:
     except Exception as exc:
         logger.warning('Schema ensure skipped at startup (will retry on first job): %s', exc)
 
+    logger.info('Document import thread pool ready: max_workers=%s', MAX_WORKERS)
+    reclaim_queued_jobs()
+
+
 def save_upload(filename: str, content: bytes, *, module: str) -> Path:
     safe_name = Path(filename).name
     module_dir = UPLOAD_DIR / module
@@ -39,6 +69,7 @@ def save_upload(filename: str, content: bytes, *, module: str) -> Path:
     dest = module_dir / f'{uuid.uuid4().hex}_{safe_name}'
     dest.write_bytes(content)
     return dest
+
 
 async def save_upload_stream(upload, *, module: str, chunk_size: int = 8 * 1024 * 1024) -> Path:
     """Stream a large upload to disk without loading it entirely into memory."""
@@ -54,17 +85,27 @@ async def save_upload_stream(upload, *, module: str, chunk_size: int = 8 * 1024 
             out.write(chunk)
     return dest
 
+
 def _run_job(job_id: int) -> None:
     with _lock:
         if job_id in _running:
+            logger.info('Job %s already running on another worker; skip duplicate submit', job_id)
             return
         _running.add(job_id)
+    logger.info(
+        'Worker start job=%s (running=%s/%s)',
+        job_id,
+        len(_running),
+        MAX_WORKERS,
+    )
     try:
         execute_document_job(job_id, resume=True)
+        logger.info('Worker finished job=%s', job_id)
     except Exception as exc:
         logger.exception('Background document job failed for job %s', job_id)
         try:
             from document_processing.db import db_connection, update_document_job
+
             with db_connection() as conn:
                 update_document_job(conn, job_id, status='failed', error_message=str(exc))
         except Exception:
@@ -73,27 +114,105 @@ def _run_job(job_id: int) -> None:
         with _lock:
             _running.discard(job_id)
 
-def submit_background_document(file_path: Path, *, module: str, batch_size: int, dry_run: bool=False, operator: Optional[str] = None) -> dict:
-    queued = enqueue_document(file_path, module=module, batch_size=batch_size, dry_run=dry_run, operator=operator)
+
+def submit_job(job_id: int) -> bool:
+    """Queue a job onto the parallel worker pool. Returns False if already running."""
+    job_id = int(job_id)
+    with _lock:
+        if job_id in _running:
+            return False
+    _executor.submit(_run_job, job_id)
+    return True
+
+
+def reclaim_queued_jobs(*, limit: int = 50) -> int:
+    """On startup, submit any DB-queued jobs whose source file still exists."""
+    try:
+        with db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT job_id, file_path, source_file
+                    FROM document_jobs
+                    WHERE status = 'queued'
+                    ORDER BY job_id ASC
+                    LIMIT %s
+                    """,
+                    (limit,),
+                )
+                rows = cur.fetchall()
+    except Exception as exc:
+        logger.warning('Could not reclaim queued jobs: %s', exc)
+        return 0
+
+    submitted = 0
+    for job_id, file_path, source_file in rows:
+        path = Path(file_path or source_file or '')
+        if not path.is_file():
+            logger.warning(
+                'Skip reclaim job=%s; source missing: %s',
+                job_id,
+                path,
+            )
+            continue
+        if submit_job(int(job_id)):
+            submitted += 1
+    if submitted:
+        logger.info('Reclaimed %s queued document job(s) onto worker pool', submitted)
+    return submitted
+
+
+def submit_background_document(
+    file_path: Path,
+    *,
+    module: str,
+    batch_size: int,
+    dry_run: bool = False,
+    operator: Optional[str] = None,
+) -> dict:
+    queued = enqueue_document(
+        file_path,
+        module=module,
+        batch_size=batch_size,
+        dry_run=dry_run,
+        operator=operator,
+    )
     job_id = queued.get('job_id')
     if job_id and (not dry_run):
-        _executor.submit(_run_job, int(job_id))
+        submit_job(int(job_id))
+        stats = worker_stats()
+        queued['workers_running'] = stats['workers_running']
+        queued['workers_max'] = stats['workers_max']
+        logger.info(
+            'Queued job=%s module=%s parallel_workers=%s/%s',
+            job_id,
+            module,
+            stats['workers_running'],
+            stats['workers_max'],
+        )
     return queued
 
+
 def resume_background_job(job_id: int) -> dict:
-    _executor.submit(_run_job, job_id)
+    submit_job(job_id)
     return get_document_job_status(job_id)
+
 
 def validate_upload(file_path: Path, module: str, operator: Optional[str] = None) -> dict:
     return validate_document(file_path, module, operator=operator)
 
-def fetch_jobs(*, module: str | None=None, limit: int=50, offset: int=0) -> list[dict]:
+
+def fetch_jobs(*, module: str | None = None, limit: int = 50, offset: int = 0) -> list[dict]:
     with db_connection() as conn:
         return list_document_jobs(conn, module=module, limit=limit, offset=offset)
+
+
 CdrImportError = DocumentProcessingError
+
 
 def submit_background_import(file_path: Path, *, batch_size: int) -> dict:
     return submit_background_document(file_path, module='cdr', batch_size=batch_size)
+
 
 def get_job_status(job_id: int) -> dict:
     return get_document_job_status(job_id)

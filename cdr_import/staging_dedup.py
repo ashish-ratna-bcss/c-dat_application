@@ -31,7 +31,9 @@ def refresh_cdr_staging_duplicates(
 
     with conn.cursor() as cur:
         # Cap dedup so a slow scan cannot wedge the DB / block new uploads for hours.
-        cur.execute("SET LOCAL statement_timeout TO '10min'")
+        # Disable role-level timeout first, then apply an explicit long budget.
+        cur.execute("SET LOCAL statement_timeout TO '0'")
+        cur.execute("SET LOCAL statement_timeout TO '30min'")
         cur.execute("SET LOCAL lock_timeout TO '0'")
         if import_job_id is not None:
             cur.execute(
