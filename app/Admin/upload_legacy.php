@@ -1361,7 +1361,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
 var MenuBar1 = new Spry.Widget.MenuBar("MenuBar1", {imgDown:"SpryAssets/SpryMenuBarDownHover.gif", imgRight:"SpryAssets/SpryMenuBarRightHover.gif"});
 
 var moduleConfig = <?= json_encode($modules, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
-var apiConfig = <?= json_encode($config['api'] ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+<?php
+// SDR resumable upload hits the document API from the browser; only expose the
+// API key on this uploader-gated page (audit_require_uploader above).
+$browserApiConfig = $config['api'] ?? [];
+?>
+var apiConfig = <?= json_encode($browserApiConfig, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
 var activeSdrUploader = null;
 var activeSdrUploadMeta = { uploadId: null, fileKey: null };
 

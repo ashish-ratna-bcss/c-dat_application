@@ -4,8 +4,12 @@
  * Configuration for the Common Data Upload Framework (CDR & SDR modules).
  */
 
+require_once __DIR__ . '/bootstrap/env.php';
+
 return [
     'api' => [
+        // Production: set CDR_API_URL to http://127.0.0.1:8088 (same host as nginx proxy).
+        // Local Mac talking to remote server: set CDR_API_URL in .env.
         'base_url' => getenv('CDR_API_URL') ?: 'http://127.0.0.1:8088',
         'public_base_url' => getenv('CDR_API_PUBLIC_URL') ?: '/document-api',
         'api_key' => getenv('CDR_API_KEY') ?: '',

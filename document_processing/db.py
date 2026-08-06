@@ -36,7 +36,21 @@ def db_connection():
     finally:
         conn.close()
 
-def ensure_schema(conn) -> None:
+def ensure_schema(conn, *, force: bool = False) -> None:
+    """Apply schema SQL. Skip when core tables already exist (avoids DDL lock storms)."""
+    with conn.cursor() as cur:
+        if not force:
+            cur.execute(
+                """
+                SELECT COUNT(*) FROM information_schema.tables
+                WHERE table_schema = 'public'
+                  AND table_name IN ('document_jobs', 'upload_staging_batches')
+                """
+            )
+            if int(cur.fetchone()[0] or 0) >= 2:
+                return
+        cur.execute("SET LOCAL lock_timeout TO '0'")
+        cur.execute("SET LOCAL statement_timeout TO '120s'")
     for schema in SCHEMA_FILES:
         if schema.exists():
             conn.cursor().execute(schema.read_text(encoding='utf-8'))

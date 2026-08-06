@@ -470,6 +470,8 @@ class ViDbEnricher:
                     row = cur.fetchone()
                     if row and row[0]:
                         value = int(row[0])
+                    # Undo SET LOCAL statement_timeout so later import/dedup is not capped at 1.5s.
+                    cur.execute('ROLLBACK TO SAVEPOINT vi_tower_lookup')
                     cur.execute('RELEASE SAVEPOINT vi_tower_lookup')
                 except Exception as inner_exc:
                     cur.execute('ROLLBACK TO SAVEPOINT vi_tower_lookup')
@@ -509,6 +511,8 @@ class ViDbEnricher:
                     row = cur.fetchone()
                     if row and row[0]:
                         value = int(row[0])
+                    # Undo SET LOCAL statement_timeout so later import/dedup is not capped at 1.5s.
+                    cur.execute('ROLLBACK TO SAVEPOINT vi_tower_bts')
                     cur.execute('RELEASE SAVEPOINT vi_tower_bts')
                 except Exception as inner_exc:
                     cur.execute('ROLLBACK TO SAVEPOINT vi_tower_bts')

@@ -5,7 +5,9 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT/cdr-import-service"
 
 export PYTHONPATH="$ROOT:${PYTHONPATH:-}"
-export CDR_API_HOST="${CDR_API_HOST:-0.0.0.0}"
+# Bind localhost by default; nginx proxies /document-api/ → 127.0.0.1:8088.
+# Override with CDR_API_HOST=0.0.0.0 only on trusted private networks.
+export CDR_API_HOST="${CDR_API_HOST:-127.0.0.1}"
 export CDR_API_PORT="${CDR_API_PORT:-8088}"
 export CDR_STAGING_TABLE="${CDR_STAGING_TABLE:-cdatpcsuspect}"
 

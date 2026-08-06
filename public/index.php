@@ -12,7 +12,26 @@ if ($uri === '/' || $uri === '/index.php') {
     $uri = '/HOME.html';
 }
 
-if (str_starts_with($uri, '/old_versionfiles')) {
+$deniedPrefixes = [
+    '/old_versionfiles',
+    '/app/',
+    '/bootstrap/',
+    '/cdr_import/',
+    '/cdr-import-service/',
+    '/document_processing/',
+    '/sql/',
+    '/scripts/',
+    '/var/',
+    '/uploads/',
+];
+foreach ($deniedPrefixes as $prefix) {
+    if ($uri === rtrim($prefix, '/') || str_starts_with($uri, $prefix)) {
+        http_response_code(404);
+        echo 'Not found';
+        exit;
+    }
+}
+if ($uri === '/.env' || str_starts_with($uri, '/.env.')) {
     http_response_code(404);
     echo 'Not found';
     exit;

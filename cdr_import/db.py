@@ -35,6 +35,9 @@ def db_connection(*, fast_staging: bool = False) -> Generator:
     if fast_staging:
         with conn.cursor() as cur:
             cur.execute('SET synchronous_commit TO OFF')
+            # Imports + end-of-job dedup can exceed short role timeouts.
+            cur.execute("SET statement_timeout TO '0'")
+            cur.execute("SET idle_in_transaction_session_timeout TO '0'")
     try:
         yield conn
         conn.commit()

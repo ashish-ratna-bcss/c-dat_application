@@ -22,7 +22,10 @@ try {
 } catch (Throwable $e) {
     // Network/pg_hba issues must not fail liveness of the web process.
     $result['db'] = 'unavailable';
-    $result['db_error'] = $e->getMessage();
+    // Never leak connection/host details on a public health endpoint.
+    if (getenv('CDAT_DEBUG') === '1') {
+        $result['db_error'] = $e->getMessage();
+    }
 }
 
 echo json_encode($result, JSON_UNESCAPED_SLASHES);

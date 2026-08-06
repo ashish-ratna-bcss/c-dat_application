@@ -22,8 +22,15 @@ def ensure_runtime_dirs() -> None:
     UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
     from document_processing.resumable_upload import ensure_sessions_dir
     ensure_sessions_dir()
-    with db_connection() as conn:
-        ensure_schema(conn)
+    # Schema is normally already applied; don't block API startup on lock contention.
+    try:
+        with db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SET LOCAL lock_timeout TO '5s'")
+                cur.execute("SET LOCAL statement_timeout TO '30s'")
+            ensure_schema(conn)
+    except Exception as exc:
+        logger.warning('Schema ensure skipped at startup (will retry on first job): %s', exc)
 
 def save_upload(filename: str, content: bytes, *, module: str) -> Path:
     safe_name = Path(filename).name
