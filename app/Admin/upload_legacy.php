@@ -47,6 +47,26 @@ function normalizeUploadedFiles(array $files): array
     return $normalized;
 }
 
+/**
+ * Ensure project uploads/ exists and is writable. Creates it when missing.
+ *
+ * @return string|false Absolute path on success, false if missing/unwritable.
+ */
+function ensureCdatUploadDir()
+{
+    $uploadDir = dirname(__DIR__, 2) . '/uploads';
+    if (!is_dir($uploadDir)) {
+        // umask can clear bits; mkdir then chmod so www-data can write after create.
+        if (!@mkdir($uploadDir, 0775, true) && !is_dir($uploadDir)) {
+            return false;
+        }
+    }
+    if (!is_writable($uploadDir)) {
+        @chmod($uploadDir, 0775);
+    }
+    return is_dir($uploadDir) && is_writable($uploadDir) ? $uploadDir : false;
+}
+
 
 if (isset($_POST['ajax_action']) && $_POST['ajax_action'] === 'preview_cdr') {
     header('Content-Type: application/json');
@@ -377,6 +397,11 @@ $step = 1;
 $error = '';
 $success = '';
 
+// Auto-create uploads/ on page load so first upload does not fail on a fresh deploy.
+if (ensureCdatUploadDir() === false) {
+    $error = 'Upload directory is missing and could not be created. Contact administrator.';
+}
+
 $selectedModule = '';
 $fileName = '';
 $fileSize = 0;
@@ -432,13 +457,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
             $moduleConfig = $modules[$selectedModule];
             $allowedExt = $moduleConfig['allowed_extensions'];
             $maxSize = (int)$moduleConfig['max_file_size'];
-            $uploadDir = dirname(__DIR__, 2) . '/uploads';
+            $uploadDir = ensureCdatUploadDir();
             $parser = new CdrUploadParser();
             $ipAddress = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
             $files = normalizeUploadedFiles($_FILES['cdr_file']);
             $hadValidFile = false;
 
+            if ($uploadDir === false) {
+                $error = 'Upload directory is missing and could not be created. Contact administrator.';
+            }
+
             foreach ($files as $file) {
+                if ($uploadDir === false) {
+                    break;
+                }
                 if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
                     if (!$hadValidFile && count($files) === 1) {
                         $error = $errMap[$file['error']] ?? 'Please select a valid file to upload.';
@@ -460,14 +492,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
                         : round($maxSize / (1024 * 1024)) . ' MB';
                     $bulkResults[] = ['status' => 'Failed', 'file_name' => $fileName, 'reason' => "File exceeds the {$limitLabel} limit."];
                     continue;
-                }
-                if (!is_dir($uploadDir) && !@mkdir($uploadDir, 0775, true)) {
-                    $error = 'Upload directory is missing and could not be created. Contact administrator.';
-                    break;
-                }
-                if (!is_writable($uploadDir)) {
-                    $error = 'Upload directory is not writable by the web server.';
-                    break;
                 }
 
                 $destFile = $uploadDir . '/' . time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $fileName);
