@@ -19,8 +19,29 @@ PROGRESS_UPDATE_EVERY_BATCHES = int(os.environ.get('CDR_PROGRESS_UPDATE_EVERY', 
 WORKER_POLL_SECONDS = int(os.environ.get('CDR_WORKER_POLL_SECONDS', '10'))
 PROVIDER_KEYS = {'airtel': int(os.environ.get('CDR_PROVIDER_KEY_AIRTEL', '2')), 'bsnl': int(os.environ.get('CDR_PROVIDER_KEY_BSNL', '4')), 'vi': int(os.environ.get('CDR_PROVIDER_KEY_VI', '12')), 'jio': int(os.environ.get('CDR_PROVIDER_KEY_JIO', '15'))}
 
+def _load_dotenv(path: Path) -> None:
+    if not path.is_file():
+        return
+    for line in path.read_text(encoding='utf-8', errors='replace').splitlines():
+        line = line.strip()
+        if not line or line.startswith('#') or '=' not in line:
+            continue
+        key, value = line.split('=', 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
 def load_db_config() -> dict[str, str]:
-    cfg = {'host': os.environ.get('CDR_DB_HOST', '127.0.0.1'), 'port': os.environ.get('CDR_DB_PORT', '5432'), 'database': os.environ.get('CDR_DB_NAME', 'postgres'), 'user': os.environ.get('CDR_DB_USER', 'postgres'), 'password': os.environ.get('CDR_DB_PASSWORD', '')}
+    _load_dotenv(BASE_DIR / '.env')
+    cfg = {
+        'host': os.environ.get('CDR_DB_HOST', '127.0.0.1'),
+        'port': os.environ.get('CDR_DB_PORT', '5432'),
+        'database': os.environ.get('CDR_DB_NAME', 'postgres'),
+        'user': os.environ.get('CDR_DB_USER', 'postgres'),
+        'password': os.environ.get('CDR_DB_PASSWORD', ''),
+    }
     php_cfg = BASE_DIR / 'db_config.php'
     if php_cfg.exists():
         text = php_cfg.read_text(encoding='utf-8', errors='replace')
@@ -35,6 +56,6 @@ def load_db_config() -> dict[str, str]:
                 cfg[key] = text[start:end]
             elif end != -1 and key == 'password' and (not os.environ.get('CDR_DB_PASSWORD')):
                 cfg[key] = text[start:end]
-    if not cfg['password']:
-        raise RuntimeError('Database password not configured (db_config.php or CDR_DB_PASSWORD).')
+    if not cfg['password'] or cfg['password'] in ('your_password_here',):
+        raise RuntimeError('Database password not configured (.env CDR_DB_PASSWORD or db_config.php).')
     return cfg

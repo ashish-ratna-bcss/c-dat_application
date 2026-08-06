@@ -13,6 +13,7 @@ logs/
 cache/
 tmp/
 uploads/
+var/
 
 # OS and editor
 .DS_Store
