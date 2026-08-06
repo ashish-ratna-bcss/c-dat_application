@@ -1,1 +1,0 @@
-_gallery.scss

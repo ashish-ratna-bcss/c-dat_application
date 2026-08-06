@@ -1,1 +1,0 @@
-qrvfr17.dat

@@ -1,1 +1,0 @@
-Flaticon.svg

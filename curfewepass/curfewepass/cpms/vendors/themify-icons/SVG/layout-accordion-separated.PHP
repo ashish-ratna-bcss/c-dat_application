@@ -1,1 +1,0 @@
-layout-accordion-separated.svg

@@ -1,1 +1,0 @@
-SpryMenuBarDown.gif

@@ -1,1 +1,0 @@
-slide-effect.html

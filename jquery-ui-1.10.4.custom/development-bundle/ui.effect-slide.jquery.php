@@ -1,1 +1,0 @@
-ui.effect-slide.jquery.json

@@ -1,1 +1,0 @@
-ui-icons_cd0a0a_256x240.png

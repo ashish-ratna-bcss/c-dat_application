@@ -1,1 +1,0 @@
-brand-logo2.png

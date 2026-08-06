@@ -1,1 +1,0 @@
-ui-icons_ffffff_256x240.png

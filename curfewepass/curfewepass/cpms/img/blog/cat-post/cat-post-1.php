@@ -1,1 +1,0 @@
-cat-post-1.jpg

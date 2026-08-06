@@ -1,1 +1,0 @@
-brush-alt.svg

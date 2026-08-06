@@ -1,1 +1,0 @@
-layout-column4-alt.svg

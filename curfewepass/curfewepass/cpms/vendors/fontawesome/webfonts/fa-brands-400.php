@@ -1,1 +1,0 @@
-fa-brands-400.ttf

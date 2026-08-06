@@ -1,1 +1,0 @@
-high_tatras2.jpg

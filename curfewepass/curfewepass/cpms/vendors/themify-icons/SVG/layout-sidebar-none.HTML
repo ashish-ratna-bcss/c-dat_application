@@ -1,1 +1,0 @@
-layout-sidebar-none.svg

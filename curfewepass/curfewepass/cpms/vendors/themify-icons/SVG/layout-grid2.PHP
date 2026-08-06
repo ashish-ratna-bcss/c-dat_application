@@ -1,1 +1,0 @@
-layout-grid2.svg

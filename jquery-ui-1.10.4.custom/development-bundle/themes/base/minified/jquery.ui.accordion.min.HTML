@@ -1,1 +1,0 @@
-jquery.ui.accordion.min.css

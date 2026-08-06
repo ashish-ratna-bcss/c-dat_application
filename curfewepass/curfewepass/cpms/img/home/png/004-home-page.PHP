@@ -1,1 +1,0 @@
-004-home-page.png

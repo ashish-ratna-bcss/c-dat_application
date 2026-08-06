@@ -1,1 +1,0 @@
-medall.svg

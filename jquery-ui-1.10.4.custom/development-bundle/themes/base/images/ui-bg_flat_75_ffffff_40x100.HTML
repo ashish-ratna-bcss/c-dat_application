@@ -1,1 +1,0 @@
-ui-bg_flat_75_ffffff_40x100.png

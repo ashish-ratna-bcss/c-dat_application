@@ -1,1 +1,0 @@
-ANALYSIS1.jpg

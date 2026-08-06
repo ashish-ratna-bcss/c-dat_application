@@ -1,1 +1,0 @@
-shopping-cart-full.svg

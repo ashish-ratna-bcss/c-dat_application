@@ -1,1 +1,0 @@
-INTERROGATION9.jpeg

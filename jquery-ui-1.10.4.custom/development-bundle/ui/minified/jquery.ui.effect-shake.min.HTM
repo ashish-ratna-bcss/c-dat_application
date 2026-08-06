@@ -1,1 +1,0 @@
-jquery.ui.effect-shake.min.js

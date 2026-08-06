@@ -1,1 +1,0 @@
-pbar-ani.gif

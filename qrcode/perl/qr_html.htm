@@ -1,1 +1,0 @@
-qr_html.pl

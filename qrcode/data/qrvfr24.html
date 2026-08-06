@@ -1,1 +1,0 @@
-qrvfr24.dat

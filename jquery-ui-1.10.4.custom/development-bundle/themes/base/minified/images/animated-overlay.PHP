@@ -1,1 +1,0 @@
-animated-overlay.gif

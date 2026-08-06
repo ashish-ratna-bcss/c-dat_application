@@ -1,1 +1,0 @@
-jqueryui_32x32.png

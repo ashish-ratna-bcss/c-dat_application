@@ -1,1 +1,0 @@
-control-play.svg

@@ -1,1 +1,0 @@
-widget-i4.png

@@ -1,1 +1,0 @@
-layout-cta-left.svg

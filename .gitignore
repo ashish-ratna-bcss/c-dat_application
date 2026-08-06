@@ -4,6 +4,9 @@ db_config.php
 .env.*
 !.env.example
 
+# Archived URL-alias symlinks (generated; not part of live web root)
+old_versionfiles/
+
 # Logs and runtime data
 *.log
 logs/

@@ -1,1 +1,0 @@
-layout-tab-v.svg

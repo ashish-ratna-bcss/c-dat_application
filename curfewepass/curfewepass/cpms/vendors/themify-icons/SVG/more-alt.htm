@@ -1,1 +1,0 @@
-more-alt.svg

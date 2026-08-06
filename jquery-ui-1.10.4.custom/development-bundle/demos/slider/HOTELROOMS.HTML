@@ -1,1 +1,0 @@
-hotelrooms.html

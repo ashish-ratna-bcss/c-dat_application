@@ -1,1 +1,0 @@
-jquery.ui.datepicker-nb.min.js

@@ -1,1 +1,0 @@
-qr_image.pl

@@ -1,1 +1,0 @@
-control-skip-forward.svg

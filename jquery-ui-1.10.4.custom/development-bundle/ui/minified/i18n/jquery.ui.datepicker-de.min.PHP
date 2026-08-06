@@ -1,1 +1,0 @@
-jquery.ui.datepicker-de.min.js

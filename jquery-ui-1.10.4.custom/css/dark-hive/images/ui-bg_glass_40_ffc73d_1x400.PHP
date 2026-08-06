@@ -1,1 +1,0 @@
-ui-bg_glass_40_ffc73d_1x400.png

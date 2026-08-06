@@ -1,1 +1,0 @@
-jquery.ui.datepicker-pt-BR.js

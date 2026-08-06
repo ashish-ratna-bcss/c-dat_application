@@ -1,1 +1,0 @@
-control-backward.svg

@@ -1,1 +1,0 @@
-jquery.ui.effect-bounce.min.js

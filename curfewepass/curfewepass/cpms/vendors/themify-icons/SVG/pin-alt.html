@@ -1,1 +1,0 @@
-pin-alt.svg

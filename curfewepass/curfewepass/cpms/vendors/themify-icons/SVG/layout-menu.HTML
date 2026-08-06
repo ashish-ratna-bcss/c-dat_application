@@ -1,1 +1,0 @@
-layout-menu.svg
