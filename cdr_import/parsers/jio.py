@@ -27,35 +27,61 @@ class JioParser(BaseCdrParser):
 
     def map_row(self, row, header, source_row_number):
         d = self.row_dict(row, header)
-        calling_raw = clean(d.get('Calling Party Telephone Number'))
-        called_raw = clean(d.get('Called Party Telephone Number'))
+        calling_raw = clean(
+            d.get('Calling Party Telephone Number')
+            or d.get('CallingNo')
+            or d.get('Calling No')
+        )
+        called_raw = clean(
+            d.get('Called Party Telephone Number')
+            or d.get('CalledNo')
+            or d.get('Called No')
+        )
         # Keep alphanumeric sender IDs (e.g. A2P SMS senders like JA-JIONEW)
         # when the value is not a phone number.
         calling = to_phone(calling_raw) or (calling_raw or None)
         called = to_phone(called_raw) or (called_raw or None)
-        subscriber = to_phone(self._subscriber) or self.target_phone
-        call_type = clean(d.get('Call Type')).lower()
-        # Direction: handle *_IN/*_OUT and SMSIN/SMSOUT suffixes.
-        if call_type.endswith('out'):
-            incoming = 0
-        elif call_type.endswith('in'):
-            incoming = 1
+        call_type = clean(d.get('Call Type') or d.get('Call_Type') or d.get('CALL_TYPE'))
+        # Direction finalized by Jio normalizer; seed from legacy %out% rule.
+        incoming = 0 if 'out' in call_type.lower() else 1
+        # Legacy proc_rel_jio: OUT → phone=CallingNo, other=CalledNo; else reverse.
+        if incoming == 0:
+            phone, other = calling, called
         else:
-            incoming = 0
-        if subscriber and calling and (calling.endswith(subscriber) or calling == subscriber):
-            phone, other = (calling, called)
-        elif subscriber and called and (called.endswith(subscriber) or called == subscriber):
-            phone, other = (called, calling)
-        elif incoming:
-            # Subscriber received the call/SMS -> they are the called party.
-            phone, other = (subscriber or called), calling
-        else:
-            # Outgoing -> subscriber is the calling party.
-            phone, other = (subscriber or calling), called
-        starttime = parse_datetime(d.get('Call Date', ''), d.get('Call Time', ''))
-        duration = to_int(d.get('Call Duration'))
-        first_cell = clean(d.get('First Cell ID')).strip("'") or None
-        last_cell = clean(d.get('Last Cell ID')).strip("'") or None
-        imei = to_int(d.get('IMEI'))
-        imsi = to_int(d.get('IMSI'), default=0) or None
-        return self.base_record(phone=phone, other=other, starttime=starttime, duration=duration, incoming=incoming, imeinumber=imei, imsinumber=imsi, celltowerid=first_cell, first_cellid=first_cell, last_cellid=last_cell, roaming_nw=clean(d.get('Roaming Circle Name')) or None, call_type=call_type, calling_no=calling, called_no=called, source_row_number=source_row_number, raw=d)
+            phone, other = called, calling
+        starttime = parse_datetime(
+            d.get('Call Date') or d.get('Call_Date') or '',
+            d.get('Call Time') or d.get('Call_Time') or '',
+        )
+        duration = to_int(d.get('Call Duration') or d.get('Call_Dur') or d.get('Call Dur'))
+        first_cell = clean(d.get('First Cell ID') or d.get('FIRST_CELLID') or d.get('First_Cellid'))
+        first_cell = first_cell.strip("'") or None if first_cell else None
+        last_cell = clean(d.get('Last Cell ID') or d.get('LAST_CELLID') or d.get('Last_Cellid'))
+        last_cell = last_cell.strip("'") or None if last_cell else None
+        imei = to_int(d.get('IMEI') or d.get('Imeinumber'))
+        imsi = to_int(d.get('IMSI') or d.get('Imsinumber'), default=0) or None
+        roaming = clean(
+            d.get('Roaming Circle Name')
+            or d.get('roam_nw')
+            or d.get('Roam_NW')
+            or d.get('Roam Nw')
+        ) or None
+        return self.base_record(
+            phone=phone,
+            other=other,
+            starttime=starttime,
+            duration=duration,
+            incoming=incoming,
+            imeinumber=imei,
+            imsinumber=imsi,
+            celltowerid=first_cell,
+            first_cellid=first_cell,
+            last_cellid=last_cell,
+            roaming_nw=roaming,
+            call_type=call_type,
+            calling_no=calling,
+            called_no=called,
+            otherinfo=None,
+            source_row_number=source_row_number,
+            raw=d,
+        )

@@ -1,8 +1,80 @@
 # Case-insensitive PHP routing for Apache (if used).
 # Prefer lowercase .php URLs; map .PHP to .php when available.
+# Landing page for /cdat-web/ is the login form, not HOME.
+# httpd.conf lists "home.php home.html home.htm" in its global DirectoryIndex, which
+# is why visiting the directory served the dashboard without any login at all.
+DirectoryIndex auth.html
+
 RewriteEngine On
+# Without this, an external redirect (R=301) from a per-directory .htaccess builds
+# its Location from the filesystem path, e.g. http://localhost/C:/xampp/htdocs/...
+RewriteBase /cdat-web/
+
+# The login form is auth.html (was LOGIN1.html). Send the old FORM spellings there
+# so existing links keep working -- including LOGIN.HTML, which activity_logger.php
+# and logout.php used to redirect to.
+# Deliberately limited to .html/.htm: LOGIN1.PHP is the POST handler the form
+# submits to, so redirecting the .php spellings would break login outright.
+RewriteRule ^(?i:login1?|login_page)\.(?i:html?)$ auth.html [R=301,L]
 
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_URI} ^(.*)\.PHP$ [NC]
 RewriteCond %{DOCUMENT_ROOT}%1.php -f
 RewriteRule ^(.*)\.PHP$ $1.php [L]
+
+# Extension fallback for de-duplicated pages.
+# Historically each page existed as .php AND .html AND .htm (byte-identical copies
+# left behind when Linux symlinks collapsed on NTFS). The copies are gone, but ~62
+# of them are still linked from code -- HOME.HTML alone has 240 references. Rather
+# than rewrite every href, resolve a missing page to a surviving sibling.
+# Order matters: .php is canonical, so try it first.
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_URI} ^(.*)\.(?:html?)$ [NC]
+RewriteCond %{DOCUMENT_ROOT}%1.php -f
+RewriteRule ^(.*)\.(?:html?)$ $1.php [L,NC]
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_URI} ^(.*)\.(?:html?|php)$ [NC]
+RewriteCond %{DOCUMENT_ROOT}%1.htm -f
+RewriteRule ^(.*)\.(?:html?|php)$ $1.htm [L,NC]
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_URI} ^(.*)\.(?:html?|php)$ [NC]
+RewriteCond %{DOCUMENT_ROOT}%1.html -f
+RewriteRule ^(.*)\.(?:html?|php)$ $1.html [L,NC]
+
+# Execute PHP inside .html/.htm — 218 files in this directory contain <?php.
+# The Linux deploy did this in nginx (scripts/nginx-html-php.conf.snippet);
+# XAMPP's Apache handles only .php by default.
+<FilesMatch "\.(?i:php|html|htm)$">
+    SetHandler application/x-httpd-php
+</FilesMatch>
+
+# Server-side includes, never pages. Nothing references them from the client, and
+# require() is unaffected by these rules. Two reasons to block direct requests:
+#   - db_config holds the live password; if PHP handling ever breaks it would be
+#     served as plain text.
+#   - sqlsrv_compat is already loaded via auto_prepend_file, so requesting it
+#     directly loads it twice and fatals on "Cannot redeclare __sqlsrv_root()".
+<FilesMatch "(?i)^(db_config(\.example)?|sqlsrv_compat|activity_logger|cdr_upload_config|cdr_upload_parser|excel_converter|cdr_enrichment_sql|upload_verification_service|document_processing_client)\.(php|html?|htm)$">
+    Require all denied
+</FilesMatch>
+
+# Preload the sqlsrv_* -> PostgreSQL shim. Legacy pages call sqlsrv_connect()
+# without requiring it; nginx injected this via fastcgi_param PHP_VALUE.
+# Scoped here rather than php.ini so other XAMPP projects are unaffected.
+php_value auto_prepend_file "C:/xampp/htdocs/cdat-web/SQLSRV_COMPAT.php"
+
+# Python 3.14 is installed but not on PATH as `python`, so excel_converter.php
+# and the CDR preview cannot find it. cdr_python_bin() honours CDR_PYTHON.
+SetEnv CDR_PYTHON "C:/Users/sunakshi/AppData/Local/Python/pythoncore-3.14-64/python.exe"
+
+# Keep this project's PHP errors out of the XAMPP-wide log. Without this they land
+# in C:\xampp\php\logs\php_error_log, shared with every other htdocs project.
+# .gitignore already excludes logs/ and *.log.
+php_value error_log "C:/xampp/htdocs/cdat-web/logs/php_error_log"
+
+# Log files must never be served over HTTP -- they contain filesystem paths and SQL.
+<FilesMatch "\.log$">
+    Require all denied
+</FilesMatch>

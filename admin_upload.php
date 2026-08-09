@@ -71,7 +71,10 @@ if (isset($_POST['ajax_action']) && $_POST['ajax_action'] === 'preview_cdr') {
 
         $csvPath = convert_excel_upload_to_csv($workPath, $ext);
         $operator = mapNetworkToOperator($_POST['network'] ?? null);
-        $operatorArg = $operator !== null ? $operator : 'auto';
+        if ($operator === null) {
+            throw new RuntimeException('Please select a Network (Airtel, Jio, Vi, or BSNL) before preview.');
+        }
+        $operatorArg = $operator;
 
         $script = __DIR__ . '/scripts/cdr_preview.py';
         $cmd = sprintf(
@@ -426,6 +429,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
 
         if (!isset($modules[$selectedModule])) {
             $error = 'Please select a valid module (CDR or SDR).';
+        } elseif ($selectedModule === 'cdr' && $operator === null) {
+            $error = 'Please select a Network (Airtel, Jio, Vi, or BSNL) before uploading.';
         } elseif (!isset($_FILES['cdr_file'])) {
             $error = 'Please select a valid file to upload.';
         } else {
@@ -1046,14 +1051,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
 
                     <!-- Network Selection Dropdown (Only shown when CDR is selected) -->
                     <div class="form-group" id="standard-network-group" style="display: none; margin-top: 15px;">
-                      <label for="standard-network-select">Select Network</label>
-                      <select name="network" id="standard-network-select">
-                        <option value="ALL">All Networks</option>
+                      <label for="standard-network-select">Select Network <span style="color:#FFA500;">*</span></label>
+                      <select name="network" id="standard-network-select" required>
+                        <option value="">-- Select Network --</option>
                         <option value="2">Airtel</option>
                         <option value="15">Jio</option>
                         <option value="12">VI</option>
                         <option value="4">BSNL</option>
                       </select>
+                      <div style="font-size:11px;color:#ccc;margin-top:6px;">
+                        Operator is taken from this dropdown only (not from the filename).
+                      </div>
                     </div>
 
                     <div class="form-group">
@@ -1088,9 +1096,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
                   <!-- Standard Sheet Preview & Data Grid Section -->
                   <div id="standard-preview-container" style="display:none; margin-top: 25px;">
                       <div class="wizard-card" style="background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.15);">
-                          <div class="wizard-title" style="color: #FFA500;"><i class="fa-solid fa-eye"></i> 3. Preview Uploaded Sheet Data</div>
+                          <div class="wizard-title" style="color: #FFA500;"><i class="fa-solid fa-eye"></i> 3. Preview Normalized CDR Data</div>
                           <p style="font-size:12px; color:#ccc; margin-bottom:12px; text-align: left;">
-                              Below is a read-only preview of each uploaded file's columns exactly as uploaded &mdash; same columns, same order, with surrounding quotes removed. Your original files are not changed.
+                              Preview after operator parsing and normalization (phone cleanup, direction, cell ID, roaming/state rules).
+                              This is read-only here &mdash; after upload you can edit rows on the staging verification screen.
                           </p>
 
                           <div id="standard-preview-summary" style="font-size:12px;color:#9fd0e6;margin-bottom:12px;text-align:left;display:none;"></div>
@@ -1117,6 +1126,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
                           <td class="pv-note"><?= htmlspecialchars($br['reason'] ?? ($br['verify_url'] ? 'Pending verification' : '')) ?></td>
                           <td>
                             <?php if ($isPending): ?>
+                              <?php if (!empty($br['verify_url'])): ?>
+                              <a href="<?= htmlspecialchars($br['verify_url']) ?>"
+                                style="display:inline-block;background:#1f8a70;color:#fff;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:bold;text-decoration:none;margin-right:6px;">
+                                <i class="fa-solid fa-table-list"></i> Preview &amp; Edit</a>
+                              <?php endif; ?>
                               <button type="button" onclick="insertToLive(<?= (int)$br['job_id'] ?>, this)"
                                 style="background:#FFA500;color:#10222b;border:0;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:bold;cursor:pointer;">
                                 <i class="fa-solid fa-database"></i> Insert Data</button>
@@ -1149,10 +1163,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
                     </p>
                     <?php if (($results['status'] ?? '') === 'Pending Verification' && !empty($results['job_id'])): ?>
                     <div id="single-insert-wrap" style="margin:6px 0 14px;">
+                      <?php if (!empty($results['verify_url'])): ?>
+                      <a href="<?= htmlspecialchars($results['verify_url']) ?>"
+                        style="display:inline-block;background:#1f8a70;color:#fff;border:0;border-radius:8px;padding:9px 22px;font-size:13px;font-weight:bold;text-decoration:none;margin-right:8px;">
+                        <i class="fa-solid fa-table-list"></i> Preview &amp; Edit Staging</a>
+                      <?php endif; ?>
                       <button type="button" onclick="insertToLive(<?= (int)$results['job_id'] ?>, this)"
                         style="background:#FFA500;color:#10222b;border:0;border-radius:8px;padding:9px 22px;font-size:13px;font-weight:bold;cursor:pointer;">
                         <i class="fa-solid fa-database"></i> Insert Data to Live Table</button>
-                      <div style="font-size:11px;color:#9fd0e6;margin-top:5px;">Data is in staging. Click to insert it into the live table.</div>
+                      <div style="font-size:11px;color:#9fd0e6;margin-top:5px;">Normalized data is in staging. Review/edit rows first, then insert into the live table.</div>
                     </div>
                     <?php endif; ?>
 
@@ -1408,6 +1427,17 @@ async function startSdrActivityLog(file) {
 
 async function handleStandardUploadSubmit(event) {
     var moduleVal = document.getElementById('module').value;
+    if (moduleVal === 'cdr') {
+        var networkSelect = document.getElementById('standard-network-select');
+        var networkVal = networkSelect ? (networkSelect.value || '') : '';
+        if (!networkVal || networkVal === 'ALL') {
+            event.preventDefault();
+            alert('Please select a Network (Airtel, Jio, Vi, or BSNL) before uploading.');
+            if (networkSelect) networkSelect.focus();
+            return false;
+        }
+        return true;
+    }
     if (moduleVal !== 'sdr') {
         return true;
     }
@@ -1584,6 +1614,7 @@ function buildPreviewTableHTML(data) {
 function buildPreviewNoteHTML(data) {
     var rows = data.rows || [];
     var parts = [];
+    if (data.normalized) parts.push('<strong>Normalized preview</strong>');
     if (data.operator) parts.push('Operator: <strong>' + previewEscapeHtml(data.operator) + '</strong>');
     if (data.target_phone) parts.push('Target phone: <strong>' + previewEscapeHtml(data.target_phone) + '</strong>');
     if (data.total_records != null) parts.push('Records: <strong>' + data.total_records + '</strong>');
@@ -1635,6 +1666,14 @@ async function generateStandardPreview() {
         return;
     }
 
+    var networkSelect = document.getElementById('standard-network-select');
+    var networkVal = networkSelect ? (networkSelect.value || '') : '';
+    if (!networkVal || networkVal === 'ALL') {
+        showPreviewNotice("Please select a Network (Airtel, Jio, Vi, or BSNL) before preview.");
+        if (networkSelect) networkSelect.focus();
+        return;
+    }
+
     var files = Array.prototype.slice.call(fileInput.files);
     for (var i = 0; i < files.length; i++) {
         var ext = files[i].name.split('.').pop().toLowerCase();
@@ -1644,8 +1683,7 @@ async function generateStandardPreview() {
         }
     }
 
-    var networkSelect = document.getElementById('standard-network-select');
-    previewState = { files: files, cache: {}, current: 0, network: networkSelect ? (networkSelect.value || 'ALL') : 'ALL' };
+    previewState = { files: files, cache: {}, current: 0, network: networkVal };
 
     var container = document.getElementById('standard-preview-container');
     var summaryEl = document.getElementById('standard-preview-summary');

@@ -8,7 +8,6 @@ from .importer import CdrImportError
 from .jobs import create_queued_job, fetch_job
 from .enrichment import normalize_record, resolve_operator
 from .parsers import get_parser
-from .parsers.base import clean
 _OP_LABELS = {'jio': 'Jio', 'airtel': 'Airtel', 'bsnl': 'BSNL', 'vi': 'Vi'}
 
 
@@ -35,7 +34,10 @@ def analyze_file(file_path: str | Path, *, operator: Optional[str]=None, target_
     path = Path(file_path).resolve()
     if not path.is_file():
         raise CdrImportError(f'File not found: {path}')
-    op = resolve_operator(operator, detect_operator(path)) if operator else detect_operator(path)
+    if operator and str(operator).strip().lower() not in ('', 'all', 'auto'):
+        op = resolve_operator(operator)
+    else:
+        op = resolve_operator(None, detect_operator(path))
     phone = target_phone or extract_phone_from_filename(path)
     digest = file_sha256(path)
     parser = get_parser(op, path, phone)
@@ -60,17 +62,34 @@ def enqueue_import(file_path: str | Path, *, batch_size: int=500, operator: Opti
         with content_lock(conn, 'cdr', digest):
             existing = find_job_by_hash(conn, module='cdr', file_hash=digest)
             if existing and existing['status'] in ('pending_verification', 'running', 'queued'):
-                return {
-                    'job_id': existing['job_id'],
-                    'status': existing['status'],
-                    'operator': existing.get('operator') or analysis['operator'],
-                    'target_phone': existing.get('target_phone') or analysis['target_phone'],
-                    'total_records': existing.get('total_rows_estimated') or analysis['total_records'],
-                    'warnings': analysis['warnings'],
-                    'file': existing.get('file_path') or analysis['file'],
-                    'basename': existing.get('source_basename') or analysis['basename'],
-                    'message': 'Reusing existing CDR job for identical file content.',
-                }
+                existing_path = existing.get('file_path') or existing.get('source_file') or ''
+                path_ok = bool(existing_path) and Path(existing_path).is_file()
+                # Do not reuse a queued/running job whose file is missing (e.g. foreign Mac path).
+                if existing['status'] == 'pending_verification' or path_ok:
+                    return {
+                        'job_id': existing['job_id'],
+                        'status': existing['status'],
+                        'operator': existing.get('operator') or analysis['operator'],
+                        'target_phone': existing.get('target_phone') or analysis['target_phone'],
+                        'total_records': existing.get('total_rows_estimated') or analysis['total_records'],
+                        'warnings': analysis['warnings'],
+                        'file': existing.get('file_path') or analysis['file'],
+                        'basename': existing.get('source_basename') or analysis['basename'],
+                        'message': 'Reusing existing CDR job for identical file content.',
+                    }
+                # Fall through: mark dead queued job failed so a new local path can be queued.
+                with conn.cursor() as cur:
+                    cur.execute(
+                        """
+                        UPDATE document_jobs
+                        SET status = 'failed',
+                            error_message = 'Auto-failed: queued job file path missing on this host',
+                            completed_at = NOW(),
+                            updated_at = NOW()
+                        WHERE job_id = %s AND status IN ('queued', 'running')
+                        """,
+                        (existing['job_id'],),
+                    )
             job_id = create_queued_job(conn, source_file=str(path), file_path=str(path), file_hash=digest, operator=analysis['operator'], target_phone=analysis['target_phone'], batch_size=batch_size, total_rows_estimated=analysis['total_records'], header_line_no=analysis['header_line_no'])
     return {'job_id': job_id, 'status': 'queued', 'operator': analysis['operator'], 'target_phone': analysis['target_phone'], 'total_records': analysis['total_records'], 'warnings': analysis['warnings'], 'file': analysis['file'], 'basename': analysis['basename']}
 
@@ -129,11 +148,16 @@ PREVIEW_COLUMNS = [
 
 
 def preview_file(file_path: str | Path, *, operator: Optional[str] = None, target_phone: Optional[str] = None, limit: int = 150) -> dict:
-    """Parse and normalize CDR rows for read-only UI preview (no DB writes)."""
+    """Parse + operator-normalize CDR rows for UI preview (no DB writes)."""
+    from .normalize import apply_operator_normalization
+
     path = Path(file_path).resolve()
     if not path.is_file():
         raise CdrImportError(f'File not found: {path}')
-    op = resolve_operator(operator, detect_operator(path)) if operator else detect_operator(path)
+    if operator and str(operator).strip().lower() not in ('', 'all', 'auto'):
+        op = resolve_operator(operator)
+    else:
+        op = resolve_operator(None, detect_operator(path))
     phone = target_phone or extract_phone_from_filename(path)
     parser = get_parser(op, path, phone)
     try:
@@ -141,26 +165,27 @@ def preview_file(file_path: str | Path, *, operator: Optional[str] = None, targe
     except ValueError as exc:
         raise _friendly_header_error(path, op, exc) from exc
     rows: list[dict] = []
-    columns: list[str] = ['row']
     parse_errors = 0
+    dropped = 0
     for record, row_warnings, _hdr in parser.iter_records():
         warnings.extend(row_warnings)
+        if record is None:
+            parse_errors += 1
+            continue
         try:
-            # Raw preview: show the original file's columns in their original
-            # order, with surrounding single/double quotes stripped. record.raw
-            # is the row keyed by original (cleaned) column name, in header order.
-            raw = record.raw or {}
-            if len(columns) == 1:
-                columns = ['row'] + [str(k) for k in raw.keys()]
-            row = {'row': record.source_row_number}
-            for key, value in raw.items():
-                row[str(key)] = clean(value)
-            rows.append(row)
+            normalize_record(record)
+            normalized = apply_operator_normalization(record, op, conn=None)
+            if normalized is None:
+                dropped += 1
+                continue
+            rows.append(_record_to_preview_dict(normalized))
         except Exception as exc:
             parse_errors += 1
             warnings.append(f'Row {record.source_row_number}: {exc}')
         if len(rows) >= limit:
             break
+    if dropped:
+        warnings.append(f'{dropped} row(s) dropped by operator normalization rules.')
     return {
         'operator': op,
         'target_phone': parser.target_phone or phone,
@@ -168,8 +193,9 @@ def preview_file(file_path: str | Path, *, operator: Optional[str] = None, targe
         'total_records': total,
         'preview_count': len(rows),
         'parse_errors': parse_errors,
-        'truncated': total > len(rows),
+        'truncated': total > len(rows) + dropped,
         'warnings': warnings[:25],
-        'columns': columns,
+        'normalized': True,
+        'columns': list(PREVIEW_COLUMNS),
         'rows': rows,
     }

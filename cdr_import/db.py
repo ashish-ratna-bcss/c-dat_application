@@ -7,7 +7,7 @@ from typing import Generator, Iterable, Optional
 import psycopg2
 import psycopg2.extras
 from .config import JOBS_TABLE, PRODUCTION_INSERT_COLUMNS, load_db_config
-from document_processing.staging import create_cdr_staging_table
+from document_processing.staging import create_cdr_staging_table, original_cdr_basename
 
 def file_sha256(path: Path) -> str:
     h = hashlib.sha256()
@@ -51,7 +51,7 @@ def get_or_create_job(conn, *, source_file: str, file_path: str, file_hash: str,
                 (file_path, existing[0]),
             )
             return (int(existing[0]), int(existing[1]), existing[2])
-        cur.execute(f"\n            INSERT INTO {JOBS_TABLE} (\n                module, source_file, source_basename, file_path, file_sha256,\n                operator, target_phone, status, phase, dry_run, batch_size\n            ) VALUES ('cdr', %s, %s, %s, %s, %s, %s, 'pending', 'import', %s, %s)\n            ON CONFLICT (module, source_file, file_sha256) DO UPDATE\n            SET updated_at = NOW(),\n                file_path = EXCLUDED.file_path\n            RETURNING job_id, rows_committed, status\n            ", (source_file, Path(source_file).name, file_path, file_hash, operator, target_phone, dry_run, batch_size))
+        cur.execute(f"\n            INSERT INTO {JOBS_TABLE} (\n                module, source_file, source_basename, file_path, file_sha256,\n                operator, target_phone, status, phase, dry_run, batch_size\n            ) VALUES ('cdr', %s, %s, %s, %s, %s, %s, 'pending', 'import', %s, %s)\n            ON CONFLICT (module, source_file, file_sha256) DO UPDATE\n            SET updated_at = NOW(),\n                file_path = EXCLUDED.file_path\n            RETURNING job_id, rows_committed, status\n            ", (source_file, original_cdr_basename(source_file), file_path, file_hash, operator, target_phone, dry_run, batch_size))
         job_id, rows_committed, status = cur.fetchone()
         return (int(job_id), int(rows_committed), status)
 
@@ -67,28 +67,75 @@ def next_ucids(conn, count: int) -> list[int]:
 _job_staging_tables: dict[int, str] = {}
 
 
-def ensure_job_staging_table(conn, job_id: int) -> str:
-    if job_id not in _job_staging_tables:
-        _job_staging_tables[job_id] = create_cdr_staging_table(conn, job_id)
-    return _job_staging_tables[job_id]
+def ensure_job_staging_table(conn, job_id: int, filename: str | None = None) -> str:
+    """Return filename-keyed shared CDR staging table (create if needed)."""
+    if job_id in _job_staging_tables and filename is None:
+        return _job_staging_tables[job_id]
+    if not filename:
+        # Fallback: look up basename from the job row.
+        with conn.cursor() as cur:
+            cur.execute(
+                f"SELECT COALESCE(source_basename, source_file) FROM {JOBS_TABLE} WHERE job_id = %s",
+                (job_id,),
+            )
+            row = cur.fetchone()
+            filename = Path(row[0]).name if row and row[0] else f'job_{job_id}.csv'
+    qualified = create_cdr_staging_table(conn, original_cdr_basename(filename))
+    _job_staging_tables[job_id] = qualified
+    return qualified
 
 
-def insert_staging_batch(conn, rows: Iterable[dict], *, job_id: int) -> None:
+def insert_staging_batch(conn, rows: Iterable[dict], *, job_id: int, filename: str | None = None) -> int:
+    """Append CDR rows into the shared filename staging table.
+
+    Does not dedupe within the file or against existing staging rows.
+    Production duplicates are flagged afterwards via refresh_cdr_staging_duplicates
+    (phone + other + starttime + duration + incoming) and blocked again at promote.
+    """
     rows = list(rows)
     if not rows:
-        return
-    table = ensure_job_staging_table(conn, job_id)
+        return 0
+    table = ensure_job_staging_table(conn, job_id, filename)
     base_cols = [c for c in PRODUCTION_INSERT_COLUMNS if c in rows[0]]
     extra_cols = ['operator', 'source_file', 'source_row_number', 'import_job_id']
     cols = base_cols + [c for c in extra_cols if c in rows[0]]
     values = [[row.get(c) for c in cols] for row in rows]
+
+    col_list = ', '.join(cols)
+    typed_cols = []
+    for c in cols:
+        if c in ('starttime', 'asondate'):
+            typed_cols.append(f'{c} TIMESTAMP WITHOUT TIME ZONE')
+        elif c in ('ucid', 'source_row_number', 'import_job_id', 'imeinumber', 'imsinumber', 'tower_key'):
+            typed_cols.append(f'{c} BIGINT')
+        elif c == 'duration':
+            typed_cols.append(f'{c} NUMERIC')
+        elif c in ('incoming', 'provider_key', 'state_key'):
+            typed_cols.append(f'{c} SMALLINT')
+        else:
+            typed_cols.append(f'{c} TEXT')
+
     with conn.cursor() as cur:
+        cur.execute('DROP TABLE IF EXISTS _cdr_stg_batch')
+        cur.execute(
+            f'CREATE TEMP TABLE _cdr_stg_batch ({", ".join(typed_cols)}) ON COMMIT DROP'
+        )
         psycopg2.extras.execute_values(
             cur,
-            f"INSERT INTO {table} ({', '.join(cols)}) VALUES %s",
+            f'INSERT INTO _cdr_stg_batch ({col_list}) VALUES %s',
             values,
             page_size=min(len(values), 2000),
         )
+        cur.execute(
+            f'''
+            INSERT INTO {table} ({col_list})
+            SELECT {', '.join(f'b.{c}' for c in cols)}
+            FROM _cdr_stg_batch b
+            '''
+        )
+        inserted = cur.rowcount if cur.rowcount is not None and cur.rowcount >= 0 else 0
+    return int(inserted)
+
 
 def utcnow() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)

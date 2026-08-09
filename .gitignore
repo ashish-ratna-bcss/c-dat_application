@@ -1,5 +1,7 @@
 # Local configuration (never commit secrets)
 db_config.php
+DB_CONFIG.php
+SETUP_WINDOWS.md
 .env
 .env.*
 !.env.example
@@ -10,6 +12,13 @@ logs/
 cache/
 tmp/
 uploads/
+
+# Operator CDR/SDR exports. These hold real subscriber call records; once
+# committed they live in git history permanently. None are tracked today --
+# keep it that way.
+*.csv
+*.xls
+*.xlsx
 
 # OS and editor
 .DS_Store

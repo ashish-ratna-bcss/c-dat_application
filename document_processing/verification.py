@@ -6,7 +6,7 @@ from typing import Any, Optional
 import psycopg2
 import psycopg2.extras
 from cdr_import.config import load_db_config
-from cdr_import.staging_dedup import refresh_cdr_staging_duplicates
+from cdr_import.staging_dedup import production_not_exists_sql, refresh_cdr_staging_duplicates
 
 class VerificationError(Exception):
     pass
@@ -19,6 +19,18 @@ def _assert_qualified(table: str) -> None:
     if not re.fullmatch('upload_staging\\.[a-z][a-z0-9_]*', table):
         raise VerificationError('Invalid staging table reference.')
 
+def _as_staging_tables(value: Any) -> dict[str, Any]:
+    if value is None:
+        return {}
+    if isinstance(value, dict):
+        return value
+    if isinstance(value, (bytes, bytearray)):
+        value = value.decode()
+    if isinstance(value, str):
+        return json.loads(value or '{}')
+    return dict(value)
+
+
 def get_batch_by_job_id(job_id: int) -> Optional[dict[str, Any]]:
     with _conn() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute('\n            SELECT b.*, j.module, j.source_basename AS file_name\n            FROM upload_staging_batches b\n            JOIN document_jobs j ON j.job_id = b.document_job_id\n            WHERE b.document_job_id = %s\n            ', (job_id,))
@@ -26,7 +38,7 @@ def get_batch_by_job_id(job_id: int) -> Optional[dict[str, Any]]:
         if not row:
             return None
         data = dict(row)
-        data['staging_tables'] = json.loads(data.get('staging_tables') or '{}')
+        data['staging_tables'] = _as_staging_tables(data.get('staging_tables'))
         return data
 
 def fetch_staging_rows(job_id: int, *, table_key: Optional[str]=None, limit: int=100, offset: int=0) -> dict:
@@ -75,11 +87,25 @@ def reject_staging_batch(job_id: int, username: str='api') -> dict:
         raise VerificationError('Staging batch not found.')
     tables = batch['staging_tables']
     batch_id = batch['batch_id']
+    module = (batch.get('module') or '').lower()
     with _conn() as conn:
         with conn.cursor() as cur:
             cur.execute("\n                UPDATE upload_approval_queue\n                SET status = 'cancelled', completed_at = NOW()\n                WHERE batch_id = %s AND status = 'queued'\n                ", (batch_id,))
-            for qualified in tables.values():
+            for key, qualified in tables.items():
                 _assert_qualified(qualified)
+                if module == 'cdr' and key == 'cdr':
+                    cur.execute(
+                        """
+                        SELECT COUNT(*) FROM upload_staging_batches
+                        WHERE module = 'cdr'
+                          AND verification_status = 'pending'
+                          AND staging_tables->>'cdr' = %s
+                          AND batch_id <> %s
+                        """,
+                        (qualified, batch_id),
+                    )
+                    if int(cur.fetchone()[0] or 0) > 0:
+                        continue
                 cur.execute(f'DROP TABLE IF EXISTS {qualified} CASCADE')
             cur.execute("\n                UPDATE upload_staging_batches\n                SET verification_status = 'rejected', verified_at = NOW(), verified_by = %s\n                WHERE batch_id = %s\n                ", (username, batch['batch_id']))
             cur.execute("\n                UPDATE upload_activity_logs\n                SET upload_status = 'Rejected', verification_status = 'rejected'\n                WHERE staging_batch_id = %s OR document_job_id = %s\n                ", (batch['batch_id'], job_id))
@@ -96,10 +122,61 @@ def _approve_cdr_only(batch: dict, username: str) -> dict:
     with _conn() as conn:
         refresh_cdr_staging_duplicates(conn, table)
         with conn.cursor() as cur:
-            cur.execute(f'\n                INSERT INTO cdatpcsuspect (\n                    ucid, phone, other, starttime, duration, incoming, imeinumber, imsinumber,\n                    celltowerid, otherinfo, tower_key, provider_key, state_key, first_cellid,\n                    last_cellid, roaming_nw, call_type, calling_no, called_no, asondate\n                )\n                SELECT\n                    ucid, phone, other, starttime, duration, incoming, imeinumber, imsinumber,\n                    celltowerid, otherinfo, tower_key, provider_key, state_key, first_cellid,\n                    last_cellid, roaming_nw, call_type, calling_no, called_no, COALESCE(asondate, NOW())\n                FROM {table}\n                WHERE COALESCE(is_duplicate, FALSE) = FALSE\n                ')
+            cur.execute(
+                f'''
+                INSERT INTO cdatpcsuspect (
+                    ucid, phone, other, starttime, duration, incoming, imeinumber, imsinumber,
+                    celltowerid, otherinfo, tower_key, provider_key, state_key, first_cellid,
+                    last_cellid, roaming_nw, call_type, calling_no, called_no, asondate
+                )
+                SELECT
+                    s.ucid, s.phone, s.other, s.starttime, s.duration, s.incoming, s.imeinumber, s.imsinumber,
+                    s.celltowerid, s.otherinfo, s.tower_key, s.provider_key, s.state_key, s.first_cellid,
+                    s.last_cellid, s.roaming_nw, s.call_type, s.calling_no, s.called_no, COALESCE(s.asondate, NOW())
+                FROM {table} s
+                WHERE COALESCE(s.is_duplicate, FALSE) = FALSE
+                  AND {production_not_exists_sql('s', 't')}
+                '''
+            )
             inserted = cur.rowcount
             cur.execute(f'DROP TABLE IF EXISTS {table} CASCADE')
-            cur.execute("\n                UPDATE upload_staging_batches\n                SET verification_status = 'approved', verified_at = NOW(), verified_by = %s\n                WHERE batch_id = %s\n                ", (username, batch['batch_id']))
-            cur.execute("\n                UPDATE document_jobs SET status = 'completed', phase = 'completed', completed_at = NOW()\n                WHERE job_id = %s\n                ", (batch['document_job_id'],))
+            cur.execute(
+                """
+                UPDATE upload_staging_batches
+                SET verification_status = 'approved', verified_at = NOW(), verified_by = %s
+                WHERE batch_id = %s
+                """,
+                (username, batch['batch_id']),
+            )
+            # Complete sibling pending batches that shared this filename staging table.
+            cur.execute(
+                """
+                UPDATE upload_staging_batches
+                SET verification_status = 'approved', verified_at = NOW(), verified_by = %s
+                WHERE module = 'cdr'
+                  AND verification_status = 'pending'
+                  AND staging_tables->>'cdr' = %s
+                  AND batch_id <> %s
+                RETURNING document_job_id
+                """,
+                (username, table, batch['batch_id']),
+            )
+            sibling_jobs = [int(r[0]) for r in cur.fetchall()]
+            for sjid in sibling_jobs:
+                cur.execute(
+                    """
+                    UPDATE document_jobs
+                    SET status = 'completed', phase = 'completed', completed_at = NOW(), updated_at = NOW()
+                    WHERE job_id = %s
+                    """,
+                    (sjid,),
+                )
+            cur.execute(
+                """
+                UPDATE document_jobs SET status = 'completed', phase = 'completed', completed_at = NOW()
+                WHERE job_id = %s
+                """,
+                (batch['document_job_id'],),
+            )
         conn.commit()
     return {'ok': True, 'inserted': inserted, 'job_id': batch['document_job_id']}

@@ -1,0 +1,3 @@
+-- Reference-table indexes on distributed_db (Citus).
+-- Applied by scripts/build_distributed_reference_indexes.sh via cdat-distributed-indexes.service.
+-- Uses CREATE INDEX CONCURRENTLY (one index at a time; safe on large tables).

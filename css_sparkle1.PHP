@@ -1,0 +1,15 @@
+.confirm_selection {
+    animation: glow .5s infinite alternate;
+}
+
+@keyframes glow {
+    to {
+        text-shadow: 0 0 5px red;
+    }
+}
+
+.confirm_selection {
+    font-family: sans-serif;
+    font-size: 20px;
+    font-weight: bold;
+}

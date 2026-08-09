@@ -1,0 +1,32 @@
+<html>
+<head>
+<title> IMAGE FORM </title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" href="style.css" >
+<style type="test/css">
+label{
+float:left;
+width:200px;
+text-align=left;
+}
+</style>
+</head>
+<body bgcolor="#5195BA">
+<table>
+    <tr>
+    <th width="1126" align="center" scope="col">MO IMAGE LIST</th>
+    </tr>
+</table>
+<form action="MO_IMAGE_LIST.PHP" Method="post" enctype="multipart/form-data">
+<label>MO_KEY:</label><input type="text"  name="MO_KEY">
+    <br/>
+    <br/>
+<label>MO_KEY:</label>
+<input type="file" name="image"/>
+	<br/>
+	<br/>
+<input type="submit" value="insert">
+    <br/>
+    </form>
+</body>
+</html>

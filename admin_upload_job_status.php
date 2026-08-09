@@ -47,11 +47,12 @@ try {
                 ]);
             }
         } elseif (in_array($status, ['running', 'queued'], true)) {
+            // Progress only — do not treat unprocessed rows as failures.
             $db->prepare('
                 UPDATE upload_activity_logs
                 SET total_records = :total,
                     inserted_records = :ins,
-                    failed_records = GREATEST(:total - :ins, 0)
+                    failed_records = 0
                 WHERE document_job_id = :jid AND upload_status = \'Processing\'
             ')->execute([
                 ':total' => (int)($job['total_records'] ?? 0),

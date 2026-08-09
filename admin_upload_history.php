@@ -162,6 +162,7 @@ function renderApprovalStatus(array $log): array
 <script src="SpryAssets/SpryMenuBar.js" type="text/javascript"></script>
 <link href="SpryAssets/SpryMenuBarHorizontal.css" rel="stylesheet" type="text/css" />
 <link href="SpryAssets/SpryMenuBarVertical.css" rel="stylesheet" type="text/css" />
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
 <style type="text/css">
 .FONT {
 	color: #CFF;
@@ -280,6 +281,24 @@ function renderApprovalStatus(array $log): array
 .approval-na { color: #aaa; }
 .history-row-link { color: #fff; text-decoration: underline; cursor: pointer; }
 .history-row-link:hover { color: #FFD700; }
+.action-btns { display: inline-flex; gap: 6px; align-items: center; }
+.action-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    text-decoration: none !important;
+    color: #10222b !important;
+    font-size: 13px;
+    border: 1px solid rgba(255,255,255,0.25);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.action-icon-btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.action-icon-preview { background: #1f8a70; color: #fff !important; }
+.action-icon-insert { background: #FFA500; }
+.action-icon-view { background: #5dade2; color: #10222b !important; }
 
 .pagination {
     margin-top: 20px;
@@ -547,10 +566,27 @@ function renderApprovalStatus(array $log): array
                           </td>
                           <?php endif; ?>
                           <td>
-                            <?php if (!empty($log['document_job_id'])): ?>
-                              <a class="history-row-link" href="admin_upload.php?view=results&amp;log_id=<?= (int)$log['id'] ?>">
-                                <?= ($log['upload_status'] === 'Pending Verification') ? 'Insert Data' : 'View' ?>
-                              </a>
+                            <?php
+                              $pendingVerify = ($log['upload_status'] === 'Pending Verification');
+                              $hasJob = !empty($log['document_job_id']);
+                              $verifyHref = 'admin_upload_verify.php?log_id=' . (int)$log['id'];
+                              $resultsHref = 'admin_upload.php?view=results&log_id=' . (int)$log['id'];
+                            ?>
+                            <?php if ($hasJob && $pendingVerify): ?>
+                              <span class="action-btns">
+                                <a class="action-icon-btn action-icon-preview" href="<?= htmlspecialchars($verifyHref) ?>" title="Preview &amp; Edit staging">
+                                  <i class="fa-solid fa-pen-to-square"></i>
+                                </a>
+                                <a class="action-icon-btn action-icon-insert" href="<?= htmlspecialchars($resultsHref) ?>" title="Insert Data to live table">
+                                  <i class="fa-solid fa-database"></i>
+                                </a>
+                              </span>
+                            <?php elseif ($hasJob): ?>
+                              <span class="action-btns">
+                                <a class="action-icon-btn action-icon-view" href="<?= htmlspecialchars($resultsHref) ?>" title="View upload">
+                                  <i class="fa-solid fa-eye"></i>
+                                </a>
+                              </span>
                             <?php else: ?>
                               —
                             <?php endif; ?>

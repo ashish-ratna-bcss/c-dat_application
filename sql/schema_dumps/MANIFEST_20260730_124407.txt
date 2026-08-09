@@ -1,0 +1,7 @@
+Schema-only dumps generated 20260730_124407
+Host 127.0.0.1:5432
+
+postgres: /mnt/storage1/cdat-web/sql/schema_dumps/postgres_schema_only_20260730_124407.sql (262850 bytes)
+distributed_db: /mnt/storage1/cdat-web/sql/schema_dumps/distributed_db_schema_only_20260730_124407.sql (20495 bytes)
+cdat_db: /mnt/storage1/cdat-web/sql/schema_dumps/cdat_db_schema_only_20260730_124407.sql (2695742 bytes)
+ai_copint_db: /mnt/storage1/cdat-web/sql/schema_dumps/ai_copint_db_schema_only_20260730_124407.sql (5117 bytes)

@@ -82,9 +82,10 @@ try {
                     UPDATE upload_activity_logs
                     SET upload_status = \'Failed\',
                         error_reason = :err,
+                        total_records = COALESCE(NULLIF(:total, 0), total_records),
                         inserted_records = :ins,
-                        failed_records = GREATEST(:total - :ins, 0)
-                    WHERE document_job_id = :jid AND upload_status = \'Processing\'
+                        failed_records = GREATEST(COALESCE(NULLIF(:total, 0), total_records) - :ins, 0)
+                    WHERE document_job_id = :jid AND upload_status IN (\'Processing\', \'Failed\')
                 ')->execute([
                     ':err' => $job['error_message'] ?? 'Processing failed.',
                     ':ins' => (int)($job['rows_committed'] ?? 0),

@@ -1,8 +1,8 @@
 from __future__ import annotations
-from pathlib import Path
 from typing import Any, Optional
 import psycopg2.extras
 from document_processing.db import JOBS_TABLE
+from document_processing.staging import original_cdr_basename
 
 def fetch_job(conn, job_id: int) -> Optional[dict[str, Any]]:
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
@@ -42,6 +42,6 @@ def create_queued_job(conn, *, source_file: str, file_path: str, file_hash: str,
                 END
             RETURNING job_id
             """,
-            (source_file, Path(source_file).name, file_path, file_hash, operator, target_phone, dry_run, batch_size, total_rows_estimated),
+            (source_file, original_cdr_basename(source_file), file_path, file_hash, operator, target_phone, dry_run, batch_size, total_rows_estimated),
         )
         return int(cur.fetchone()[0])

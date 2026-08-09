@@ -1,11 +1,9 @@
 from __future__ import annotations
 import re
 from pathlib import Path
-OPERATOR_PATTERNS = {'jio': re.compile('jio', re.IGNORECASE), 'bsnl': re.compile('bsnl', re.IGNORECASE), 'vi': re.compile('(?:^|[_\\-.])vi(?:[_\\-.]|\\.|$)|vodafone\\s*idea', re.IGNORECASE), 'airtel': re.compile('airtel', re.IGNORECASE)}
 
-# Structural column-header strings unique to each operator's export. These are the most
-# reliable in-file signal because real CDR files are named after the target phone, not the
-# operator. Kept in sync with each parser's header_marker().
+# Structural column-header strings unique to each operator's export.
+# Used only as a CLI / mismatch-hint fallback — never for filename matching.
 HEADER_MARKERS = {
     'airtel': re.compile(r'Target No\b', re.IGNORECASE),
     'vi': re.compile(r'Target\s*/A\s*PARTY\s*NUMBER', re.IGNORECASE),
@@ -55,17 +53,19 @@ def detect_operator_from_content(file_path: str | Path) -> str | None:
 
 
 def detect_operator(file_path: str | Path) -> str:
-    name = Path(file_path).name.lower()
-    matches = [op for op, pattern in OPERATOR_PATTERNS.items() if pattern.search(name)]
-    if len(matches) == 1:
-        return matches[0]
-    if len(matches) > 1:
-        raise ValueError(f"Ambiguous operator in filename '{name}': {matches}")
-    # Real exports are named after the target phone, so fall back to the file contents.
+    """Resolve operator without using the filename.
+
+    Filenames are usually the target MSISDN (or opaque tickets), so operator
+    must come from an explicit selection. Content headers are only a last-resort
+    fallback for CLI tools that omit --operator.
+    """
     from_content = detect_operator_from_content(file_path)
     if from_content:
         return from_content
-    return 'airtel'
+    raise ValueError(
+        f"Cannot determine network for '{Path(file_path).name}'. "
+        "Select the Network from the dropdown (Airtel / Jio / Vi / BSNL)."
+    )
 
 def extract_phone_from_filename(file_path: str | Path) -> str | None:
     name = Path(file_path).stem

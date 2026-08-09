@@ -5,18 +5,26 @@ import psycopg2.extras
 from .config import PROVIDER_KEYS
 NETWORK_OPERATOR_MAP = {'airtel': 'airtel', 'jio': 'jio', 'bsnl': 'bsnl', 'vi': 'vi', 'vodafone': 'vi', 'idea': 'vi', 'all': None}
 
-def resolve_operator(network: Optional[str], detected: str) -> str:
-    if not network:
+def resolve_operator(network: Optional[str], detected: Optional[str] = None) -> str:
+    """Prefer the explicit Network dropdown / --operator value.
+
+    Filename-based detection is not used. `detected` is only a fallback when
+    the caller did not pass a network (e.g. CLI without --operator).
+    """
+    if network:
+        key = network.strip().lower()
+        if key not in ('all', 'auto', ''):
+            mapped = NETWORK_OPERATOR_MAP.get(key)
+            if mapped:
+                return mapped
+            if key in PROVIDER_KEYS:
+                return key
+            raise ValueError(f"Unknown network/operator: {network!r}")
+    if detected:
         return detected
-    key = network.strip().lower()
-    if key in ('all', 'auto', ''):
-        return detected
-    mapped = NETWORK_OPERATOR_MAP.get(key)
-    if mapped:
-        return mapped
-    if key in PROVIDER_KEYS:
-        return key
-    return detected
+    raise ValueError(
+        'Network is required. Select Airtel, Jio, Vi, or BSNL from the dropdown.'
+    )
 
 def normalize_duration(duration: int, call_type: Optional[str], service_type: Optional[str]) -> int:
     blob = f'{call_type or ''} {service_type or ''}'.lower()
@@ -25,6 +33,24 @@ def normalize_duration(duration: int, call_type: Optional[str], service_type: Op
     if duration == 1 and 'sms' in blob:
         return 0
     return duration
+
+
+# Matches public.cdatpcsuspect.tower_key NUMERIC(18,0).
+TOWER_KEY_MAX_DIGITS = 18
+
+
+def safe_tower_key(value) -> Optional[int]:
+    """Parse bts/tower id digits into tower_key, or None if missing/overflow."""
+    if value is None:
+        return None
+    digits = re.sub(r'\D', '', str(value))
+    if not digits or len(digits) > TOWER_KEY_MAX_DIGITS:
+        return None
+    try:
+        parsed = int(digits)
+    except ValueError:
+        return None
+    return parsed or None
 
 def _phone_lookup_sql(phone: str) -> tuple[str, list]:
     digits = re.sub('\\D', '', phone or '')
@@ -102,9 +128,6 @@ class CdrEnricher:
                 row = cur.fetchone()
         data = dict(row) if row else {}
         if data.get('bts_id'):
-            try:
-                data['tower_key'] = int(re.sub('\\D', '', str(data['bts_id'])) or 0) or None
-            except (TypeError, ValueError):
-                pass
+            data['tower_key'] = safe_tower_key(data['bts_id'])
         self._tower_cache[cache_key] = data
         return data

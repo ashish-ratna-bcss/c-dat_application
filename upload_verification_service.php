@@ -261,7 +261,9 @@ class UploadVerificationService
     public function refreshCdrDuplicates(string $qualifiedTable): array
     {
         $this->assertQualifiedTable($qualifiedTable);
-        $this->refreshStagingBatchDuplicates($qualifiedTable);
+        // Within-file / within-staging duplicates are not flagged.
+        // Only matches against production (cdatpcsuspect) count as duplicates.
+        $this->db->exec("UPDATE {$qualifiedTable} SET is_duplicate = FALSE, duplicate_reason = NULL");
 
         $mainDup = $this->db->exec("
             UPDATE {$qualifiedTable} s
@@ -269,8 +271,10 @@ class UploadVerificationService
             WHERE EXISTS (
                 SELECT 1 FROM cdatpcsuspect t
                 WHERE t.phone = s.phone
-                  AND t.other = s.other
+                  AND t.other IS NOT DISTINCT FROM s.other
                   AND t.starttime = s.starttime
+                  AND t.duration IS NOT DISTINCT FROM s.duration
+                  AND t.incoming IS NOT DISTINCT FROM s.incoming
             )
         ");
 
@@ -285,18 +289,8 @@ class UploadVerificationService
 
     public function refreshStagingBatchDuplicates(string $qualifiedTable): void
     {
+        // Kept for SDR callers; CDR no longer marks within-batch duplicates.
         $this->assertQualifiedTable($qualifiedTable);
-        $this->db->exec("UPDATE {$qualifiedTable} SET is_duplicate = FALSE, duplicate_reason = NULL");
-        $this->db->exec("
-            UPDATE {$qualifiedTable} s
-            SET is_duplicate = TRUE,
-                duplicate_reason = COALESCE(s.duplicate_reason, 'duplicate_in_batch')
-            WHERE staging_row_id NOT IN (
-                SELECT MIN(staging_row_id)
-                FROM {$qualifiedTable}
-                GROUP BY COALESCE(phone, ''), COALESCE(other, ''), starttime
-            )
-        ");
     }
 
     public function duplicateCounts(string $qualifiedTable): array
@@ -508,11 +502,44 @@ class UploadVerificationService
                 $this->db->exec('DROP TABLE IF EXISTS ' . $qualified . ' CASCADE');
             }
 
+            // Mark this batch approved.
             $this->db->prepare('
                 UPDATE upload_staging_batches
                 SET verification_status = \'approved\', verified_at = NOW(), verified_by = :user
                 WHERE batch_id = :id
             ')->execute([':user' => $username, ':id' => $batchId]);
+
+            // Shared filename staging: any other pending CDR batches pointing at the
+            // same staging table are also complete once the table is promoted+dropped.
+            if ($module === 'cdr' && !empty($tables['cdr'])) {
+                $sibling = $this->db->prepare("
+                    UPDATE upload_staging_batches
+                    SET verification_status = 'approved', verified_at = NOW(), verified_by = :user
+                    WHERE module = 'cdr'
+                      AND verification_status = 'pending'
+                      AND staging_tables->>'cdr' = :tbl
+                      AND batch_id <> :id
+                    RETURNING document_job_id
+                ");
+                $sibling->execute([
+                    ':user' => $username,
+                    ':tbl' => $tables['cdr'],
+                    ':id' => $batchId,
+                ]);
+                $siblingJobIds = $sibling->fetchAll(PDO::FETCH_COLUMN) ?: [];
+                foreach ($siblingJobIds as $sjid) {
+                    $this->db->prepare("
+                        UPDATE document_jobs
+                        SET status = 'completed', phase = 'completed', completed_at = NOW(), updated_at = NOW()
+                        WHERE job_id = :jid
+                    ")->execute([':jid' => (int)$sjid]);
+                    $this->db->prepare("
+                        UPDATE upload_activity_logs
+                        SET upload_status = 'Success', verification_status = 'approved'
+                        WHERE document_job_id = :jid
+                    ")->execute([':jid' => (int)$sjid]);
+                }
+            }
 
             $this->db->prepare('
                 UPDATE upload_activity_logs
@@ -751,10 +778,26 @@ class UploadVerificationService
         ")->execute([':id' => $batchId]);
 
         $tables = json_decode($batch['staging_tables'], true) ?: [];
+        $module = strtolower((string)($batch['module'] ?? ''));
 
         $this->db->beginTransaction();
         try {
-            foreach ($tables as $qualified) {
+            foreach ($tables as $key => $qualified) {
+                // Shared CDR filename staging: only drop if no other pending batch still uses it.
+                if ($module === 'cdr' && $key === 'cdr') {
+                    $stmt = $this->db->prepare("
+                        SELECT COUNT(*) FROM upload_staging_batches
+                        WHERE module = 'cdr'
+                          AND verification_status = 'pending'
+                          AND staging_tables->>'cdr' = :tbl
+                          AND batch_id <> :id
+                    ");
+                    $stmt->execute([':tbl' => $qualified, ':id' => $batchId]);
+                    $others = (int)$stmt->fetchColumn();
+                    if ($others > 0) {
+                        continue;
+                    }
+                }
                 $this->db->exec('DROP TABLE IF EXISTS ' . $qualified . ' CASCADE');
             }
             $this->db->prepare('
@@ -785,6 +828,8 @@ class UploadVerificationService
 
     private function promoteCdr(string $qualifiedTable): int
     {
+        // Re-check uniqueness at promote time against production
+        // (phone, other, starttime, duration, incoming).
         $sql = "
             INSERT INTO cdatpcsuspect (
                 ucid, phone, other, starttime, duration, incoming, imeinumber, imsinumber,
@@ -792,11 +837,20 @@ class UploadVerificationService
                 last_cellid, roaming_nw, call_type, calling_no, called_no, asondate
             )
             SELECT
-                ucid, phone, other, starttime, duration, incoming, imeinumber, imsinumber,
-                celltowerid, otherinfo, tower_key, provider_key, state_key, first_cellid,
-                last_cellid, roaming_nw, call_type, calling_no, called_no, COALESCE(asondate, NOW())
-            FROM {$qualifiedTable}
-            WHERE COALESCE(is_duplicate, FALSE) = FALSE
+                s.ucid, s.phone, s.other, s.starttime, s.duration, s.incoming, s.imeinumber, s.imsinumber,
+                s.celltowerid, s.otherinfo, s.tower_key, s.provider_key, s.state_key, s.first_cellid,
+                s.last_cellid, s.roaming_nw, s.call_type, s.calling_no, s.called_no, COALESCE(s.asondate, NOW())
+            FROM {$qualifiedTable} s
+            WHERE COALESCE(s.is_duplicate, FALSE) = FALSE
+              AND NOT EXISTS (
+                    SELECT 1
+                    FROM cdatpcsuspect t
+                    WHERE t.phone = s.phone
+                      AND t.other IS NOT DISTINCT FROM s.other
+                      AND t.starttime = s.starttime
+                      AND t.duration IS NOT DISTINCT FROM s.duration
+                      AND t.incoming IS NOT DISTINCT FROM s.incoming
+              )
         ";
         $count = $this->db->exec($sql);
         return $count === false ? 0 : (int)$count;
@@ -897,7 +951,7 @@ class UploadVerificationService
             'pgsql:host=%s;port=%s;dbname=%s',
             $cfg['host'],
             $cfg['port'],
-            getenv('DIST_PG_DATABASE') ?: 'distributed_db'
+            getenv('DIST_PG_DATABASE') ?: 'distribution_db'
         );
         $this->distDb = new PDO($dsn, $cfg['user'], $cfg['password'], [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,

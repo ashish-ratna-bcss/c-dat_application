@@ -1,6 +1,8 @@
 from __future__ import annotations
+import hashlib
 import json
 import re
+from pathlib import Path
 from typing import Any, Optional
 import psycopg2
 from cdr_import.config import PRODUCTION_INSERT_COLUMNS
@@ -12,8 +14,41 @@ def _safe_ident(name: str) -> str:
         raise ValueError(f'Invalid staging identifier: {name}')
     return name
 
+# API/inbox saves as "{uuid32}_{original}"; strip those so staging is keyed by
+# the client filename. Repeated prefixes happen when a already-prefixed path is re-uploaded.
+_UPLOAD_UUID_PREFIX_RE = re.compile(r'^(?:[0-9a-f]{32}_)+', re.IGNORECASE)
+
+
+def original_cdr_basename(filename: str) -> str:
+    """Client upload basename with inbox UUID prefix(es) removed."""
+    base = Path(str(filename or 'file')).name
+    stripped = _UPLOAD_UUID_PREFIX_RE.sub('', base)
+    return stripped or base
+
+
+def sanitize_cdr_filename(filename: str) -> str:
+    """Build a stable, Postgres-safe token from an upload filename.
+
+    Same client basename always maps to the same staging table so two uploads
+    of the same file name append into one shared staging table
+    (even when the on-disk path has a per-upload UUID prefix).
+    """
+    base = original_cdr_basename(filename)
+    digest = hashlib.sha1(base.encode('utf-8', errors='replace')).hexdigest()[:8]
+    stem = Path(base).stem.lower()
+    cleaned = re.sub(r'[^a-z0-9]+', '_', stem).strip('_') or 'file'
+    if not cleaned[0].isalpha():
+        cleaned = 'f_' + cleaned
+    # stg_cdr_ (8) + _digest (9) = 17; keep total ident <= 63
+    cleaned = cleaned[:45].rstrip('_') or 'file'
+    return f'{cleaned}_{digest}'
+
+def cdr_staging_table_name(filename: str) -> str:
+    return _safe_ident(f'stg_cdr_{sanitize_cdr_filename(filename)}')
+
 def cdr_staging_table(job_id: int) -> str:
-    return _safe_ident(f'stg_cdr_{job_id}')
+    """Legacy job-id naming (kept for older rows / callers)."""
+    return _safe_ident(f'stg_cdr_{int(job_id)}')
 
 def sdr_staging_table(job_id: int, pg_target: str) -> str:
     suffix = pg_target.lower().replace(' ', '_')
@@ -23,14 +58,34 @@ def ensure_staging_schema(conn) -> None:
     with conn.cursor() as cur:
         cur.execute(f'CREATE SCHEMA IF NOT EXISTS {STAGING_SCHEMA}')
 
-def create_cdr_staging_table(conn, job_id: int) -> str:
+def create_cdr_staging_table(conn, filename: str) -> str:
+    """Create (or reuse) filename-keyed CDR staging table."""
     ensure_staging_schema(conn)
-    table = cdr_staging_table(job_id)
+    table = cdr_staging_table_name(filename)
     qualified = f'{STAGING_SCHEMA}.{table}'
     cols_sql = ',\n        '.join((f'{col} {_cdr_column_type(col)}' for col in PRODUCTION_INSERT_COLUMNS))
-    ddl = f'\n        CREATE UNLOGGED TABLE IF NOT EXISTS {qualified} (\n            staging_row_id BIGSERIAL PRIMARY KEY,\n            {cols_sql},\n            operator VARCHAR(20),\n            source_file TEXT,\n            source_row_number BIGINT,\n            import_job_id BIGINT,\n            is_duplicate BOOLEAN NOT NULL DEFAULT FALSE,\n            duplicate_reason VARCHAR(50),\n            user_edited BOOLEAN NOT NULL DEFAULT FALSE\n        )\n    '
+    ddl = f'''
+        CREATE UNLOGGED TABLE IF NOT EXISTS {qualified} (
+            staging_row_id BIGSERIAL PRIMARY KEY,
+            {cols_sql},
+            operator VARCHAR(20),
+            source_file TEXT,
+            source_row_number BIGINT,
+            import_job_id BIGINT,
+            is_duplicate BOOLEAN NOT NULL DEFAULT FALSE,
+            duplicate_reason VARCHAR(50),
+            user_edited BOOLEAN NOT NULL DEFAULT FALSE
+        )
+    '''
+    # Legacy within-staging unique indexes — duplicates are checked only vs production.
+    legacy_uq = [
+        _safe_ident(f'uq_{table}_phone_other_start_call'),
+        _safe_ident(f'uq_{table}_phone_other_start'),
+    ]
     with conn.cursor() as cur:
         cur.execute(ddl)
+        for uq_name in legacy_uq:
+            cur.execute(f'DROP INDEX IF EXISTS {STAGING_SCHEMA}.{uq_name}')
     return qualified
 
 def _cdr_column_type(col: str) -> str:
@@ -46,9 +101,9 @@ def create_sdr_staging_table(conn, job_id: int, pg_target: str, columns: list[di
     for col in columns:
         pg_type = mssql_type_to_pg(col['data_type'], col['char_len'], col['num_precision'])
         null_sql = '' if col['nullable'] else ' NOT NULL'
-        col_defs.append(f'{col['pg_name']} {pg_type}{null_sql}')
+        col_defs.append(f'{col["pg_name"]} {pg_type}{null_sql}')
     col_defs.extend(['is_duplicate BOOLEAN NOT NULL DEFAULT FALSE', 'duplicate_reason VARCHAR(50)', 'user_edited BOOLEAN NOT NULL DEFAULT FALSE'])
-    ddl = f'CREATE UNLOGGED TABLE IF NOT EXISTS {qualified} ({', '.join(col_defs)})'
+    ddl = f'CREATE UNLOGGED TABLE IF NOT EXISTS {qualified} ({", ".join(col_defs)})'
     with conn.cursor() as cur:
         cur.execute(ddl)
     return qualified
@@ -83,3 +138,19 @@ def drop_staging_tables(conn, staging_tables: dict[str, str]) -> None:
                 cur.execute(f'DROP TABLE IF EXISTS {_safe_ident(schema)}.{_safe_ident(table)} CASCADE')
             else:
                 cur.execute(f'DROP TABLE IF EXISTS {_safe_ident(qualified)} CASCADE')
+
+def count_pending_batches_for_cdr_table(conn, qualified_table: str, *, exclude_batch_id: Optional[int] = None) -> int:
+    """How many non-finished batches still point at this shared CDR staging table."""
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT COUNT(*)
+            FROM upload_staging_batches
+            WHERE module = 'cdr'
+              AND verification_status = 'pending'
+              AND staging_tables->>'cdr' = %s
+              AND (%s::bigint IS NULL OR batch_id <> %s)
+            """,
+            (qualified_table, exclude_batch_id, exclude_batch_id),
+        )
+        return int(cur.fetchone()[0] or 0)

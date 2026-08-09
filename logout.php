@@ -6,5 +6,5 @@ audit_logout();
 session_unset();
 session_destroy();
 
-header('Location: LOGIN.HTML');
+header('Location: auth.html');
 exit;

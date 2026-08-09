@@ -13,6 +13,11 @@ def clean(value: Any) -> str:
     if value is None:
         return ''
     text = str(value).strip()
+    # Excel CSV formula cells: ="9494283159" or ='text' or =9494283159
+    if len(text) >= 3 and text[0] == '=' and text[1] in {'"', "'"} and text.endswith(text[1]):
+        text = text[2:-1].strip()
+    elif text.startswith('=') and len(text) > 1:
+        text = text[1:].strip()
     while len(text) >= 2 and (text.startswith("'") and text.endswith("'") or (text.startswith('"') and text.endswith('"'))):
         text = text[1:-1].strip()
     text = text.replace("''", "'")
@@ -56,6 +61,12 @@ def to_phone(value: Any) -> Optional[str]:
         return None
     if is_scientific_notation(text):
         text = str(int(Decimal(text)))
+    # Alphanumeric sender IDs ('AB-650002-P', 'VK-SBIBNK-P') are not phone numbers.
+    # Stripping their letters leaves a bare digit run that reads like a subscriber
+    # number, so reject them and let callers fall back to the raw value. Checked
+    # after scientific-notation expansion so '9.876543210E+9' still parses.
+    if re.search('[A-Za-z]', text):
+        return None
     text = re.sub('[^\\d+]', '', text)
     if text.startswith('91') and len(text) > 10:
         text = text[2:]
@@ -94,13 +105,14 @@ class BaseCdrParser(ABC):
         for record, row_warnings, hdr in self.iter_records():
             if not header:
                 header_idx, header = hdr
-            records.append(record)
             warnings.extend(row_warnings)
+            if record is None:
+                continue
+            records.append(record)
         return ParseResult(operator=self.operator, target_phone=self.target_phone, header_line_no=header_idx + 1, records=records, warnings=warnings)
 
     def iter_records(self):
         """Stream records line-by-line to avoid holding the full file in memory."""
-        warnings: list[str] = []
         header_idx: Optional[int] = None
         header: list[str] = []
         row_no = 0
@@ -126,7 +138,9 @@ class BaseCdrParser(ABC):
                     if record is not None:
                         yield record, [], (header_idx, header)
                 except Exception as exc:
-                    warnings.append(f'Row {row_no}: {exc}')
+                    # Yield parse failure as a warning so callers can surface it
+                    # (previously these were appended to a discarded local list).
+                    yield None, [f'Row {row_no}: {exc}'], (header_idx, header)
         if header_idx is None:
             raise ValueError(f'{self.operator}: header row not found in {self.file_path.name}')
 
