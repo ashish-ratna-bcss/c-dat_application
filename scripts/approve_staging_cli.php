@@ -4,7 +4,7 @@ if ($argc < 3) {
     fwrite(STDERR, "Usage: php approve_staging_cli.php <batch_id> <username>\n");
     exit(2);
 }
-require_once __DIR__ . '/../upload_verification_service.php';
+require_once __DIR__ . '/../controller/upload_verification_service.php';
 try {
     $service = new UploadVerificationService();
     $result = $service->approveBatch((int)$argv[1], $argv[2]);

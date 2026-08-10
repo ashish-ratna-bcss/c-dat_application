@@ -3,19 +3,31 @@
 # Landing page for /cdat-web/ is the login form, not HOME.
 # httpd.conf lists "home.php home.html home.htm" in its global DirectoryIndex, which
 # is why visiting the directory served the dashboard without any login at all.
-DirectoryIndex auth.html
+# Pages now live in view/ and controller/, so there is no index file at the root:
+# the empty-path rule below sends visitors to the login form instead.
+DirectoryIndex disabled
 
 RewriteEngine On
 # Without this, an external redirect (R=301) from a per-directory .htaccess builds
 # its Location from the filesystem path, e.g. http://localhost/C:/xampp/htdocs/...
 RewriteBase /cdat-web/
 
-# The login form is auth.html (was LOGIN1.html). Send the old FORM spellings there
-# so existing links keep working -- including LOGIN.HTML, which activity_logger.php
-# and logout.php used to redirect to.
+RewriteRule ^$ view/auth.html [R=302,L]
+
+# The login form is view/auth.html (was LOGIN1.html). Send the old FORM spellings
+# there so existing links keep working -- including LOGIN.HTML, which
+# activity_logger.php and logout.php used to redirect to.
 # Deliberately limited to .html/.htm: login1.php is the POST handler the form
 # submits to, so redirecting the .php spellings would break login outright.
-RewriteRule ^(?i:login1?|login_page)\.(?i:html?)$ auth.html [R=301,L]
+RewriteRule ^(?i:login1?|login_page)\.(?i:html?)$ view/auth.html [R=301,L]
+
+# Pages moved out of the root into view/ (.html/.htm) and controller/ (.php).
+# Keep old flat URLs working for bookmarks and any link still spelled the old way.
+# Internal (no R=) so the new layout is what the address bar shows going forward.
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^([A-Za-z0-9_%&.\-]+\.(?i:php))$ controller/$1 [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^([A-Za-z0-9_%&.\-]+\.(?i:html?))$ view/$1 [L]
 
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_URI} ^(.*)\.PHP$ [NC]
@@ -63,7 +75,7 @@ RewriteRule ^(.*)\.(?:html?|php)$ $1.html [L,NC]
 # Preload the sqlsrv_* -> PostgreSQL shim. Legacy pages call sqlsrv_connect()
 # without requiring it; nginx injected this via fastcgi_param PHP_VALUE.
 # Scoped here rather than php.ini so other XAMPP projects are unaffected.
-php_value auto_prepend_file "C:/xampp/htdocs/cdat-web/sqlsrv_compat.php"
+php_value auto_prepend_file "C:/xampp/htdocs/cdat-web/controller/sqlsrv_compat.php"
 
 # Python 3.14 is installed but not on PATH as `python`, so excel_converter.php
 # and the CDR preview cannot find it. cdr_python_bin() honours CDR_PYTHON.

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Login &ndash; Call Data Analysis Tool</title>
+<link href="../SpryAssets/SPRYMENUBARHORIZONTAL.CSS" rel="stylesheet" type="text/css" />
+<link href="../SpryAssets/SPRYMENUBARVERTICAL.CSS" rel="stylesheet" type="text/css" />
+<style type="text/css">
+body{
+/* Real path on disk is IMAGES/analysis.jpg. The old "images/ANALYSIS.JPG"
+   only resolved because NTFS ignores case; it would 404 on Linux. */
+background-image: url(../IMAGES/analysis.jpg);
+background-size: cover;
+}
+.aa{
+width: 300px;
+height: 300px;
+background-color: rgba(0,0,0,0.4);
+margin:0 auto;
+margin-top:40px;
+padding-top:10px;
+padding-left: 50px;
+border-radius: 15px;
+-webkit-border-radius: 15px;
+-moz-border-radius:15px;
+color:white;
+font-weight:bolder;
+box-shadow: inset -4px -4px rgba(0,0,0,0.4);
+font-size:18px;
+}
+.aa input[type="text"],
+.aa input[type="password"]{
+width:200px;
+height:35px;
+border:0;
+border-radius:5px;
+-webkit-border-radius:5px;
+-moz-border-radius:5px;
+padding-left: 10px;
+}
+.aa input[type="submit"]{
+width:200px;
+height:35px;
+border:0;
+border-radius:5px;
+-webkit-border-radius:5px;
+-moz-border-radius:5px;
+background-color: orange;
+font-weight: bolder;
+cursor: pointer;
+}
+.aa label{ display:block; margin-bottom:4px; }
+.aa p{ margin:0 0 14px 0; }
+</style>
+</head>
+<body>
+<marquee><h1>INTERROGATION REPORTS</h1></marquee>
+<div class="aa">
+<h2>Login</h2>
+<form action="../controller/login1.php" method="post">
+<p>
+<label for="USERNAME">USERNAME:</label>
+<input type="text" name="USERNAME" id="USERNAME" placeholder="Please Enter username...."
+       autocomplete="username" required>
+</p>
+<p>
+<label for="PASSWORD">PASSWORD:</label>
+<input type="password" name="PASSWORD" id="PASSWORD" placeholder="Please Enter Password...."
+       autocomplete="current-password" required>
+</p>
+<p><input type="submit" value="Login"></p>
+</form>
+</div>
+</body>
+</html>

@@ -21,7 +21,7 @@ PROVIDER_KEYS = {'airtel': int(os.environ.get('CDR_PROVIDER_KEY_AIRTEL', '2')), 
 
 def load_db_config() -> dict[str, str]:
     cfg = {'host': os.environ.get('CDR_DB_HOST', '127.0.0.1'), 'port': os.environ.get('CDR_DB_PORT', '5432'), 'database': os.environ.get('CDR_DB_NAME', 'postgres'), 'user': os.environ.get('CDR_DB_USER', 'postgres'), 'password': os.environ.get('CDR_DB_PASSWORD', '')}
-    php_cfg = BASE_DIR / 'db_config.php'
+    php_cfg = BASE_DIR / 'controller' / 'db_config.php'
     if php_cfg.exists():
         text = php_cfg.read_text(encoding='utf-8', errors='replace')
         for key in ('host', 'port', 'database', 'user', 'password'):

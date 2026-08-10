@@ -1,0 +1,47 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Untitled Document</title>
+<script src="../SpryAssets/SPRYMENUBAR.JS" type="text/javascript"></script>
+<link href="../SpryAssets/SPRYMENUBARHORIZONTAL.CSS" rel="stylesheet" type="text/css" />
+</head>
+
+<body bgcolor="#5195BA">
+<div align="center">
+<table width="1323" height="603" border="2">
+    <tr>
+      <td width="1349" height="595" align="left" valign="top"><table width="1313" height="140">
+        <tr>
+          <td width="1265" height="130" align="center" valign="bottom" background="../IMAGES/topborder.jpg"><ul id="MenuBar1" class="MenuBarHorizontal">      </table>
+      <p>&nbsp;</p>
+      <table width="1021" height="157" align="center">
+        <tr>
+      <th height="27" align="center" valign="middle" bgcolor="#A9D1F5" class="CDAT" scope="col" >JRMS UNIQUE KEY UPDATION</th>
+        </tr>
+        
+        <tr>
+        <form id="form1" name="form1" method="post" action="../controller/jrms_unique_key_update.php">
+                 <th width="764" align="center" valign="middle" bgcolor="#A9D1F5" class="CDAT" scope="col" > JRMS CIN NO'S:            <style>
+label textarea{
+font: normal 15px courier;
+vertical-align: middle;
+}
+</style>
+<label> <textarea rows=2 cols=30 name='CIN_NO'  id="JRMS_UPDATE" placeholder="Enter Cin Number Seperated by comma without space Ex: 123xxx,124xxx,125xxx" required="required"></textarea></label>
+Unique Key:
+<input type="text" name="UNIQUE_KEY" id="NAME" size="10" required="required"/>
+Irkey:
+<input type="text" name="IRKEY" id="NAME" size="10" />
+            <input type="submit" name="BTN_CDAT" id="BTN_CDAT" value="Submit" /></th>
+        </form></tr>
+      </table>
+      <p class="MenuBarItemHover">&nbsp;</p></td>
+    </tr>
+  </table>
+</div>
+<script type="text/javascript">
+var MenuBar1 = new Spry.Widget.MenuBar("MenuBar1", {imgDown:"SpryAssets/SpryMenuBarDownHover.gif", imgRight:"SpryAssets/SpryMenuBarRightHover.gif"});
+</script>
+</body>
+</html>
