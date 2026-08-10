@@ -1,27 +1,8 @@
-<!DOCTYPE html>
-<html lang="en" class="no-js">
-	<head>
-		<meta charset="UTF-8" />
-		<meta http-equiv="X-UA-Compatible" content="IE=edge"> 
-		<meta name="viewport" content="width=device-width, initial-scale=1"> 
-		<title>Off-Canvas Menu Effects - Side Slide</title>
-		<meta name="description" content="Modern effects and styles for off-canvas navigation with CSS transitions and SVG animations using Snap.svg" />
-		<meta name="keywords" content="sidebar, off-canvas, menu, navigation, effect, inspiration, css transition, SVG, morphing, animation" />
-		<meta name="author" content="Codrops" />
-        <link rel="shortcut icon" href="../favicon.ico">
-		<link rel="stylesheet" type="text/css" href="css/normalize.css" />
-		<link rel="stylesheet" type="text/css" href="css/demo.css" />
-		<link rel="stylesheet" type="text/css" href="fonts/font-awesome-4.2.0/css/font-awesome.min.css" />
-		<link rel="stylesheet" type="text/css" href="css/menu_sideslide.css" />
-		<link rel="stylesheet" type="text/css" href="css/style2.css" />
-		
-	</head>
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("Towerdump Home");
+?>
 
-<style>
-table {border-collapse: collapse;} table,th{border:1px solid white;}
-</style>
-	
-	<body>
     <div align="center">
     <table width="1317" height="15" border="1">
     </table>
@@ -57,5 +38,4 @@ table {border-collapse: collapse;} table,th{border:1px solid white;}
 	<script src="js/main.js"></script>
 		
 		
-</body>
-</html>
+<?php layout_end(); ?>

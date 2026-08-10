@@ -1,80 +1,8 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-<table>
-        <tr>
-          <th width="1126" align="center" scope="col"><font size='5' color='#AED1F1'>INFORMATION ON CATEGORY OF MIGRANT LABOURS</font></th>
-        </tr>
-</table>
-<title> CATEGORY OF MIGRANT LABOURS FORM</title>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>Untitled Document</title>
-<link rel="stylesheet" type="text/css" href="../assets/vendor/jquery-ui-1.10.4.custom/css/dark-hive/jquery-ui-1.10.4.custom.min.css">
-<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-1.10.2.js"></script>
-<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.js"></script>
-<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.min.js"></script>
-<script type="text/javascript">
-$("document").ready(function() {
-	$("#datepickerID").datepicker({dateFormat: "yy-mm-dd",
-		changeYear: true,
-		changeMonth: true,
-	}) 
-	$("#datepickerID1").datepicker({dateFormat: "yy-mm-dd",
-		changeYear: true,
-		changeMonth: true,
-	})    
-	
-});
-</script>
 <?php
-require_once("dbcontroller.php");
-$db_handle = new DBController();
-$query ="select distinct PS POLICE_STATION from MIGRANT_LABOURS_FORM..PS_NAMES";
-$results = $db_handle->runQuery($query);
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("Migrant Labours 1");
 ?>
-<script src="../dynamicdependentbox/JQUERYDYNAMIC.JS" type="text/javascript"></script>
-<link href="../assets/spry/sprymenubarhorizontal.css" rel="stylesheet" type="text/css" />
-<style>
-input[type=text], select {
-    width: 25%;
-    padding: 3px 10px;
-    margin: 4px 0;
-    display: inline-block;
-    border: 1px solid #ccc;
-    border-radius: 2px;
-    box-sizing: border-box;
-}
 
-input[type=submit] {
-    width: 15%;
-    background-color: ORANGE;
-    color: white;
-    padding: 4px 15px;
-    margin: 4px 0;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 25px;
-}
-
-div {
-    border-radius: 5px;
-    background-color: #f2f2f2;
-    padding: 5px;
-    width: 40%;
-    border-radius: 4px;
-    float:left;
-    width:200px;
-    text-align: left;
-        }
-       textarea{
-       width: 25%;
-       height: 25px;
-       }
-</style>
-</head>
-
-<body bgcolor="#808000">
 <table>
         <tr>
           <th width="1126" align="center" scope="col">MIGRANT LABOUR FORM</th>
@@ -227,5 +155,4 @@ foreach($results as $POLICE_STATION) {
 <br/><br/>
 
  </form>
-</body>
-</html>
+<?php layout_end(); ?>

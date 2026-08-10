@@ -1,62 +1,8 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>TRAINING MODULE</title>
-<script src="../assets/spry/sprymenubar.js" type="text/javascript"></script>
-<link href="../assets/spry/sprymenubarhorizontal.css" rel="stylesheet" type="text/css" />
-<link href="../assets/spry/sprymenubarhorizontal.css" rel="stylesheet" type="text/css" />
-<link href="../assets/spry/sprymenubarvertical.css" rel="stylesheet" type="text/css" />
-<style type="text/css">
-.aa{
-width: 300px;
-height: 300px;
-background-color: rgba(0,0,0,0.4);
-margin:0 auto;
-margin-top:40px;
-padding-top:10px;
-padding-left: 50px;
-border-radius: 15px;
--webkit-border-radius: 15px;
--moz-border-radius:15px;
-color:white;
-font-weight:bolder;
-box-shadow: inset -4px -4px rgba(0,0,0,0.4);
-font-size:18px;
-}
-.aa input[type="text"]{
-width:200px;
-height:35px;
-border:0;
-border-radius:5px;
--webkit-border-radius:5px;
--o- border-radius:5px;
--moz-border-radius:5px;
-padding-left: 10px;
-}
-.aa input[type="password"]{
-width:200px;
-height:35px;
-border:0;
-border-radius:5px;
--webkit-border-radius:5px;
--o- border-radius:5px;
--moz-border-radius:5px;
-}
-.aa input[type="submit"]{
-width:200px;
-height:35px;
-border:0;
-border-radius:5px;
--webkit-border-radius:5px;
--o- border-radius:5px;
--moz-border-radius:5px;
-background-color: orange;
-font-weight: bolder;
-}
-</style>
-</head>
-<body background="../assets/images/emp.png">
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("Training Module2");
+?>
+
       <table width="625" height="124">
 <br>
 &nbsp;
@@ -98,8 +44,5 @@ Select Rank : <select type="text" name="EMPLOYEE_SEARCH_RANK">
        </table>
 
 </div>
-<script type="text/javascript">
-var MenuBar1 = new Spry.Widget.MenuBar("MenuBar1", {imgDown:"../assets/spry/sprymenubardownhover.gif", imgRight:"../assets/spry/sprymenubarrighthover.gif"});
-</script>
-</body>
-</html>
+
+<?php layout_end(); ?>

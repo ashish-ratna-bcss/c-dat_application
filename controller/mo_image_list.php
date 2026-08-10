@@ -5,20 +5,11 @@
 // !empty($_GET) covers links that pass parameters in the query string.
 $__submitted = ($_SERVER['REQUEST_METHOD'] === 'POST') || !empty($_GET);
 ?>
-<html>
-<head>
-<title> IMAGE FORM </title>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<link rel="stylesheet" href="../assets/css/style.css" >
-<style type="test/css">
-label{
-float:left;
-width:200px;
-text-align=left;
-}
-</style>
-</head>
-<body bgcolor="#5195BA">
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("Mo Image List");
+?>
+
 <table>
     <tr>
     <th width="1126" align="center" scope="col">MO IMAGE LIST</th>
@@ -84,5 +75,4 @@ echo '<img height="300" width="300" src="'.cdat_base64_image_src($row['IMAGE']).
 }
 ?>
 <?php endif; ?>
-</body>
-</html>
+<?php layout_end(); ?>

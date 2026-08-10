@@ -1,7 +1,8 @@
-<html>
-<head>
-</head>
-<body bgcolor="#0C5D90">
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("Cis Data Name Search Php");
+?>
+
 <li><a href="jrms.php"><font color=#FDEFEF>Back</a></li>
 <script>
 function bigImg(x) { 
@@ -71,5 +72,4 @@ echo "<td height=100 width=100px>";?> <?php echo '<img onmouseover="bigImg(this)
 echo"</table>";
 
 ?>
-</body>
-</html>
+<?php layout_end(); ?>

@@ -1,7 +1,8 @@
-<html>
-<head>
-</head>
-<body bgcolor="#0C5D90">
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("Cis Data Name Search Php1");
+?>
+
 <li><a href="jrms.php"><font color=#FDEFEF>Back</a></li>
 <?php
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
@@ -28,5 +29,4 @@ echo "<font size=4 face=verdana color='#F9FBFC'><td><center><b>". $row['PHONE'] 
 }
 
 ?>
-</body>
-</html>
+<?php layout_end(); ?>

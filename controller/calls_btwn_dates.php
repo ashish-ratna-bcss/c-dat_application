@@ -1,7 +1,14 @@
-<html>
-<head>
-</head>
-<body bgcolor="#0C5D90">
+<?php
+// Must run before any output: audit_require_* redirects with
+// header(), which is lost once the layout has started printing.
+require_once __DIR__ . '/activity_logger.php';
+audit_require_session();
+?>
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("Calls Between Dates");
+?>
+
 <li><a href="calls_btwn_dates.php"><font color=#FDEFEF>Back</a></li>
 <?php
 require_once __DIR__ . '/activity_logger.php';
@@ -80,5 +87,4 @@ echo"</table>";
 
 sqlsrv_free_stmt( $st5);
 ?>
-</body>
-</html>
+<?php layout_end(); ?>

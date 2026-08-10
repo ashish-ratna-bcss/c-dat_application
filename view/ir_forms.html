@@ -1,63 +1,8 @@
-<!DOCTYPE html>
-<html>
-<head>
-<MARQUEE><h1>HYDERABAD CITY POLICE INTERROGATION REPORTS</h1></MARQUEE>
-<link href="../assets/spry/sprymenubarhorizontal.css" rel="stylesheet" type="text/css" />
-<link href="../assets/spry/sprymenubarvertical.css" rel="stylesheet" type="text/css" />
-<style type="text/css">
-body{
-background-image: url(../assets/images/analysis.jpg);
-background-size: cover;
-}
-.aa{
-width: 300px;
-height: 300px;
-background-color: rgba(0,0,0,0.4);
-margin:0 auto;
-margin-top:40px;
-padding-top:10px;
-padding-left: 50px;
-border-radius: 15px;
--webkit-border-radius: 15px;
--moz-border-radius:15px;
-color:white;
-font-weight:bolder;
-box-shadow: inset -4px -4px rgba(0,0,0,0.4);
-font-size:18px;
-}
-.aa input[type="text"]{
-width:200px;
-height:35px;
-border:0;
-border-radius:5px;
--webkit-border-radius:5px;
--o- border-radius:5px;
--moz-border-radius:5px;
-padding-left: 10px;
-}
-.aa input[type="password"]{
-width:200px;
-height:35px;
-border:0;
-border-radius:5px;
--webkit-border-radius:5px;
--o- border-radius:5px;
--moz-border-radius:5px;
-}
-.aa input[type="submit"]{
-width:200px;
-height:35px;
-border:0;
-border-radius:5px;
--webkit-border-radius:5px;
--o- border-radius:5px;
--moz-border-radius:5px;
-background-color: orange;
-font-weight: bolder;
-}
-</style>
-</head>
-<body>
+<?php
+define('CDAT_BASE', '..');
+require_once __DIR__ . '/../controller/includes/layout.php';
+layout_begin("IR Forms");
+?>
 <div class="aa">
 <h2>Login</h2>
 <form action="../controller/login.php" Method="post">
@@ -66,5 +11,4 @@ PASSWORD:<input type="PASSWORD" name="PASSWORD" placeholder="Please Enter Passwo
 <input type="SUBMIT" value="Login"></br>     
 </form>
 </div>
-</body>
-</html>
+<?php layout_end(); ?>

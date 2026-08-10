@@ -1,7 +1,8 @@
-<html>
-<head>
-</head>
-<body bgcolor="#0C5D90">
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("IMEI Search In Phone");
+?>
+
 <li><a href="imeisinphone.php"><font color=#FDEFEF>Back</a></li>
 <?php
 require_once __DIR__ . '/sql_safe.php';
@@ -78,5 +79,4 @@ echo"</table>";
 
 sqlsrv_free_stmt( $st3);
 ?>
-</body>
-</html>
+<?php layout_end(); ?>

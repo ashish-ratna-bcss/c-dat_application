@@ -1,7 +1,8 @@
-<html>
-<head>
-</head>
-<body>
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("Alldata Search");
+?>
+
 
 <style>
 input[type=text], select {
@@ -260,5 +261,4 @@ echo"</table>";
 }
 
 ?>
-</body>
-</html>
+<?php layout_end(); ?>

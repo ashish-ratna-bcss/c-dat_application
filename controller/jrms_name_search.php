@@ -1,7 +1,8 @@
-<html>
-<head>
-</head>
-<body bgcolor="#0C5D90">
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("JRMS Name Search");
+?>
+
 <?php
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"JRMS");
@@ -80,5 +81,4 @@ echo "</tr>";
 echo"</table>";
 
 ?>
-</body>
-</html>
+<?php layout_end(); ?>

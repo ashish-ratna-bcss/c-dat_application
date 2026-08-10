@@ -1,7 +1,8 @@
-<html>
-<head>
-</head>
-<body bgcolor="#0C5D90">
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("Cdatcnts1");
+?>
+
 <p><a href="cdatcnts.php"><font color=#FDEFEF>BACK</a></p>
 <style type="text/css">
 a:link , a:visited{
@@ -217,5 +218,4 @@ echo "<blink><font size=4 face=verdana color='#F9FBFC'><td><center><b>". htmlspe
 }
 
 ?>
-</body>
-</html>
+<?php layout_end(); ?>

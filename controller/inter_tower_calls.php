@@ -1,19 +1,8 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-<title>Untitled Document</title>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>Untitled Document</title>
-<script src="../assets/spry/sprymenubar.js" type="text/javascript"></script>
-<link href="../assets/spry/sprymenubarhorizontal.css" rel="stylesheet" type="text/css" />
-<style type="text/css">
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("Inter Tower Calls");
+?>
 
-body,td,th {
-	font-family: Arial, Helvetica, sans-serif;
-}
-</style>
-</head>
-<body bgcolor="#5195BA">
 <?php
 require_once("dbcontroller.php");
 $db_handle = new DBController();
@@ -129,8 +118,5 @@ foreach($results as $POLICE_STATION) {
     </tr>
   </table>
 </div>
-<script type="text/javascript">
-var MenuBar1 = new Spry.Widget.MenuBar("MenuBar1", {imgDown:"../assets/spry/sprymenubardownhover.gif", imgRight:"../assets/spry/sprymenubarrighthover.gif"});
-</script>
-</body>
-</html>
+
+<?php layout_end(); ?>

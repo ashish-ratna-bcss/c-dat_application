@@ -1,15 +1,8 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8"/>
-    <title>Table Dropdown Filter</title>
-    <link href="../assets/css/w3.css" rel="stylesheet"/>
-    <style>
-        .container{width:960px;margin:30px auto;}
-        thead select{border: 1px solid #ffffff;width:100%;}
-    </style>
-</head>
-<body>
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("Demo.php");
+?>
+
 
     <div class="container">
         <table id="mytable" class="w3-table-all">
@@ -53,5 +46,4 @@ echo "</tr>";
     <script>
         $('#mytable').ddTableFilter();
     </script>
-</body>
-</html>
+<?php layout_end(); ?>

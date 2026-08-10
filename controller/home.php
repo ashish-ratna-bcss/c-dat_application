@@ -5,99 +5,16 @@
 require_once __DIR__ . '/activity_logger.php';
 audit_require_session();
 ?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>Untitled Document</title>
-<script src="../assets/spry/sprymenubar.js" type="text/javascript"></script>
-<link href="../assets/spry/sprymenubarhorizontal.css" rel="stylesheet" type="text/css" />
-<link href="../assets/spry/sprymenubarvertical.css" rel="stylesheet" type="text/css" />
-<link rel="stylesheet" type="text/css" href="../assets/css/css_sparkle1.css">
-<style type="text/css">
-.FONT {
-	color: #CFF;
-	font-size: 24px;
-	font-weight: bold;
-	font-family: Verdana, Geneva, sans-serif;
-}
-</style>
-</head>
-
-<body bgcolor="#5195BA">
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("Dashboard");
+?>
 <div align="center">
   <table width="1323" height="603" border="2">
 <tr>
   <td width="1349" height="595" align="left" valign="top"><table width="1313" height="148">
         <tr>
-          <td width="1265" height="134" align="center" valign="bottom" background="../assets/images/topborder.jpg"><ul id="MenuBar1" class="MenuBarHorizontal">
-            <li><a href="home.php">Home</a>              </li>
-            <li><a href="home.php" class="MenuBarItemSubmenu">Summary</a>
-              <ul>
-                <li><a href="sum_home.php">Summary Total</a></li>
-                <li><a href="sum_between_dates.php">Summary Between Dates</a></li>
-                <li><a href="sum_isd_cnts.php">Summary of ISD Contacts</a></li>
-                <li><a href="sum_new_nos.php">Summary of New Contacts</a></li>
-                <li><a href="sum_in_state.php">Summary Within a State</a></li>
-                <li><a href="sum_out_state.php">Summary other than a state</a></li>
-              </ul>
-            </li>
-            <li><a href="home.php" class="MenuBarItemSubmenu">Call Details</a>
-              <ul>
-		<li><a href="movements.php"> MOVEMENTS </a></li>
-		<li><a href="movements_between_two_numbers.php">Movements Btwn Two Nos</a></li>
-		<li><a href="movements_between_two_numbers_comparision.php">Movements Btwn Two Nos Comparision</a></li>
-                <!----<li><a href="calls_tot.php">Call Details Total</a></li>---->
-                <li><a href="calls_btwn_dates.php">Calls Between Dates</a></li>
-                <!-----<li><a href="calls_bt_nos.php">Calls Between Two Numbers</a></li>--->
-              </ul>
-            </li>
-            <li><a href="home.php" class="MenuBarItemSubmenu">Cdat</a>
-              <ul>
-                <li><a href="cdatcnts.php">Cdat Cnts</a></li>
-		<li><a href="bulk_cdat_contacts.php">Bulk Cdat Contacts</a></li>
-		<li><a href="otherscdat.php">Others Cdat</a></li>
-              </ul>
-            </li>
-            <li><a href="home.php" class="MenuBarItemSubmenu">Imei Search</a>
-              <ul>
-                <li><a href="imeisearch.php">Phones used in Imei</a></li>
-                <li><a href="imeisinphone.php">Imeis used in phone</a></li>
-              </ul>
-            </li>
-            <li><a href="home.php" class="MenuBarItemSubmenu">Address</a>
-              <ul>
-                <li><a href="address.php">Single Address</a></li>
-                <li><a href="bulkaddress.php">Bulk Addresses</a></li>
-              </ul>
-            </li>
-             <li><a href="#" class="MenuBarItemSubmenu">Day Night Loc</a>
-               <ul>
-                <li><a href="../view/day%26nightloc.html">Top 10 Day Night Loc</a></li>
-                <li><a href="../view/day%26nightloc_btwn_dates.html">Top 10 Day Night Loc Between Dates</a></li>
-               </ul>
-            </li>
-                <li><a href="#" class="MenuBarItemSubmenu">Offenders List</a>
-                  <ul>
-                    <li><a href="habitual.php">Habitual Offenders List - 1</a></li>
-                  </ul>
-                </li>
-            <li><a href="#" class="MenuBarItemSubmenu">Others</a>
-              <ul>
-                <li><a href="cellid_search.php">Cellid Search</a></li>
-                <li><a href="vehicle_search.php">Vehicle Search</a></li>
-                <li><a href="common_cnts.php">Common Cnts</a></li>
-                <li><a href="admin_activity_log.php">User Activity</a></li>
-                <li><a href="admin_sql_console.php">SQL Query Console</a></li>
-		<li><a href="tower_home.php">Tower Dump Reports (Under Development)</a></li>
-		<li><a href="../view/auth.html">IR FORMS</a></li>
-		<li><a href="ir_search.php">IR Form Search By Name</a></li>
-		<li><a href="training_module1.php">TRAININGS</a></li>
-              </ul>
-            </li>
-            <!-- <li><a href="home_ir.php" style="color: #FFD700; font-weight: bold;">IR Home</a></li>
-            <li><a href="logout.php" style="color: #FF6347; font-weight: bold;">Logout</a></li> -->
-          </ul></td>
+          <td width="1265" height="134" align="center" valign="bottom" background="../assets/images/topborder.jpg"></td>
         </tr>
       </table>
 <marquee behavior="scroll" direction="right"> <font color="YELLOW" face=verdana size='2'><b> *** PLEASE MAIL RAW DATA TO cdranalysiswing@gmail.com TO VIEW REPORTS *** </b></font></marquee> 
@@ -105,22 +22,7 @@ audit_require_session();
           <tr>
             <td width="214" rowspan="2" valign="top">
               <blockquote>
-                <ul class="MenuBarVertical">
-          <li><a href="admin_upload.php">DATA UPLOAD</a></li>
-          <li><a href="address.php">Address Search</a></li>
-          <li><a href="cdatcnts.php">Cdat Cnts</a></li>
-          <li><a href="cellid_search.php">Cellid Search</a></li>
-          <li><a href="common_cnts.php">Common Cnts</a></li>
-          <li><a href="imeisearch.php">IMEI Search</a></li>
-          <li><a href="vehicle_search_criteria.php">Vehicle Search</a></li>
-	  <li><a href="ir_module.php" class="confirm_selection">Interrogation Report Search</a></li>
-	  <li><a href="offender_search_by_mo.php" class="confirm_selection">Offender Search By MO</a></li>
-	  <li><a href="jrms_main_page1.php" class="confirm_selection">JRMS</a></li>
-	  <li><a href="pdact_main_page_search.php" class="confirm_selection">PDACT</a></li>
-	  <li><a href="rowdysheeter_ps_wise_search.php" class="confirm_selection">Rowdy Sheeter Search By PS</a></li>
-          <li><a href="home_ir.php" class="confirm_selection">Interrogation Report Home</a></li>
-          <li><a href="logout.php" class="confirm_selection">Logout</a></li>
-        </ul>
+                
         <p>&nbsp; </p>
       </blockquote></td>
             <td width="1015" height="24" align="left" valign="top"><p align="center" class="FONT">CALL DATA ANALYSIS TOOL</p></td>
@@ -142,10 +44,5 @@ audit_require_session();
 
 <p>&nbsp;</p>
     
-  <script type="text/javascript">
-var MenuBar1 = new Spry.Widget.MenuBar("MenuBar1", {imgDown:"../assets/spry/sprymenubardownhover.gif", imgRight:"../assets/spry/sprymenubarrighthover.gif"});
-var MenuBar2 = new Spry.Widget.MenuBar("MenuBar2", {imgRight:"../assets/spry/sprymenubarrighthover.gif"});
-
-</script>
-</body>
-</html>
+  
+<?php layout_end(); ?>

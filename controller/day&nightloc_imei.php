@@ -1,72 +1,14 @@
-﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>Untitled Document</title>
-<script src="../assets/spry/sprymenubar.js" type="text/javascript"></script>
-<link href="../assets/spry/sprymenubarhorizontal.css" rel="stylesheet" type="text/css" />
-<style type="text/css">
-body,td,th {
-	font-family: Arial, Helvetica, sans-serif;
-}
-</style>
-</head>
-
-<body bgcolor="#5195BA">
+﻿
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("Day&nightloc IMEI");
+?>
 <div align="center">
   <table width="1323" height="603" border="2">
     <tr>
       <td width="1349" height="595" align="left" valign="top"><table width="1313" height="148">
         <tr>
-          <td width="1265" height="134" align="center" valign="bottom" background="../assets/images/topborder.jpg"><ul id="MenuBar1" class="MenuBarHorizontal">
-            <li><a href="home_imei.php">Home</a>              </li>
-            <li><a href="#" class="MenuBarItemSubmenu">Summary</a>
-              <ul>
-                <li><a href="imei_request_sum.php">Summary Total</a></li>
-              </ul>
-            </li>
-            <li><a href="#" class="MenuBarItemSubmenu">Call Details</a>
-              <ul>
-                <li><a href="imei_request_movements.php"> MOVEMENTS </a></li>
-	          </ul>
-            </li>
-            <li><a href="#" class="MenuBarItemSubmenu">Cdat</a>
-              <ul>
-                <li><a href="cdatcnts.php">Cdat Cnts</a></li>
-		              </ul>
-            </li>
-            <li><a href="#" class="MenuBarItemSubmenu">Imei Search</a>
-              <ul>
-                <li><a href="imei_request_status.php">Phones used in Imei</a></li>
-                <li><a href="imei_request_status.php">Imeis used in phone</a></li>
-              </ul>
-            </li>
-            <li><a href="#" class="MenuBarItemSubmenu">Address</a>
-              <ul>
-                <li><a href="address.php">Single Address</a></li>
-                <li><a href="bulkaddress.php">Bulk Addresses</a></li>
-              </ul>
-            </li>
-             <li><a href="#" class="MenuBarItemSubmenu">Day Night Loc</a>
-               <ul>
-                <li><a href="../view/day%26nightloc_imei.html">Top 10 Day Night Loc</a></li>
-                  </ul>
-                </li>
-                <li><a href="#" class="MenuBarItemSubmenu">Wanted</a>
-                  <ul>
-                    <li><a href="wanted1.php">List - 1</a></li>
-                  </ul>
-                </li>
-            <li><a href="#" class="MenuBarItemSubmenu">Others</a>
-              <ul>
-                <li><a href="cellid_search.php">Cellid Search</a></li>
-                <li><a href="vehicle_search.php">Vehicle Search</a></li>
-                <li><a href="common_cnts.php">Common Cnts</a></li>
-                <li><a href="admin_activity_log.php">User Activity</a></li>
-                <li><a href="admin_sql_console.php">SQL Query Console</a></li>
-                </ul>
-            </li>
-          </ul></td>
+          <td width="1265" height="134" align="center" valign="bottom" background="../assets/images/topborder.jpg"></td>
         </tr>
       </table>
       <p>&nbsp;</p>
@@ -87,8 +29,4 @@ body,td,th {
     </tr>
   </table>
 </div>
-<script type="text/javascript">
-var MenuBar1 = new Spry.Widget.MenuBar("MenuBar1", {imgDown:"../assets/spry/sprymenubardownhover.gif", imgRight:"../assets/spry/sprymenubarrighthover.gif"});
-</script>
-</body>
-</html>
+<?php layout_end(); ?>

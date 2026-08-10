@@ -1,7 +1,8 @@
-<html>
-<head>
-</head>
-<body bgcolor="#0C5D90">
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("Fp List");
+?>
+
 <li><a href="ir_module.php"><font color=#FDEFEF>Back</a></li>
 <script>
 function bigImg(x) { 
@@ -81,6 +82,4 @@ echo "</tr>";
 sqlsrv_free_stmt( $st9);
 
 ?>
-</body>
-</html>dy>
-</html>
+<?php layout_end(); ?>

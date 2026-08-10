@@ -1,7 +1,8 @@
-<html>
-<head>
-</head>
-<body bgcolor="#0C5D90">
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("IR Ndps");
+?>
+
 <script>
 function bigImg(x) { 
 x.style.height="400px";
@@ -390,5 +391,4 @@ echo "</tr>";
 
 echo "</table>";
 ?>
-</body>
-</html>
+<?php layout_end(); ?>

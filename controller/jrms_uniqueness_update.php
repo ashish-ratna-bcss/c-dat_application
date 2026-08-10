@@ -1,78 +1,8 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
-<html>
-<head>
-<table>
-        <tr>
-          <th width="1126" align="center" scope="col"><font size='5' color='#AED1F1'>JRMS RECORDS UPDATE FORM</font></th>
-        </tr>
-</table>
-<title> JRMS ENTRY FORM </title>
-<link rel="stylesheet" type="text/css" href="../assets/vendor/jquery-ui-1.10.4.custom/css/dark-hive/jquery-ui-1.10.4.custom.min.css">
-<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-1.10.2.js"></script>
-<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.js"></script>
-<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.min.js"></script>
-<script type="text/javascript">
-$("document").ready(function() {
-	$("#datepickerID").datepicker({dateFormat: "yy-mm-dd",
-		changeYear: true,
-		changeMonth: true,
-	}) 
-	$("#datepickerID1").datepicker({dateFormat: "yy-mm-dd",
-		changeYear: true,
-		changeMonth: true,
-	})    
-	$("#datepickerID2").datepicker({dateFormat: "yy-mm-dd",
-		changeYear: true,
-		changeMonth: true,
-	}) 
-		$("#datepickerID3").datepicker({dateFormat: "yy-mm-dd",
-		changeYear: true,
-		changeMonth: true,
-	}) 
-});
-</script>
-<script src="../assets/spry/sprymenubar.js" type="text/javascript"></script>
-<link href="../assets/spry/sprymenubarhorizontal.css" rel="stylesheet" type="text/css" />
-<style>
-input[type=text], select {
-    width: 25%;
-    padding: 3px 10px;
-    margin: 4px 0;
-    display: inline-block;
-    border: 1px solid #ccc;
-    border-radius: 2px;
-    box-sizing: border-box;
-}
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("JRMS Uniqueness Update");
+?>
 
-input[type=submit] {
-    width: 15%;
-    background-color: ORANGE;
-    color: white;
-    padding: 4px 15px;
-    margin: 4px 0;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 25px;
-}
-
-div {
-    border-radius: 5px;
-    background-color: #f2f2f2;
-    padding: 5px;
-    width: 40%;
-    border-radius: 4px;
-    float:left;
-    width:200px;
-    text-align: left;
-        }
-       textarea{
-       width: 25%;
-       height: 25px;
-       }
-</style>
-</head>
-<body bgcolor="#808000">
 <table>
         <tr>
           <th width="1126" align="center" scope="col">JRMS</th>
@@ -292,9 +222,5 @@ $DISTRICT=$row['DISTRICT'];
 <input type="submit" value="UPDATE">
 <br/><br/>
 </form>
-<script type="text/javascript">
-var MenuBar1 = new Spry.Widget.MenuBar("MenuBar1", {imgDown:"../assets/spry/sprymenubardownhover.gif", imgRight:"../assets/spry/sprymenubarrighthover.gif"});
-</script>
-</body>
 
-</html>
+<?php layout_end(); ?>

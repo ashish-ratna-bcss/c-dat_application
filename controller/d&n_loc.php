@@ -1,7 +1,7 @@
-<html>
-<head>
-</head>
-<body bgcolor="#0C5D90">
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("D&n Loc");
+?>
 <li><a href="../view/day%26nightloc.html"><font color=#FDEFEF>Back</a></li>
 <?php
 require_once __DIR__ . '/cdr_enrichment_sql.php';
@@ -100,5 +100,4 @@ echo "<font size=4 face=verdana color='#F9FBFC'><td><center><b>NIGHT LOCATION OF
     . "<center></td></font></br>";
 dn_render_table($nightRows, $towerMap);
 ?>
-</body>
-</html>
+<?php layout_end(); ?>

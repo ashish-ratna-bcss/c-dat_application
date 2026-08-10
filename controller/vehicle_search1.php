@@ -5,16 +5,11 @@
 // !empty($_GET) covers links that pass parameters in the query string.
 $__submitted = ($_SERVER['REQUEST_METHOD'] === 'POST') || !empty($_GET);
 ?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>Untitled Document</title>
-<script src="../assets/spry/sprymenubar.js" type="text/javascript"></script>
-<link href="../assets/spry/sprymenubarhorizontal.css" rel="stylesheet" type="text/css" />
-</head>
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("Vehicle Search1");
+?>
 
-<body bgcolor="#80d4ff">
 <div align="center">
   <table width="1323" height="603" border="2">
     <tr>
@@ -42,9 +37,7 @@ $__submitted = ($_SERVER['REQUEST_METHOD'] === 'POST') || !empty($_GET);
     </tr>
   </table>
 </div>
-<script type="text/javascript">
-var MenuBar1 = new Spry.Widget.MenuBar("MenuBar1", {imgDown:"../assets/spry/sprymenubardownhover.gif", imgRight:"../assets/spry/sprymenubarrighthover.gif"});
-</script>
+
 
 <?php if ($__submitted): ?>
 </p>
@@ -104,5 +97,4 @@ sqlsrv_free_stmt( $st9);
 }
 ?>
 <?php endif; ?>
-</body>
-</html>
+<?php layout_end(); ?>

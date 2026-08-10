@@ -1,7 +1,8 @@
-<html>
-<head>
-</head>
-<body bgcolor="#0C5D90">
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("Common Contacts");
+?>
+
 <li><a href="common_cnts.php">Back</a></li>
 <?php
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
@@ -163,5 +164,4 @@ echo"</table>";
 sqlsrv_free_stmt( $at8);
 sqlsrv_free_stmt( $st9);
 ?>
-</body>
-</html>
+<?php layout_end(); ?>

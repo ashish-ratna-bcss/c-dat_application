@@ -1,0 +1,4 @@
+# Layout partials, never pages. They emit no output on their own, but there is
+# no reason to expose them over HTTP.
+Require all denied
+Options -Indexes

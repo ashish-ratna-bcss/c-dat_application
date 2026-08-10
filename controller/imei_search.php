@@ -1,7 +1,14 @@
-<html>
-<head>
-</head>
-<body bgcolor="#0C5D90">
+<?php
+// Must run before any output: audit_require_* redirects with
+// header(), which is lost once the layout has started printing.
+require_once __DIR__ . '/activity_logger.php';
+audit_require_session();
+?>
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("IMEI Search");
+?>
+
 <li><a href="imeisearch.php"><font color=#FDEFEF>Back</a></li>
 <?php
 require_once __DIR__ . '/activity_logger.php';
@@ -88,5 +95,4 @@ echo "<blink><font size=4 face=verdana color='#F9FBFC'><td><center><b>". $row['P
 
 sqlsrv_free_stmt( $st3);
 ?>
-</body>
-</html>
+<?php layout_end(); ?>

@@ -1,7 +1,7 @@
-<html>
-<head>
-</head>
-<body bgcolor="#0C5D90">
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("D & N Bt Dts");
+?>
 <li><a href="../view/day%26nightloc_btwn_dates.html"><font color=#FDEFEF>Back</a></li>
 <?php
 require_once __DIR__ . '/cdr_enrichment_sql.php';
@@ -116,5 +116,4 @@ echo"</table>";
 
 sqlsrv_free_stmt( $st5);
 ?>
-</body>
-</html>
+<?php layout_end(); ?>

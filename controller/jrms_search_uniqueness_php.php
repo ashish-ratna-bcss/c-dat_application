@@ -1,7 +1,8 @@
-<html>
-<head>
-</head>
-<body bgcolor="#0C5D90">
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("JRMS Search Uniqueness Php");
+?>
+
 <li><a href="jrms_search_uniqueness.php"><font color=#FDEFEF>Back</a></li>
 <?php
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
@@ -152,5 +153,4 @@ while( $row = sqlsrv_fetch_array( $st11, SQLSRV_FETCH_ASSOC) ) {
 echo "<blink><font size=4 face=verdana color='#F9FBFC'><td><center><b>". $row['PHONE'] ."<center></td></font></br>";
 }
 ?>
-</body>
-</html>
+<?php layout_end(); ?>

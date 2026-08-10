@@ -5,40 +5,11 @@
 // !empty($_GET) covers links that pass parameters in the query string.
 $__submitted = ($_SERVER['REQUEST_METHOD'] === 'POST') || !empty($_GET);
 ?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>Untitled Document</title>
-<link rel="stylesheet" type="text/css" href="../assets/vendor/jquery-ui-1.10.4.custom/css/dark-hive/jquery-ui-1.10.4.custom.min.css">
-<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-1.10.2.js"></script>
-<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.js"></script>
-<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.min.js"></script>
-<script type="text/javascript">
-$("document").ready(function() {
-	$("#datepickerID").datepicker({dateFormat: "yy-mm-dd",
-		changeYear: true,
-		changeMonth: true,
-	}) 
-	$("#datepickerID1").datepicker({dateFormat: "yy-mm-dd",
-		changeYear: true,
-		changeMonth: true,
-	})    
-	
-});
-</script>
-<script src="../assets/spry/sprymenubar.js" type="text/javascript"></script>
-<link href="../assets/spry/sprymenubarhorizontal.css" rel="stylesheet" type="text/css" />
-<style type="text/css">
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("IMEI Request Traced Details");
+?>
 
-body,td,th {
-	font-family: Arial, Helvetica, sans-serif;
-}
-</style>
-
-</head>
-
-<body bgcolor="#5195BA">
 <div align="center">
   <table width="1323" height="603" border="2">
     <tr>
@@ -66,9 +37,7 @@ body,td,th {
       <p>&nbsp;</p></td>
     </tr>
   </table>
-<script type="text/javascript">
-var MenuBar1 = new Spry.Widget.MenuBar("MenuBar1", {imgDown:"../assets/spry/sprymenubardownhover.gif", imgRight:"../assets/spry/sprymenubarrighthover.gif"});
-</script>
+
 
 <?php if ($__submitted): ?>
 </br>
@@ -172,5 +141,4 @@ echo "</tr>";
 sqlsrv_free_stmt( $st3);
 ?>
 <?php endif; ?>
-</body>
-</html>
+<?php layout_end(); ?>

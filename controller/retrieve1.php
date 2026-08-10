@@ -1,7 +1,8 @@
-﻿<html>
-<head>
-</head>
-<body bgcolor="#0C5E95">
+﻿
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("Retrieve1");
+?>
 <p><a href="../view/retrieve1.htm">BACK</a></p>
 <body>
 <?php
@@ -36,32 +37,4 @@ echo "<blink><font size=4 face=verdana color='#F9FBFC'><td><center><b>". $row['D
 }
 
 ?>
-</body>
-</html>
-
-<!------------------------php code ------------------------>
-
-<?php
-
-if(isset($_POST["btnclick"])){
-
-    $USERNAME = $_POST["USERNAME"];
-    $PASSWORD = $_POST["PASSWORD"];
-
-    $_SESSION["status"]=false;
-
-    //condition for checking valid input from user
-
-    if ( $USERNAME == "FORMS" && $PASSWORD == "sa@1234" ){
-
-        $_SESSION["USERNAME"] = $USERNAME;
-        $_SESSION["status"]= true;
-        header("Location: login1.php");
-    }
-    else{
-        echo "invalid credentials";
-    }
-    
-}
-
-?>
+<?php layout_end(); ?>

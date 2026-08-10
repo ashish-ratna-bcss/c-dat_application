@@ -1,7 +1,8 @@
-<html>
-<head>
-</head>
-<body bgcolor="#0C5D90">
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("Vbr Search");
+?>
+
 <li><a href="vbr_search.php"><font color=#FDEFEF>Back</a></li>
 <?php
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
@@ -192,5 +193,4 @@ sqlsrv_free_stmt( $st4);
 sqlsrv_free_stmt( $st5);
 sqlsrv_free_stmt( $st21);
 ?>
-</body>
-</html>
+<?php layout_end(); ?>

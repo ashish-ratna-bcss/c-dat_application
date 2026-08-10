@@ -170,74 +170,10 @@ try {
     // Ignore history load errors
 }
 ?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>SQL Query Console</title>
-<script src="../assets/spry/sprymenubar.js" type="text/javascript"></script>
-<link href="../assets/spry/sprymenubarhorizontal.css" rel="stylesheet" type="text/css" />
-<style type="text/css">
-body,td,th {
-    font-family: Arial, Helvetica, sans-serif;
-}
-.console-editor {
-    background-color: #1e1e1e;
-    color: #d4d4d4;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 14px;
-    padding: 10px;
-    border: 1px solid #3c3c3c;
-    border-radius: 4px;
-    width: 95%;
-    height: 120px;
-    resize: vertical;
-}
-.btn-console {
-    background-color: #0A4D73;
-    color: white;
-    border: 1px solid #002244;
-    padding: 6px 12px;
-    font-size: 13px;
-    font-weight: bold;
-    cursor: pointer;
-    border-radius: 3px;
-}
-.btn-console:hover {
-    background-color: #0d6292;
-}
-.btn-clear {
-    background-color: #7D0F12;
-}
-.btn-clear:hover {
-    background-color: #921215;
-}
-.btn-secondary {
-    background-color: #555;
-}
-.btn-secondary:hover {
-    background-color: #666;
-}
-.history-item {
-    background-color: #AED1F1;
-    border: 1px solid #75a7d3;
-    margin: 5px 0;
-    padding: 5px;
-    border-radius: 3px;
-    font-size: 11px;
-    font-family: monospace;
-    text-align: left;
-    cursor: pointer;
-    max-height: 50px;
-    overflow: hidden;
-}
-.history-item:hover {
-    background-color: #C2E0FB;
-}
-</style>
-</head>
-
-<body bgcolor="#5195BA">
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("SQL Query Console");
+?>
 <div align="center">
   <table width="1323" height="603" border="2">
     <tr>
@@ -247,67 +183,7 @@ body,td,th {
         <table width="1313" height="148">
           <tr>
             <td width="1265" height="134" align="center" valign="bottom" background="../assets/images/topborder.jpg">
-              <ul id="MenuBar1" class="MenuBarHorizontal">
-                <li><a href="home.php">Home</a></li>
-                <li><a href="#" class="MenuBarItemSubmenu">Summary</a>
-                  <ul>
-                    <li><a href="sum_home.php">Summary Total</a></li>
-                    <li><a href="sum_between_dates.php">Summary Between Dates</a></li>
-                    <li><a href="sum_isd_cnts.php">Summary of ISD Contacts</a></li>
-                    <li><a href="sum_new_nos.php">Summary of New Contacts</a></li>
-                    <li><a href="sum_in_state.php">Summary Within a State</a></li>
-                    <li><a href="sum_out_state.php">Summary other than a state</a></li>
-                  </ul>
-                </li>
-                <li><a href="#" class="MenuBarItemSubmenu">Call Details</a>
-                  <ul>
-                    <li><a href="movements.php">MOVEMENTS</a></li>
-                    <li><a href="movements_between_two_numbers.php">Movements Btwn Two Nos</a></li>
-                    <li><a href="movements_between_two_numbers_comparision.php">Movements Btwn Two Nos Comparision</a></li>
-                    <li><a href="calls_btwn_dates.php">Calls Between Dates</a></li>
-                  </ul>
-                </li>
-                <li><a href="#" class="MenuBarItemSubmenu">Cdat</a>
-                  <ul>
-                    <li><a href="cdatcnts.php">Cdat Cnts</a></li>
-                    <li><a href="bulk_cdat_contacts.php">Bulk Cdat Contacts</a></li>
-                    <li><a href="otherscdat.php">Others Cdat</a></li>
-                  </ul>
-                </li>
-                <li><a href="#" class="MenuBarItemSubmenu">Imei Search</a>
-                  <ul>
-                    <li><a href="imeisearch.php">Phones used in Imei</a></li>
-                    <li><a href="imeisinphone.php">Imeis used in phone</a></li>
-                  </ul>
-                </li>
-                <li><a href="#" class="MenuBarItemSubmenu">Address</a>
-                  <ul>
-                    <li><a href="address.php">Single Address</a></li>
-                    <li><a href="bulkaddress.php">Bulk Addresses</a></li>
-                  </ul>
-                </li>
-                <li><a href="#" class="MenuBarItemSubmenu">Day Night Loc</a>
-                  <ul>
-                    <li><a href="../view/day%26nightloc.html">Top 10 Day Night Loc</a></li>
-                    <li><a href="../view/day%26nightloc_btwn_dates.html">Top 10 Day Night Loc Between Dates</a></li>
-                  </ul>
-                </li>
-                <li><a href="#" class="MenuBarItemSubmenu">Wanted</a>
-                  <ul>
-                    <li><a href="wanted1.php">List - 1</a></li>
-                  </ul>
-                </li>
-                <li><a href="#" class="MenuBarItemSubmenu">Others</a>
-                  <ul>
-                    <li><a href="cellid_search.php">Cellid Search</a></li>
-                    <li><a href="vehicle_search.php">Vehicle Search</a></li>
-                    <li><a href="common_cnts.php">Common Cnts</a></li>
-                    <li><a href="admin_activity_log.php">User Activity</a></li>
-                    <li><a href="admin_sql_console.php"><b>SQL Query Console</b></a></li>
-                  </ul>
-                </li>
-                <!-- <li><a href="logout.php" style="color: #FF6347; font-weight: bold;">Logout</a></li> -->
-              </ul>
+              
             </td>
           </tr>
         </table>
@@ -544,9 +420,4 @@ body,td,th {
     </tr>
   </table>
 </div>
-
-<script type="text/javascript">
-var MenuBar1 = new Spry.Widget.MenuBar("MenuBar1", {imgDown:"../assets/spry/sprymenubardownhover.gif", imgRight:"../assets/spry/sprymenubarrighthover.gif"});
-</script>
-</body>
-</html>
+<?php layout_end(); ?>

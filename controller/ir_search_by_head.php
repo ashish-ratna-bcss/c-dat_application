@@ -1,7 +1,8 @@
-<html>
-<head>
-</head>
-<body bgcolor="#0C5D90">
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("IR Search By Head");
+?>
+
 <li><a href="ir_search.php"><font color=#FDEFEF>Back</a></li>
 <form action ='ir_search_by_head.php'method='post'>
 <b><font size=3 face=verdana color='#F9FBFC'>CRIME_HEAD : </b>
@@ -77,6 +78,4 @@ echo "</tr>";
 sqlsrv_free_stmt( $st9);
 }
 ?>
-</body>
-</html>dy>
-</html>
+<?php layout_end(); ?>

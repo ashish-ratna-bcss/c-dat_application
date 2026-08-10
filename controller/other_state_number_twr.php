@@ -1,7 +1,8 @@
-<html>
-<head>
-</head>
-<body bgcolor="#0C5D90">
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("Other State Number Twr");
+?>
+
 <li><a href="suspect_search.php"><font color='#FDEFEF'>Back</a></li></b></b>
 <?php
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
@@ -59,5 +60,4 @@ echo"</table>";
 
 sqlsrv_free_stmt( $st1);
 ?>
-</body>
-</html>
+<?php layout_end(); ?>

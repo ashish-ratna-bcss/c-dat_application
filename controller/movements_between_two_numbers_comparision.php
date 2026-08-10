@@ -1,7 +1,8 @@
-<html>
-<head>
-</head>
-<body bgcolor="#0C5D90">
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("Movements Comparison");
+?>
+
 <li><a href="movements_between_two_numbers_comparision.php">Back</a></li>
 <?php
 require_once __DIR__ . '/cdr_enrichment_sql.php';
@@ -103,5 +104,4 @@ echo"</table>";
 
 sqlsrv_free_stmt( $st5);
 ?>
-</body>
-</html>
+<?php layout_end(); ?>

@@ -1,7 +1,8 @@
-<html>
-<head>
-</head>
-<body bgcolor="#0C5D90">
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("Bulk Address");
+?>
+
 <li><a href="bulkaddress.php"><font color=#FDEFEF>Back</a></li>
 <?php
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
@@ -88,5 +89,4 @@ echo"</table>";
 
 sqlsrv_free_stmt( $st8);
 ?>
-</body>
-</html>
+<?php layout_end(); ?>

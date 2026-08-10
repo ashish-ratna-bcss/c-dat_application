@@ -1,0 +1,243 @@
+/* CDAT application shell + legacy-content normalisation.
+   ------------------------------------------------------------------
+   The second half matters as much as the first: ~200 pages still emit
+   <font>, bgcolor="#921215", border=1 tables and inline widths. Rather
+   than rewrite that markup, the rules under "Legacy content" neutralise
+   it so old pages inherit the new look automatically. */
+
+:root {
+    --bg:        #eef2f7;
+    --surface:   #ffffff;
+    --sidebar:   #0f2740;
+    --sidebar-2: #16334f;
+    --line:      #dbe3ec;
+    --ink:       #1b2733;
+    --ink-soft:  #5b6b7c;
+    --brand:     #1668c3;
+    --brand-ink: #ffffff;
+    --accent:    #0d9488;
+    --danger:    #b3261e;
+    --thead:     #123a63;
+    --radius:    10px;
+    --shadow:    0 1px 2px rgba(16,32,48,.06), 0 6px 18px rgba(16,32,48,.07);
+    --sw:        264px;
+}
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 15px/1.5 "Segoe UI", Roboto, system-ui, -apple-system, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--brand); }
+
+.skip {
+    position: absolute; left: -9999px; top: 0; z-index: 100;
+    background: #fff; padding: .6rem 1rem; border-radius: 0 0 var(--radius) 0;
+}
+.skip:focus { left: 0; }
+
+/* ---------------- shell ---------------- */
+
+.shell { display: flex; min-height: 100vh; }
+
+.sidebar {
+    width: var(--sw); flex: 0 0 var(--sw);
+    background: var(--sidebar);
+    color: #cfe0f0;
+    display: flex; flex-direction: column;
+    position: sticky; top: 0; height: 100vh;
+}
+
+.brand {
+    display: flex; gap: .7rem; align-items: center;
+    padding: 1rem 1rem 1.1rem;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.brand img { width: 38px; height: 38px; object-fit: contain; }
+.brand strong { display: block; color: #fff; font-size: .95rem; line-height: 1.2; }
+.brand span   { display: block; color: #8fb0cd; font-size: .74rem; margin-top: 2px; }
+
+.sidebar nav { flex: 1 1 auto; overflow-y: auto; padding: .6rem .55rem 1rem; }
+.sidebar nav::-webkit-scrollbar { width: 8px; }
+.sidebar nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,.14); border-radius: 8px; }
+
+.nav, .nav-sub { list-style: none; margin: 0; padding: 0; }
+
+.nav-item, .nav-parent {
+    display: flex; align-items: center; gap: .6rem; width: 100%;
+    padding: .55rem .65rem; margin: 1px 0;
+    border: 0; background: none; color: #cfe0f0;
+    font: inherit; text-align: left; text-decoration: none;
+    border-radius: 8px; cursor: pointer;
+}
+.nav-item:hover, .nav-parent:hover { background: var(--sidebar-2); color: #fff; }
+.nav-item.is-active { background: var(--brand); color: #fff; font-weight: 600; }
+
+.ic { width: 18px; height: 18px; flex: 0 0 18px; opacity: .9; }
+.chev { width: 15px; height: 15px; margin-left: auto; transition: transform .18s ease; opacity: .7; }
+.nav-group.is-open > .nav-parent .chev { transform: rotate(180deg); }
+
+/* Children are hidden until the group is opened. Height animation keeps the
+   sidebar from jumping when several groups are open at once. */
+.nav-sub {
+    display: grid; grid-template-rows: 0fr;
+    transition: grid-template-rows .2s ease;
+}
+.nav-group.is-open > .nav-sub { grid-template-rows: 1fr; }
+.nav-sub > li { overflow: hidden; }
+.nav-sub li:first-child { padding-top: 2px; }
+.nav-sub a {
+    display: block; padding: .44rem .65rem .44rem 2.4rem;
+    color: #a8c4dd; text-decoration: none; border-radius: 8px;
+    font-size: .89rem;
+}
+.nav-sub a:hover { background: var(--sidebar-2); color: #fff; }
+.nav-sub a.is-active { background: rgba(22,104,195,.9); color: #fff; font-weight: 600; }
+
+.side-foot { padding: .55rem; border-top: 1px solid rgba(255,255,255,.08); }
+
+.main-wrap { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+
+.topbar {
+    display: flex; align-items: center; gap: 1rem;
+    background: var(--surface); border-bottom: 1px solid var(--line);
+    padding: .8rem 1.25rem; position: sticky; top: 0; z-index: 20;
+}
+.page-title h1 { margin: 0; font-size: 1.12rem; font-weight: 650; letter-spacing: .2px; }
+.page-title p  { margin: 2px 0 0; font-size: .82rem; color: var(--ink-soft); }
+
+.user { margin-left: auto; display: flex; align-items: center; gap: .55rem; }
+.avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--brand); color: #fff;
+    display: grid; place-items: center; font-weight: 700; font-size: .85rem;
+}
+.uname { font-size: .88rem; color: var(--ink-soft); }
+
+.burger { display: none; border: 0; background: none; padding: .3rem; cursor: pointer; color: var(--ink); }
+.burger svg { width: 22px; height: 22px; }
+
+.content { flex: 1 1 auto; padding: 1.25rem; }
+.card {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 1.15rem 1.25rem; overflow-x: auto;
+}
+.foot { padding: .9rem 1.25rem; color: var(--ink-soft); font-size: .8rem; }
+
+.scrim { position: fixed; inset: 0; background: rgba(8,18,28,.45); z-index: 25; }
+
+@media (max-width: 900px) {
+    .sidebar {
+        position: fixed; z-index: 30; left: 0; top: 0;
+        transform: translateX(-100%); transition: transform .2s ease;
+    }
+    body.nav-open .sidebar { transform: none; }
+    .burger { display: block; }
+}
+
+/* ---------------- Legacy content ----------------
+   Everything below re-skins markup the old pages still produce. */
+
+.content font { font-size: inherit !important; font-family: inherit !important; }
+.content font[color] { color: inherit !important; }
+.content center { text-align: left; }
+.content marquee { display: block; }
+
+/* Old pages nest their content inside layout tables -- <table width="1323"
+   height="603" border="2"> and friends. Those wrappers are left in the markup
+   on purpose: cutting them out of 180 files would mean balancing tag soup by
+   hand. Neutralising them here is exact and reversible. */
+.content table { max-width: 100%; border-collapse: collapse; }
+.content table[border] { border: 0 !important; }
+.content table td, .content table th { vertical-align: top; }
+
+.content table:not([border="1"]) {
+    width: 100% !important; height: auto !important; border: 0 !important;
+}
+.content table:not([border="1"]) > tbody > tr > td,
+.content table:not([border="1"]) > tr > td {
+    width: auto !important; height: auto !important; padding: 0;
+}
+/* The menu strip used a masthead image as a td background. */
+.content td[background] { background-image: none !important; }
+.content [bgcolor] { background-color: transparent; }
+.content div[align], .content p[align], .content td[align="center"] { text-align: left; }
+
+/* A data table is one the pages built with border=1 + bgcolor headers. */
+.content table[border="1"] {
+    width: 100%; margin: .85rem 0 1.1rem;
+    border: 1px solid var(--line) !important;
+    border-radius: 8px; overflow: hidden;
+    font-size: .87rem;
+}
+.content table[border="1"] th {
+    background: var(--thead) !important;
+    color: #fff !important; font-weight: 600;
+    text-align: left; padding: .55rem .6rem;
+    border: 0 !important; white-space: nowrap;
+}
+.content table[border="1"] th font { color: #fff !important; }
+.content table[border="1"] td {
+    background: transparent !important;
+    padding: .48rem .6rem;
+    border-top: 1px solid var(--line) !important;
+}
+.content table[border="1"] tr:nth-child(even) td { background: #f7fafd !important; }
+.content table[border="1"] tr:hover td { background: #eef5fc !important; }
+
+/* Layout tables used bgcolor to tint panels; neutralise those. */
+.content td[bgcolor], .content th[bgcolor], .content table[bgcolor] { background-color: transparent; }
+.content table[border="1"] th[bgcolor] { background: var(--thead) !important; }
+
+.content img { max-width: 100%; height: auto; }
+
+/* Forms */
+.content input[type=text], .content input[type=search], .content input[type=number],
+.content input[type=date], .content input[type=password], .content select,
+.content textarea {
+    font: inherit; color: var(--ink);
+    padding: .48rem .6rem; margin: .15rem .25rem .15rem 0;
+    border: 1px solid #c6d2e0; border-radius: 8px; background: #fff;
+    max-width: 100%;
+}
+.content input:focus, .content select:focus, .content textarea:focus {
+    outline: 2px solid rgba(22,104,195,.35); outline-offset: 1px;
+    border-color: var(--brand);
+}
+.content input[type=submit], .content input[type=button], .content button {
+    font: inherit; font-weight: 600;
+    padding: .5rem 1.05rem; margin: .15rem .25rem;
+    background: var(--brand); color: var(--brand-ink);
+    border: 1px solid transparent; border-radius: 8px; cursor: pointer;
+}
+.content input[type=submit]:hover, .content button:hover { background: #12559f; }
+.content label { color: var(--ink-soft); }
+
+/* The old "Back" link sat in a bare <li> at the top of handler pages. */
+.content > li, .content li > a[href*="."]:only-child { list-style: none; }
+.content > ul { padding-left: 1.1rem; }
+
+.content b, .content strong { font-weight: 650; }
+.content hr { border: 0; border-top: 1px solid var(--line); margin: 1rem 0; }
+
+/* A page's own heading text, usually a lone bold font tag before the table. */
+.content h1, .content h2, .content h3 { margin: .2rem 0 .7rem; font-weight: 650; }
+
+.notice {
+    background: #fff8e6; border: 1px solid #f2dfae; color: #6b5312;
+    padding: .6rem .8rem; border-radius: 8px; margin: 0 0 1rem;
+    font-size: .88rem;
+}
+
+@media print {
+    .sidebar, .topbar, .foot { display: none !important; }
+    .card { border: 0; box-shadow: none; padding: 0; }
+}

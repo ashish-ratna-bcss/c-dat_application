@@ -1,7 +1,7 @@
-<html>
-<head>
-</head>
-<body bgcolor="#0C5D90">
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("D & N Loc IMEI");
+?>
 <li><a href="../view/day%26nightloc_imei.html"><font color=#FDEFEF>Back</a></li>
 	</br>
 <li><a href="home_imei.php"><font color=#FDEFEF>HOME</a></li>
@@ -117,5 +117,4 @@ echo"</table>";
 
 sqlsrv_free_stmt( $st5);
 ?>
-</body>
-</html>
+<?php layout_end(); ?>

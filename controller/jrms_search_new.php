@@ -1,7 +1,8 @@
-<html>
-<head>
-</head>
-<body bgcolor="#0C5D90">
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("JRMS Search New");
+?>
+
 <li><a href="jrms_datewise_search_uniqueness.php"><font color=#FDEFEF>Back</a></li>
 <?php
 $serverName = "10.10.46.14\DAU_HYD_2023";
@@ -85,5 +86,4 @@ echo "</tr>";
 echo"</table>";
 
 ?>
-</body>
-</html>
+<?php layout_end(); ?>

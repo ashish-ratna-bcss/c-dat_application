@@ -5,78 +5,11 @@
 // !empty($_GET) covers links that pass parameters in the query string.
 $__submitted = ($_SERVER['REQUEST_METHOD'] === 'POST') || !empty($_GET);
 ?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>Untitled Document</title>
-<link rel="stylesheet" type="text/css" href="../assets/vendor/jquery-ui-1.10.4.custom/css/dark-hive/jquery-ui-1.10.4.custom.min.css">
-<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-1.10.2.js"></script>
-<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.js"></script>
-<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.min.js"></script>
-<script type="text/javascript">
-$("document").ready(function() {
-	$("#datepickerID").datepicker({dateFormat: "yy-mm-dd",
-		changeYear: true,
-		changeMonth: true,
-	}) 
-	$("#datepickerID1").datepicker({dateFormat: "yy-mm-dd",
-		changeYear: true,
-		changeMonth: true,
-	})    
-	
-});
-</script>
-<script src="../assets/spry/sprymenubar.js" type="text/javascript"></script>
-<link href="../assets/spry/sprymenubarhorizontal.css" rel="stylesheet" type="text/css" />
-<link href="../assets/spry/sprymenubarvertical.css" rel="stylesheet" type="text/css" />
-<style type="text/css">
-	
-body,td,th {
-	font-family: Arial, Helvetica, sans-serif;
-}
-.aa{
-width: 800px;
-height: 400px;
-background-color: rgba(0,0,0,0.4);
-margin:0 auto;
-margin-top:40px;
-padding-top:10px;
-padding-left: 10px;
-border-radius: 15px;
--webkit-border-radius: 15px;
--moz-border-radius:15px;
-color:white;
-font-weight:bolder;
-box-shadow: inset -4px -4px rgba(0,0,0,0.4);
-font-size:18px;
-}
-.aa input[type="text"]{
-width:100px;
-height:35px;
-border:0;
-border-radius:5px;
--webkit-border-radius:5px;
--o- border-radius:5px;
--moz-border-radius:5px;
-padding-left: 10px;
-}
-.aa input[type="submit"]{
-width:200px;
-height:35px;
-border:0;
-border-radius:5px;
--webkit-border-radius:5px;
--o- border-radius:5px;
--moz-border-radius:5px;
-background-color: orange;
-font-weight: bolder;
-}
-</style>
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("Migrant Labours Date Report");
+?>
 
-</head>
-
-<body bgcolor="#808000">
   <p>&nbsp;</p>
       <p>&nbsp;</p></td>
 <div class="aa">
@@ -187,6 +120,4 @@ echo"</table>";
 
 ?>
 <?php endif; ?>
-</body>
-</html>
-</html>
+<?php layout_end(); ?>

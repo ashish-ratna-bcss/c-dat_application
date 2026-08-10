@@ -1,7 +1,9 @@
-﻿<html>
-<head>
-</head>
-<body bgcolor="#0C5E95">
+﻿
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("Retrieve");
+?>
+
 <p><a href="retrieve.php">BACK</a></p>
 <body>
 <?php
@@ -42,5 +44,4 @@ echo "<blink><font size=4 face=verdana color='#F9FBFC'><td><center><b>". $row['D
 }
 
 ?>
-</body>
-</html>
+<?php layout_end(); ?>

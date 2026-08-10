@@ -1,7 +1,8 @@
-<html>
-<head>
-</head>
-<body bgcolor="#0C5D90">
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("Bulk Irsearch Irkey");
+?>
+
 <script>
 //*function bigImg(x) { 
 x.style.height="400px";
@@ -92,6 +93,4 @@ echo "</tr>";
 sqlsrv_free_stmt( $st9);
 }
 ?>
-</body>
-</html>dy>
-</html>
+<?php layout_end(); ?>

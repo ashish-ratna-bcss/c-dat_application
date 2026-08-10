@@ -1,7 +1,8 @@
-<html>
-<head>
-</head>
-<body bgcolor="#0C5D90">
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("JRMS Search By Prisonerno Uniqueness Mahesh");
+?>
+
 <li><a href="jrms_search_by_prisonerno_uniqueness.php"><font color=#FDEFEF>Back</a></li>
 <?php
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
@@ -87,5 +88,4 @@ echo "</tr>";
 echo"</table>";
 
 ?>
-</body>
-</html>
+<?php layout_end(); ?>

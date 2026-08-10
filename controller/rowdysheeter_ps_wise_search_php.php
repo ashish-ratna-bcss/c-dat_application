@@ -1,7 +1,8 @@
-<html>
-<head>
-</head>
-<body bgcolor="#0C5D90">
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("Rowdysheeter Ps Wise Search Php");
+?>
+
 <script>
 function bigImg(x) { 
 x.style.height="400px";
@@ -117,5 +118,4 @@ echo "</table>";
 
 
 ?>
-</body>
-</html>
+<?php layout_end(); ?>

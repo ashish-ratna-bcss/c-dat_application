@@ -1,7 +1,8 @@
-<html>
-<head>
-</head>
-<body bgcolor="#0C5D90">
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("Othercdat");
+?>
+
 <a href="otherscdat.php"><font color=#FDEFEF>BACK</a>
 <style type="text/css">
 a:link , a:visited{
@@ -137,5 +138,4 @@ echo "<blink><font size=4 face=verdana color='#F9FBFC'><td><center><b>". $row['C
 sqlsrv_free_stmt( $st2);
 sqlsrv_free_stmt( $st7);
 ?>
-</body>
-</html>
+<?php layout_end(); ?>

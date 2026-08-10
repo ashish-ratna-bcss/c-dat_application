@@ -1,6 +1,8 @@
-<html>
-<head></head>
-<body>
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("Dump");
+?>
+
 <?php
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"TWRMDB");
@@ -20,5 +22,4 @@ if( $conn === false ) {
 }
 ?>
 </select>
-</body>
-</html>
+<?php layout_end(); ?>

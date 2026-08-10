@@ -1,7 +1,8 @@
-<html>
-<head>
-</head>
-<body bgcolor="#0C5D90">
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("Cdatcnts2");
+?>
+
 <p><a href="cdatcnts.php"><font color='#FDEFEF'>BACK</a></p>
 <style type="text/css">
 a:link , a:visited{
@@ -201,5 +202,4 @@ echo "<font size=4 face=verdana><td><center><b>". $row['CNTS'] ."<center></td></
 sqlsrv_free_stmt( $st2);
 sqlsrv_free_stmt( $st7);
 ?>
-</body>
-</html>
+<?php layout_end(); ?>

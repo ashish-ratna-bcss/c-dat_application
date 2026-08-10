@@ -1,7 +1,8 @@
-<html>
-<head>
-</head>
-<body bgcolor="#0C5D90">
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("Summary Btwn Dates");
+?>
+
 <li><a href="sum_between_dates.php"><font color=#FDEFEF>Back</a></li>
 <?php
 require_once __DIR__ . '/activity_logger.php';
@@ -147,5 +148,4 @@ echo"</table>";
 sqlsrv_free_stmt( $st8);
 sqlsrv_free_stmt( $st4);
 ?>
-</body>
-</html>
+<?php layout_end(); ?>

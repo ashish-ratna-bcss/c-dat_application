@@ -1,7 +1,8 @@
-<html>
-<head>
-</head>
-<body bgcolor="#0C5D90">
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("Summary");
+?>
+
 <li><a href="sum_home.php"><font color=#FDEFEF>Back</a></li>
 <?php
 set_time_limit(0);
@@ -159,5 +160,4 @@ echo "<blink><font size=4 face=verdana color='#F9FBFC'><td><center><b>". $row['P
 
 sqlsrv_free_stmt( $stmt);
 ?>
-</body>
-</html>
+<?php layout_end(); ?>

@@ -1,22 +1,8 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>Untitled Document</title>
-<script src="../assets/spry/sprymenubar.js" type="text/javascript"></script>
-<link href="../assets/spry/sprymenubarhorizontal.css" rel="stylesheet" type="text/css" />
-<link href="../assets/spry/sprymenubarvertical.css" rel="stylesheet" type="text/css" />
-<style type="text/css">
-.FONT {
-	color: #CFF;
-	font-size: 24px;
-	font-weight: bold;
-	font-family: Verdana, Geneva, sans-serif;
-}
-</style>
-</head>
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("Home JRMS");
+?>
 
-<body bgcolor="#5195BA">
 <div align="center">
   <table width="1323" height="580" border="2">
 <tr>
@@ -30,19 +16,7 @@
           <tr>
             <td width="214" rowspan="2" valign="top">
               <blockquote>
-                <ul class="MenuBarVertical">
-          <li><a href="jrms_new_records_entry_uniqueness_php.php">JRMS NEW RECORDS ENTRY</a></li>
-          <li><a href="jrms_datewise_search_uniqueness.php">JRMS SEARCH BY RELEASE DATE</a></li>
-          <li><a href="jrms_cin_search_uniqueness.php">JRMS SEARCH BY CIN NUMBER</a></li>
-   <li><a href="jrms_search_by_prisonerno_uniqueness.php">
-JRMS SEARCH BY PRISONER NO</a></li>
-          <li><a href="jrms_search_uniqueness.php">
-JRMS SEARCH BY NAME AND UNIQUE ID's</a></li>
-          <li><a href="jrms_unique_key_update.php">
-JRMS UNIQUE KEY UPDATATION FORM</a></li>
-   <li><a href="mulakath_entry.php">
-MULAKATH_ENTRY</a></li>
-          </ul>
+                
         <p>&nbsp; </p>
       </blockquote></td>
             <td width="1015" height="24" align="left" valign="top"><p align="center" class="FONT"> JRMS OFFENDER UNIQUING   </p></td>
@@ -54,9 +28,5 @@ MULAKATH_ENTRY</a></li>
         </table>
         <p>&nbsp;</p>
     
-  <script type="text/javascript">
-var MenuBar1 = new Spry.Widget.MenuBar("MenuBar1", {imgDown:"../assets/spry/sprymenubardownhover.gif", imgRight:"../assets/spry/sprymenubarrighthover.gif"});
-var MenuBar2 = new Spry.Widget.MenuBar("MenuBar2", {imgRight:"../assets/spry/sprymenubarrighthover.gif"});
-</script>
-</body>
-</html>
+  
+<?php layout_end(); ?>

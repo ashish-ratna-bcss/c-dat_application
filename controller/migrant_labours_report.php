@@ -1,13 +1,8 @@
-<html>
-<head>
+<?php
+require_once __DIR__ . '/includes/layout.php';
+layout_begin("Migrant Labours Report");
+?>
 
-<link href="../assets/css/w3.css" rel="stylesheet"/>
-<style>
-        .container{width:960px;margin:30px auto;}
-        thead select{border: 1px solid #ffffff;width:100%;}
-    </style>
-</head>
-<body bgcolor="#808000">
 
 <?php
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
@@ -76,6 +71,4 @@ sqlsrv_free_stmt( $st13);
 </tbody>
         </table>
 </div>
-</body>
-</html>dy>
-</html>
+<?php layout_end(); ?>
