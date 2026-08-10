@@ -195,11 +195,16 @@ mark.hit { background: #ffd44d; color: #10243a; border-radius: 3px; padding: 0 1
 .content table[border] { border: 0 !important; }
 .content table td, .content table th { vertical-align: top; }
 
-.content table:not([border="1"]) {
+/* :not([class]) is the discriminator. The legacy layout wrappers are bare
+   <table width="1323" border="2"> with no class, while every table a page
+   actually styles carries one (.preview-table, .w3-table-all). Without this
+   the rule also flattened real content tables -- it stripped the padding off
+   the upload screen's results table, which rendered as a blank gap. */
+.content table:not([border="1"]):not([class]) {
     width: 100% !important; height: auto !important; border: 0 !important;
 }
-.content table:not([border="1"]) > tbody > tr > td,
-.content table:not([border="1"]) > tr > td {
+.content table:not([border="1"]):not([class]) > tbody > tr > td,
+.content table:not([border="1"]):not([class]) > tr > td {
     width: auto !important; height: auto !important; padding: 0;
 }
 /* The menu strip used a masthead image as a td background. */

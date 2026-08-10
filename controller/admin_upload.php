@@ -76,7 +76,7 @@ if (isset($_POST['ajax_action']) && $_POST['ajax_action'] === 'preview_cdr') {
         }
         $operatorArg = $operator;
 
-        $script = __DIR__ . '/scripts/cdr_preview.py';
+        $script = __DIR__ . '/../scripts/cdr_preview.py';
         $cmd = sprintf(
             '%s %s %s %s 150 2>&1',
             cdr_python_bin(),
@@ -379,6 +379,10 @@ unset($modules['api']);
 $step = 1;
 $error = '';
 $success = '';
+// Links that belong with the success message. Kept apart from the text because
+// the banner escapes $success -- markup embedded in it printed as literal
+// "<a href=...>" on screen.
+$successLinks = [];
 
 $selectedModule = '';
 $fileName = '';
@@ -437,7 +441,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
             $moduleConfig = $modules[$selectedModule];
             $allowedExt = $moduleConfig['allowed_extensions'];
             $maxSize = (int)$moduleConfig['max_file_size'];
-            $uploadDir = __DIR__ . '/uploads';
+            // uploads/ is at the project root, not under controller/
+            $uploadDir = __DIR__ . '/../uploads';
             $parser = new CdrUploadParser();
             $ipAddress = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
             $files = normalizeUploadedFiles($_FILES['cdr_file']);
@@ -532,10 +537,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
                             $verifyUrl = $r['verify_url'] ?? null;
                             $success = 'Data loaded into staging. Please review and approve before production load.';
                             if ($verifyUrl) {
-                                $success .= ' <a href="' . htmlspecialchars($verifyUrl) . '" style="color:#FFD700;font-weight:bold;">Open Verification Screen</a>';
+                                $successLinks[] = ['url' => $verifyUrl, 'text' => 'Open Verification Screen'];
                             }
                         } elseif ($r['status'] === 'Processing') {
-                            $success = 'Upload accepted and processing in the background. Refresh <a href="admin_upload_history.php" style="color:#FFD700;font-weight:bold;">Upload History</a> for status.';
+                            $success = 'Upload accepted and processing in the background. Check Upload History for status.';
+                            $successLinks[] = ['url' => 'admin_upload_history.php', 'text' => 'Upload History'];
                         } else {
                             $success = 'Upload logged with status: ' . $r['status'];
                         }
@@ -956,7 +962,12 @@ layout_begin('Data Upload', 'Common Data Upload Framework', ob_get_clean());
                 <?php endif; ?>
 
                 <?php if ($success !== ''): ?>
-                  <div class="msg-container msg-success"><?= htmlspecialchars($success) ?></div>
+                  <div class="msg-container msg-success">
+                    <?= htmlspecialchars($success) ?>
+                    <?php foreach ($successLinks as $lnk): ?>
+                      <a href="<?= htmlspecialchars($lnk['url'], ENT_QUOTES) ?>" class="msg-link"><?= htmlspecialchars($lnk['text']) ?></a>
+                    <?php endforeach; ?>
+                  </div>
                 <?php endif; ?>
 
                 <?php if ($step === 1): ?>

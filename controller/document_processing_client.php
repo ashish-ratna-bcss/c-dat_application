@@ -96,9 +96,24 @@ class DocumentProcessingClient
         $body = curl_exec($ch);
         $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $curlError = curl_error($ch);
+        $curlErrno = curl_errno($ch);
         curl_close($ch);
 
         if ($body === false) {
+            // "Couldn't connect to server" on its own sends people hunting through
+            // the upload code, when the cause is simply that the import service is
+            // not running. Say so, and say how to start it.
+            $offline = in_array($curlErrno, [CURLE_COULDNT_CONNECT,
+                                             CURLE_OPERATION_TIMEDOUT,
+                                             CURLE_COULDNT_RESOLVE_HOST], true);
+            if ($offline) {
+                throw new RuntimeException(
+                    'The document processing service is not reachable at ' . $this->baseUrl . '. '
+                    . 'It runs separately from the web app and must be started before uploading: '
+                    . 'run scripts/run_cdr_import_service.ps1 and leave that window open, '
+                    . 'then retry the upload. (' . ($curlError ?: 'connection failed') . ')'
+                );
+            }
             throw new RuntimeException('Document service request failed: ' . ($curlError ?: 'unknown error'));
         }
 

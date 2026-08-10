@@ -148,6 +148,10 @@
 
 .content .msg-container { border-radius: 10px; padding: .7rem .85rem; margin: .8rem 0; font-size: .88rem; }
 .content .msg-success { background: #eaf7ef; border: 1px solid #b9e2c8; color: #14532d; }
+.content .msg-link {
+    display: inline-block; margin-left: .4rem; font-weight: 600;
+    color: #0f6b35; text-decoration: underline;
+}
 .content .msg-error   { background: #fdecea; border: 1px solid #f3c2bd; color: #7f1d1d; }
 
 .content .badge { border-radius: 999px; padding: 2px 9px; font-size: .76rem; font-weight: 700; }
