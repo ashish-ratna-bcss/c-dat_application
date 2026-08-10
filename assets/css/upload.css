@@ -1,0 +1,170 @@
+/* Light-theme corrections for the upload screen.
+   ------------------------------------------------------------------
+   admin_upload.php's stylesheet was written when the page sat on a dark
+   blue body, so it uses #CFF headings, #FFD700 body text and
+   rgba(255,255,255,.2) surfaces. On the new light shell several of those
+   are invisible -- the "cdatpcsuspect" reference in the staging banner
+   was white text on pale yellow.
+
+   Loaded AFTER the page's own <style>, so equal-specificity rules win.
+   Inline style="" attributes still need !important. Nothing here changes
+   behaviour: colours, spacing and borders only. */
+
+/* The layout already prints the page name and subtitle in the top bar. */
+.content .FONT { display: none; }
+
+/* ---- notices ---- */
+.content .staging-banner {
+    background: #fff8e6;
+    border: 1px solid #f0dca8;
+    color: #6b5312;
+    border-radius: 10px;
+    padding: .7rem .85rem;
+    font-size: .86rem;
+    line-height: 1.55;
+}
+.content .staging-banner strong { color: #4d3c0d; }
+.content .staging-banner em { font-style: normal; font-weight: 600; color: #7a5c10; }
+/* was style="color:#fff" -- unreadable once the banner became light */
+.content .staging-banner code {
+    color: #7a4b00 !important;
+    background: #fdf0cf;
+    border: 1px solid #f0dca8;
+    border-radius: 5px;
+    padding: 1px 6px;
+    font-size: .85em;
+}
+.content [style*="color:#FFD700"], .content [style*="color: #FFD700"] {
+    color: #7a5c10 !important;
+}
+
+/* ---- step / tab controls ---- */
+.content .nav-tabs {
+    display: flex; gap: .5rem; flex-wrap: wrap;
+    margin: 0 0 1.1rem; padding: 0 0 .9rem;
+    border-bottom: 1px solid var(--line);
+}
+.content .nav-tab-btn {
+    background: #fff; color: var(--ink-soft);
+    border: 1px solid var(--line); border-radius: 8px;
+    padding: .55rem 1rem; font-weight: 600; font-size: .9rem;
+    display: inline-flex; align-items: center; gap: .5rem;
+}
+.content .nav-tab-btn:hover { background: #f3f7fc; color: var(--ink); }
+.content .nav-tab-btn.active {
+    background: var(--brand); border-color: var(--brand); color: #fff;
+}
+
+.content .step-header { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: 1.1rem; }
+.content .step-pill {
+    flex: 1 1 220px; text-align: center;
+    background: #f4f7fb; color: var(--ink-soft);
+    border: 1px solid var(--line); border-radius: 8px;
+    padding: .6rem .8rem; font-weight: 600; font-size: .88rem;
+}
+.content .step-pill.active {
+    background: var(--brand); border-color: var(--brand); color: #fff;
+}
+
+/* ---- cards ---- */
+.content .wizard-card, .content .progress-card, .content .result-card,
+.content .upload-wrapper, .content .tab-content {
+    background: transparent; border: 0; box-shadow: none;
+}
+.content .wizard-card {
+    background: #fff; border: 1px solid var(--line);
+    border-radius: 12px; padding: 1.15rem 1.25rem; box-shadow: var(--shadow);
+}
+.content .wizard-title {
+    color: var(--ink); font-size: 1rem; font-weight: 650; margin: 0 0 .9rem;
+}
+
+/* ---- form controls ---- */
+.content .form-label, .content .form-group label {
+    display: block; color: var(--ink); font-weight: 600;
+    font-size: .88rem; margin: 0 0 .35rem;
+}
+.content .form-select, .content select.form-select {
+    width: 100%; font: inherit; color: var(--ink);
+    background: #fff; border: 1px solid #c6d2e0; border-radius: 8px;
+    padding: .55rem .65rem;
+}
+.content .form-select:disabled { background: #f1f4f8; color: #94a3b3; }
+.content .module-hint { color: var(--ink-soft); font-size: .82rem; margin-top: .3rem; }
+.content .form-row { display: flex; gap: 1rem; flex-wrap: wrap; }
+.content .form-col { flex: 1 1 260px; min-width: 0; }
+.content .form-group { margin-bottom: 1rem; }
+
+.content .upload-dropzone {
+    border: 1.5px dashed #b9c8da; border-radius: 10px;
+    background: #f8fbff; color: var(--ink-soft);
+    padding: 1rem; transition: border-color .15s, background .15s;
+}
+.content .upload-dropzone:hover { border-color: var(--brand); background: #eef5fd; }
+.content .upload-filename { color: var(--ink); font-weight: 600; }
+
+/* ---- buttons ---- */
+.content .btn-action {
+    background: var(--brand); color: #fff; border: 1px solid transparent;
+    border-radius: 8px; padding: .58rem 1.15rem; font-weight: 600; font-size: .92rem;
+}
+.content .btn-action:hover { background: #12559f; }
+/* was white text on a translucent white panel */
+.content .btn-secondary {
+    background: #fff; color: var(--ink); border: 1px solid #c6d2e0;
+    border-radius: 8px; padding: .58rem 1.15rem; font-weight: 600; font-size: .92rem;
+}
+.content .btn-secondary:hover { background: #f1f5fa; }
+
+/* ---- progress ---- */
+.content .progress-bar-wrap {
+    background: #e6edf5; border: 1px solid var(--line);
+    border-radius: 999px; overflow: hidden; height: 10px;
+}
+.content .progress-bar-fill { background: var(--brand); height: 100%; }
+.content .progress-log {
+    background: #0f2740; color: #d6e6f5;
+    border: 1px solid #0b1d30; border-radius: 10px;
+    padding: .8rem .9rem; font-size: .8rem; line-height: 1.5;
+    font-family: ui-monospace, Consolas, "Courier New", monospace;
+}
+
+/* ---- results ---- */
+.content .results-summary { display: flex; gap: .7rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.content .result-card {
+    flex: 1 1 150px; background: #f7fafd;
+    border: 1px solid var(--line); border-radius: 10px;
+    padding: .8rem .9rem; text-align: center; color: var(--ink-soft);
+    font-size: .82rem;
+}
+.content .result-card .num {
+    display: block; font-size: 1.5rem; font-weight: 700; color: var(--ink);
+    line-height: 1.2; margin-bottom: .15rem;
+}
+.content .color-total   { color: var(--brand) !important; }
+.content .color-success { color: #15803d !important; }
+.content .color-failed  { color: var(--danger) !important; }
+.content .color-skipped { color: #8a6d0b !important; }
+
+.content .msg-container { border-radius: 10px; padding: .7rem .85rem; margin: .8rem 0; font-size: .88rem; }
+.content .msg-success { background: #eaf7ef; border: 1px solid #b9e2c8; color: #14532d; }
+.content .msg-error   { background: #fdecea; border: 1px solid #f3c2bd; color: #7f1d1d; }
+
+.content .badge { border-radius: 999px; padding: 2px 9px; font-size: .76rem; font-weight: 700; }
+
+/* ---- preview table ---- */
+.content .preview-table-wrapper {
+    border: 1px solid var(--line); border-radius: 10px;
+    overflow: auto; max-height: 460px;
+}
+.content .preview-table { width: 100%; border-collapse: collapse; font-size: .84rem; }
+.content .preview-table th {
+    position: sticky; top: 0; z-index: 1;
+    background: var(--thead); color: #fff; font-weight: 600;
+    text-align: left; padding: .5rem .6rem; white-space: nowrap;
+}
+.content .preview-table td {
+    padding: .42rem .6rem; border-top: 1px solid var(--line); background: #fff;
+}
+.content .preview-table tr:nth-child(even) td { background: #f7fafd; }
+.content .preview-table td.preview-readonly { background: #f1f4f8; color: var(--ink-soft); }

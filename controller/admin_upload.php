@@ -916,6 +916,9 @@ ob_start();
     margin-top: 15px;
 }
 </style>
+<!-- Loaded last so it overrides the dark-background colours above, which are
+     unreadable now that the page sits on the light application shell. -->
+<link rel="stylesheet" href="../assets/css/upload.css">
 <?php
 layout_begin('Data Upload', 'Common Data Upload Framework', ob_get_clean());
 ?>

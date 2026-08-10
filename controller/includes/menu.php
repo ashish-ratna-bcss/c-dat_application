@@ -64,9 +64,9 @@ return [
 
     ['label' => 'Interrogation Reports', 'icon' => 'file', 'children' => [
         ['label' => 'IR Home',                  'url' => 'home_ir.php'],
-        ['label' => 'IR Search',                'url' => 'ir_search.php'],
         ['label' => 'IR Search By Name',        'url' => 'ir_search.php'],
         ['label' => 'IR Module',                'url' => 'ir_module.php'],
+        ['label' => 'IR Forms',                 'url' => 'bulk_irsearch_irkey.php'],
     ]],
 
     ['label' => 'Records', 'icon' => 'folder', 'children' => [
