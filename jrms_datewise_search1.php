@@ -2,7 +2,7 @@
 <head>
 </head>
 <body bgcolor="#0C5D90">
-<li><a href="JRMS_DATEWISE_SEARCH_UNIQUENESS.PHP"><font color=#FDEFEF>Back</a></li>
+<li><a href="JRMS_DATEWISE_SEARCH_UNIQUENESS.HTM"><font color=#FDEFEF>Back</a></li>
 <?php
 $serverName = "10.10.46.14\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"CDATDUPL");

@@ -268,7 +268,7 @@ $canVerify = $batch && ($batch['verification_status'] ?? 'pending') === 'pending
                     <li><a href="SUM_ISD_CNTS.PHP">Summary of ISD Contacts</a></li>
                     <li><a href="SUM_NEW_NOS.php">Summary of New Contacts</a></li>
                     <li><a href="SUM_IN_STATE.html">Summary Within a State</a></li>
-                    <li><a href="SUM_OUT_STATE.PHP">Summary other than a state</a></li>
+                    <li><a href="SUM_OUT_STATE.HTM">Summary other than a state</a></li>
                   </ul>
                 </li>
                 <li><a href="HOME.PHP" class="MenuBarItemSubmenu">Call Details</a>
@@ -282,7 +282,7 @@ $canVerify = $batch && ($batch['verification_status'] ?? 'pending') === 'pending
                 <li><a href="HOME.PHP" class="MenuBarItemSubmenu">Cdat</a>
                   <ul>
                     <li><a href="CDATCNTS.php">Cdat Cnts</a></li>
-                    <li><a href="BULK_CDAT_CONTACTS.PHP">Bulk Cdat Contacts</a></li>
+                    <li><a href="BULK_CDAT_CONTACTS.HTM">Bulk Cdat Contacts</a></li>
                     <li><a href="otherscdat.php">Others Cdat</a></li>
                   </ul>
                 </li>
@@ -294,7 +294,7 @@ $canVerify = $batch && ($batch['verification_status'] ?? 'pending') === 'pending
                 </li>
                 <li><a href="HOME.PHP" class="MenuBarItemSubmenu">Address</a>
                   <ul>
-                    <li><a href="ADDRESS.php">Single Address</a></li>
+                    <li><a href="ADDRESS.htm">Single Address</a></li>
                     <li><a href="bulkaddress.php">Bulk Addresses</a></li>
                   </ul>
                 </li>
@@ -311,13 +311,13 @@ $canVerify = $batch && ($batch['verification_status'] ?? 'pending') === 'pending
                 </li>
                 <li><a href="#" class="MenuBarItemSubmenu">Others</a>
                   <ul>
-                    <li><a href="cellid_search.php">Cellid Search</a></li>
+                    <li><a href="CELLID_SEARCH.htm">Cellid Search</a></li>
                     <li><a href="VEHICLE_SEARCH.HTML">Vehicle Search</a></li>
                     <li><a href="COMMON_CNTS.php">Common Cnts</a></li>
                     <li><a href="ADMIN_ACTIVITY_LOG.PHP">User Activity</a></li>
                     <li><a href="ADMIN_SQL_CONSOLE.PHP">SQL Query Console</a></li>
                     <li><a href="admin_upload.php">Data Upload</a></li>
-                    <li><a href="TRAINING_MODULE1.PHP">TRAININGS</a></li>
+                    <li><a href="TRAINING_MODULE1.htm">TRAININGS</a></li>
                   </ul>
                 </li>
               </ul>

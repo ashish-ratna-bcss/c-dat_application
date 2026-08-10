@@ -2,7 +2,7 @@
 <head>
 </head>
 <body bgcolor="#0C5D90">
-<li><a href="SUM_OUT_STATE.PHP"><font color=#FDEFEF>Back</a></li>
+<li><a href="SUM_OUT_STATE.HTM"><font color=#FDEFEF>Back</a></li>
 <?php
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"CDATDUPL");

@@ -37,7 +37,7 @@ div {
 </style>
 
 
-<li><a href="NAMESEARCH.PHP">Back</a></li></p>
+<li><a href="NAMESEARCH.HTM">Back</a></li></p>
 <form action ='NAMESEARCH.PHP'method='post'>
 <b><font size=4 face=verdana text-align:'center' color='#ffb84d'>ENTER NAME & ADDRESS : </b>
  <div class="form-group">

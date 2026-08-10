@@ -2,7 +2,7 @@
 <head>
 </head>
 <body bgcolor="#0C5D90">
-<li><a href="IMEI_REQUEST_MOVEMENTS.PHP">Back</a></li>
+<li><a href="IMEI_REQUEST_MOVEMENTS.HTM">Back</a></li>
 		</br>
 <li><a href="home_imei.PHP"><font color=#FDEFEF>HOME</a></li>
 <?php

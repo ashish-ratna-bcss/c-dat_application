@@ -2,7 +2,7 @@
 <head>
 </head>
 <body bgcolor="#cce0ff">
-<li><a href="VEHICLE_SEARCH1.php">Back</a></li></p>
+<li><a href="VEHICLE_SEARCH1.HTM">Back</a></li></p>
 <form action ='VEHICLE_SEARCH1.PHP'method='post'>
 <b><font size=4 face=verdana color='#000000'>ENTER VEHICLE NO : </b>
 <input type='text' name='VEHICLE_NO' value='' placeholder='Enter Vehicle No' required='required'>

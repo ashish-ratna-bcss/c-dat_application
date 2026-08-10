@@ -34,5 +34,5 @@ else
 {
 echo "inserted";
 }
-header("refresh:30; url=previous_offence_details.PHP");
+header("refresh:30; url=PREVIOUS_OFFENCE_DETAILS.htm");
 ?>

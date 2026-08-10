@@ -30,5 +30,5 @@ else
 {
 echo "inserted";
 }
-header("refresh:30; url=relation_with_other_associates_and_gangs.php");
+header("refresh:30; url=RELATION_WITH_OTHER_ASSOCIATES_AND_GANGS.HTM");
 ?>

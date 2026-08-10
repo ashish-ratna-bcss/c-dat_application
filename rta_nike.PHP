@@ -2,7 +2,7 @@
 <head>
 </head>
 <body bgcolor="#0C5D90">
-<li><a href="rta_nike.PHP">Back</a></li>
+<li><a href="rta_nike.HTM">Back</a></li>
 <?php
 require_once __DIR__ . '/sql_safe.php';
 

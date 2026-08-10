@@ -2,7 +2,7 @@
 <head>
 </head>
 <body bgcolor="#0C5D90">
-<li><a href="imei_request_status.php"><font color=#FDEFEF>Back</a></li>
+<li><a href="IMEI_REQUEST_STATUS.htm"><font color=#FDEFEF>Back</a></li>
 <?php
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"LOSTREPORT_HAWKEYE");

@@ -27,7 +27,7 @@ body,td,th {
             </li>
             <li><a href="#" class="MenuBarItemSubmenu">Call Details</a>
               <ul>
-                <li><a href="IMEI_REQUEST_MOVEMENTS.PHP"> MOVEMENTS </a></li>
+                <li><a href="IMEI_REQUEST_MOVEMENTS.HTM"> MOVEMENTS </a></li>
 	          </ul>
             </li>
             <li><a href="#" class="MenuBarItemSubmenu">Cdat</a>
@@ -37,13 +37,13 @@ body,td,th {
             </li>
             <li><a href="#" class="MenuBarItemSubmenu">Imei Search</a>
               <ul>
-                <li><a href="imei_request_status.php">Phones used in Imei</a></li>
-                <li><a href="imei_request_status.php">Imeis used in phone</a></li>
+                <li><a href="IMEI_REQUEST_STATUS.htm">Phones used in Imei</a></li>
+                <li><a href="IMEI_REQUEST_STATUS.htm">Imeis used in phone</a></li>
               </ul>
             </li>
             <li><a href="#" class="MenuBarItemSubmenu">Address</a>
               <ul>
-                <li><a href="ADDRESS.php">Single Address</a></li>
+                <li><a href="ADDRESS.htm">Single Address</a></li>
                 <li><a href="bulkaddress.php">Bulk Addresses</a></li>
               </ul>
             </li>
@@ -59,7 +59,7 @@ body,td,th {
                 </li>
             <li><a href="#" class="MenuBarItemSubmenu">Others</a>
               <ul>
-                <li><a href="cellid_search.php">Cellid Search</a></li>
+                <li><a href="CELLID_SEARCH.htm">Cellid Search</a></li>
                 <li><a href="VEHICLE_SEARCH.HTML">Vehicle Search</a></li>
                 <li><a href="COMMON_CNTS.php">Common Cnts</a></li>
                 <li><a href="ADMIN_ACTIVITY_LOG.PHP">User Activity</a></li>

@@ -42,7 +42,7 @@ return false;
 }
 }
 </script>
-<li><a href="IR_SEARCH.PHP">Back</a></li>
+<li><a href="IR_SEARCH.htm">Back</a></li>
 <?php
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"CDATDUPL");

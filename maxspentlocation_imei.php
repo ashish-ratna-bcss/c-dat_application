@@ -2,7 +2,7 @@
 <head>
 </head>
 <body bgcolor="#0C5D90">
-<li><a href="maxspentlocation_imei.php"><font color=#FDEFEF>Back</a></li>
+<li><a href="MAXSPENTLOCATION_IMEI.HTM"><font color=#FDEFEF>Back</a></li>
 	</br>
 <li><a href="home_imei.PHP"><font color=#FDEFEF>HOME</a></li>
 <?php

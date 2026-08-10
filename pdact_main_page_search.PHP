@@ -47,7 +47,7 @@ body,td,th {
                 <li><a href="SUM_ISD_CNTS.PHP">Summary of ISD Contacts</a></li>
                 <li><a href="SUM_NEW_NOS.php">Summary of New Contacts</a></li>
                 <li><a href="SUM_IN_STATE.html">Summary Within a State</a></li>
-                <li><a href="SUM_OUT_STATE.PHP">Summary other than a state</a></li>
+                <li><a href="SUM_OUT_STATE.HTM">Summary other than a state</a></li>
               </ul>
             </li>
             <li><a href="#" class="MenuBarItemSubmenu">Call Details</a>
@@ -57,13 +57,13 @@ body,td,th {
 		<li><a href="movements_between_two_numbers_comparision.PHP">Movements Btwn Two Nos Comparision</a></li> 
 		<!----<li><a href="calls_tot.PHP">Call Details Total</a></li>--->
                 <li><a href="calls_btwn_dates.PHP">Calls Between Dates</a></li>
-                <!----<li><a href="calls_bt_nos.php">Calls Between Two Numbers</a></li>---->
+                <!----<li><a href="CALLS_BT_NOS.htm">Calls Between Two Numbers</a></li>---->
               </ul>
             </li>
             <li><a href="#" class="MenuBarItemSubmenu">Cdat</a>
               <ul>
                 <li><a href="CDATCNTS.php">Cdat Cnts</a></li>
-		<li><a href="BULK_CDAT_CONTACTS.PHP">Bulk Cdat Contacts</a></li>
+		<li><a href="BULK_CDAT_CONTACTS.HTM">Bulk Cdat Contacts</a></li>
 		<li><a href="otherscdat.php">Others Cdat</a></li>
               </ul>
             </li>
@@ -75,7 +75,7 @@ body,td,th {
             </li>
             <li><a href="#" class="MenuBarItemSubmenu">Address</a>
               <ul>
-                <li><a href="ADDRESS.php">Single Address</a></li>
+                <li><a href="ADDRESS.htm">Single Address</a></li>
                 <li><a href="bulkaddress.php">Bulk Addresses</a></li>
               </ul>
             </li>
@@ -92,7 +92,7 @@ body,td,th {
                 </li>
             <li><a href="#" class="MenuBarItemSubmenu">Others</a>
               <ul>
-                <li><a href="cellid_search.php">Cellid Search</a></li>
+                <li><a href="CELLID_SEARCH.htm">Cellid Search</a></li>
                 <li><a href="VEHICLE_SEARCH.HTML">Vehicle Search</a></li>
                 <li><a href="COMMON_CNTS.php">Common Cnts</a></li>
                 </ul>
@@ -107,8 +107,8 @@ body,td,th {
             <td width="214" rowspan="2" valign="top">
               <blockquote>
                 <ul class="MenuBarVertical">
-          <li><a href="pdact_search.php" class="MenuBarItemSubmenu">PDACT NAME SEARCH</a>            </li>
-          <li><a href="PDACT_MO_SEARCH.PHP" class="MenuBarItemSubmenu">PDACT SEARCH BY MO</a>            </li>
+          <li><a href="PDACT_SEARCH.htm" class="MenuBarItemSubmenu">PDACT NAME SEARCH</a>            </li>
+          <li><a href="PDACT_MO_SEARCH.HTM" class="MenuBarItemSubmenu">PDACT SEARCH BY MO</a>            </li>
           <li><a href="PDACT_PS_WISE_SEARCH.PHP" class="MenuBarItemSubmenu">PDACT SEARCH BY PS</a>            </li>
           </ul>
 

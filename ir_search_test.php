@@ -22,7 +22,7 @@
                 <li><a href="SUM_ISD_CNTS.PHP">Summary of ISD Contacts</a></li>
                 <li><a href="SUM_NEW_NOS.php">Summary of New Contacts</a></li>
                 <li><a href="SUM_IN_STATE.html">Summary Within a State</a></li>
-                <li><a href="SUM_OUT_STATE.PHP">Summary other than a state</a></li>
+                <li><a href="SUM_OUT_STATE.HTM">Summary other than a state</a></li>
               </ul>
             </li>
             <li><a href="#" class="MenuBarItemSubmenu">Call Details</a>
@@ -32,7 +32,7 @@
 		<li><a href="movements_between_two_numbers_comparision.PHP">Movements Btwn Two Nos Comparision</a></li>
 		<li><a href="calls_tot.PHP">Call Details Total</a></li>
                 <li><a href="calls_btwn_dates.PHP">Calls Between Dates</a></li>
-                <li><a href="calls_bt_nos.php">Calls Between Two Numbers</a></li>
+                <li><a href="CALLS_BT_NOS.htm">Calls Between Two Numbers</a></li>
               </ul>
             </li>
             <li><a href="#" class="MenuBarItemSubmenu">Cdat</a>
@@ -49,7 +49,7 @@
             </li>
             <li><a href="#" class="MenuBarItemSubmenu">Address</a>
               <ul>
-                <li><a href="ADDRESS.php">Single Address</a></li>
+                <li><a href="ADDRESS.htm">Single Address</a></li>
                 <li><a href="bulkaddress.php">Bulk Addresses</a></li>
               </ul>
             </li>
@@ -66,13 +66,13 @@
                 </li>
             <li><a href="#" class="MenuBarItemSubmenu">Others</a>
                <ul>
-                <li><a href="cellid_search.php">Cellid Search</a></li>
+                <li><a href="CELLID_SEARCH.htm">Cellid Search</a></li>
                 <li><a href="VEHICLE_SEARCH.HTML">Vehicle Search</a></li>
                 <li><a href="COMMON_CNTS.php">Common Cnts</a></li>
                 <li><a href="ADMIN_ACTIVITY_LOG.PHP">User Activity</a></li>
                 <li><a href="ADMIN_SQL_CONSOLE.PHP">SQL Query Console</a></li>
 		<li><a href="IR_MODULE.PHP">IR FORMS</a></li>
-		<li><a href="IR_SEARCH.PHP">IR Search By Name</a></li>
+		<li><a href="IR_SEARCH.htm">IR Search By Name</a></li>
                 </ul>
             </li>
                 </ul>

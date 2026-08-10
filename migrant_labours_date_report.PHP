@@ -2,7 +2,7 @@
 <head>
 </head>
 <body bgcolor="#80800">
-<li><a href="migrant_labours_date_report.PHP"><font color=#FDEFEF>Back</a></li>
+<li><a href="MIGRANT_LABOURS_DATE_REPORT.htm"><font color=#FDEFEF>Back</a></li>
 <?php
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"MIGRANT_LABOURS_FORM");

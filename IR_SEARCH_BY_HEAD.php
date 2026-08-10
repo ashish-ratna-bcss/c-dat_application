@@ -2,7 +2,7 @@
 <head>
 </head>
 <body bgcolor="#0C5D90">
-<li><a href="IR_SEARCH.PHP"><font color=#FDEFEF>Back</a></li>
+<li><a href="IR_SEARCH.htm"><font color=#FDEFEF>Back</a></li>
 <form action ='IR_SEARCH_BY_HEAD.PHP'method='post'>
 <b><font size=3 face=verdana color='#F9FBFC'>CRIME_HEAD : </b>
 <input type='text' name='CRIME_HEAD' value=''>

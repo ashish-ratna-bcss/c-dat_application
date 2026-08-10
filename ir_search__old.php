@@ -29,11 +29,11 @@
             <li><a href="HOME_IR.PHP" class="MenuBarItemSubmenu">CRIME DETAILS</a>
              <ul>
                 <li><a href="OFFENCE_DETAILS.html">OFFENCE DETAILS</a></li>
-                <li><a href="previous_offence_details.PHP">PREVIOUS OFFENCE DETAILS</a></li>
+                <li><a href="PREVIOUS_OFFENCE_DETAILS.htm">PREVIOUS OFFENCE DETAILS</a></li>
               </ul>
               </li>
             <li><a href="LOCAL_CONTACTS.PHP">LOCAL CONTACTS</a></li>
-            <li><a href="relation_with_other_associates_and_gangs.php">GANGS/ASSOCIATES</a></li>
+            <li><a href="RELATION_WITH_OTHER_ASSOCIATES_AND_GANGS.HTM">GANGS/ASSOCIATES</a></li>
             <li><a href="disposal_of_property.PHP">PROPERTY DETAILS</a></li>
             <li><a href="brief_facts.php">BRIEF FACTS</a></li>
             <li><a href="IMAGE_LIST.HTML">IMAGE</a></li>

@@ -2,7 +2,7 @@
 <head>
 </head>
 <body bgcolor="#0C5D90">
-<li><a href="OFFENDER_SEARCH_BY_MO.php"><font color=#FDEFEF>Back</a></li>
+<li><a href="OFFENDER_SEARCH_BY_MO.HTM"><font color=#FDEFEF>Back</a></li>
 <form action ='OFFENDER_SEARCH_BY_MO.PHP' method='post'>
 <b><font size=3 face=verdana color='#F9FBFC'>MO SUB CLASSIFICATION: </b>
 <input type='text' name='MO' value=''>
