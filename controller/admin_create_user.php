@@ -57,9 +57,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <title>Create User - Interrogation Reports</title>
-<script src="../SpryAssets/SPRYMENUBAR.JS" type="text/javascript"></script>
-<link href="../SpryAssets/SPRYMENUBARHORIZONTAL.CSS" rel="stylesheet" type="text/css" />
-<link href="../SpryAssets/SPRYMENUBARVERTICAL.CSS" rel="stylesheet" type="text/css" />
+<script src="../assets/spry/sprymenubar.js" type="text/javascript"></script>
+<link href="../assets/spry/sprymenubarhorizontal.css" rel="stylesheet" type="text/css" />
+<link href="../assets/spry/sprymenubarvertical.css" rel="stylesheet" type="text/css" />
 <style type="text/css">
 .FONT {
 	color: #CFF;
@@ -152,7 +152,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <td width="1349" height="595" align="left" valign="top">
         <table width="1313" height="148">
           <tr>
-            <td width="1265" height="134" align="center" valign="bottom" background="../IMAGES/topborder.jpg">
+            <td width="1265" height="134" align="center" valign="bottom" background="../assets/images/topborder.jpg">
               <ul id="MenuBar1" class="MenuBarHorizontal">
                 <li><a href="home_ir.php">Home</a></li>
                 <li><a href="../view/irreport.html">IRREPORT</a></li>
@@ -241,7 +241,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 
 <script type="text/javascript">
-var MenuBar1 = new Spry.Widget.MenuBar("MenuBar1", {imgDown:"SpryAssets/SpryMenuBarDownHover.gif", imgRight:"SpryAssets/SpryMenuBarRightHover.gif"});
+var MenuBar1 = new Spry.Widget.MenuBar("MenuBar1", {imgDown:"../assets/spry/sprymenubardownhover.gif", imgRight:"../assets/spry/sprymenubarrighthover.gif"});
 
 // Simple validation to ensure username has no spaces
 document.getElementById('createUserForm').addEventListener('submit', function(e) {

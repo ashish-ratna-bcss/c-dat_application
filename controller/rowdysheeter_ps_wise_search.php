@@ -3,10 +3,10 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <title>Untitled Document</title>
-<link rel="stylesheet" type="text/css" href="../jquery-ui-1.10.4.custom/css/dark-hive/jquery-ui-1.10.4.custom.min.css">
-<script type="text/javascript" src="../jquery-ui-1.10.4.custom/js/jquery-1.10.2.js"></script>
-<script type="text/javascript" src="../jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.js"></script>
-<script type="text/javascript" src="../jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.min.js"></script>
+<link rel="stylesheet" type="text/css" href="../assets/vendor/jquery-ui-1.10.4.custom/css/dark-hive/jquery-ui-1.10.4.custom.min.css">
+<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-1.10.2.js"></script>
+<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.js"></script>
+<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.min.js"></script>
 <script type="text/javascript">
 $("document").ready(function() {
 	$("#datepickerID").datepicker({dateFormat: "yy-mm-dd",
@@ -20,9 +20,9 @@ $("document").ready(function() {
 	
 });
 </script>
-<script src="../SpryAssets/SPRYMENUBAR.JS" type="text/javascript"></script>
-<link href="../SpryAssets/SPRYMENUBARHORIZONTAL.CSS" rel="stylesheet" type="text/css" />
-<link href="../SpryAssets/SPRYMENUBARVERTICAL.CSS" rel="stylesheet" type="text/css" />
+<script src="../assets/spry/sprymenubar.js" type="text/javascript"></script>
+<link href="../assets/spry/sprymenubarhorizontal.css" rel="stylesheet" type="text/css" />
+<link href="../assets/spry/sprymenubarvertical.css" rel="stylesheet" type="text/css" />
 <style type="text/css">
 	
 body,td,th {
@@ -44,7 +44,7 @@ $results = $db_handle->runQuery($query);
     <tr>
       <td width="1349" height="595" align="left" valign="top"><table width="1313" height="148">
         <tr>
-          <td width="1265" height="134" align="center" valign="bottom" background="../IMAGES/topborder.jpg"><ul id="MenuBar1" class="MenuBarHorizontal">
+          <td width="1265" height="134" align="center" valign="bottom" background="../assets/images/topborder.jpg"><ul id="MenuBar1" class="MenuBarHorizontal">
             <li><a href="home.php">Home</a>              </li>
             <li><a href="#" class="MenuBarItemSubmenu">Summary</a>
               <ul>
@@ -110,10 +110,10 @@ $results = $db_handle->runQuery($query);
       <p>&nbsp;</p>
 <table width="1021" height="163" align="center">
         <tr>
-          <th height="31" align="center" valign="middle" background="../IMAGES/BORDER.jpg" scope="col">ROWDYSHEET SEARCH BY POLICE STATION</th>
+          <th height="31" align="center" valign="middle" background="../assets/images/border.jpg" scope="col">ROWDYSHEET SEARCH BY POLICE STATION</th>
         </tr>
         <tr>
-          <th width="782" align="center" valign="middle" background="../IMAGES/BORDER.jpg" scope="col"><form id="form1" name="form1" method="post" action="rowdysheeter_ps_wise_search_php.php">
+          <th width="782" align="center" valign="middle" background="../assets/images/border.jpg" scope="col"><form id="form1" name="form1" method="post" action="rowdysheeter_ps_wise_search_php.php">
                      
              POLICE_STATION: <select name="POLICE_STATION">
 <option value="">Select Police Station</option>
@@ -132,7 +132,7 @@ foreach($results as $POLICE_STATION) {
  
 
 <script type="text/javascript">
-var MenuBar1 = new Spry.Widget.MenuBar("MenuBar1", {imgDown:"SpryAssets/SpryMenuBarDownHover.gif", imgRight:"SpryAssets/SpryMenuBarRightHover.gif"});
+var MenuBar1 = new Spry.Widget.MenuBar("MenuBar1", {imgDown:"../assets/spry/sprymenubardownhover.gif", imgRight:"../assets/spry/sprymenubarrighthover.gif"});
 </script>
 </body>
 </html>dy>

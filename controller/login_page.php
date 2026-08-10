@@ -3,10 +3,10 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <title>Untitled Document</title>
-<script src="../SpryAssets/SPRYMENUBAR.JS" type="text/javascript"></script>
-<link href="../SpryAssets/SPRYMENUBARHORIZONTAL.CSS" rel="stylesheet" type="text/css" />
-<link href="../SpryAssets/SPRYMENUBARVERTICAL.CSS" rel="stylesheet" type="text/css" />
-<link rel="stylesheet" type="text/css" href="../css_sparkle1.css">
+<script src="../assets/spry/sprymenubar.js" type="text/javascript"></script>
+<link href="../assets/spry/sprymenubarhorizontal.css" rel="stylesheet" type="text/css" />
+<link href="../assets/spry/sprymenubarvertical.css" rel="stylesheet" type="text/css" />
+<link rel="stylesheet" type="text/css" href="../assets/css/css_sparkle1.css">
 <style type="text/css">
 .FONT {
 	color: #CFF;

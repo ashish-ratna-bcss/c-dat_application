@@ -7,10 +7,10 @@
         </tr>
 </table>
 <title> JRMS ENTRY FORM </title>
-<link rel="stylesheet" type="text/css" href="../jquery-ui-1.10.4.custom/css/dark-hive/jquery-ui-1.10.4.custom.min.css">
-<script type="text/javascript" src="../jquery-ui-1.10.4.custom/js/jquery-1.10.2.js"></script>
-<script type="text/javascript" src="../jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.js"></script>
-<script type="text/javascript" src="../jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.min.js"></script>
+<link rel="stylesheet" type="text/css" href="../assets/vendor/jquery-ui-1.10.4.custom/css/dark-hive/jquery-ui-1.10.4.custom.min.css">
+<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-1.10.2.js"></script>
+<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.js"></script>
+<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.min.js"></script>
 <script type="text/javascript">
 $("document").ready(function() {
 	$("#datepickerID").datepicker({dateFormat: "yy-mm-dd",
@@ -31,8 +31,8 @@ $("document").ready(function() {
 	}) 
 });
 </script>
-<script src="../SpryAssets/SPRYMENUBAR.JS" type="text/javascript"></script>
-<link href="../SpryAssets/SPRYMENUBARHORIZONTAL.CSS" rel="stylesheet" type="text/css" />
+<script src="../assets/spry/sprymenubar.js" type="text/javascript"></script>
+<link href="../assets/spry/sprymenubarhorizontal.css" rel="stylesheet" type="text/css" />
 <style>
 input[type=text], select {
     width: 25%;
@@ -293,7 +293,7 @@ $DISTRICT=$row['DISTRICT'];
 <br/><br/>
 </form>
 <script type="text/javascript">
-var MenuBar1 = new Spry.Widget.MenuBar("MenuBar1", {imgDown:"SpryAssets/SpryMenuBarDownHover.gif", imgRight:"SpryAssets/SpryMenuBarRightHover.gif"});
+var MenuBar1 = new Spry.Widget.MenuBar("MenuBar1", {imgDown:"../assets/spry/sprymenubardownhover.gif", imgRight:"../assets/spry/sprymenubarrighthover.gif"});
 </script>
 </body>
 

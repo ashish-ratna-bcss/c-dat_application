@@ -558,15 +558,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <title>Common Data Upload Framework - CDR Dashboard</title>
-<script src="../SpryAssets/SPRYMENUBAR.JS" type="text/javascript"></script>
-<link href="../SpryAssets/SPRYMENUBARHORIZONTAL.CSS" rel="stylesheet" type="text/css" />
-<link href="../SpryAssets/SPRYMENUBARVERTICAL.CSS" rel="stylesheet" type="text/css" />
+<script src="../assets/spry/sprymenubar.js" type="text/javascript"></script>
+<link href="../assets/spry/sprymenubarhorizontal.css" rel="stylesheet" type="text/css" />
+<link href="../assets/spry/sprymenubarvertical.css" rel="stylesheet" type="text/css" />
 
 <!-- Load FontAwesome, SheetJS, and PapaParse -->
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-<script src="../js/sdr_resumable_upload.js" type="text/javascript"></script>
+<script src="../assets/js/sdr_resumable_upload.js" type="text/javascript"></script>
 
 <style type="text/css">
 .FONT {
@@ -929,7 +929,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
         <!-- Header Menu -->
         <table width="1313" height="148">
           <tr>
-            <td width="1265" height="134" align="center" valign="bottom" background="../IMAGES/topborder.jpg">
+            <td width="1265" height="134" align="center" valign="bottom" background="../assets/images/topborder.jpg">
               <ul id="MenuBar1" class="MenuBarHorizontal">
                 <li><a href="home.php">Home</a>              </li>
                 <li><a href="home.php" class="MenuBarItemSubmenu">Summary</a>
@@ -1366,7 +1366,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
 
 <script type="text/javascript">
 // Initialize Navigation horizontal menu
-var MenuBar1 = new Spry.Widget.MenuBar("MenuBar1", {imgDown:"SpryAssets/SpryMenuBarDownHover.gif", imgRight:"SpryAssets/SpryMenuBarRightHover.gif"});
+var MenuBar1 = new Spry.Widget.MenuBar("MenuBar1", {imgDown:"../assets/spry/sprymenubardownhover.gif", imgRight:"../assets/spry/sprymenubarrighthover.gif"});
 
 var moduleConfig = <?= json_encode($modules, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
 var apiConfig = <?= json_encode($config['api'] ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;

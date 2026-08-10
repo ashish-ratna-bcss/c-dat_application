@@ -1,7 +1,7 @@
 <html>
 <head>
 
-<link href="../w3.css" rel="stylesheet"/>
+<link href="../assets/css/w3.css" rel="stylesheet"/>
 <style>
         .container{width:960px;margin:30px auto;}
         thead select{border: 1px solid #ffffff;width:100%;}

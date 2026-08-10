@@ -92,7 +92,7 @@ ul.MenuBarVertical a
 	padding: 0.5em 0.75em;
 	color: #FFF;
 	text-decoration: none;
-	background-image: url(../IMAGES/BTN.jpg);
+	background-image: url(../images/btn.jpg);
 	font-family: Arial, Helvetica, sans-serif;
 	font-size: 12px;
 }
@@ -100,7 +100,7 @@ ul.MenuBarVertical a
 ul.MenuBarVertical a:hover, ul.MenuBarVertical a:focus
 {
 	color: #FF0;
-	background-image: url(../IMAGES/BTN1.jpg);
+	background-image: url(../images/btn1.jpg);
 	font-size: 12px;
 	font-weight: bold;
 	font-family: Arial, Helvetica, sans-serif;
@@ -121,7 +121,7 @@ ul.MenuBarVertical a.MenuBarItemHover, ul.MenuBarVertical a.MenuBarItemSubmenuHo
 /* Menu items that have a submenu have the class designation MenuBarItemSubmenu and are set to use a background image positioned on the far left (95%) and centered vertically (50%) */
 ul.MenuBarVertical a.MenuBarItemSubmenu
 {
-	background-image: url(SpryMenuBarRight.gif);
+	background-image: url(sprymenubarright.gif);
 	background-repeat: no-repeat;
 	background-position: 95% 50%;
 }
@@ -129,7 +129,7 @@ ul.MenuBarVertical a.MenuBarItemSubmenu
 /* Menu items that are open with submenus have the class designation MenuBarItemSubmenuHover and are set to use a "hover" background image positioned on the far left (95%) and centered vertically (50%) */
 ul.MenuBarVertical a.MenuBarItemSubmenuHover
 {
-	background-image: url(SpryMenuBarRightHover.gif);
+	background-image: url(sprymenubarrighthover.gif);
 	background-repeat: no-repeat;
 	background-position: 95% 50%;
 }

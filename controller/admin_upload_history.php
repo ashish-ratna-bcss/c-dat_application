@@ -159,9 +159,9 @@ function renderApprovalStatus(array $log): array
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <title><?= $type === 'custom' ? 'Custom Table Upload Logs' : 'Standard Upload Logs' ?> - CDR Dashboard</title>
-<script src="../SpryAssets/SPRYMENUBAR.JS" type="text/javascript"></script>
-<link href="../SpryAssets/SPRYMENUBARHORIZONTAL.CSS" rel="stylesheet" type="text/css" />
-<link href="../SpryAssets/SPRYMENUBARVERTICAL.CSS" rel="stylesheet" type="text/css" />
+<script src="../assets/spry/sprymenubar.js" type="text/javascript"></script>
+<link href="../assets/spry/sprymenubarhorizontal.css" rel="stylesheet" type="text/css" />
+<link href="../assets/spry/sprymenubarvertical.css" rel="stylesheet" type="text/css" />
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
 <style type="text/css">
 .FONT {
@@ -335,7 +335,7 @@ function renderApprovalStatus(array $log): array
         <!-- Header Section -->
         <table width="1313" height="148">
           <tr>
-            <td width="1265" height="134" align="center" valign="bottom" background="../IMAGES/topborder.jpg">
+            <td width="1265" height="134" align="center" valign="bottom" background="../assets/images/topborder.jpg">
               <ul id="MenuBar1" class="MenuBarHorizontal">
                 <li><a href="home.php">Home</a>              </li>
                 <li><a href="home.php" class="MenuBarItemSubmenu">Summary</a>
@@ -629,7 +629,7 @@ function renderApprovalStatus(array $log): array
 </div>
 
 <script type="text/javascript">
-var MenuBar1 = new Spry.Widget.MenuBar("MenuBar1", {imgDown:"SpryAssets/SpryMenuBarDownHover.gif", imgRight:"SpryAssets/SpryMenuBarRightHover.gif"});
+var MenuBar1 = new Spry.Widget.MenuBar("MenuBar1", {imgDown:"../assets/spry/sprymenubardownhover.gif", imgRight:"../assets/spry/sprymenubarrighthover.gif"});
 
 // Dynamic date range limit adjustment
 function updateToDateLimit() {

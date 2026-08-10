@@ -1,7 +1,7 @@
 <html>
 <head>
 </head>
-<body background="../IMAGES/EMP.PNG">
+<body background="../assets/images/emp.png">
 <li><a href="../view/training_module1.htm"><font color=#FDEFEF>Back</a></li></p>
 <?php
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";

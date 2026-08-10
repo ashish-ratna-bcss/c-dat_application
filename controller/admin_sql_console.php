@@ -175,8 +175,8 @@ try {
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <title>SQL Query Console</title>
-<script src="../SpryAssets/SPRYMENUBAR.JS" type="text/javascript"></script>
-<link href="../SpryAssets/SPRYMENUBARHORIZONTAL.CSS" rel="stylesheet" type="text/css" />
+<script src="../assets/spry/sprymenubar.js" type="text/javascript"></script>
+<link href="../assets/spry/sprymenubarhorizontal.css" rel="stylesheet" type="text/css" />
 <style type="text/css">
 body,td,th {
     font-family: Arial, Helvetica, sans-serif;
@@ -246,7 +246,7 @@ body,td,th {
         <!-- ═══ TOP NAVIGATION ═══ -->
         <table width="1313" height="148">
           <tr>
-            <td width="1265" height="134" align="center" valign="bottom" background="../IMAGES/topborder.jpg">
+            <td width="1265" height="134" align="center" valign="bottom" background="../assets/images/topborder.jpg">
               <ul id="MenuBar1" class="MenuBarHorizontal">
                 <li><a href="home.php">Home</a></li>
                 <li><a href="#" class="MenuBarItemSubmenu">Summary</a>
@@ -322,7 +322,7 @@ body,td,th {
               
               <table width="100%" border="0" cellpadding="0" cellspacing="0">
                 <tr>
-                  <th height="25" align="center" valign="middle" background="../IMAGES/BORDER.jpg" scope="col">
+                  <th height="25" align="center" valign="middle" background="../assets/images/border.jpg" scope="col">
                     <font color="#FFFFFF">SQL QUERY CONSOLE (POSTGRESQL)</font>
                   </th>
                 </tr>
@@ -513,7 +513,7 @@ body,td,th {
             <td width="300" align="left" valign="top" style="padding-left: 15px;">
               <table width="100%" border="0" cellpadding="0" cellspacing="0">
                 <tr>
-                  <th height="25" align="center" valign="middle" background="../IMAGES/BORDER.jpg" scope="col">
+                  <th height="25" align="center" valign="middle" background="../assets/images/border.jpg" scope="col">
                     <font color="#FFFFFF">RECENT QUERIES</font>
                   </th>
                 </tr>
@@ -546,7 +546,7 @@ body,td,th {
 </div>
 
 <script type="text/javascript">
-var MenuBar1 = new Spry.Widget.MenuBar("MenuBar1", {imgDown:"SpryAssets/SpryMenuBarDownHover.gif", imgRight:"SpryAssets/SpryMenuBarRightHover.gif"});
+var MenuBar1 = new Spry.Widget.MenuBar("MenuBar1", {imgDown:"../assets/spry/sprymenubardownhover.gif", imgRight:"../assets/spry/sprymenubarrighthover.gif"});
 </script>
 </body>
 </html>

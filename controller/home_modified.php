@@ -3,10 +3,10 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <title>Untitled Document</title>
-<script src="../SpryAssets/SPRYMENUBAR.JS" type="text/javascript"></script>
-<link href="../SpryAssets/SPRYMENUBARHORIZONTAL.CSS" rel="stylesheet" type="text/css" />
-<link href="../SpryAssets/SPRYMENUBARVERTICAL.CSS" rel="stylesheet" type="text/css" />
-<link rel="stylesheet" type="text/css" href="../css_sparkle1.css">
+<script src="../assets/spry/sprymenubar.js" type="text/javascript"></script>
+<link href="../assets/spry/sprymenubarhorizontal.css" rel="stylesheet" type="text/css" />
+<link href="../assets/spry/sprymenubarvertical.css" rel="stylesheet" type="text/css" />
+<link rel="stylesheet" type="text/css" href="../assets/css/css_sparkle1.css">
 <style type="text/css">
 .FONT {
 	color: #CFF;
@@ -23,7 +23,7 @@
 <tr>
   <td width="1349" height="595" align="left" valign="top"><table width="1313" height="148">
         <tr>
-          <td width="1265" height="134" align="center" valign="bottom" background="../IMAGES/topborder.jpg"><ul id="MenuBar1" class="MenuBarHorizontal">
+          <td width="1265" height="134" align="center" valign="bottom" background="../assets/images/topborder.jpg"><ul id="MenuBar1" class="MenuBarHorizontal">
             <li><a href="home.php">Home</a>              </li>
             <li><a href="home.php" class="MenuBarItemSubmenu">Summary</a>
               <ul>
@@ -119,7 +119,7 @@
             <td width="62" rowspan="2">&nbsp;</td>
           </tr>
           <tr>
-            <td height="310" align="left" valign="top"><div align="center"><img src="../IMAGES/ANALYSIS1.jpg" width="950" height="250" /></div></td>
+            <td height="310" align="left" valign="top"><div align="center"><img src="../assets/images/analysis1.jpg" width="950" height="250" /></div></td>
           </tr>
 
        </table>
@@ -135,8 +135,8 @@
 <p>&nbsp;</p>
     
   <script type="text/javascript">
-var MenuBar1 = new Spry.Widget.MenuBar("MenuBar1", {imgDown:"SpryAssets/SpryMenuBarDownHover.gif", imgRight:"SpryAssets/SpryMenuBarRightHover.gif"});
-var MenuBar2 = new Spry.Widget.MenuBar("MenuBar2", {imgRight:"SpryAssets/SpryMenuBarRightHover.gif"});
+var MenuBar1 = new Spry.Widget.MenuBar("MenuBar1", {imgDown:"../assets/spry/sprymenubardownhover.gif", imgRight:"../assets/spry/sprymenubarrighthover.gif"});
+var MenuBar2 = new Spry.Widget.MenuBar("MenuBar2", {imgRight:"../assets/spry/sprymenubarrighthover.gif"});
 
 </script>
 </body>

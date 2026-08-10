@@ -526,7 +526,7 @@ function sqlsrv_execute($stmt)
  * Build an <img src> value for base64 image columns from SQL Server/PostgreSQL.
  * Returns a data URI when image data exists, otherwise a static placeholder.
  */
-function cdat_base64_image_src($data, string $fallback = 'IMAGES/emp.png'): string
+function cdat_base64_image_src($data, string $fallback = '../assets/images/emp.png'): string
 {
     if ($data === null) {
         return $fallback;

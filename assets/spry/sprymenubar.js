@@ -770,7 +770,7 @@ Spry.Widget.MenuBar.setOptions = function(obj, optionsObj, ignoreUndefinedProps)
         for (var i = 0; i < scriptTags.length; i++) {
             var src = scriptTags[i].getAttribute('src') || '';
             if (src.indexOf('SpryMenuBar.js') !== -1) {
-                basePath = src.substring(0, src.indexOf('SpryAssets/SpryMenuBar.js'));
+                basePath = src.substring(0, src.indexOf('sprymenubar.js'));
                 break;
             }
         }

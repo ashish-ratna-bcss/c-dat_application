@@ -4,8 +4,8 @@
 <title>Untitled Document</title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <title>Untitled Document</title>
-<script src="../SpryAssets/SPRYMENUBAR.JS" type="text/javascript"></script>
-<link href="../SpryAssets/SPRYMENUBARHORIZONTAL.CSS" rel="stylesheet" type="text/css" />
+<script src="../assets/spry/sprymenubar.js" type="text/javascript"></script>
+<link href="../assets/spry/sprymenubarhorizontal.css" rel="stylesheet" type="text/css" />
 <style type="text/css">
 
 body,td,th {
@@ -23,11 +23,11 @@ where stage_of_case in ('ISSUE BW/NBW','PROCLAMATION US 82-83 CRPC','NBW','N.B.W
 ORDER BY POLICE_STATION";
 $results = $db_handle->runQuery($query);
 ?>
-<script src="../jquerydynamic.js" type="text/javascript"></script>
-<link rel="stylesheet" type="text/css" href="../jquery-ui-1.10.4.custom/css/dark-hive/jquery-ui-1.10.4.custom.min.css">
-<script type="text/javascript" src="../jquery-ui-1.10.4.custom/js/jquery-1.10.2.js"></script>
-<script type="text/javascript" src="../jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.js"></script>
-<script type="text/javascript" src="../jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.min.js"></script>
+<script src="../assets/js/jquerydynamic.js" type="text/javascript"></script>
+<link rel="stylesheet" type="text/css" href="../assets/vendor/jquery-ui-1.10.4.custom/css/dark-hive/jquery-ui-1.10.4.custom.min.css">
+<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-1.10.2.js"></script>
+<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.js"></script>
+<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.min.js"></script>
 <script type="text/javascript">
 $("document").ready(function() {
 	$("#datepickerID").datepicker({dateFormat: "yy-mm-dd",
@@ -42,17 +42,17 @@ $("document").ready(function() {
     <tr>
       <td width="1349" height="595" align="left" valign="top"><table width="1313" height="148">
         <tr>
-          <td width="1265" height="134" align="center" valign="bottom" background="../IMAGES/topborder.jpg"><ul id="MenuBar1" class="MenuBarHorizontal">
+          <td width="1265" height="134" align="center" valign="bottom" background="../assets/images/topborder.jpg"><ul id="MenuBar1" class="MenuBarHorizontal">
             </td>
         </tr>
       </table>
       <p>&nbsp;</p>
       <table width="862" height="158" align="center">
         <tr>
-          <th height="25" align="center" valign="middle" background="../IMAGES/BORDER.jpg" scope="col">NBWS/WARRANT SEARCH</th>
+          <th height="25" align="center" valign="middle" background="../assets/images/border.jpg" scope="col">NBWS/WARRANT SEARCH</th>
         </tr>
         <tr>
-          <th width="782" align="center" valign="middle" background="../IMAGES/BORDER.jpg" scope="col"><form id="form1" name="form1" method="post" action="nbws.php">
+          <th width="782" align="center" valign="middle" background="../assets/images/border.jpg" scope="col"><form id="form1" name="form1" method="post" action="nbws.php">
             <p>
             <label for="SUM" font face="verdana"> POLICE_STATION:</label>
               <select name="POLICE_STATION" id="POLICE_STATION" class="demoInputbox" onChange="GETPS(this.value);">
@@ -85,7 +85,7 @@ foreach($results as $POLICE_STATION) {
   </table>
 </div>
 <script type="text/javascript">
-var MenuBar1 = new Spry.Widget.MenuBar("MenuBar1", {imgDown:"SpryAssets/SpryMenuBarDownHover.gif", imgRight:"SpryAssets/SpryMenuBarRightHover.gif"});
+var MenuBar1 = new Spry.Widget.MenuBar("MenuBar1", {imgDown:"../assets/spry/sprymenubardownhover.gif", imgRight:"../assets/spry/sprymenubarrighthover.gif"});
 </script>
 </body>
 </html>

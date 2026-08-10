@@ -87,8 +87,8 @@ echo"</table>";
 sqlsrv_free_stmt( $st5);
 ?>
 
-<script src="../DROP DOWN FILTER/jquery.min.js"></script>
-    <script src="../DROP DOWN FILTER/ddtf.js"></script>
+<script src="../assets/vendor/drop-down-filter/jquery.min.js"></script>
+    <script src="../assets/vendor/drop-down-filter/ddtf.js"></script>
     <script>
         $('#mytable').ddTableFilter();
     </script> 

@@ -14,7 +14,7 @@ body{width:610px;font-family:calibri;}
 .demoInputBox {padding: 10px;border: #bdbdbd 1px solid;border-radius: 4px;background-color: #FFF;width: 50%;}
 .row{padding-bottom:15px;}
 </style>
-<script src="../jquerydynamic.js" type="text/javascript"></script>
+<script src="../assets/js/jquerydynamic.js" type="text/javascript"></script>
 <script>
 function getState(val) {
 	$.ajax({

@@ -1,7 +1,7 @@
 <html>
 <head>
 
-<link href="../w3.css" rel="stylesheet"/>
+<link href="../assets/css/w3.css" rel="stylesheet"/>
 <style>
         .container{width:960px;margin:30px auto;}
         thead select{border: 1px solid #ffffff;width:100%;}
@@ -95,8 +95,8 @@ sqlsrv_free_stmt( $st11);
 </tbody>
         </table>
 </div>
-<script src="../DROP DOWN FILTER/jquery.min.js"></script>
-    <script src="../DROP DOWN FILTER/ddtf.js"></script>
+<script src="../assets/vendor/drop-down-filter/jquery.min.js"></script>
+    <script src="../assets/vendor/drop-down-filter/ddtf.js"></script>
     <script>
         $('#mytable').ddTableFilter();
     </script> 

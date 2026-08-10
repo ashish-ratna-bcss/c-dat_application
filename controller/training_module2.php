@@ -3,10 +3,10 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <title>TRAINING MODULE</title>
-<script src="../SpryAssets/SPRYMENUBAR.JS" type="text/javascript"></script>
-<link href="../SpryAssets/SPRYMENUBARHORIZONTAL.CSS" rel="stylesheet" type="text/css" />
-<link href="../SpryAssets/SPRYMENUBARHORIZONTAL.CSS" rel="stylesheet" type="text/css" />
-<link href="../SpryAssets/SPRYMENUBARVERTICAL.CSS" rel="stylesheet" type="text/css" />
+<script src="../assets/spry/sprymenubar.js" type="text/javascript"></script>
+<link href="../assets/spry/sprymenubarhorizontal.css" rel="stylesheet" type="text/css" />
+<link href="../assets/spry/sprymenubarhorizontal.css" rel="stylesheet" type="text/css" />
+<link href="../assets/spry/sprymenubarvertical.css" rel="stylesheet" type="text/css" />
 <style type="text/css">
 .aa{
 width: 300px;
@@ -56,7 +56,7 @@ font-weight: bolder;
 }
 </style>
 </head>
-<body background="../IMAGES/EMP.PNG">
+<body background="../assets/images/emp.png">
       <table width="625" height="124">
 <br>
 &nbsp;
@@ -92,14 +92,14 @@ Select Rank : <select type="text" name="EMPLOYEE_SEARCH_RANK">
         </form></tr>
  <table width="625" height="347">
           <tr>
-            <td height="310" align="centre" valign="top"><div align="center"><img src="../IMAGES/TRAINING_DB1.GIF" width="600" height="350" /></div></td>
+            <td height="310" align="centre" valign="top"><div align="center"><img src="../assets/images/training_db1.gif" width="600" height="350" /></div></td>
           </tr>
 
        </table>
 
 </div>
 <script type="text/javascript">
-var MenuBar1 = new Spry.Widget.MenuBar("MenuBar1", {imgDown:"SpryAssets/SpryMenuBarDownHover.gif", imgRight:"SpryAssets/SpryMenuBarRightHover.gif"});
+var MenuBar1 = new Spry.Widget.MenuBar("MenuBar1", {imgDown:"../assets/spry/sprymenubardownhover.gif", imgRight:"../assets/spry/sprymenubarrighthover.gif"});
 </script>
 </body>
 </html>

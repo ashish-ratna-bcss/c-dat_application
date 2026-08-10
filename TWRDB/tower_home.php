@@ -3,9 +3,9 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <title>Untitled Document</title>
-<script src="SpryAssets/SpryMenuBar.js" type="text/javascript"></script>
-<link href="SpryAssets/SpryMenuBarHorizontal.css" rel="stylesheet" type="text/css" />
-<link href="SpryAssets/SpryMenuBarVertical.css" rel="stylesheet" type="text/css" />
+<script src="../assets/spry/sprymenubar.js" type="text/javascript"></script>
+<link href="../assets/spry/sprymenubarhorizontal.css" rel="stylesheet" type="text/css" />
+<link href="../assets/spry/sprymenubarvertical.css" rel="stylesheet" type="text/css" />
 
 </head>
 
@@ -15,7 +15,7 @@
 <tr>
   <td width="1349" height="595" align="left" valign="top"><table width="1313" height="120">
         <tr>
-          <td width="1260" height="110" align="center" background="IMAGES/TOPBORDER.JPG">
+          <td width="1260" height="110" align="center" background="../assets/images/topborder.jpg">
    </table>
 <marquee behavior="scroll" direction="left"> <font color="YELLOW" face=verdana size='2'><b> *** PLEASE MAIL RAW DATA TO crimelab@hyd.tspolice.gov.in TO VIEW REPORTS *** </b></font></marquee> 
         <table width="1307" height="347">
@@ -35,14 +35,14 @@
             <td width="62" rowspan="2">&nbsp;</td>
           </tr>
           <tr>
-            <td height="310" align="left" valign="top"><div align="center"><img src="IMAGES/TOWER2.jpeg" width="950" height="250" /></div></td>
+            <td height="310" align="left" valign="top"><div align="center"><img src="../assets/images/tower2.jpeg" width="950" height="250" /></div></td>
           </tr>
 
        </table>
     </div>    
 <script type="text/javascript">
-var MenuBar1 = new Spry.Widget.MenuBar("MenuBar1", {imgDown:"SpryAssets/SpryMenuBarDownHover.gif", imgRight:"SpryAssets/SpryMenuBarRightHover.gif"});
-var MenuBar2 = new Spry.Widget.MenuBar("MenuBar2", {imgRight:"SpryAssets/SpryMenuBarRightHover.gif"});
+var MenuBar1 = new Spry.Widget.MenuBar("MenuBar1", {imgDown:"../assets/spry/sprymenubardownhover.gif", imgRight:"../assets/spry/sprymenubarrighthover.gif"});
+var MenuBar2 = new Spry.Widget.MenuBar("MenuBar2", {imgRight:"../assets/spry/sprymenubarrighthover.gif"});
 
 </script>
 </body>

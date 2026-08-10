@@ -9,10 +9,10 @@
 <title> CATEGORY OF MIGRANT LABOURS FORM</title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <title>Untitled Document</title>
-<link rel="stylesheet" type="text/css" href="../jquery-ui-1.10.4.custom/css/dark-hive/jquery-ui-1.10.4.custom.min.css">
-<script type="text/javascript" src="../jquery-ui-1.10.4.custom/js/jquery-1.10.2.js"></script>
-<script type="text/javascript" src="../jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.js"></script>
-<script type="text/javascript" src="../jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.min.js"></script>
+<link rel="stylesheet" type="text/css" href="../assets/vendor/jquery-ui-1.10.4.custom/css/dark-hive/jquery-ui-1.10.4.custom.min.css">
+<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-1.10.2.js"></script>
+<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.js"></script>
+<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.min.js"></script>
 <script type="text/javascript">
 $("document").ready(function() {
 	$("#datepickerID").datepicker({dateFormat: "yy-mm-dd",
@@ -33,7 +33,7 @@ $query ="select distinct PS POLICE_STATION from MIGRANT_LABOURS_FORM..PS_NAMES";
 $results = $db_handle->runQuery($query);
 ?>
 <script src="../dynamicdependentbox/JQUERYDYNAMIC.JS" type="text/javascript"></script>
-<link href="../SpryAssets/SPRYMENUBARHORIZONTAL.CSS" rel="stylesheet" type="text/css" />
+<link href="../assets/spry/sprymenubarhorizontal.css" rel="stylesheet" type="text/css" />
 <style>
 input[type=text], select {
     width: 25%;
