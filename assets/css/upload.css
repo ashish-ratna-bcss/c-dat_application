@@ -74,6 +74,11 @@
 }
 .content [style*="rgba(255, 255, 255, 0.15)"],
 .content [style*="rgba(255,255,255,0.15)"] { border-color: var(--line) !important; }
+/* a badge tinted with translucent white -- white text on a white page */
+.content .badge-status[style*="rgba(255,255,255,0.1)"],
+.content .badge-status[style*="rgba(255, 255, 255, 0.1)"] {
+    background: #eef2f7 !important; color: var(--ink) !important;
+}
 
 /* ---- step / tab controls ---- */
 .content .nav-tabs {
@@ -209,3 +214,132 @@
 }
 .content .preview-table tr:nth-child(even) td { background: #f7fafd; }
 .content .preview-table td.preview-readonly { background: #f1f4f8; color: var(--ink-soft); }
+
+/* ==================================================================
+   admin_upload_history.php and admin_upload_verify.php
+   ------------------------------------------------------------------
+   The remaps above only reach style="" attributes. These two pages set
+   their colours in CLASSES in their own <style> block, all written for
+   the dark blue body, so they survived untouched:
+
+     .history-wrapper { color: #fff }  -> every table cell white on white,
+                                          which read as empty columns
+     .btn-back        { color: #fff }  -> the two "Back" buttons on the
+                                          verify screen were invisible
+     .filter-group label { #FFD700 }   -> gold on a grey bar
+     th { background: rgba(0,0,0,.35) } -> grey headers, pale blue text
+
+   Overridden here rather than in the pages so their stylesheets stay as
+   written and a future edit there does not have to know about the shell.
+   ================================================================== */
+
+/* ---- the wrapper panels ---- */
+.content .history-wrapper,
+.content .verify-wrapper {
+    /* were fixed at 1050px / 1200px, which forced the page to scroll
+       sideways once the sidebar took 264px off the viewport */
+    width: auto; max-width: 100%; margin: 0;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: none;
+    color: var(--ink);
+    font-family: inherit;
+}
+.content .verify-wrapper h2 { color: var(--ink); }
+
+/* ---- filter bar (history) ---- */
+.content .filter-bar {
+    background: #f7fafd;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+}
+.content .filter-grid {
+    /* six rigid columns squeezed the date inputs; let them wrap instead */
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+.content .filter-group label {
+    color: var(--ink); font-size: .8rem; font-weight: 600;
+}
+.content .filter-group select,
+.content .filter-group input[type="date"] {
+    border: 1px solid #c6d2e0; border-radius: 8px; color: var(--ink);
+}
+
+/* ---- meta strip (verify) ---- */
+.content .meta {
+    background: #f7fafd;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    color: var(--ink);
+}
+.content .meta strong { color: var(--ink); font-weight: 650; }
+
+/* ---- data tables ---- */
+.content .history-table,
+.content #verify-table { color: var(--ink); }
+.content .history-table th,
+.content #verify-table th {
+    background: var(--thead) !important;
+    color: #fff;
+    font-weight: 600;
+    border-bottom: 0;
+}
+.content .history-table td,
+.content #verify-table td {
+    color: var(--ink);
+    border-bottom: 1px solid var(--line);
+}
+.content .history-table tbody tr:nth-child(even) td { background: #f7fafd; }
+.content .history-table tbody tr:hover td { background: #eef5fc; }
+
+.content .table-scroll {
+    border: 1px solid var(--line); border-radius: 10px; background: #fff;
+}
+/* duplicate rows: the point is that they stand out, so keep them red -- just
+   a red that works on white */
+.content #verify-table tr.duplicate td {
+    background: #fdecea; color: #7f1d1d;
+}
+.content #verify-table td[contenteditable="true"] { background: #fffdf3; }
+.content #verify-table td[contenteditable="true"]:focus {
+    background: #fff4d6; outline: 2px solid rgba(22,104,195,.35);
+}
+
+/* ---- buttons ---- */
+.content .btn-back, .content .btn-reset {
+    background: #fff; color: var(--ink);
+    border: 1px solid #c6d2e0;
+}
+.content .btn-back:hover, .content .btn-reset:hover { background: #f1f5fa; }
+.content .btn-filter { background-color: var(--brand); color: #fff; }
+.content .btn-filter:hover { background-color: #12559f; }
+.content .tabs button.inactive {
+    background: #fff; color: var(--ink); border: 1px solid #c6d2e0;
+}
+
+/* ---- small text that was tinted for the dark background ---- */
+.content .stats, .content #page-label { color: var(--ink-soft); }
+.content .approval-rejected, .content .approval-na { color: var(--ink-soft); }
+.content .approval-approved { color: #15803d; }
+.content .approval-awaiting { color: var(--danger); }
+.content .history-row-link { color: var(--brand); }
+.content .history-row-link:hover { color: #12559f; }
+
+/* ---- alerts ---- */
+.content .alert-warn {
+    background: #fff8e6; border: 1px solid #f0dca8; color: #6b5312;
+}
+.content .alert-ok {
+    background: #eaf7ef; border: 1px solid #b9e2c8; color: #14532d;
+}
+
+/* ---- pagination ---- */
+.content .pagination-link {
+    background: #fff; color: var(--ink);
+    border: 1px solid #c6d2e0; border-radius: 8px;
+}
+.content .pagination-link:hover { background: #f1f5fa; }
+.content .pagination-link.active {
+    background: var(--brand); border-color: var(--brand); color: #fff;
+}

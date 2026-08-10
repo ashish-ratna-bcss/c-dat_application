@@ -12,14 +12,25 @@
 
     var KEY = 'cdat.nav.open';
 
+    // One group open at a time. With 12 groups and 42 links, letting them all
+    // stay open pushed the lower half of the menu below the fold and the
+    // sidebar became a long scroll.
     function readOpen() {
-        try { return JSON.parse(sessionStorage.getItem(KEY)) || []; }
-        catch (e) { return []; }
+        try { return sessionStorage.getItem(KEY) || ''; }
+        catch (e) { return ''; }
     }
 
-    function writeOpen(list) {
-        try { sessionStorage.setItem(KEY, JSON.stringify(list)); }
-        catch (e) { /* private mode: not worth failing over */ }
+    function writeOpen(name) {
+        try {
+            if (name) { sessionStorage.setItem(KEY, name); }
+            else { sessionStorage.removeItem(KEY); }
+        } catch (e) { /* private mode: not worth failing over */ }
+    }
+
+    function setOpen(g, openIt) {
+        g.classList.toggle('is-open', openIt);
+        var b = g.querySelector('.nav-parent');
+        if (b) { b.setAttribute('aria-expanded', openIt ? 'true' : 'false'); }
     }
 
     function labelOf(group) {
@@ -29,31 +40,26 @@
 
     var groups = Array.prototype.slice.call(document.querySelectorAll('.nav-group'));
 
-    // Restore previous state, but never close a group holding the current page:
-    // the server already opened that one and hiding it would strand the user.
-    var open = readOpen();
-    groups.forEach(function (g) {
-        if (g.classList.contains('is-open')) { return; }
-        if (open.indexOf(labelOf(g)) !== -1) {
-            g.classList.add('is-open');
-            g.querySelector('.nav-parent').setAttribute('aria-expanded', 'true');
-        }
-    });
+    // Restore the previously open group -- unless the server already opened the
+    // one holding the current page, which always wins: closing it would hide
+    // the entry for the page you are looking at.
+    var serverOpen = groups.filter(function (g) { return g.classList.contains('is-open'); })[0];
+    if (serverOpen) {
+        groups.forEach(function (g) { if (g !== serverOpen) { setOpen(g, false); } });
+        writeOpen(labelOf(serverOpen));
+    } else {
+        var remembered = readOpen();
+        groups.forEach(function (g) { setOpen(g, remembered !== '' && labelOf(g) === remembered); });
+    }
 
     groups.forEach(function (g) {
         var btn = g.querySelector('.nav-parent');
         if (!btn) { return; }
         btn.addEventListener('click', function () {
             var nowOpen = !g.classList.contains('is-open');
-            g.classList.toggle('is-open', nowOpen);
-            btn.setAttribute('aria-expanded', nowOpen ? 'true' : 'false');
-
-            var list = readOpen();
-            var name = labelOf(g);
-            var at = list.indexOf(name);
-            if (nowOpen && at === -1) { list.push(name); }
-            if (!nowOpen && at !== -1) { list.splice(at, 1); }
-            writeOpen(list);
+            // Opening one closes the rest; clicking the open one closes it.
+            groups.forEach(function (other) { setOpen(other, other === g && nowOpen); });
+            writeOpen(nowOpen ? labelOf(g) : '');
         });
     });
 

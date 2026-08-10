@@ -965,4 +965,21 @@ class UploadVerificationService
             throw new RuntimeException('Invalid staging table reference.');
         }
     }
+
+    /**
+     * Approving or rejecting a batch drops its staging table (see rejectBatch
+     * and the promote path). Opening the verification screen for a finished
+     * upload -- which the history list links to -- then queried a table that no
+     * longer exists, and the caller got PDO's "member function on bool" back as
+     * its error message. Callers check this first and say something useful.
+     */
+    public function stagingTableExists(string $qualified): bool
+    {
+        if ($qualified === '' || !preg_match('/^upload_staging\.[a-z][a-z0-9_]*$/', $qualified)) {
+            return false;
+        }
+        $stmt = $this->db->prepare('SELECT to_regclass(:t) IS NOT NULL');
+        $stmt->execute([':t' => $qualified]);
+        return (bool)$stmt->fetchColumn();
+    }
 }

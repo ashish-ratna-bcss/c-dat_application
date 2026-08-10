@@ -25,6 +25,18 @@ if (isset($_POST['ajax_action'])) {
             $limit = min(5000, max(10, (int)($_POST['limit'] ?? 100)));
             $offset = max(0, (int)($_POST['offset'] ?? 0));
             $forceRefresh = !empty($_POST['refresh_enrich']);
+            // Approve and reject both drop the staging table. Say so, rather
+            // than letting the query fail and reporting the PDO error verbatim.
+            if (!$service->stagingTableExists($table)) {
+                $status = strtolower($batch['verification_status'] ?? '');
+                echo json_encode(['ok' => false, 'gone' => true, 'status' => $status, 'error' =>
+                    $status === 'approved'
+                        ? 'This upload has already been approved. Its staging rows were removed once they were loaded into production, so there is nothing left to review.'
+                        : ($status === 'rejected'
+                            ? 'This upload was rejected and its staging rows were removed.'
+                            : 'The staging table for this upload no longer exists.')]);
+                exit;
+            }
             if ($module === 'cdr') {
                 if ($forceRefresh) {
                     $service->enrichCdrStaging($table);
@@ -469,7 +481,25 @@ function loadRows(refreshEnrich) {
   limit = currentLimit();
   document.getElementById('message').textContent = refreshEnrich ? 'Refreshing tower enrichment and duplicates…' : '';
   post('fetch_rows', { table_key: currentTableKey, limit, offset, refresh_enrich: refreshEnrich ? '1' : '' }).then(data => {
-    if (!data.ok) { document.getElementById('message').textContent = data.error || 'Failed to load rows.'; return; }
+    if (!data.ok) {
+      const msg = document.getElementById('message');
+      msg.textContent = data.error || 'Failed to load rows.';
+      if (data.gone) {
+        // Nothing on this screen can act on a batch whose staging rows are
+        // gone, so show the explanation instead of empty controls -- including
+        // the "you may edit values before approving" instructions.
+        document.querySelector('.verify-wrapper > .alert-warn')?.remove();
+        msg.className = 'alert ' + (data.status === 'approved' ? 'alert-ok' : 'alert-warn');
+        ['stats', 'sdr-tabs'].forEach(id => document.getElementById(id)?.remove());
+        document.querySelector('.table-scroll')?.remove();
+        document.querySelector('.pager')?.remove();
+        document.getElementById('refresh-btn')?.remove();
+        // put the explanation above the Back links rather than below them
+        const tb = document.querySelector('.toolbar');
+        if (tb) { tb.parentNode.insertBefore(msg, tb); }
+      }
+      return;
+    }
     currentTable = data.table;
     totalRows = data.total || 0;
     // If "All" was chosen before total was known, reload once with full size.
