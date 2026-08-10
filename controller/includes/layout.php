@@ -98,7 +98,13 @@ function cdat_render_nav(array $items): void
     echo '</ul>';
 }
 
-function layout_begin(string $title = 'Call Data Analysis Tool', string $subtitle = ''): void
+/**
+ * @param string $head Extra markup for <head> -- a page's own <style>, CDN
+ *                     tags or scripts. Capture it with ob_start()/ob_get_clean()
+ *                     so the block can stay written as plain HTML in the page.
+ */
+function layout_begin(string $title = 'Call Data Analysis Tool', string $subtitle = '',
+                      string $head = ''): void
 {
     $base  = CDAT_BASE;
     $user  = $_SESSION['audit_fullname'] ?? ($_SESSION['audit_username'] ?? '');
@@ -112,6 +118,7 @@ function layout_begin(string $title = 'Call Data Analysis Tool', string $subtitl
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= $t ?> &mdash; CDAT</title>
 <link rel="stylesheet" href="<?= $base ?>/assets/css/app.css">
+<?= $head ?>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -125,6 +132,15 @@ function layout_begin(string $title = 'Call Data Analysis Tool', string $subtitl
         <span>Call Data Analysis Tool</span>
       </div>
     </div>
+    <div class="nav-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+           stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input type="search" id="navSearch" placeholder="Search menu&hellip;"
+             autocomplete="off" spellcheck="false" aria-label="Search the menu"
+             aria-describedby="navSearchHint">
+      <button type="button" class="nav-search-clear" aria-label="Clear search" hidden>&times;</button>
+    </div>
+    <p id="navSearchHint" class="nav-empty" hidden>No menu item matches</p>
     <nav aria-label="Main">
       <?php cdat_render_nav($menu); ?>
     </nav>
