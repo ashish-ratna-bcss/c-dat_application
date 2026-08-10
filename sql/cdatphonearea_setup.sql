@@ -2,7 +2,7 @@
 --
 -- cdatphonearea maps a leading phone prefix to a human-readable area/network description.
 -- It is consulted by:
---   * legacy report pages (e.g. ADDRESS.PHP) via  phone LIKE PHONEPREFIX || '%'
+--   * legacy report pages (e.g. address.php) via  phone LIKE PHONEPREFIX || '%'
 --   * CDR staging enrichment (upload_verification_service.php::enrichCdrStaging) to fill the
 --     Cellular/network ID when celltowerid is empty.
 --

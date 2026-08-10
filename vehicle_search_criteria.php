@@ -2,8 +2,8 @@
 <head>
 </head>
 <body bgcolor="#0C5D90">
-<li><a href="VEHICLE_SEARCH_CRITERIA.HTM"><font color=#FDEFEF>Back</a></li></p>
-<form action ='VEHICLE_SEARCH.PHP'method='post'>
+<li><a href="vehicle_search_criteria.htm"><font color=#FDEFEF>Back</a></li></p>
+<form action ='vehicle_search.php'method='post'>
 <b><font size=4 face=verdana color='#F9FBFC'>ENTER VEHICLE NO : </b>
 <input type='text' name='VEHICLE_NO' value='' placeholder='Enter Vehicle No' required='required'>
 <input type ='submit' value='Submit'/>

@@ -66,15 +66,15 @@ echo "<td width=10px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['
 echo "<td width=10px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['FATHERSNAME'] ."<center></font></td>";
 echo "<td width=10px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['CRIMENOS'] ."<center></font></td>";
 echo "<td width=10px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['HEADOFCRIME'] ."<center></font></td>";
-echo "<td width=10px bgcolor=#AED1F1><font size=1 face=verdana><a href=".'JRMS_SEARCH_FOR_UNIQUEKEY.PHP?UNIQUE_KEY='.($row['UNIQUE_KEY'])."><center>". $row['NO_OF_TIMES_RELEASED'] ."</center></font></td>";
-echo "<td width=10px bgcolor=#AED1F1><font size=1 face=verdana><center><a href=".'CDATCNTS2.PHP?PHONE_NO='.($row['PHONE']).">". $row['PHONE'] ."<center></font></td>";
+echo "<td width=10px bgcolor=#AED1F1><font size=1 face=verdana><a href=".'jrms_search_for_uniquekey.php?UNIQUE_KEY='.($row['UNIQUE_KEY'])."><center>". $row['NO_OF_TIMES_RELEASED'] ."</center></font></td>";
+echo "<td width=10px bgcolor=#AED1F1><font size=1 face=verdana><center><a href=".'cdatcnts2.php?PHONE_NO='.($row['PHONE']).">". $row['PHONE'] ."<center></font></td>";
 echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['IDPROOF'] ."<center></font></td>";
 echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['ADDR_DURING_RELEASE'] ."<center></font></td>";
 echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['JAILNAME'] ."<center></font></td>";
 echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana>". $row['ADD_TO_JAIL'] ."</font></td>";
 echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana>". $row['RELEASE_DATE'] ."</font></td>";
 echo "<td>";?> <?php echo '<img  height="100" width="100" src="'.cdat_base64_image_src($row['PHOTO']).'"></img>' ?> <?php "</td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center><a href=".'IR.PHP?IRKEY='.($row['IRKEY']).">". $row['IRFORM'] ."</font></td>";
+echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center><a href=".'ir.php?IRKEY='.($row['IRKEY']).">". $row['IRFORM'] ."</font></td>";
 echo "</tr>";
 }
 echo"</table>";

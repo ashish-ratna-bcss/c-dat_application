@@ -21,5 +21,5 @@ else
 {
 echo "Updated";
 }
-header("refresh:30; url=JRMS_UNIQUE_KEY_UPDATE.HTM");
+header("refresh:30; url=jrms_unique_key_update.htm");
 ?>

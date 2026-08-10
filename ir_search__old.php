@@ -23,20 +23,20 @@
   <td width="1349" height="595" align="left" valign="top"><table width="1313" height="148">
         <tr>
           <td width="1265" height="134" align="center" valign="bottom" background="IMAGES/TOPBORDER.jpg"><ul id="MenuBar1" class="MenuBarHorizontal">
-            <li><a href="HOME_IR.PHP">Home</a>              </li>
-            <li><a href="IRREPORT.html">IRREPORT</a></li>
-            <li><a href="FAMILY_HISTORY.html">FAMILY HISTORY</a></li>
-            <li><a href="HOME_IR.PHP" class="MenuBarItemSubmenu">CRIME DETAILS</a>
+            <li><a href="home_ir.php">Home</a>              </li>
+            <li><a href="irreport.html">IRREPORT</a></li>
+            <li><a href="family_history.html">FAMILY HISTORY</a></li>
+            <li><a href="home_ir.php" class="MenuBarItemSubmenu">CRIME DETAILS</a>
              <ul>
-                <li><a href="OFFENCE_DETAILS.html">OFFENCE DETAILS</a></li>
-                <li><a href="PREVIOUS_OFFENCE_DETAILS.htm">PREVIOUS OFFENCE DETAILS</a></li>
+                <li><a href="offence_details.html">OFFENCE DETAILS</a></li>
+                <li><a href="previous_offence_details.htm">PREVIOUS OFFENCE DETAILS</a></li>
               </ul>
               </li>
-            <li><a href="LOCAL_CONTACTS.PHP">LOCAL CONTACTS</a></li>
-            <li><a href="RELATION_WITH_OTHER_ASSOCIATES_AND_GANGS.HTM">GANGS/ASSOCIATES</a></li>
-            <li><a href="disposal_of_property.PHP">PROPERTY DETAILS</a></li>
+            <li><a href="local_contacts.php">LOCAL CONTACTS</a></li>
+            <li><a href="relation_with_other_associates_and_gangs.htm">GANGS/ASSOCIATES</a></li>
+            <li><a href="disposal_of_property.php">PROPERTY DETAILS</a></li>
             <li><a href="brief_facts.php">BRIEF FACTS</a></li>
-            <li><a href="IMAGE_LIST.HTML">IMAGE</a></li>
+            <li><a href="image_list.html">IMAGE</a></li>
           </ul></td>
         </tr>
         <table width="800" height="100" align=center>
@@ -44,7 +44,7 @@
           <th height="27" bgcolor="#A9D1F5" class="CDAT" scope="col">OFFENDER IR SEARCH BY NAME</th>
         </tr>
         <tr>
-        <form id="form1" name="form1" method="post" action="IR_SEARCH.PHP">
+        <form id="form1" name="form1" method="post" action="ir_search.php">
                  <th width="555" bgcolor="#A9D1F5" class="CDAT" scope="col"> NAME OF THE OFFENDER:            <label for="textfield"></label>
             <input type="text" name="NAME" id="NAME" placeholder="Enter NAME" required="required"/>
 	CRIME HEAD:            	<label for="textfield"></label>

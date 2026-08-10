@@ -52,7 +52,7 @@ $("document").ready(function() {
           <th height="25" align="center" valign="middle" background="IMAGES/BORDER.jpg" scope="col">NBWS/WARRANT SEARCH</th>
         </tr>
         <tr>
-          <th width="782" align="center" valign="middle" background="IMAGES/BORDER.jpg" scope="col"><form id="form1" name="form1" method="post" action="NBWS.PHP">
+          <th width="782" align="center" valign="middle" background="IMAGES/BORDER.jpg" scope="col"><form id="form1" name="form1" method="post" action="nbws.php">
             <p>
             <label for="SUM" font face="verdana"> POLICE_STATION:</label>
               <select name="POLICE_STATION" id="POLICE_STATION" class="demoInputbox" onChange="GETPS(this.value);">

@@ -1,6 +1,6 @@
 <?php
 /**
- * LOGIN1.PHP  — Updated with Session + Audit Tracking
+ * login1.php  — Updated with Session + Audit Tracking
  */
 require_once __DIR__ . '/activity_logger.php';
 
@@ -30,11 +30,11 @@ if ($count == 1) {
         (int)($row['ID'] ?? 0)
     );
 
-    // Point at the file that actually exists. HOME_IR.PHP was a byte-identical
+    // Point at the file that actually exists. home_ir.php was a byte-identical
     // duplicate and was removed; it only still resolves through the extension
     // fallback in .htaccess, so any environment where mod_rewrite is off or
     // AllowOverride is None gets a 404 straight after a successful login.
-    header("refresh:0; url=HOME_IR.PHP");
+    header("refresh:0; url=home_ir.php");
 } else {
     echo "<font size=4 face=verdana color='#921215'>NO PASSWORD MATCHED</font></br>";
 }

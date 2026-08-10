@@ -3,7 +3,7 @@
 </head>
 <body bgcolor="#0C5D90">
 <li><a href="IR_SEARCH.HTML"><font color=#FDEFEF>Back</a></li>
-<form action ='IR_SEARCH_BY_HEAD.php'method='post'>
+<form action ='ir_search_by_head.php'method='post'>
 <b><font size=3 face=verdana color='#F9FBFC'>CRIME_HEAD : </b>
 <input type='text' name='CRIME_HEAD' value=''>
 <input type ='submit' value='Submit'/>
@@ -58,8 +58,8 @@ echo "<table border=1 cellspacing=0 cellpadding=5>
 
 while( $row = sqlsrv_fetch_array( $st9, SQLSRV_FETCH_ASSOC) ) {
 echo "<tr>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center><a href=".'IR.PHP?IRKEY='.($row['IRKEY']).">". $row['IRKEY'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center><a href=".'pdact_main.PHP?PDACT_KEY='.($row['PDACT_KEY']).">". $row['PDACT'] ."<center></font></td>";
+echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center><a href=".'ir.php?IRKEY='.($row['IRKEY']).">". $row['IRKEY'] ."<center></font></td>";
+echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center><a href=".'pdact_main.php?PDACT_KEY='.($row['PDACT_KEY']).">". $row['PDACT'] ."<center></font></td>";
 echo "<td width=25px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['NAME'] ."<center></font></td>";
 echo "<td width=10px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['ALIAS_NAME'] ."<center></font></td>";
 echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['FATHER_NAME'] ."<center></font></td>";

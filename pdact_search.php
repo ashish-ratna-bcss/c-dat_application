@@ -42,7 +42,7 @@ return false;
 }
 }
 </script>
-<li><a href="IR_SEARCH.htm">Back</a></li>
+<li><a href="ir_search.htm">Back</a></li>
 <?php
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"PDACT");
@@ -88,8 +88,8 @@ echo "<table width=815px border=1 cellspacing=0 cellpadding=5>
 
 while( $row = sqlsrv_fetch_array( $st1, SQLSRV_FETCH_ASSOC) ) {
 echo "<tr>";
-echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana ><center><a href=".'PDACT_MAIN.PHP?PDACT_KEY='.($row['PDACT_KEY']).">". $row['PDACT_KEY'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#C2E0FB><font size=1 face=verdana><center><a href=".'IR.PHP?IRKEY='.($row['IRKEY']).">". $row['IRKEY'] ."<center></font></td>";
+echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana ><center><a href=".'pdact_main.php?PDACT_KEY='.($row['PDACT_KEY']).">". $row['PDACT_KEY'] ."<center></font></td>";
+echo "<td width=150px bgcolor=#C2E0FB><font size=1 face=verdana><center><a href=".'ir.php?IRKEY='.($row['IRKEY']).">". $row['IRKEY'] ."<center></font></td>";
 echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['NAME'] ."<center></font></td>";
 echo "<td height=150px width=150px>";?> <?php echo '<img onmouseover="bigImg(this)" onmouseout="normalImg(this)" height="200" width="220" src="'.cdat_base64_image_src($row['IMAGE']).'"></img>' ?> <?php "</td>";
 echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['FATHER_NAME'] ."<center></font></td>";

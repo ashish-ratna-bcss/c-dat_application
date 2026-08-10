@@ -13,7 +13,7 @@ RewriteBase /cdat-web/
 # The login form is auth.html (was LOGIN1.html). Send the old FORM spellings there
 # so existing links keep working -- including LOGIN.HTML, which activity_logger.php
 # and logout.php used to redirect to.
-# Deliberately limited to .html/.htm: LOGIN1.PHP is the POST handler the form
+# Deliberately limited to .html/.htm: login1.php is the POST handler the form
 # submits to, so redirecting the .php spellings would break login outright.
 RewriteRule ^(?i:login1?|login_page)\.(?i:html?)$ auth.html [R=301,L]
 
@@ -63,7 +63,7 @@ RewriteRule ^(.*)\.(?:html?|php)$ $1.html [L,NC]
 # Preload the sqlsrv_* -> PostgreSQL shim. Legacy pages call sqlsrv_connect()
 # without requiring it; nginx injected this via fastcgi_param PHP_VALUE.
 # Scoped here rather than php.ini so other XAMPP projects are unaffected.
-php_value auto_prepend_file "C:/xampp/htdocs/cdat-web/SQLSRV_COMPAT.php"
+php_value auto_prepend_file "C:/xampp/htdocs/cdat-web/sqlsrv_compat.php"
 
 # Python 3.14 is installed but not on PATH as `python`, so excel_converter.php
 # and the CDR preview cannot find it. cdr_python_bin() honours CDR_PYTHON.

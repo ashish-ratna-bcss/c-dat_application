@@ -2,7 +2,7 @@
 <head>
 </head>
 <body bgcolor="#0C5E95">
-<p><a href="RETRIEVE1.HTM">BACK</a></p>
+<p><a href="retrieve1.htm">BACK</a></p>
 <body>
 <?php
 $NAME=$_POST['NAME'];
@@ -56,7 +56,7 @@ if(isset($_POST["btnclick"])){
 
         $_SESSION["USERNAME"] = $USERNAME;
         $_SESSION["status"]= true;
-        header("Location: LOGIN1.php");
+        header("Location: login1.php");
     }
     else{
         echo "invalid credentials";

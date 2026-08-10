@@ -42,7 +42,7 @@ return false;
 }
 }
 </script>
-<li><a href="CDATCNTS.php">Back</a></li>
+<li><a href="cdatcnts.php">Back</a></li>
 <?php
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"IRFORMS");

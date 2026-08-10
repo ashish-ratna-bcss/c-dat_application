@@ -260,64 +260,64 @@ $canVerify = $batch && ($batch['verification_status'] ?? 'pending') === 'pending
           <tr>
             <td width="1265" height="134" align="center" valign="bottom" background="IMAGES/TOPBORDER.jpg">
               <ul id="MenuBar1" class="MenuBarHorizontal">
-                <li><a href="HOME.PHP">Home</a></li>
-                <li><a href="HOME.PHP" class="MenuBarItemSubmenu">Summary</a>
+                <li><a href="home.php">Home</a></li>
+                <li><a href="home.php" class="MenuBarItemSubmenu">Summary</a>
                   <ul>
                     <li><a href="sum_home.php">Summary Total</a></li>
-                    <li><a href="SUM_BETWEEN_DATES.PHP">Summary Between Dates</a></li>
-                    <li><a href="SUM_ISD_CNTS.PHP">Summary of ISD Contacts</a></li>
-                    <li><a href="SUM_NEW_NOS.php">Summary of New Contacts</a></li>
-                    <li><a href="SUM_IN_STATE.html">Summary Within a State</a></li>
-                    <li><a href="SUM_OUT_STATE.HTM">Summary other than a state</a></li>
+                    <li><a href="sum_between_dates.php">Summary Between Dates</a></li>
+                    <li><a href="sum_isd_cnts.php">Summary of ISD Contacts</a></li>
+                    <li><a href="sum_new_nos.php">Summary of New Contacts</a></li>
+                    <li><a href="sum_in_state.html">Summary Within a State</a></li>
+                    <li><a href="sum_out_state.htm">Summary other than a state</a></li>
                   </ul>
                 </li>
-                <li><a href="HOME.PHP" class="MenuBarItemSubmenu">Call Details</a>
+                <li><a href="home.php" class="MenuBarItemSubmenu">Call Details</a>
                   <ul>
-                    <li><a href="MOVEMENTS.html"> MOVEMENTS </a></li>
-                    <li><a href="MOVEMENTS_BETWEEN_TWO_NUMBERS.html">Movements Btwn Two Nos</a></li>
-                    <li><a href="movements_between_two_numbers_comparision.PHP">Movements Btwn Two Nos Comparision</a></li>
-                    <li><a href="calls_btwn_dates.PHP">Calls Between Dates</a></li>
+                    <li><a href="movements.html"> MOVEMENTS </a></li>
+                    <li><a href="movements_between_two_numbers.html">Movements Btwn Two Nos</a></li>
+                    <li><a href="movements_between_two_numbers_comparision.php">Movements Btwn Two Nos Comparision</a></li>
+                    <li><a href="calls_btwn_dates.php">Calls Between Dates</a></li>
                   </ul>
                 </li>
-                <li><a href="HOME.PHP" class="MenuBarItemSubmenu">Cdat</a>
+                <li><a href="home.php" class="MenuBarItemSubmenu">Cdat</a>
                   <ul>
-                    <li><a href="CDATCNTS.php">Cdat Cnts</a></li>
-                    <li><a href="BULK_CDAT_CONTACTS.HTM">Bulk Cdat Contacts</a></li>
+                    <li><a href="cdatcnts.php">Cdat Cnts</a></li>
+                    <li><a href="bulk_cdat_contacts.htm">Bulk Cdat Contacts</a></li>
                     <li><a href="otherscdat.php">Others Cdat</a></li>
                   </ul>
                 </li>
-                <li><a href="HOME.PHP" class="MenuBarItemSubmenu">Imei Search</a>
+                <li><a href="home.php" class="MenuBarItemSubmenu">Imei Search</a>
                   <ul>
-                    <li><a href="imeisearch.PHP">Phones used in Imei</a></li>
-                    <li><a href="IMEISINPHONE.php">Imeis used in phone</a></li>
+                    <li><a href="imeisearch.php">Phones used in Imei</a></li>
+                    <li><a href="imeisinphone.php">Imeis used in phone</a></li>
                   </ul>
                 </li>
-                <li><a href="HOME.PHP" class="MenuBarItemSubmenu">Address</a>
+                <li><a href="home.php" class="MenuBarItemSubmenu">Address</a>
                   <ul>
-                    <li><a href="ADDRESS.htm">Single Address</a></li>
+                    <li><a href="address.htm">Single Address</a></li>
                     <li><a href="bulkaddress.php">Bulk Addresses</a></li>
                   </ul>
                 </li>
                 <li><a href="#" class="MenuBarItemSubmenu">Day Night Loc</a>
                   <ul>
-                    <li><a href="DAY%26NIGHTLOC.HTML">Top 10 Day Night Loc</a></li>
-                    <li><a href="DAY%26NIGHTLOC_BTWN_DATES.HTML">Top 10 Day Night Loc Between Dates</a></li>
+                    <li><a href="day%26nightloc.html">Top 10 Day Night Loc</a></li>
+                    <li><a href="day%26nightloc_btwn_dates.html">Top 10 Day Night Loc Between Dates</a></li>
                   </ul>
                 </li>
                 <li><a href="#" class="MenuBarItemSubmenu">Offenders List</a>
                   <ul>
-                    <li><a href="HABITUAL.PHP">Habitual Offenders List - 1</a></li>
+                    <li><a href="habitual.php">Habitual Offenders List - 1</a></li>
                   </ul>
                 </li>
                 <li><a href="#" class="MenuBarItemSubmenu">Others</a>
                   <ul>
-                    <li><a href="CELLID_SEARCH.htm">Cellid Search</a></li>
-                    <li><a href="VEHICLE_SEARCH.HTML">Vehicle Search</a></li>
-                    <li><a href="COMMON_CNTS.php">Common Cnts</a></li>
-                    <li><a href="ADMIN_ACTIVITY_LOG.PHP">User Activity</a></li>
-                    <li><a href="ADMIN_SQL_CONSOLE.PHP">SQL Query Console</a></li>
+                    <li><a href="cellid_search.htm">Cellid Search</a></li>
+                    <li><a href="vehicle_search.html">Vehicle Search</a></li>
+                    <li><a href="common_cnts.php">Common Cnts</a></li>
+                    <li><a href="admin_activity_log.php">User Activity</a></li>
+                    <li><a href="admin_sql_console.php">SQL Query Console</a></li>
                     <li><a href="admin_upload.php">Data Upload</a></li>
-                    <li><a href="TRAINING_MODULE1.htm">TRAININGS</a></li>
+                    <li><a href="training_module1.htm">TRAININGS</a></li>
                   </ul>
                 </li>
               </ul>

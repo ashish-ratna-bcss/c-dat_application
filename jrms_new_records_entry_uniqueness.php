@@ -42,5 +42,5 @@ else
 {
 echo "inserted";
 }
-header("refresh:30; url=IRREPORT.html");
+header("refresh:30; url=irreport.html");
 ?>

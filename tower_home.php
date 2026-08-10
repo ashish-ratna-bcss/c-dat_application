@@ -23,11 +23,11 @@
             <td width="450" rowspan="2" valign="top">
               <blockquote>
                 <ul class="MenuBarVertical">
-	  <li><a href="HOME.PHP">HOME</a></li>
-          <li><a href="SUSPECT_SEARCH.PHP">Sus Search In Dump</a></li>
-          <li><a href="OTHER_STATE_NUMBER.PHP">Other State Numbers In Dump</a></li>
-          <li><a href="INTER_TOWER_CALLS.PHP">Inter Tower Calls</a></li>
-          <li><a href="PRE_OFF_SEARCH.PHP">Previous Offenders In Dump</a></li>
+	  <li><a href="home.php">HOME</a></li>
+          <li><a href="suspect_search.php">Sus Search In Dump</a></li>
+          <li><a href="other_state_number.php">Other State Numbers In Dump</a></li>
+          <li><a href="inter_tower_calls.php">Inter Tower Calls</a></li>
+          <li><a href="pre_off_search.php">Previous Offenders In Dump</a></li>
                 </ul>
         <p>&nbsp; </p>
       </blockquote></td>

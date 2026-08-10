@@ -46,62 +46,62 @@ $results = $db_handle->runQuery($query);
       <td width="1349" height="595" align="left" valign="top"><table width="1313" height="148">
         <tr>
           <td width="1265" height="134" align="center" valign="bottom" background="IMAGES/TOPBORDER.jpg"><ul id="MenuBar1" class="MenuBarHorizontal">
-            <li><a href="HOME.PHP">Home</a>              </li>
+            <li><a href="home.php">Home</a>              </li>
             <li><a href="#" class="MenuBarItemSubmenu">Summary</a>
               <ul>
                 <li><a href="sum_home.php">Summary Total</a></li>
-                <li><a href="SUM_BETWEEN_DATES.PHP">Summary Between Dates</a></li>
-                <li><a href="SUM_ISD_CNTS.PHP">Summary of ISD Contacts</a></li>
-                <li><a href="SUM_NEW_NOS.php">Summary of New Contacts</a></li>
-                <li><a href="SUM_IN_STATE.html">Summary Within a State</a></li>
-                <li><a href="SUM_OUT_STATE.HTM">Summary other than a state</a></li>
+                <li><a href="sum_between_dates.php">Summary Between Dates</a></li>
+                <li><a href="sum_isd_cnts.php">Summary of ISD Contacts</a></li>
+                <li><a href="sum_new_nos.php">Summary of New Contacts</a></li>
+                <li><a href="sum_in_state.html">Summary Within a State</a></li>
+                <li><a href="sum_out_state.htm">Summary other than a state</a></li>
               </ul>
             </li>
             <li><a href="#" class="MenuBarItemSubmenu">Call Details</a>
               <ul>
-                <li><a href="MOVEMENTS.html"> MOVEMENTS </a></li>
-		<li><a href="MOVEMENTS_BETWEEN_TWO_NUMBERS.html">Movements Btwn Two Nos</a></li>
-		<li><a href="movements_between_two_numbers_comparision.PHP">Movements Btwn Two Nos Comparision</a></li> 
-		<!----<li><a href="calls_tot.PHP">Call Details Total</a></li>--->
-                <li><a href="calls_btwn_dates.PHP">Calls Between Dates</a></li>
-                <!----<li><a href="CALLS_BT_NOS.htm">Calls Between Two Numbers</a></li>---->
+                <li><a href="movements.html"> MOVEMENTS </a></li>
+		<li><a href="movements_between_two_numbers.html">Movements Btwn Two Nos</a></li>
+		<li><a href="movements_between_two_numbers_comparision.php">Movements Btwn Two Nos Comparision</a></li> 
+		<!----<li><a href="calls_tot.php">Call Details Total</a></li>--->
+                <li><a href="calls_btwn_dates.php">Calls Between Dates</a></li>
+                <!----<li><a href="calls_bt_nos.htm">Calls Between Two Numbers</a></li>---->
               </ul>
             </li>
             <li><a href="#" class="MenuBarItemSubmenu">Cdat</a>
               <ul>
-                <li><a href="CDATCNTS.php">Cdat Cnts</a></li>
-		<li><a href="BULK_CDAT_CONTACTS.HTM">Bulk Cdat Contacts</a></li>
+                <li><a href="cdatcnts.php">Cdat Cnts</a></li>
+		<li><a href="bulk_cdat_contacts.htm">Bulk Cdat Contacts</a></li>
 		<li><a href="otherscdat.php">Others Cdat</a></li>
               </ul>
             </li>
             <li><a href="#" class="MenuBarItemSubmenu">Imei Search</a>
               <ul>
-                <li><a href="imeisearch.PHP">Phones used in Imei</a></li>
-                <li><a href="IMEISINPHONE.php">Imeis used in phone</a></li>
+                <li><a href="imeisearch.php">Phones used in Imei</a></li>
+                <li><a href="imeisinphone.php">Imeis used in phone</a></li>
               </ul>
             </li>
             <li><a href="#" class="MenuBarItemSubmenu">Address</a>
               <ul>
-                <li><a href="ADDRESS.htm">Single Address</a></li>
+                <li><a href="address.htm">Single Address</a></li>
                 <li><a href="bulkaddress.php">Bulk Addresses</a></li>
               </ul>
             </li>
              <li><a href="#" class="MenuBarItemSubmenu">Day Night Loc</a>
                <ul>
-                <li><a href="DAY%26NIGHTLOC.HTML">Top 10 Day Night Loc</a></li>
-                <li><a href="DAY%26NIGHTLOC_BTWN_DATES.HTML">Top 10 Day Night Loc Between Dates</a></li>
+                <li><a href="day%26nightloc.html">Top 10 Day Night Loc</a></li>
+                <li><a href="day%26nightloc_btwn_dates.html">Top 10 Day Night Loc Between Dates</a></li>
                   </ul>
                 </li>
                 <li><a href="#" class="MenuBarItemSubmenu">Wanted</a>
                   <ul>
-                    <li><a href="wanted1.PHP">List - 1</a></li>
+                    <li><a href="wanted1.php">List - 1</a></li>
                   </ul>
                 </li>
             <li><a href="#" class="MenuBarItemSubmenu">Others</a>
               <ul>
-                <li><a href="CELLID_SEARCH.htm">Cellid Search</a></li>
-                <li><a href="VEHICLE_SEARCH.HTML">Vehicle Search</a></li>
-                <li><a href="COMMON_CNTS.php">Common Cnts</a></li>
+                <li><a href="cellid_search.htm">Cellid Search</a></li>
+                <li><a href="vehicle_search.html">Vehicle Search</a></li>
+                <li><a href="common_cnts.php">Common Cnts</a></li>
                 </ul>
             </li>
           </ul></td>
@@ -114,8 +114,8 @@ $results = $db_handle->runQuery($query);
             <td width="214" rowspan="2" valign="top">
               <blockquote>
                 <ul class="MenuBarVertical">
-          <li><a href="JRMS_NAME_SEARCH.PHP" class="MenuBarItemSubmenu">JRMS NAME SEARCH</a>            </li>
-          <li><a href="JRMS_SEARCH_BY_DATES.PHP" class="MenuBarItemSubmenu">JRMS SEARCH BY DATE</a>            </li>
+          <li><a href="jrms_name_search.php" class="MenuBarItemSubmenu">JRMS NAME SEARCH</a>            </li>
+          <li><a href="jrms_search_by_dates.php" class="MenuBarItemSubmenu">JRMS SEARCH BY DATE</a>            </li>
           </ul>
 </tr>
 </table>
@@ -126,7 +126,7 @@ $results = $db_handle->runQuery($query);
           <th height="31" align="center" valign="middle" background="IMAGES/BORDER.jpg" scope="col">JAIL RELEASE BETWEEN DATES</th>
         </tr>
         <tr>
-          <th width="782" align="center" valign="middle" background="IMAGES/BORDER.jpg" scope="col"><form id="form1" name="form1" method="post" action="JRMS_SEARCH.PHP">
+          <th width="782" align="center" valign="middle" background="IMAGES/BORDER.jpg" scope="col"><form id="form1" name="form1" method="post" action="jrms_search.php">
                       Date From: 
               <input type="text" name="FROM_DT" id="datepickerID" size="10" placeholder="yyyy/mm/dd" required="required"/>
               To:
@@ -202,13 +202,13 @@ echo "<td width=25px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['
 echo "<td width=10px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['NAME'] ."<center></font></td>";
 echo "<td width=10px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['CRIMENOS'] ."<center></font></td>";
 echo "<td width=10px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['HEADOFCRIME'] ."<center></font></td>";
-echo "<td width=10px bgcolor=#AED1F1><font size=1 face=verdana><center><a href=".'CDATCNTS2.PHP?PHONE_NO='.($row['PHONE']).">". $row['PHONE'] ."<center></font></td>";
+echo "<td width=10px bgcolor=#AED1F1><font size=1 face=verdana><center><a href=".'cdatcnts2.php?PHONE_NO='.($row['PHONE']).">". $row['PHONE'] ."<center></font></td>";
 echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['IDPROOF'] ."<center></font></td>";
 echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['ADDR_DURING_RELEASE'] ."<center></font></td>";
 echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['JAILNAME'] ."<center></font></td>";
 echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana>". $row['ADD_TO_JAIL'] ."</font></td>";
 echo "<td>";?> <?php echo '<img  height="100" width="100" src="'.cdat_base64_image_src($row['PHOTO']).'"></img>' ?> <?php "</td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center><a href=".'IR.PHP?IRKEY='.($row['IRKEY']).">". $row['IRFORM'] ."</font></td>";
+echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center><a href=".'ir.php?IRKEY='.($row['IRKEY']).">". $row['IRFORM'] ."</font></td>";
 echo "</tr>";
 }
 ?> 

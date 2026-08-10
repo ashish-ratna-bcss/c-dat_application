@@ -47,7 +47,7 @@ body,td,th {
           <th height="25" align="center" valign="middle" background="IMAGES/BORDER.jpg" scope="col">SUSPECT NUMBER SEARCH IN TOWER DUMP</th>
         </tr>
         <tr>
-          <th width="782" align="center" valign="middle" background="IMAGES/BORDER.jpg" scope="col"><form id="form1" name="form1" method="post" action="SUSPECT_SEARCH_TWR.php">
+          <th width="782" align="center" valign="middle" background="IMAGES/BORDER.jpg" scope="col"><form id="form1" name="form1" method="post" action="suspect_search_twr.php">
             <p>
               <label for="SUM" font face="verdana"> Mobile No:</label>
               <input type="text" name="PHONE_NO" id="SUM" placeholder="Enter Mobile No" required="required"/>

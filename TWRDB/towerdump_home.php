@@ -36,8 +36,8 @@ table {border-collapse: collapse;} table,th{border:1px solid white;}
           <p>&nbsp;</p>
         <td width="238"  valign="top">
         <ul class="vertical-list">
-        	<li><a href="PROFILE.html" class='button'">Profile</a></li>
-        	<li><a href='CDAT_CNTS.html' class='button'>CDAT Search</a></li>
+        	<li><a href="profile.html" class='button'">Profile</a></li>
+        	<li><a href='cdat_cnts.html' class='button'>CDAT Search</a></li>
         	<li><a href='CALL_ANALYSIS.html' class='button'>Call Analysis</a></li>
         	<li><a href='SUM_HOME.html' class='button'>Call Summary</a></li>
 			<li><a href='PLACE_OF_STAY_WORK.HTML' class='button'> Location Based Analysis</a></li>
