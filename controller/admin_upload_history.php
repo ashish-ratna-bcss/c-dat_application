@@ -154,14 +154,12 @@ function renderApprovalStatus(array $log): array
     ];
 }
 ?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title><?= $type === 'custom' ? 'Custom Table Upload Logs' : 'Standard Upload Logs' ?> - CDR Dashboard</title>
-<script src="../assets/spry/sprymenubar.js" type="text/javascript"></script>
-<link href="../assets/spry/sprymenubarhorizontal.css" rel="stylesheet" type="text/css" />
-<link href="../assets/spry/sprymenubarvertical.css" rel="stylesheet" type="text/css" />
+<?php
+// The stylesheet below belongs in <head>; capture it and pass it to
+// layout_begin() so it can stay written as plain CSS in this file.
+require_once __DIR__ . '/includes/layout.php';
+ob_start();
+?>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
 <style type="text/css">
 .FONT {
@@ -324,85 +322,17 @@ function renderApprovalStatus(array $log): array
     font-weight: bold;
 }
 </style>
-</head>
-
-<body bgcolor="#5195BA">
+<link rel="stylesheet" href="../assets/css/upload.css">
+<?php
+layout_begin('Upload History', 'Previous uploads and their status', ob_get_clean());
+?>
 <div align="center">
   <table width="1323" height="603" border="2">
     <tr>
       <td width="1349" height="595" align="left" valign="top">
         
         <!-- Header Section -->
-        <table width="1313" height="148">
-          <tr>
-            <td width="1265" height="134" align="center" valign="bottom" background="../assets/images/topborder.jpg">
-              <ul id="MenuBar1" class="MenuBarHorizontal">
-                <li><a href="home.php">Home</a>              </li>
-                <li><a href="home.php" class="MenuBarItemSubmenu">Summary</a>
-                  <ul>
-                    <li><a href="sum_home.php">Summary Total</a></li>
-                    <li><a href="sum_between_dates.php">Summary Between Dates</a></li>
-                    <li><a href="sum_isd_cnts.php">Summary of ISD Contacts</a></li>
-                    <li><a href="sum_new_nos.php">Summary of New Contacts</a></li>
-                    <li><a href="sum_in_state.php">Summary Within a State</a></li>
-                    <li><a href="sum_out_state.php">Summary other than a state</a></li>
-                  </ul>
-                </li>
-                <li><a href="home.php" class="MenuBarItemSubmenu">Call Details</a>
-                  <ul>
-        		    <li><a href="movements.php"> MOVEMENTS </a></li>
-        		    <li><a href="movements_between_two_numbers.php">Movements Btwn Two Nos</a></li>
-        		    <li><a href="movements_between_two_numbers_comparision.php">Movements Btwn Two Nos Comparision</a></li>
-                    <li><a href="calls_btwn_dates.php">Calls Between Dates</a></li>
-                  </ul>
-                </li>
-                <li><a href="home.php" class="MenuBarItemSubmenu">Cdat</a>
-                  <ul>
-                    <li><a href="cdatcnts.php">Cdat Cnts</a></li>
-        		    <li><a href="bulk_cdat_contacts.php">Bulk Cdat Contacts</a></li>
-        		    <li><a href="otherscdat.php">Others Cdat</a></li>
-                  </ul>
-                </li>
-                <li><a href="home.php" class="MenuBarItemSubmenu">Imei Search</a>
-                  <ul>
-                    <li><a href="imeisearch.php">Phones used in Imei</a></li>
-                    <li><a href="imeisinphone.php">Imeis used in phone</a></li>
-                  </ul>
-                </li>
-                <li><a href="home.php" class="MenuBarItemSubmenu">Address</a>
-                  <ul>
-                    <li><a href="address.php">Single Address</a></li>
-                    <li><a href="bulkaddress.php">Bulk Addresses</a></li>
-                  </ul>
-                </li>
-                 <li><a href="#" class="MenuBarItemSubmenu">Day Night Loc</a>
-                   <ul>
-                    <li><a href="../view/day%26nightloc.html">Top 10 Day Night Loc</a></li>
-                    <li><a href="../view/day%26nightloc_btwn_dates.html">Top 10 Day Night Loc Between Dates</a></li>
-                   </ul>
-                </li>
-                <li><a href="#" class="MenuBarItemSubmenu">Offenders List</a>
-                  <ul>
-                    <li><a href="habitual.php">Habitual Offenders List - 1</a></li>
-                  </ul>
-                </li>
-                <li><a href="#" class="MenuBarItemSubmenu">Others</a>
-                  <ul>
-                    <li><a href="cellid_search.php">Cellid Search</a></li>
-                    <li><a href="vehicle_search.php">Vehicle Search</a></li>
-                    <li><a href="common_cnts.php">Common Cnts</a></li>
-                    <li><a href="admin_activity_log.php">User Activity</a></li>
-                    <li><a href="admin_sql_console.php">SQL Query Console</a></li>
-        		    <li><a href="tower_home.php">Tower Dump Reports (Under Development)</a></li>
-        		    <li><a href="login.php">IR FORMS</a></li>
-        		    <li><a href="ir_search.php">IR Form Search By Name</a></li>
-        		    <li><a href="training_module1.php">TRAININGS</a></li>
-                  </ul>
-                </li>
-              </ul>
-            </td>
-          </tr>
-        </table>
+
         
         <marquee behavior="scroll" direction="right"> 
           <font color="YELLOW" face="verdana" size="2"><b> *** PLEASE MAIL RAW DATA TO cdranalysiswing@gmail.com TO VIEW REPORTS *** </b></font>
@@ -629,7 +559,6 @@ function renderApprovalStatus(array $log): array
 </div>
 
 <script type="text/javascript">
-var MenuBar1 = new Spry.Widget.MenuBar("MenuBar1", {imgDown:"../assets/spry/sprymenubardownhover.gif", imgRight:"../assets/spry/sprymenubarrighthover.gif"});
 
 // Dynamic date range limit adjustment
 function updateToDateLimit() {
@@ -745,5 +674,4 @@ document.getElementById('filterForm').addEventListener('submit', function(e) {
     sync();
 })();
 </script>
-</body>
-</html>
+<?php layout_end(); ?>

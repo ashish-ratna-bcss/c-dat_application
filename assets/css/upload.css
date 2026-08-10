@@ -34,9 +34,46 @@
     padding: 1px 6px;
     font-size: .85em;
 }
-.content [style*="color:#FFD700"], .content [style*="color: #FFD700"] {
+/* ---- inline colours left over from the dark theme ----
+   These pages set text colour inline in dozens of places, all chosen against a
+   dark blue body. Remap them by value. Only `color:` declarations are matched,
+   so a button written as background:#FFA500;color:#10222b is untouched and
+   keeps its own contrast. */
+.content [style*="color:#FFD700"], .content [style*="color: #FFD700"],
+.content [style*="color:#ffd9a0"], .content [style*="color: #ffd9a0"] {
     color: #7a5c10 !important;
 }
+.content [style*="color:#ccc"],    .content [style*="color: #ccc"],
+.content [style*="color:#bbb"],    .content [style*="color: #bbb"],
+.content [style*="color:#aaa"],    .content [style*="color: #aaa"],
+.content [style*="color:#ddd"],    .content [style*="color: #ddd"],
+.content [style*="color:#9fd0e6"], .content [style*="color: #9fd0e6"],
+.content [style*="color:#87CEEB"], .content [style*="color: #87CEEB"],
+.content [style*="color:#eaf3f8"], .content [style*="color: #eaf3f8"] {
+    color: var(--ink-soft) !important;
+}
+.content [style*="color:#FFB6C1"], .content [style*="color: #FFB6C1"],
+.content [style*="color:#ffb3b3"], .content [style*="color: #ffb3b3"],
+.content [style*="color:#ff6b6b"], .content [style*="color: #ff6b6b"] {
+    color: var(--danger) !important;
+}
+.content [style*="color:#90EE90"], .content [style*="color: #90EE90"],
+.content [style*="color:#7CFC00"], .content [style*="color: #7CFC00"] {
+    color: #15803d !important;
+}
+.content [style*="color:#FFA500"], .content [style*="color: #FFA500"] {
+    color: #a15c00 !important;
+}
+
+/* Panels given a translucent dark fill inline -- invisible borders and washed
+   out text now that the page is light. */
+.content [style*="rgba(0, 0, 0"], .content [style*="rgba(0,0,0"] {
+    background: #f7fafd !important;
+    border: 1px solid var(--line) !important;
+    color: var(--ink);
+}
+.content [style*="rgba(255, 255, 255, 0.15)"],
+.content [style*="rgba(255,255,255,0.15)"] { border-color: var(--line) !important; }
 
 /* ---- step / tab controls ---- */
 .content .nav-tabs {

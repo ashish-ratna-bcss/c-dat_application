@@ -60,7 +60,13 @@ a { color: var(--brand); }
     padding: 1rem 1rem 1.1rem;
     border-bottom: 1px solid rgba(255,255,255,.08);
 }
-.brand img { width: 38px; height: 38px; object-fit: contain; }
+/* Cropped from the masthead (assets/images/topborder.jpg) -- it was the only
+   copy of the emblem in the project. Height-constrained so the 92x103 source
+   keeps its aspect ratio. */
+.brand img {
+    width: auto; height: 42px; flex: 0 0 auto;
+    object-fit: contain; border-radius: 4px;
+}
 .brand strong { display: block; color: #fff; font-size: .95rem; line-height: 1.2; }
 .brand span   { display: block; color: #8fb0cd; font-size: .74rem; margin-top: 2px; }
 
