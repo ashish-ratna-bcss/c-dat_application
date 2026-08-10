@@ -102,7 +102,7 @@ a { color: var(--brand); }
 }
 
 /* While filtering, groups are forced open so matching children are visible. */
-.nav-group.is-filtered > .nav-sub { grid-template-rows: 1fr; }
+.nav-group.is-filtered > .nav-sub { max-height: 40rem; }
 .nav [hidden] { display: none !important; }
 mark.hit { background: #ffd44d; color: #10243a; border-radius: 3px; padding: 0 1px; }
 
@@ -126,14 +126,16 @@ mark.hit { background: #ffd44d; color: #10243a; border-radius: 3px; padding: 0 1
 .chev { width: 15px; height: 15px; margin-left: auto; transition: transform .18s ease; opacity: .7; }
 .nav-group.is-open > .nav-parent .chev { transform: rotate(180deg); }
 
-/* Children are hidden until the group is opened. Height animation keeps the
-   sidebar from jumping when several groups are open at once. */
+/* Children are hidden until the group is opened.
+   This was written as display:grid + grid-template-rows:0fr. That only sizes
+   the FIRST row track -- every child after it lands in an implicit row that
+   stays auto-height, so collapsing a group hid one link and left the rest on
+   screen. max-height collapses the whole list, which is what it has to do. */
 .nav-sub {
-    display: grid; grid-template-rows: 0fr;
-    transition: grid-template-rows .2s ease;
+    overflow: hidden; max-height: 0;
+    transition: max-height .22s ease;
 }
-.nav-group.is-open > .nav-sub { grid-template-rows: 1fr; }
-.nav-sub > li { overflow: hidden; }
+.nav-group.is-open > .nav-sub { max-height: 40rem; }
 .nav-sub li:first-child { padding-top: 2px; }
 .nav-sub a {
     display: block; padding: .44rem .65rem .44rem 2.4rem;
@@ -201,20 +203,41 @@ mark.hit { background: #ffd44d; color: #10243a; border-radius: 3px; padding: 0 1
 .content table[border] { border: 0 !important; }
 .content table td, .content table th { vertical-align: top; }
 
-/* :not([class]) is the discriminator. The legacy layout wrappers are bare
-   <table width="1323" border="2"> with no class, while every table a page
-   actually styles carries one (.preview-table, .w3-table-all). Without this
-   the rule also flattened real content tables -- it stripped the padding off
-   the upload screen's results table, which rendered as a blank gap. */
-.content table:not([border="1"]):not([class]) {
+/* border="2" does not only draw a frame round the table -- the browser also
+   gives every cell an inset border. Zeroing the table alone left a hard square
+   box drawn round the whole page, inside the rounded card. Data tables keep
+   their cell rules further down. */
+.content table:not([border="1"]) > tbody > tr > td,
+.content table:not([border="1"]) > tbody > tr > th,
+.content table:not([border="1"]) > tr > td,
+.content table:not([border="1"]) > tr > th { border: 0 !important; }
+
+/* Only the OUTERMOST wrapper gets flattened to full width. Applying this to
+   every bare table stretched each little centred form -- <table width="700">
+   round a search box -- across the whole screen. Inner tables now keep their
+   own size and the card scrolls if one is genuinely too wide. */
+.card > table:not([border="1"]):not([class]),
+.card > div:not([class]) > table:not([border="1"]):not([class]) {
     width: 100% !important; height: auto !important; border: 0 !important;
 }
-.content table:not([border="1"]):not([class]) > tbody > tr > td,
-.content table:not([border="1"]):not([class]) > tr > td {
-    width: auto !important; height: auto !important; padding: 0;
+.card > table:not([border="1"]):not([class]) > tbody > tr > td,
+.card > div:not([class]) > table:not([border="1"]):not([class]) > tbody > tr > td {
+    width: auto !important; height: auto !important; padding: 0 !important;
 }
-/* The menu strip used a masthead image as a td background. */
-.content td[background] { background-image: none !important; }
+/* Inner tables keep their width="700" -- capped by the max-width above so a
+   width="1280" cannot push the page sideways. Only the pixel HEIGHTS go: they
+   are what left a tall empty box under short forms. */
+.content table:not([class]) { height: auto !important; }
+.content table:not([class]) > tbody > tr > td,
+.content table:not([class]) > tbody > tr > th { height: auto !important; }
+
+/* Panels the old pages tiled with a background image -- the blue border.jpg
+   strip behind a form, the masthead behind the menu. Dropping the image left
+   the text jammed against the edge, so give those cells real padding. */
+.content td[background], .content th[background] { background-image: none !important; }
+.content td[background]:not(:empty), .content th[background]:not(:empty) {
+    padding: .7rem .85rem;
+}
 .content [bgcolor] { background-color: transparent; }
 .content div[align], .content p[align], .content td[align="center"] { text-align: left; }
 
@@ -255,9 +278,24 @@ mark.hit { background: #ffd44d; color: #10243a; border-radius: 3px; padding: 0 1
     border: 1px solid #c6d2e0; border-radius: 8px; background: #fff;
     max-width: 100%;
 }
+.content select {
+    /* legacy selects are <select type="text"> with no width; without this they
+       shrink to their widest option and every row lines up differently */
+    min-width: 11rem; max-width: 100%;
+}
 .content input:focus, .content select:focus, .content textarea:focus {
     outline: 2px solid rgba(22,104,195,.35); outline-offset: 1px;
     border-color: var(--brand);
+}
+
+/* Old pages pin controls to the 24px they needed in 2013 -- style="height:24px".
+   With box-sizing:border-box that leaves about 7px for the text once padding
+   and border are taken out, so the label inside the box was sliced in half.
+   Matching " height:" and ";height:" and not "line-height:". */
+.content input[style^="height:"],  .content select[style^="height:"],
+.content input[style*=";height:"], .content select[style*=";height:"],
+.content input[style*=" height:"], .content select[style*=" height:"] {
+    height: auto !important;
 }
 .content input[type=submit], .content input[type=button], .content button {
     font: inherit; font-weight: 600;
@@ -266,7 +304,63 @@ mark.hit { background: #ffd44d; color: #10243a; border-radius: 3px; padding: 0 1
     border: 1px solid transparent; border-radius: 8px; cursor: pointer;
 }
 .content input[type=submit]:hover, .content button:hover { background: #12559f; }
-.content label { color: var(--ink-soft); }
+/* A form label is not secondary text -- it was too faint to read next to its
+   own field. */
+.content label { color: var(--ink); font-weight: 600; }
+
+/* ---- classes orphaned by the layout conversion ----
+   Each page used to carry its own <style> in the <head> the conversion
+   replaced, so these class names ended up styling nothing. The rules are
+   rewritten for the light shell rather than restored verbatim: the originals
+   were built for the dark blue body (.form-container was
+   rgba(255,255,255,.15) with #fff text) and would be invisible here. */
+
+/* admin_create_user.php */
+.content .form-container {
+    max-width: 480px; margin: 0 auto; padding: 1.15rem 1.25rem;
+    background: #fff; border: 1px solid var(--line);
+    border-radius: 12px; box-shadow: var(--shadow); text-align: left;
+}
+.content .form-title {
+    font-size: 1rem; font-weight: 650; text-align: center;
+    padding-bottom: .6rem; margin-bottom: 1rem;
+    border-bottom: 1px solid var(--line);
+}
+.content .form-group { margin-bottom: .9rem; text-align: left; }
+.content .form-group label { display: block; margin-bottom: .3rem; font-size: .85rem; }
+.content .form-group input[type="text"],
+.content .form-group input[type="password"],
+.content .form-group select { width: 100%; margin: 0; }
+.content .btn-submit { width: 100%; margin-top: .4rem; }
+
+/* admin_sql_console.php -- the editor stays dark on purpose, it is a code area */
+.content .console-editor {
+    width: 100%; min-height: 140px; resize: vertical;
+    background: #10202f; color: #d8e6f2;
+    border: 1px solid #0b1929; border-radius: 10px; padding: .8rem .9rem;
+    font-family: ui-monospace, Consolas, "Courier New", monospace; font-size: .85rem;
+}
+/* input.btn-clear, not .btn-clear: these are <input type="button">, so the
+   generic .content input[type=button] rule above would otherwise outrank it. */
+.content input.btn-clear { background: var(--danger); }
+.content input.btn-clear:hover { background: #8d1d16; }
+.content input.btn-secondary {
+    background: #fff; color: var(--ink); border: 1px solid #c6d2e0;
+}
+.content input.btn-secondary:hover { background: #f1f5fa; }
+.content .history-item {
+    background: #f7fafd; border: 1px solid var(--line); border-radius: 8px;
+    margin: .35rem 0; padding: .45rem .6rem; cursor: pointer;
+    font-family: ui-monospace, Consolas, "Courier New", monospace;
+    font-size: .8rem; text-align: left; max-height: 3.2em; overflow: hidden;
+}
+.content .history-item:hover { background: #eef5fc; }
+
+/* dump_analysis.php, myindex.php */
+.content .demoInputBox, .content .frmDronpDown {
+    padding: .48rem .6rem; border: 1px solid #c6d2e0; border-radius: 8px;
+    background: #fff; color: var(--ink); font: inherit; max-width: 100%;
+}
 
 /* The old "Back" link sat in a bare <li> at the top of handler pages. */
 .content > li, .content li > a[href*="."]:only-child { list-style: none; }
@@ -278,10 +372,28 @@ mark.hit { background: #ffd44d; color: #10243a; border-radius: 3px; padding: 0 1
 /* A page's own heading text, usually a lone bold font tag before the table. */
 .content h1, .content h2, .content h3 { margin: .2rem 0 .7rem; font-weight: 650; }
 
+/* The <marquee> banners, rebuilt. <marquee> is a removed element that browsers
+   still honour by accident; this is the same effect with an animation, so it
+   keeps working when they stop. */
 .notice {
     background: #fff8e6; border: 1px solid #f2dfae; color: #6b5312;
     padding: .6rem .8rem; border-radius: 8px; margin: 0 0 1rem;
     font-size: .88rem;
+    overflow: hidden;
+}
+.notice > span {
+    display: inline-block; white-space: nowrap;
+    padding-left: 100%;                   /* start off the right edge */
+    animation: cdat-scroll 24s linear infinite;
+}
+.notice:hover > span { animation-play-state: paused; }
+@keyframes cdat-scroll {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-100%); }
+}
+/* Motion is decoration here -- the text must still be readable without it. */
+@media (prefers-reduced-motion: reduce) {
+    .notice > span { padding-left: 0; animation: none; white-space: normal; }
 }
 
 @media print {

@@ -12,9 +12,7 @@ layout_begin("Trainings");
 
 <div align="center">
       <table width="625" height="124">
-<br>
-&nbsp;
-/*TRAINING WING background="../assets/images/emp.png"* /
+<!-- TRAINING WING background="../assets/images/emp.png" -->
         <tr>
           <th height="26" bgcolor="#00008B" class="CDAT" scope="col"><font color="white">EMPLOYEE SEARCH</font></th>
         </tr>

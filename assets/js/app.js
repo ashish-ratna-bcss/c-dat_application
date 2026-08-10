@@ -190,12 +190,17 @@
         });
     }
 
-    // Legacy pages announce things in <marquee>. Render the text as a static
-    // notice instead -- scrolling text is the loudest "old" signal on the page.
+    // Legacy pages announce things in <marquee>, an element browsers only still
+    // honour out of goodwill. Rebuild it as a notice whose text scrolls by CSS
+    // animation -- same effect, and it survives the element being dropped.
     Array.prototype.forEach.call(document.querySelectorAll('.content marquee'), function (m) {
+        var text = (m.textContent || '').replace(/\s+/g, ' ').replace(/^[\s*]+|[\s*]+$/g, '');
+        if (!text) { m.remove(); return; }
         var d = document.createElement('div');
         d.className = 'notice';
-        d.textContent = (m.textContent || '').replace(/\s+/g, ' ').replace(/^[\s*]+|[\s*]+$/g, '');
-        if (d.textContent) { m.parentNode.replaceChild(d, m); } else { m.remove(); }
+        var s = document.createElement('span');
+        s.textContent = text;
+        d.appendChild(s);
+        m.parentNode.replaceChild(d, m);
     });
 }());
