@@ -2,7 +2,7 @@
 <head>
 </head>
 <body bgcolor="#0C5E95">
-<p><a href="RETRIEVE.HTML">BACK</a></p>
+<p><a href="RETRIEVE.PHP">BACK</a></p>
 <body>
 <?php
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";

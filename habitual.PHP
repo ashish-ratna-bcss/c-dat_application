@@ -2,7 +2,7 @@
 <head>
 </head>
 <body bgcolor="#0C5D90">
-<li><a href="IR_SEARCH.HTML"><font color=#FDEFEF>Back</a></li>
+<li><a href="IR_SEARCH.PHP"><font color=#FDEFEF>Back</a></li>
 <script>
 function bigImg(x) { 
 x.style.height="450px";

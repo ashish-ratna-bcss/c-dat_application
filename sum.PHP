@@ -2,7 +2,7 @@
 <head>
 </head>
 <body bgcolor="#0C5D90">
-<li><a href="SUM_HOME.html"><font color=#FDEFEF>Back</a></li>
+<li><a href="sum_home.php"><font color=#FDEFEF>Back</a></li>
 <?php
 set_time_limit(0);
 require_once __DIR__ . '/activity_logger.php';

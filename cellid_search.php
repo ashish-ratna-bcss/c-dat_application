@@ -2,7 +2,7 @@
 <head>
 </head>
 <body bgcolor="#0C5D90">
-<li><a href="CELLID_SEARCH.HTML"><font color='#FDEFEF'>Back</a></li></b></b>
+<li><a href="cellid_search.php"><font color='#FDEFEF'>Back</a></li></b></b>
 <form action ='cellid_search.php'method='post'>
 <b><font size=4 face=verdana color='#F9FBFC'>Enter Celltower ID: <input type="text" name="CELLID" value=<?php echo $_POST['CELLID'] ?> />
 Operator : <select name="OPERATOR">

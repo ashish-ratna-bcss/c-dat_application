@@ -154,9 +154,9 @@ function audit_log(string $module, string $action_type, array $search_data = [])
 function audit_require_session(): void
 {
     if (empty($_SESSION['audit_username'])) {
-        // Was LOGIN.HTML, which resolves to login.php -- the bare POST handler with
-        // no form, so users landed on "USERNAME AND PASSWORD REQUIRED" with nothing
-        // to fill in. auth.html is the actual login form.
+        // Was LOGIN.HTML, which resolved to the bare POST handler with no form, so
+        // users landed on "USERNAME AND PASSWORD REQUIRED" with nothing to fill in.
+        // auth.html is the actual login form.
         header('Location: auth.html');
         exit;
     }

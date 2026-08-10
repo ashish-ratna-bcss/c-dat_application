@@ -4,7 +4,7 @@
 <body bgcolor="#0C5D90">
 <li><a href="IMEI_REQUEST_TRACED_DETAILS.HTML"><font color=#FDEFEF>Back</a></li>
 		</br>
-<li><a href="HOME_IMEI.html"><font color=#FDEFEF>HOME</a></li>
+<li><a href="home_imei.PHP"><font color=#FDEFEF>HOME</a></li>
 <?php
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"LOSTREPORT_HAWKEYE");

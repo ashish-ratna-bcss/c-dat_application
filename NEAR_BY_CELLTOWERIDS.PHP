@@ -2,7 +2,7 @@
 <head>
 </head>
 <body bgcolor="#0C5D90">
-<li><a href="NEAR_BY_CELLTOWERIDS.HTML">Back</a></li>
+<li><a href="NEAR_BY_CELLTOWERIDS.PHP">Back</a></li>
 <?php
 require_once __DIR__ . '/activity_logger.php';
 require_once __DIR__ . '/sql_safe.php';

@@ -32,5 +32,5 @@ else
 {
 echo "inserted";
 }
-header("refresh:30; url=LOCAL_CONTACTS.html");
+header("refresh:30; url=LOCAL_CONTACTS.PHP");
 ?>

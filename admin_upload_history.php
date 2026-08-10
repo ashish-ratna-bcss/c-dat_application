@@ -337,42 +337,42 @@ function renderApprovalStatus(array $log): array
           <tr>
             <td width="1265" height="134" align="center" valign="bottom" background="IMAGES/TOPBORDER.jpg">
               <ul id="MenuBar1" class="MenuBarHorizontal">
-                <li><a href="HOME.html">Home</a>              </li>
-                <li><a href="HOME.html" class="MenuBarItemSubmenu">Summary</a>
+                <li><a href="HOME.PHP">Home</a>              </li>
+                <li><a href="HOME.PHP" class="MenuBarItemSubmenu">Summary</a>
                   <ul>
-                    <li><a href="SUM_HOME.html">Summary Total</a></li>
-                    <li><a href="SUM_BETWEEN_DATES.html">Summary Between Dates</a></li>
-                    <li><a href="SUM_ISD_CNTS.html">Summary of ISD Contacts</a></li>
-                    <li><a href="SUM_NEW_NOS.html">Summary of New Contacts</a></li>
+                    <li><a href="sum_home.php">Summary Total</a></li>
+                    <li><a href="SUM_BETWEEN_DATES.PHP">Summary Between Dates</a></li>
+                    <li><a href="SUM_ISD_CNTS.PHP">Summary of ISD Contacts</a></li>
+                    <li><a href="SUM_NEW_NOS.php">Summary of New Contacts</a></li>
                     <li><a href="SUM_IN_STATE.html">Summary Within a State</a></li>
-                    <li><a href="SUM_OUT_STATE.html">Summary other than a state</a></li>
+                    <li><a href="SUM_OUT_STATE.PHP">Summary other than a state</a></li>
                   </ul>
                 </li>
-                <li><a href="HOME.html" class="MenuBarItemSubmenu">Call Details</a>
+                <li><a href="HOME.PHP" class="MenuBarItemSubmenu">Call Details</a>
                   <ul>
         		    <li><a href="MOVEMENTS.html"> MOVEMENTS </a></li>
         		    <li><a href="MOVEMENTS_BETWEEN_TWO_NUMBERS.html">Movements Btwn Two Nos</a></li>
-        		    <li><a href="MOVEMENTS_BETWEEN_TWO_NUMBERS_COMPARISION.html">Movements Btwn Two Nos Comparision</a></li>
-                    <li><a href="CALLS_BTWN_DATES.html">Calls Between Dates</a></li>
+        		    <li><a href="movements_between_two_numbers_comparision.PHP">Movements Btwn Two Nos Comparision</a></li>
+                    <li><a href="calls_btwn_dates.PHP">Calls Between Dates</a></li>
                   </ul>
                 </li>
-                <li><a href="HOME.html" class="MenuBarItemSubmenu">Cdat</a>
+                <li><a href="HOME.PHP" class="MenuBarItemSubmenu">Cdat</a>
                   <ul>
-                    <li><a href="CDATCNTS.html">Cdat Cnts</a></li>
-        		    <li><a href="BULK_CDAT_CONTACTS.HTML">Bulk Cdat Contacts</a></li>
-        		    <li><a href="OTHERSCDAT.html">Others Cdat</a></li>
+                    <li><a href="CDATCNTS.php">Cdat Cnts</a></li>
+        		    <li><a href="BULK_CDAT_CONTACTS.PHP">Bulk Cdat Contacts</a></li>
+        		    <li><a href="otherscdat.php">Others Cdat</a></li>
                   </ul>
                 </li>
-                <li><a href="HOME.html" class="MenuBarItemSubmenu">Imei Search</a>
+                <li><a href="HOME.PHP" class="MenuBarItemSubmenu">Imei Search</a>
                   <ul>
-                    <li><a href="IMEISEARCH.html">Phones used in Imei</a></li>
-                    <li><a href="IMEISINPHONE.html">Imeis used in phone</a></li>
+                    <li><a href="imeisearch.PHP">Phones used in Imei</a></li>
+                    <li><a href="IMEISINPHONE.php">Imeis used in phone</a></li>
                   </ul>
                 </li>
-                <li><a href="HOME.html" class="MenuBarItemSubmenu">Address</a>
+                <li><a href="HOME.PHP" class="MenuBarItemSubmenu">Address</a>
                   <ul>
-                    <li><a href="ADDRESS.HTML">Single Address</a></li>
-                    <li><a href="BULKADDRESS.HTML">Bulk Addresses</a></li>
+                    <li><a href="ADDRESS.php">Single Address</a></li>
+                    <li><a href="bulkaddress.php">Bulk Addresses</a></li>
                   </ul>
                 </li>
                  <li><a href="#" class="MenuBarItemSubmenu">Day Night Loc</a>
@@ -388,15 +388,15 @@ function renderApprovalStatus(array $log): array
                 </li>
                 <li><a href="#" class="MenuBarItemSubmenu">Others</a>
                   <ul>
-                    <li><a href="CELLID_SEARCH.html">Cellid Search</a></li>
+                    <li><a href="cellid_search.php">Cellid Search</a></li>
                     <li><a href="VEHICLE_SEARCH.HTML">Vehicle Search</a></li>
-                    <li><a href="COMMON_CNTS.HTML">Common Cnts</a></li>
+                    <li><a href="COMMON_CNTS.php">Common Cnts</a></li>
                     <li><a href="ADMIN_ACTIVITY_LOG.PHP">User Activity</a></li>
                     <li><a href="ADMIN_SQL_CONSOLE.PHP">SQL Query Console</a></li>
-        		    <li><a href="TOWER_HOME.HTML">Tower Dump Reports (Under Development)</a></li>
-        		    <li><a href="LOGIN.HTML">IR FORMS</a></li>
-        		    <li><a href="IR_SEARCH.HTML">IR Form Search By Name</a></li>
-        		    <li><a href="TRAINING_MODULE1.HTML">TRAININGS</a></li>
+        		    <li><a href="tower_home.php">Tower Dump Reports (Under Development)</a></li>
+        		    <li><a href="login.php">IR FORMS</a></li>
+        		    <li><a href="IR_SEARCH.PHP">IR Form Search By Name</a></li>
+        		    <li><a href="TRAINING_MODULE1.PHP">TRAININGS</a></li>
                   </ul>
                 </li>
               </ul>

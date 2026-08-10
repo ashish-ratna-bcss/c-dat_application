@@ -23,7 +23,7 @@
             <td width="450" rowspan="2" valign="top">
               <blockquote>
                 <ul class="MenuBarVertical">
-	  <li><a href="HOME.html">HOME</a></li>
+	  <li><a href="HOME.PHP">HOME</a></li>
           <li><a href="SUSPECT_SEARCH.PHP">Sus Search In Dump</a></li>
           <li><a href="OTHER_STATE_NUMBER.PHP">Other State Numbers In Dump</a></li>
           <li><a href="INTER_TOWER_CALLS.PHP">Inter Tower Calls</a></li>

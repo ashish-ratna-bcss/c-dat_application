@@ -2,7 +2,7 @@
 <head>
 </head>
 <body bgcolor="#0C5D90">
-<li><a href="CALLS_BT_NOS.html"><font color=#FDEFEF>Back</a></li>
+<li><a href="calls_bt_nos.php"><font color=#FDEFEF>Back</a></li>
 <?php
 require_once __DIR__ . '/cdr_enrichment_sql.php';
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";

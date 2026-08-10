@@ -20,5 +20,5 @@ else
 {
 echo "inserted";
 }
-header("refresh:30; url=BRIEF_FACTS.html");
+header("refresh:30; url=brief_facts.php");
 ?>

@@ -27,5 +27,5 @@ else
 {
 echo "inserted";
 }
-header("refresh:30; url=DISPOSAL_OF_PROPERTY.html");
+header("refresh:30; url=disposal_of_property.PHP");
 ?>

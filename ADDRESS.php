@@ -8,7 +8,7 @@
     </style>
 </head>
 <body bgcolor="#0C5D90">
-<li><a href="ADDRESS.HTML"><font color=#FDEFEF>Back</a></li>
+<li><a href="ADDRESS.php"><font color=#FDEFEF>Back</a></li>
 <form action ='ADDRESS.PHP'method='post'>
 <b><font size=3 face=verdana color='#F9FBFC'>ADDRESS OF MOBILE NO : </b>
 <input type='text' name='PHONE_NO' value=''>

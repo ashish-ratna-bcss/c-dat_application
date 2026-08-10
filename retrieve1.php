@@ -2,7 +2,7 @@
 <head>
 </head>
 <body bgcolor="#0C5E95">
-<p><a href="RETRIEVE1.HTML">BACK</a></p>
+<p><a href="retrieve1.php">BACK</a></p>
 <body>
 <?php
 $NAME=$_POST['NAME'];

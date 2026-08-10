@@ -31,11 +31,11 @@
             <td width="214" rowspan="2" valign="top">
               <blockquote>
                 <ul class="MenuBarVertical">
-          <li><a href="IMEI_REQUEST_STATUS.html">IMEI REQUEST STATUS</a></li>
+          <li><a href="imei_request_status.php">IMEI REQUEST STATUS</a></li>
           <li><a href="IMEI_REQUEST_TRACED_DETAILS.HTML">IMEI REQUEST TRACED DETAILS</a></li>
-          <li><a href="IMEI_REQUEST_SUM.HTML">TRACED PHONE SUMMARY</a></li>
-   <li><a href="IMEI_REQUEST_MOVEMENTS.HTML">TRACED PHONE MOVEMENTS</a></li>
-          <li><a href="MAXSPENTLOCATION_IMEI.HTML">TRACED PHONE MAXSPENT LOC</a></li>
+          <li><a href="imei_request_sum.PHP">TRACED PHONE SUMMARY</a></li>
+   <li><a href="IMEI_REQUEST_MOVEMENTS.PHP">TRACED PHONE MOVEMENTS</a></li>
+          <li><a href="maxspentlocation_imei.php">TRACED PHONE MAXSPENT LOC</a></li>
           <li><a href="DAY%26NIGHTLOC_IMEI.HTML">TRACED PHONE DAY&NIGHT LOC</a></li>
           </ul>
         <p>&nbsp; </p>

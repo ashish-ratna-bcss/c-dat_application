@@ -154,22 +154,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <tr>
             <td width="1265" height="134" align="center" valign="bottom" background="IMAGES/TOPBORDER.jpg">
               <ul id="MenuBar1" class="MenuBarHorizontal">
-                <li><a href="HOME_IR.HTML">Home</a></li>
+                <li><a href="HOME_IR.PHP">Home</a></li>
                 <li><a href="IRREPORT.html">IRREPORT</a></li>
                 <li><a href="FAMILY_HISTORY.html">FAMILY HISTORY</a></li>
-                <li><a href="HOME_IR.HTML" class="MenuBarItemSubmenu">CRIME DETAILS</a>
+                <li><a href="HOME_IR.PHP" class="MenuBarItemSubmenu">CRIME DETAILS</a>
                   <ul>
                     <li><a href="OFFENCE_DETAILS.html">OFFENCE DETAILS</a></li>
-                    <li><a href="PREVIOUS_OFFENCE_DETAILS.html">PREVIOUS OFFENCE DETAILS</a></li>
+                    <li><a href="previous_offence_details.PHP">PREVIOUS OFFENCE DETAILS</a></li>
                   </ul>
                 </li>
-                <li><a href="LOCAL_CONTACTS.HTML">LOCAL CONTACTS</a></li>
-                <li><a href="RELATION_WITH_OTHER_ASSOCIATES_AND_GANGS.html">GANGS/ASSOCIATES</a></li>
-                <li><a href="DISPOSAL_OF_PROPERTY.HTML">PROPERTY DETAILS</a></li>
-                <li><a href="BRIEF_FACTS.html">BRIEF FACTS</a></li>
+                <li><a href="LOCAL_CONTACTS.PHP">LOCAL CONTACTS</a></li>
+                <li><a href="relation_with_other_associates_and_gangs.php">GANGS/ASSOCIATES</a></li>
+                <li><a href="disposal_of_property.PHP">PROPERTY DETAILS</a></li>
+                <li><a href="brief_facts.php">BRIEF FACTS</a></li>
                 <li><a href="IMAGE_LIST.HTML">IMAGE</a></li>
-                <li><a href="MULAKATH_ENTRY.html">MULAKATH_DETAILS</a></li>
-                <li><a href="RETRIEVE.HTML">RETRIEVE</a></li>
+                <li><a href="mulakath_entry.php">MULAKATH_DETAILS</a></li>
+                <li><a href="RETRIEVE.PHP">RETRIEVE</a></li>
                 <li><a href="ADMIN_CREATE_USER.PHP">CREATE USER</a></li>
                 <li><a href="admin_upload.php">DATA UPLOAD</a></li>
               </ul>

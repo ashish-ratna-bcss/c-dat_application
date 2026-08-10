@@ -39,9 +39,9 @@ table {border-collapse: collapse;} table,th{border:1px solid white;}
         	<li><a href="PROFILE.html" class='button'">Profile</a></li>
         	<li><a href='CDAT_CNTS.html' class='button'>CDAT Search</a></li>
         	<li><a href='CALL_ANALYSIS.html' class='button'>Call Analysis</a></li>
-        	<li><a href='SUM_HOME.html' class='button'>Call Summary</a></li>
+        	<li><a href='sum_home.php' class='button'>Call Summary</a></li>
 			<li><a href='PLACE_OF_STAY_WORK.HTML' class='button'> Location Based Analysis</a></li>
-			<li><a href='COMMON_CNTS.HTML' class='button'> Common Contacts</a></li>
+			<li><a href='COMMON_CNTS.php' class='button'> Common Contacts</a></li>
 			<li><a href='SIMS_USED_IN_IMEI.html' class='button'>IMEI Analysis</a></li>
 
 		</ul>

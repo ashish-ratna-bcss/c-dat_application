@@ -35,7 +35,7 @@ if ($count == 1) {
         (int)($row['ID'] ?? 0)
     );
 
-    header('refresh:0; url=HOME_IR.HTML');
+    header('refresh:0; url=HOME_IR.PHP');
 } else {
     echo "<font size=4 face=verdana color='#921215'>NO PASSWORD MATCHED</font></br>";
 }

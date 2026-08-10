@@ -2,7 +2,7 @@
 <head>
 </head>
 <body background="IMAGES/emp.PNG">
-<li><a href="TRAINING_MODULE1.HTML"><font color=#FDEFEF>Back</a></li></p>
+<li><a href="TRAINING_MODULE1.PHP"><font color=#FDEFEF>Back</a></li></p>
 <?php
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"TRAINING_DB");

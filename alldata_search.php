@@ -38,7 +38,7 @@ div {
 </style>
 
 
-<li><a href="ALLDATA.HTML">Back</a></li></p>
+<li><a href="ALLDATA.PHP">Back</a></li></p>
 <form action ='ALLDATA_SEARCH.php'method='post'>
 <b><font size=4 face=verdana text-align:'center' color='#ffb84d'>ENTER PHONE_NO : </b>
  <div class="form-group">

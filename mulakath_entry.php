@@ -41,5 +41,5 @@ else
 {
 echo "inserted";
 }
-header("refresh:30; url=MULAKATH_ENTRY.html");
+header("refresh:30; url=mulakath_entry.php");
 ?>

@@ -2,7 +2,7 @@
 <head>
 </head>
 <body bgcolor="#0C5D90">
-<a href="OTHERSCDAT.html"><font color=#FDEFEF>BACK</a>
+<a href="otherscdat.php"><font color=#FDEFEF>BACK</a>
 <style type="text/css">
 a:link , a:visited{
 text-decoration: none;

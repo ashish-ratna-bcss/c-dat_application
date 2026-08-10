@@ -30,7 +30,11 @@ if ($count == 1) {
         (int)($row['ID'] ?? 0)
     );
 
-    header("refresh:0; url=HOME_IR.HTML");
+    // Point at the file that actually exists. HOME_IR.PHP was a byte-identical
+    // duplicate and was removed; it only still resolves through the extension
+    // fallback in .htaccess, so any environment where mod_rewrite is off or
+    // AllowOverride is None gets a 404 straight after a successful login.
+    header("refresh:0; url=HOME_IR.PHP");
 } else {
     echo "<font size=4 face=verdana color='#921215'>NO PASSWORD MATCHED</font></br>";
 }

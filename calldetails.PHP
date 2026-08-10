@@ -2,7 +2,7 @@
 <head>
 </head>
 <body bgcolor="#0C5D90">
-<li><a href="CALLS_TOT.html">Back</a></li>
+<li><a href="calls_tot.PHP">Back</a></li>
 <?php
 require_once __DIR__ . '/activity_logger.php';
 require_once __DIR__ . '/sql_safe.php';
