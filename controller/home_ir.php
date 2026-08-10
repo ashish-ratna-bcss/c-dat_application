@@ -22,7 +22,8 @@ layout_begin("IR Home");
             <td width="62" rowspan="2">&nbsp;</td>
           </tr>
           <tr>
-            <td height="310" align="left" valign="top"><div align="center"><img src="../assets/images/analysis1.jpg" width="950" height="250" /></div></td>
+            <!-- login lands here, so the shortcuts belong on this page too -->
+            <td height="310" align="left" valign="top"><?php cdat_ql_render_grid(); ?></td>
           </tr>
         </table>
         <p>&nbsp;</p>

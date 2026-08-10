@@ -38,6 +38,19 @@ function cdat_group_has_active(array $children): bool
     return false;
 }
 
+/**
+ * The menu, loaded once. Quick links resolve their labels and icons against
+ * it, so it has to be reachable outside layout_begin().
+ */
+function cdat_menu(): array
+{
+    static $menu = null;
+    if ($menu === null) {
+        $menu = require __DIR__ . '/menu.php';
+    }
+    return $menu;
+}
+
 function cdat_icon(string $name): string
 {
     // Inline so the page needs no icon font or sprite request.
@@ -107,9 +120,17 @@ function layout_begin(string $title = 'Call Data Analysis Tool', string $subtitl
                       string $head = ''): void
 {
     $base  = CDAT_BASE;
-    $user  = $_SESSION['audit_fullname'] ?? ($_SESSION['audit_username'] ?? '');
-    $menu  = require __DIR__ . '/menu.php';
+    // Before $user is read: this pulls in activity_logger.php, which starts the
+    // session. Reading $_SESSION first meant the signed-in name -- and the
+    // quick links button with it -- was missing on every page that does not
+    // include activity_logger.php itself, which is most of them.
+    require_once __DIR__ . '/quick_links.php';
+    // ?: not ??  -- audit_fullname is set to '' when the LOGINS row has no
+    // FULLNAME, and an empty name should fall through to the username.
+    $user  = ($_SESSION['audit_fullname'] ?? '') ?: ($_SESSION['audit_username'] ?? '');
+    $menu  = cdat_menu();
     $t     = htmlspecialchars($title, ENT_QUOTES);
+    $qlCount = $user !== '' ? count(cdat_ql_get()) : 0;
     ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -168,6 +189,16 @@ function layout_begin(string $title = 'Call Data Analysis Tool', string $subtitl
       </div>
       <?php if ($user !== ''): ?>
         <div class="user" title="Signed in">
+          <button type="button" class="ql-open" data-ql-open
+                  title="Choose the pages on your dashboard">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+                 ><path d="m12 3 2.6 5.6 6 .8-4.4 4.2 1.1 6.1L12 16.8 6.7 19.7l1.1-6.1L3.4 9.4l6-.8L12 3Z"/></svg>
+            <span>Quick Links</span>
+            <?php if ($qlCount > 0): ?>
+              <span class="ql-badge"><?= (int)$qlCount ?></span>
+            <?php endif; ?>
+          </button>
           <span class="avatar"><?= htmlspecialchars(strtoupper(substr($user, 0, 1)), ENT_QUOTES) ?></span>
           <span class="uname"><?= htmlspecialchars($user, ENT_QUOTES) ?></span>
         </div>
@@ -189,6 +220,15 @@ function layout_end(): void
   </div>
 </div>
 <div class="scrim" hidden></div>
+<?php
+require_once __DIR__ . '/quick_links.php';
+cdat_ql_render_modal();
+?>
+<script>
+// Absolute-ish so the picker works from view/ as well as controller/.
+window.CDAT_CSRF  = <?= json_encode(cdat_csrf()) ?>;
+window.CDAT_QLAPI = <?= json_encode($base . '/controller/quick_links_api.php') ?>;
+</script>
 <script src="<?= $base ?>/assets/js/app.js"></script>
 </body>
 </html>

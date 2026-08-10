@@ -29,7 +29,9 @@ layout_begin("Dashboard");
             <td width="62" rowspan="2">&nbsp;</td>
           </tr>
           <tr>
-            <td height="310" align="left" valign="top"><div align="center"><img src="../assets/images/analysis1.jpg" width="950" height="250" /></div></td>
+            <!-- was a 950x250 decorative image; the user's own shortcuts are
+                 more use in the same space -->
+            <td height="310" align="left" valign="top"><?php cdat_ql_render_grid(); ?></td>
           </tr>
 
        </table>

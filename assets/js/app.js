@@ -190,6 +190,179 @@
         });
     }
 
+    /* ---- quick links picker ------------------------------------------
+     * Tick pages, they become tiles on the dashboard. A native
+     * <select multiple> was the obvious fit, but with 42 options it shows six
+     * rows at a time and needs ctrl-click to add a second one -- and one
+     * mis-click wipes the whole selection. Checkboxes with a search box do the
+     * same job without that trap, and the chips above the list show the order
+     * the tiles will appear in.
+     */
+    var qlModal = document.getElementById('qlModal');
+    if (qlModal) {
+        var qlList   = document.getElementById('qlList');
+        var qlPicked = document.getElementById('qlPicked');
+        var qlCount  = document.getElementById('qlCount');
+        var qlSearch = document.getElementById('qlSearch');
+        var qlMsg    = document.getElementById('qlMsg');
+        var qlSave   = document.getElementById('qlSave');
+        var qlNoHit  = document.getElementById('qlNoHit');
+        var boxes    = Array.prototype.slice.call(qlList.querySelectorAll('input[type=checkbox]'));
+        var MAX      = 12;
+        var order    = [];      // urls, in the order the tiles will appear
+        var lastFocus = null;
+
+        boxes.forEach(function (b) { if (b.checked) { order.push(b.value); } });
+
+        function boxFor(url) {
+            return boxes.filter(function (b) { return b.value === url; })[0];
+        }
+
+        function render() {
+            qlPicked.textContent = '';
+            order.forEach(function (url, i) {
+                var b = boxFor(url);
+                if (!b) { return; }
+                var chip = document.createElement('span');
+                chip.className = 'ql-chip';
+                chip.appendChild(document.createTextNode(b.getAttribute('data-label')));
+
+                var up = document.createElement('button');
+                up.type = 'button'; up.textContent = '‹';
+                up.title = 'Move earlier'; up.disabled = i === 0;
+                up.addEventListener('click', function () { move(i, i - 1); });
+
+                var down = document.createElement('button');
+                down.type = 'button'; down.textContent = '›';
+                down.title = 'Move later'; down.disabled = i === order.length - 1;
+                down.addEventListener('click', function () { move(i, i + 1); });
+
+                var rm = document.createElement('button');
+                rm.type = 'button'; rm.textContent = '×';
+                rm.title = 'Remove';
+                rm.addEventListener('click', function () {
+                    b.checked = false;
+                    order.splice(order.indexOf(url), 1);
+                    render();
+                });
+
+                chip.appendChild(up); chip.appendChild(down); chip.appendChild(rm);
+                qlPicked.appendChild(chip);
+            });
+
+            var full = order.length >= MAX;
+            qlCount.textContent = order.length + ' of ' + MAX + ' chosen';
+            qlCount.classList.toggle('is-full', full);
+            // At the limit, disable what is not already ticked rather than
+            // letting the click succeed and then rejecting it.
+            boxes.forEach(function (b) { b.disabled = full && !b.checked; });
+        }
+
+        function move(from, to) {
+            if (to < 0 || to >= order.length) { return; }
+            var v = order.splice(from, 1)[0];
+            order.splice(to, 0, v);
+            render();
+        }
+
+        boxes.forEach(function (b) {
+            b.addEventListener('change', function () {
+                var at = order.indexOf(b.value);
+                if (b.checked && at === -1) { order.push(b.value); }
+                if (!b.checked && at !== -1) { order.splice(at, 1); }
+                render();
+            });
+        });
+
+        function filter() {
+            var q = qlSearch.value.trim().toLowerCase();
+            var shown = 0;
+            Array.prototype.forEach.call(qlList.querySelectorAll('.ql-sect'), function (sect) {
+                var group = (sect.getAttribute('data-group') || '').toLowerCase();
+                var groupHit = q !== '' && group.indexOf(q) !== -1;
+                var any = false;
+                Array.prototype.forEach.call(sect.querySelectorAll('.ql-opt'), function (opt) {
+                    var text = opt.textContent.trim().toLowerCase();
+                    var hit = q === '' || groupHit || text.indexOf(q) !== -1;
+                    opt.hidden = !hit;
+                    if (hit) { any = true; shown++; }
+                });
+                sect.hidden = !any;
+            });
+            qlNoHit.hidden = shown !== 0;
+        }
+
+        function open() {
+            lastFocus = document.activeElement;
+            qlModal.hidden = false;
+            document.body.style.overflow = 'hidden';
+            qlMsg.textContent = ''; qlMsg.classList.remove('is-error');
+            render();
+            qlSearch.focus();
+        }
+
+        function close() {
+            qlModal.hidden = true;
+            document.body.style.overflow = '';
+            qlSearch.value = ''; filter();
+            if (lastFocus && lastFocus.focus) { lastFocus.focus(); }
+        }
+
+        Array.prototype.forEach.call(document.querySelectorAll('[data-ql-open]'), function (el) {
+            el.addEventListener('click', open);
+        });
+        Array.prototype.forEach.call(qlModal.querySelectorAll('[data-ql-close]'), function (el) {
+            el.addEventListener('click', close);
+        });
+        qlSearch.addEventListener('input', filter);
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && !qlModal.hidden) { close(); }
+        });
+
+        qlSave.addEventListener('click', function () {
+            qlSave.disabled = true;
+            qlMsg.classList.remove('is-error');
+            qlMsg.textContent = 'Saving…';
+
+            var body = new FormData();
+            body.append('action', 'save');
+            body.append('csrf', window.CDAT_CSRF || '');
+            body.append('urls', JSON.stringify(order));
+
+            fetch(window.CDAT_QLAPI || 'quick_links_api.php', {
+                method: 'POST', body: body, credentials: 'same-origin'
+            }).then(function (r) { return r.json(); }).then(function (data) {
+                qlSave.disabled = false;
+                if (!data.ok) {
+                    qlMsg.textContent = data.error || 'Could not save.';
+                    qlMsg.classList.add('is-error');
+                    return;
+                }
+                // The dashboard shows what was just chosen, so redraw it.
+                if (document.getElementById('qlPanel')) { window.location.reload(); return; }
+                qlMsg.textContent = 'Saved.';
+                var badge = document.querySelector('.ql-badge');
+                var btn = document.querySelector('.ql-open');
+                if (!badge && btn && order.length) {
+                    badge = document.createElement('span');
+                    badge.className = 'ql-badge';
+                    btn.appendChild(badge);
+                }
+                if (badge) {
+                    badge.textContent = order.length;
+                    badge.hidden = order.length === 0;
+                }
+                setTimeout(close, 550);
+            }).catch(function (err) {
+                qlSave.disabled = false;
+                qlMsg.textContent = 'Could not save: ' + (err.message || err);
+                qlMsg.classList.add('is-error');
+            });
+        });
+
+        render();
+    }
+
     // Legacy pages announce things in <marquee>, an element browsers only still
     // honour out of goodwill. Rebuild it as a notice whose text scrolls by CSS
     // animation -- same effect, and it survives the element being dropped.
