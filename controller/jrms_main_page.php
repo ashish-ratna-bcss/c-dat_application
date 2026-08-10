@@ -53,24 +53,24 @@ $results = $db_handle->runQuery($query);
                 <li><a href="sum_between_dates.php">Summary Between Dates</a></li>
                 <li><a href="sum_isd_cnts.php">Summary of ISD Contacts</a></li>
                 <li><a href="sum_new_nos.php">Summary of New Contacts</a></li>
-                <li><a href="../view/sum_in_state.html">Summary Within a State</a></li>
-                <li><a href="../view/sum_out_state.htm">Summary other than a state</a></li>
+                <li><a href="sum_in_state.php">Summary Within a State</a></li>
+                <li><a href="sum_out_state.php">Summary other than a state</a></li>
               </ul>
             </li>
             <li><a href="#" class="MenuBarItemSubmenu">Call Details</a>
               <ul>
-                <li><a href="../view/movements.html"> MOVEMENTS </a></li>
-		<li><a href="../view/movements_between_two_numbers.html">Movements Btwn Two Nos</a></li>
+                <li><a href="movements.php"> MOVEMENTS </a></li>
+		<li><a href="movements_between_two_numbers.php">Movements Btwn Two Nos</a></li>
 		<li><a href="movements_between_two_numbers_comparision.php">Movements Btwn Two Nos Comparision</a></li> 
 		<!----<li><a href="calls_tot.php">Call Details Total</a></li>--->
                 <li><a href="calls_btwn_dates.php">Calls Between Dates</a></li>
-                <!----<li><a href="../view/calls_bt_nos.htm">Calls Between Two Numbers</a></li>---->
+                <!----<li><a href="calls_bt_nos.php">Calls Between Two Numbers</a></li>---->
               </ul>
             </li>
             <li><a href="#" class="MenuBarItemSubmenu">Cdat</a>
               <ul>
                 <li><a href="cdatcnts.php">Cdat Cnts</a></li>
-		<li><a href="../view/bulk_cdat_contacts.htm">Bulk Cdat Contacts</a></li>
+		<li><a href="bulk_cdat_contacts.php">Bulk Cdat Contacts</a></li>
 		<li><a href="otherscdat.php">Others Cdat</a></li>
               </ul>
             </li>
@@ -82,7 +82,7 @@ $results = $db_handle->runQuery($query);
             </li>
             <li><a href="#" class="MenuBarItemSubmenu">Address</a>
               <ul>
-                <li><a href="../view/address.htm">Single Address</a></li>
+                <li><a href="address.php">Single Address</a></li>
                 <li><a href="bulkaddress.php">Bulk Addresses</a></li>
               </ul>
             </li>
@@ -99,8 +99,8 @@ $results = $db_handle->runQuery($query);
                 </li>
             <li><a href="#" class="MenuBarItemSubmenu">Others</a>
               <ul>
-                <li><a href="../view/cellid_search.htm">Cellid Search</a></li>
-                <li><a href="../view/vehicle_search.html">Vehicle Search</a></li>
+                <li><a href="cellid_search.php">Cellid Search</a></li>
+                <li><a href="vehicle_search.php">Vehicle Search</a></li>
                 <li><a href="common_cnts.php">Common Cnts</a></li>
                 </ul>
             </li>

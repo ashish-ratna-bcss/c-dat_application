@@ -42,7 +42,7 @@ return false;
 }
 }
 </script>
-<li><a href="../view/offender_search_by_mo.htm">Back</a></li>
+<li><a href="offender_search_by_mo.php">Back</a></li>
 <?php
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"CDATDUPL");

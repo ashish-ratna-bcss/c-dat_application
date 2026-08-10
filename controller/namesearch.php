@@ -1,7 +1,71 @@
-<html>
+<?php
+// One page for both halves of this screen: the form, and the results.
+// Was view/namesearch.htm (form) + controller/namesearch.php (handler).
+// GET shows the form; a submit renders the form and the results below it.
+// !empty($_GET) covers links that pass parameters in the query string.
+$__submitted = ($_SERVER['REQUEST_METHOD'] === 'POST') || !empty($_GET);
+?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-</head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Untitled Document</title>
+<link rel="stylesheet" type="text/css" href="../assets/vendor/jquery-ui-1.10.4.custom/css/dark-hive/jquery-ui-1.10.4.custom.min.css">
+<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-1.10.2.js"></script>
+<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.js"></script>
+<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.min.js"></script>
 <body>
+<style>
+input[type=text], select {
+    width: 30%;
+    padding: 3px 10px;
+    margin: 4px 0;
+    display: inline-block;
+    border: 1px solid #ccc;
+    border-radius: 2px;
+    box-sizing: border-box;
+}
+
+input[type=submit] {
+    width: 20%;
+    background-color: ORANGE;
+    color: white;
+    padding: 3px 10px;
+    margin: 4px 0;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+input[type=submit]:hover {
+
+    background-color: #45a049;
+}
+
+div {
+    border-radius: 20px;
+    background-color: #f2f2f2;
+    padding: 20px;
+}
+</style>
+<body>
+
+
+<form NAME="PSFORMS" action="namesearch.php" onsubmit="validateForm()" method="post">
+  <div class="form-group">
+    <label class="sr-only" for="exampleInputEmail3"></label>
+    <input type="TEXT" name="NAME" placeholder="NAME"> <input type="TEXT"name="ADDRESS" placeholder="ADDRESS">
+ <input type="submit" value="Submit">
+
+  </div>
+
+
+
+</form>
+
+
+
+<?php if ($__submitted): ?>
 <style>
 input[type=text], select {
     width: 30%;
@@ -37,17 +101,7 @@ div {
 </style>
 
 
-<li><a href="../view/namesearch.htm">Back</a></li></p>
-<form action ='namesearch.php'method='post'>
-<b><font size=4 face=verdana text-align:'center' color='#ffb84d'>ENTER NAME & ADDRESS : </b>
- <div class="form-group">
-    <label class="sr-only" for="exampleInputEmail3"></label>
-    <input type="TEXT" name="NAME" placeholder="NAME"> <input type="TEXT"name="ADDRESS" placeholder="ADDRESS">
- <input type="submit" value="Submit">
-
-  
-
-
+</p>
 <?php
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"CDATDUPL");
@@ -241,5 +295,6 @@ echo"</table><br />";
 
 ?>
 </div>
+<?php endif; ?>
 </body>
 </html>

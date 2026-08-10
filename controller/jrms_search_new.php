@@ -2,7 +2,7 @@
 <head>
 </head>
 <body bgcolor="#0C5D90">
-<li><a href="../view/jrms_datewise_search_uniqueness.htm"><font color=#FDEFEF>Back</a></li>
+<li><a href="jrms_datewise_search_uniqueness.php"><font color=#FDEFEF>Back</a></li>
 <?php
 $serverName = "10.10.46.14\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"CDATDUPL");

@@ -1,4 +1,43 @@
 <?php
+// One page for both halves of this screen: the form, and the results.
+// Was view/mo_image_list.html (form) + controller/mo_image_list.php (handler).
+// GET shows the form; a submit renders the form and the results below it.
+// !empty($_GET) covers links that pass parameters in the query string.
+$__submitted = ($_SERVER['REQUEST_METHOD'] === 'POST') || !empty($_GET);
+?>
+<html>
+<head>
+<title> IMAGE FORM </title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" href="../assets/css/style.css" >
+<style type="test/css">
+label{
+float:left;
+width:200px;
+text-align=left;
+}
+</style>
+</head>
+<body bgcolor="#5195BA">
+<table>
+    <tr>
+    <th width="1126" align="center" scope="col">MO IMAGE LIST</th>
+    </tr>
+</table>
+<form action="mo_image_list.php" Method="post" enctype="multipart/form-data">
+<label>MO_KEY:</label><input type="text"  name="MO_KEY">
+    <br/>
+    <br/>
+<label>MO_KEY:</label>
+<input type="file" name="image"/>
+	<br/>
+	<br/>
+<input type="submit" value="insert">
+    <br/>
+    </form>
+
+<?php if ($__submitted): ?>
+<?php
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"CDATDUPL");
 $conn = sqlsrv_connect( $serverName, $connectionInfo );
@@ -44,3 +83,6 @@ echo '<img height="300" width="300" src="'.cdat_base64_image_src($row['IMAGE']).
 }
 }
 ?>
+<?php endif; ?>
+</body>
+</html>

@@ -42,7 +42,7 @@ return false;
 }
 }
 </script>
-<li><a href="../view/ir_search.htm">Back</a></li>
+<li><a href="ir_search.php">Back</a></li>
 <?php
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"PDACT");

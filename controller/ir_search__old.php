@@ -24,19 +24,19 @@
         <tr>
           <td width="1265" height="134" align="center" valign="bottom" background="../assets/images/topborder.jpg"><ul id="MenuBar1" class="MenuBarHorizontal">
             <li><a href="home_ir.php">Home</a>              </li>
-            <li><a href="../view/irreport.html">IRREPORT</a></li>
-            <li><a href="../view/family_history.html">FAMILY HISTORY</a></li>
+            <li><a href="irreport.php">IRREPORT</a></li>
+            <li><a href="family_history.php">FAMILY HISTORY</a></li>
             <li><a href="home_ir.php" class="MenuBarItemSubmenu">CRIME DETAILS</a>
              <ul>
-                <li><a href="../view/offence_details.html">OFFENCE DETAILS</a></li>
-                <li><a href="../view/previous_offence_details.htm">PREVIOUS OFFENCE DETAILS</a></li>
+                <li><a href="offence_details.php">OFFENCE DETAILS</a></li>
+                <li><a href="previous_offence_details.php">PREVIOUS OFFENCE DETAILS</a></li>
               </ul>
               </li>
             <li><a href="local_contacts.php">LOCAL CONTACTS</a></li>
-            <li><a href="../view/relation_with_other_associates_and_gangs.htm">GANGS/ASSOCIATES</a></li>
+            <li><a href="relation_with_other_associates_and_gangs.php">GANGS/ASSOCIATES</a></li>
             <li><a href="disposal_of_property.php">PROPERTY DETAILS</a></li>
             <li><a href="brief_facts.php">BRIEF FACTS</a></li>
-            <li><a href="../view/image_list.html">IMAGE</a></li>
+            <li><a href="image_list.php">IMAGE</a></li>
           </ul></td>
         </tr>
         <table width="800" height="100" align=center>

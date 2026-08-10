@@ -1,13 +1,53 @@
-<html>
+<?php
+// One page for both halves of this screen: the form, and the results.
+// Was view/vehicle_search1.htm (form) + controller/vehicle_search1.php (handler).
+// GET shows the form; a submit renders the form and the results below it.
+// !empty($_GET) covers links that pass parameters in the query string.
+$__submitted = ($_SERVER['REQUEST_METHOD'] === 'POST') || !empty($_GET);
+?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Untitled Document</title>
+<script src="../assets/spry/sprymenubar.js" type="text/javascript"></script>
+<link href="../assets/spry/sprymenubarhorizontal.css" rel="stylesheet" type="text/css" />
 </head>
-<body bgcolor="#cce0ff">
-<li><a href="../view/vehicle_search1.htm">Back</a></li></p>
-<form action ='vehicle_search1.php'method='post'>
-<b><font size=4 face=verdana color='#000000'>ENTER VEHICLE NO : </b>
-<input type='text' name='VEHICLE_NO' value='' placeholder='Enter Vehicle No' required='required'>
-<input type ='submit' value='Submit'/>
 
+<body bgcolor="#80d4ff">
+<div align="center">
+  <table width="1323" height="603" border="2">
+    <tr>
+      <td width="1349" height="595" align="center" valign="top"><table width="1313" height="148">
+        <tr>
+          <td width="1305" height="134" align="center" valign="bottom" background="IMAGES/TOPBORDER_123.jpg"><ul id="MenuBar1" class="MenuBarHorizontal">
+          
+         </td>
+        </tr>
+      </table>
+      <p class="MenuBarItemHover">&nbsp;</p>
+      <p class="MenuBarItemHover">&nbsp;</p>
+      <table width="625" height="124">
+        <tr>
+          <th height="26" bgcolor="#cce0ff" class="CDAT" scope="col">VEHICLE NUMBER SEARCH</th>
+        </tr>
+        <tr>
+        <form id="form1" name="form1" method="post" action="vehicle_search1.php">
+                 <th width="555" height="90" bgcolor="#cce0ff" class="CDAT" scope="col"> VEHICLE NO:            <label for="textfield"></label>
+            <input type="text" name="VEHICLE_NO" id="CAF" placeholder="Enter Vehicle No" required="required"/>
+            <input type="submit" name="BTN_CDAT" id="BTN_CDAT" value="Submit" /></th>
+        </form></tr>
+      </table>
+      <p class="MenuBarItemHover">&nbsp;</p></td>
+    </tr>
+  </table>
+</div>
+<script type="text/javascript">
+var MenuBar1 = new Spry.Widget.MenuBar("MenuBar1", {imgDown:"../assets/spry/sprymenubardownhover.gif", imgRight:"../assets/spry/sprymenubarrighthover.gif"});
+</script>
+
+<?php if ($__submitted): ?>
+</p>
 <?php
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"cdatdupl");
@@ -63,5 +103,6 @@ echo "</tr>";
 sqlsrv_free_stmt( $st9);
 }
 ?>
+<?php endif; ?>
 </body>
 </html>

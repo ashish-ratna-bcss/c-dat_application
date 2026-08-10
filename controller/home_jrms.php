@@ -32,13 +32,13 @@
               <blockquote>
                 <ul class="MenuBarVertical">
           <li><a href="jrms_new_records_entry_uniqueness_php.php">JRMS NEW RECORDS ENTRY</a></li>
-          <li><a href="../view/jrms_datewise_search_uniqueness.htm">JRMS SEARCH BY RELEASE DATE</a></li>
-          <li><a href="../view/jrms_cin_search_uniqueness.html">JRMS SEARCH BY CIN NUMBER</a></li>
-   <li><a href="../view/jrms_search_by_prisonerno_uniqueness.htm">
+          <li><a href="jrms_datewise_search_uniqueness.php">JRMS SEARCH BY RELEASE DATE</a></li>
+          <li><a href="jrms_cin_search_uniqueness.php">JRMS SEARCH BY CIN NUMBER</a></li>
+   <li><a href="jrms_search_by_prisonerno_uniqueness.php">
 JRMS SEARCH BY PRISONER NO</a></li>
-          <li><a href="../view/jrms_search_uniqueness.html">
+          <li><a href="jrms_search_uniqueness.php">
 JRMS SEARCH BY NAME AND UNIQUE ID's</a></li>
-          <li><a href="../view/jrms_unique_key_update.htm">
+          <li><a href="jrms_unique_key_update.php">
 JRMS UNIQUE KEY UPDATATION FORM</a></li>
    <li><a href="mulakath_entry.php">
 MULAKATH_ENTRY</a></li>

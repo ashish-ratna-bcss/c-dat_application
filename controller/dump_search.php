@@ -1,3 +1,10 @@
+<?php
+// One page for both halves of this screen: the form, and the results.
+// Was view/dump_search.htm (form) + controller/dump_search.php (handler).
+// GET shows the form; a submit renders the form and the results below it.
+// !empty($_GET) covers links that pass parameters in the query string.
+$__submitted = ($_SERVER['REQUEST_METHOD'] === 'POST') || !empty($_GET);
+?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -47,15 +54,85 @@ body,td,th {
           <th height="25" align="center" valign="middle" background="../assets/images/border.jpg" scope="col">SUSPECT NUMBER SEARCH IN TOWER DUMP</th>
         </tr>
         <tr>
-          <th width="782" align="center" valign="middle" background="../assets/images/border.jpg" scope="col"><form id="form1" name="form1" method="post" action="suspect_search_twr.php">
+          <th width="782" align="center" valign="middle" background="../assets/images/border.jpg" scope="col"><form id="form1" name="form1" method="post" action="dump_search.php">
             <p>
               <label for="SUM" font face="verdana"> Police Station:</label>
-              <input type="text" name="PS" id="PS" placeholder="Select the PS" required="required"/>
-              <label for="SUM" font face="verdana"> Crime No:</label>
+<select>
+              <option value=""></option>
+<option value="Abids">Abids</option>
+<option value="Begum Bazar">Begum Bazar</option>
+<option value="Narayanaguda">Narayanaguda</option>
+<option value="Chikkadpally">Chikkadpally</option>
+<option value="Gandhi Nagar">Gandhi Nagar</option>
+<option value="Musheerabad">Musheerabad</option>
+<option value="Nampally">Nampally</option>
+<option value="Ramgopalpet">Ramgopalpet</option>
+<option value="Saifabad">Saifabad</option>
+<option value="Kachiguda">Kachiguda</option>
+<option value="Nallakunta">Nallakunta</option>
+<option value="O.U.Sity">O.U.Sity</option>
+<option value="Amberpet">Amberpet</option>
+<option value="Malakpet">Malakpet</option>
+<option value="Saidabad">Saidabad</option>
+<option value="Afzalgunj">Afzalgunj</option>
+<option value="Chaderghat">Chaderghat</option>
+<option value="Sultanbazar">Sultanbazar</option>
+<option value="Begumpet">Begumpet</option>
+<option value="Bollaram">Bollaram</option>
+<option value="Bowenpally">Bowenpally</option>
+<option value="Tirumalgherry">Tirumalgherry</option>
+<option value="WPS Begumpet">WPS Begumpet</option>
+<option value="Chilkalguda">Chilkalguda</option>
+<option value="Gopalpuram">Gopalpuram</option>
+<option value="Lalaguda">Lalaguda</option>
+<option value="Tukkaramgate">Tukkaramgate</option>
+<option value="Karkhana">Karkhana</option>
+<option value="Mahankali">Mahankali</option>
+<option value="Market">Market</option>
+<option value="Marredpally">Marredpally</option>
+<option value="Bahadurpura">Bahadurpura</option>
+<option value="Charminar">Charminar</option>
+<option value="Hussainialam">Hussainialam</option>
+<option value="Kalapattar">Kalapattar</option>
+<option value="Kamatipura">Kamatipura</option>
+<option value="WPS South Zone">WPS South Zone</option>
+<option value="Chandrayangutta">Chandrayangutta</option>
+<option value="Chatrinaka">Chatrinaka</option>
+<option value="Falaknuma">Falaknuma</option>
+<option value="Shalialibanda">Shalialibanda</option>
+<option value="Dabeerpura">Dabeerpura</option>
+<option value="Mirchowk">Mirchowk</option>
+<option value="Moghalpura">Moghalpura</option>
+<option value="Reinbazar">Reinbazar</option>
+<option value="BhavaniNagar">BhavaniNagar</option>
+<option value="Kanchanbagh">Kanchanbagh</option>
+<option value="Madannapet">Madannapet</option>
+<option value="SantoshNagar">SantoshNagar</option>
+<option value="Asif Nagar">Asif Nagar</option>
+<option value="Golconda">Golconda</option>
+<option value="Humayunnagar">Humayunnagar</option>
+<option value="Langerhouz">Langerhouz</option>
+<option value="Tappachabutra">Tappachabutra</option>
+<option value="BanjaraHills">BanjaraHills</option>
+<option value="Jubille Hills">Jubille Hills</option>
+<option value="Habeebnagar">Habeebnagar</option>
+<option value="Kulsumpura">Kulsumpura</option>
+<option value="Mangalhat">Mangalhat</option>
+<option value="Shahinayathgunj">Shahinayathgunj</option>
+<option value="Panjagutta">Panjagutta</option>
+<option value="S.R.Nagar">S.R.Nagar</option>
+<option value="CCS">CCS</option>
+<option value="CYBER CRIME PS">CYBER CRIMES</option>
+<option value="TASK FORCE EAST ZONE">TASK FORCE EAST ZONE</option>
+<option value="TASK FORCE WEST ZONE">TASK FORCE WEST ZONE</option>
+<option value="TASK FORCE NORTH ZONE">TASK FORCE NORHT ZONE</option>
+<option value="TASK FORCE SOUTH ZONE">TASK FORCE SOUTH ZONE</option>
+</select>
+<label for="SUM" font face="verdana"> Crime No:
               <select>  
-             <option value=""></option>
-<option><?php
-$serverName = "CPHYDERABAD1\DAU_HYD_2023";
+             <option value=""></option>                   
+              <option ><?php
+$serverName = "CPHYDERABAD1";
 $connectionInfo = array( "Database"=>"TWRMDB");
 $conn = sqlsrv_connect( $serverName, $connectionInfo );
 if( $conn === false ) {
@@ -71,8 +148,10 @@ if( $conn === false ) {
 <?php
 }
 ?>
-</select></option>
-
+</select>
+</option>
+</select>
+</label>
               <label for="SUM" font face="verdana"> YEAR:</label>
               <input type="text" name="Y" id="SUM" placeholder="Enter Mobile No" required="required"/>
              
@@ -98,5 +177,75 @@ if( $conn === false ) {
 <script type="text/javascript">
 var MenuBar1 = new Spry.Widget.MenuBar("MenuBar1", {imgDown:"../assets/spry/sprymenubardownhover.gif", imgRight:"../assets/spry/sprymenubarrighthover.gif"});
 </script>
+
+<?php if ($__submitted): ?>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Untitled Document</title>
+<link rel="stylesheet" type="text/css" href="../assets/vendor/jquery-ui-1.10.4.custom/css/dark-hive/jquery-ui-1.10.4.custom.min.css">
+<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-1.10.2.js"></script>
+<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.js"></script>
+<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.min.js"></script>
+<script type="text/javascript">
+$("document").ready(function() {
+	$("#datepickerID").datepicker({dateFormat: "hh:mm:ss",
+		changehours: true,
+		changeminutes: true,
+	}) 
+	$("#datepickerID1").datepicker({dateFormat: "hh:mm:ss",
+		changehours: true,
+		changeminutes: true,
+	})    
+	
+});
+</script>
+<script src="../assets/spry/sprymenubar.js" type="text/javascript"></script>
+<link href="../assets/spry/sprymenubarhorizontal.css" rel="stylesheet" type="text/css" />
+<style type="text/css">
+
+body,td,th {
+	font-family: Arial, Helvetica, sans-serif;
+}
+</style>
+
+
+
+
+<div align="center">
+  <table width="1323" height="603" border="2">
+    <tr>
+      <td width="1349" height="595" align="left" valign="top"><table width="1313" height="148">
+        <tr>
+          <td width="1265" height="134" align="center" valign="bottom" background="../assets/images/topborder.jpg"><ul id="MenuBar1" class="MenuBarHorizontal">
+            </td>
+        </tr>
+      </table>
+      <p>&nbsp;</p>
+      <table width="862" height="158" align="center">
+        <tr>
+          <th height="25" align="center" valign="middle" background="../assets/images/border.jpg" scope="col">SUSPECT NUMBER SEARCH IN TOWER DUMP</th>
+        </tr>
+        <tr>
+          <th width="782" align="center" valign="middle" background="../assets/images/border.jpg" scope="col">
+            <div align="justify">
+              <table width="734" height="25">
+                <tr>
+                  <th width="40" scope="col">&nbsp;</th>
+                  <th width="8" scope="col">&nbsp;</th>
+                  <th width="79" scope="col">&nbsp;</th>
+                  <th width="368" scope="col">&nbsp;</th>
+                  </tr>
+              </table>
+            </div></th>
+        </tr>
+      </table>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p></td>
+    </tr>
+  </table>
+</div>
+<script type="text/javascript">
+var MenuBar1 = new Spry.Widget.MenuBar("MenuBar1", {imgDown:"../assets/spry/sprymenubardownhover.gif", imgRight:"../assets/spry/sprymenubarrighthover.gif"});
+</script>
+<?php endif; ?>
 </body>
 </html>

@@ -26,6 +26,14 @@ RewriteRule ^(?i:login1?|login_page)\.(?i:html?)$ view/auth.html [R=301,L]
 # Internal (no R=) so the new layout is what the address bar shows going forward.
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^([A-Za-z0-9_%&.\-]+\.(?i:php))$ controller/$1 [L]
+
+# 52 form pages were merged into their handler, so e.g. address.htm no longer
+# exists -- controller/address.php now serves both the form and the results.
+# Route the old .html/.htm spellings there, at the flat url and the view/ one.
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{DOCUMENT_ROOT}/cdat-web/controller/$1.php -f
+RewriteRule ^(?:view/)?([A-Za-z0-9_%&.\-]+)\.(?i:html?)$ controller/$1.php [L]
+
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^([A-Za-z0-9_%&.\-]+\.(?i:html?))$ view/$1 [L]
 

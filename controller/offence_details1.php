@@ -1,4 +1,123 @@
 <?php
+// One page for both halves of this screen: the form, and the results.
+// Was view/offence_details1.htm (form) + controller/offence_details1.php (handler).
+// GET shows the form; a submit renders the form and the results below it.
+// !empty($_GET) covers links that pass parameters in the query string.
+$__submitted = ($_SERVER['REQUEST_METHOD'] === 'POST') || !empty($_GET);
+?>
+<DOCHTML>
+<html>
+<head>
+<title> OFFENCE DETAILS FORM </title>
+<link rel="stylesheet" type="text/css" href="../assets/vendor/jquery-ui-1.10.4.custom/css/dark-hive/jquery-ui-1.10.4.custom.min.css">
+<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-1.10.2.js"></script>
+<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.js"></script>
+<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.min.js"></script>
+<script type="text/javascript">
+$("document").ready(function() {
+	$("#datepickerID").datepicker({dateFormat: "yy-mm-dd",
+		changeYear: true,
+		changeMonth: true,
+	}) 
+	$("#datepickerID1").datepicker({dateFormat: "yy-mm-dd",
+		changeYear: true,
+		changeMonth: true,
+	})    
+	
+});
+</script>
+<script src="../assets/spry/sprymenubar.js" type="text/javascript"></script>
+<link href="../assets/spry/sprymenubarhorizontal.css" rel="stylesheet" type="text/css" />
+<style>
+input[type=text], select {
+    width: 25%;
+    padding: 3px 10px;
+    margin: 4px 0;
+    display: inline-block;
+    border: 1px solid #ccc;
+    border-radius: 2px;
+    box-sizing: border-box;
+}
+
+input[type=submit] {
+    width: 15%;
+    background-color: ORANGE;
+    color: white;
+    padding: 4px 15px;
+    margin: 4px 0;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 25px;
+}
+
+div {
+    border-radius: 5px;
+    background-color: #f2f2f2;
+    padding: 5px;
+    width: 40%;
+    border-radius: 4px;
+    float:left;
+    width:200px;
+    text-align: left;
+   }
+  textarea{
+  width: 25%;
+  height: 25px;
+  }
+</style>
+</head>
+<body bgcolor="#808000">
+<table>
+   <tr>
+<th width="1126" align="center" scope="col">OFFENCE DETAILS</th>
+   </tr>
+</table>
+<form action="offence_details1.php" Method="post">
+<div>IRKEY:</div><textarea  type="text" name="IRKEY" required="required" placeholder="IRKEY" style="float:center;"></textarea><br/><br/>
+<div>PERIOD_OF_OFFENCE:</div><textarea type="text" required="required" name="PERIOD_OF_OFFENCE" placeholder="PERIOD OF OFF"></textarea><br/><br/>
+<div>REGULAR_RESIDENCE:</div><textarea type="text" required="required" name="REGULAR_RESIDENCE" placeholder="REGULAR RESIDENCE"></textarea><br/><br/>
+<div>PREPARATION_OF_OFFENCE:</div><textarea type="text" name="PREPARATION_OF_OFFENCE" placeholder="PREPARATION OF OFFENCE"></textarea><br/><br/>
+<div>AFTER_OFFENCE:</div><textarea type="text" name="AFTER_OFFENCE" placeholder="AFTER OFFENCE"></textarea><br/><br/>
+<div>INDULGANCE_BEFORE_OFFENCE:</div><textarea type="text" name="INDULGANCE_BEFORE_OFFENCE" placeholder="INDULGANCE"></textarea><br/><br/>
+
+<div>CRIME_HEAD:</div><SELECT name="CRIME_HEAD">
+<option value=""></option>
+<option value="ORDINARY THEFT">ORDINARY THEFT</option>
+<option value="SNATCHING">SNATCHING</option>
+<option value="HB DAY">HB DAY</option>
+<option value="HB NIGHT">HB NIGHT</option>
+<option value="MURDER">MURDER</option>
+<option value="ATTEMPT TO MURDER">ATTEMPT TO MURDER</option>
+<option value="EXTORTION">EXTORTION</option>
+<option value="CHEATING">CHEATING</option>
+<option value="DIVERTING ATTENTION">DIVERTING ATTENTION</option>
+<option value="DACOITY">DACOITY</option>
+<option value="HOUSE THEFT">HOUSE THEFT</option>
+<option value="RAPE">RAPE</option>
+<option value="ROBBERY">ROBBERY</option>
+<option value="SERVANT THEFT">SNATCHING</option>
+</SELECT>
+<br/><br/><div>SUB_TYPE:</div><textarea type="text" name="SUB_TYPE" placeholder="SUB_TYPE"></textarea><br/><br/>
+<div>MO:</div><textarea type="text" name="MO" placeholder="MO"></textarea><br/><br/>
+<div>DATE_OF_ARREST:</div><input type="TEXT" name="DATE" required="required" id="datepickerID" size="10" placeholder="yyyy-mm-dd" required="required"/><br/><br/>
+<div>PLACE_OF_ARREST:</div><textarea type="text" name="PLACE_OF_ARREST" placeholder="PLACE OF ARREST"></textarea><br/><br/>
+<div>SUB_DIVISION:</div><textarea type="text" name="SUB_DIVISION" placeholder="SUB DIVISION"></textarea><br/><br/>
+<div>DISTRICT_OR_UNIT:</div><textarea type="text" name="DISTRICT_OR_UNIT" placeholder="DISTRICT/UNIT"></textarea><br/><br/>
+<div>ARRESTED_BY:</div><textarea type="text" name="ARRESTED_BY" placeholder="ARRESTED BY"></textarea><br/><br/>
+<div>INTERROGATED_BY:</div><textarea type="text" name="INTERROGATED_BY" placeholder="INTERROGATED BY"></textarea><br/><br/>
+<div>OTHERS_WHO_CAN_IDENTIFY:</div><textarea type="text" name="OTHERS_WHO_CAN_IDENTIFY" placeholder="IDENTIFIED BY"></textarea><br/><br/>
+<div>CRIME_NO:</div><textarea type="text" name="CRIME_NO" required="required" placeholder="CRIME NO"></textarea><br/><br/>
+<div>YEAR:</div><textarea type="text" name="YEAR" required="required" placeholder="YEAR"></textarea><br/><br/>
+<div>SEC_OF_LAW:</div><textarea type="text" required="required" name="SEC_OF_LAW" placeholder="U/S"></textarea><br/><br/>
+<div>POLICE_STATION:</div><textarea type="text" name="POLICE_STATION" required="required" placeholder="PS"></textarea><br/><br/>
+<div>CRIME_HEAD1:</div><textarea type="text" name="CRIME_HEAD1" required="required" placeholder="PS"></textarea><br/><br/><input type="submit" value="INSERT" style="padding:15px;">
+<br/><br/>
+
+</form>
+
+<?php if ($__submitted): ?>
+<?php
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"forms");
 $conn = sqlsrv_connect( $serverName, $connectionInfo );
@@ -43,3 +162,6 @@ echo "inserted";
 }
 header("refresh:30; url=../view/offence_details.html");
 ?>
+<?php endif; ?>
+</body>
+</html>

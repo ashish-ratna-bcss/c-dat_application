@@ -1,9 +1,77 @@
-<html>
+<?php
+// One page for both halves of this screen: the form, and the results.
+// Was view/imei_request_traced_details.html (form) + controller/imei_request_traced_details.php (handler).
+// GET shows the form; a submit renders the form and the results below it.
+// !empty($_GET) covers links that pass parameters in the query string.
+$__submitted = ($_SERVER['REQUEST_METHOD'] === 'POST') || !empty($_GET);
+?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Untitled Document</title>
+<link rel="stylesheet" type="text/css" href="../assets/vendor/jquery-ui-1.10.4.custom/css/dark-hive/jquery-ui-1.10.4.custom.min.css">
+<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-1.10.2.js"></script>
+<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.js"></script>
+<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.min.js"></script>
+<script type="text/javascript">
+$("document").ready(function() {
+	$("#datepickerID").datepicker({dateFormat: "yy-mm-dd",
+		changeYear: true,
+		changeMonth: true,
+	}) 
+	$("#datepickerID1").datepicker({dateFormat: "yy-mm-dd",
+		changeYear: true,
+		changeMonth: true,
+	})    
+	
+});
+</script>
+<script src="../assets/spry/sprymenubar.js" type="text/javascript"></script>
+<link href="../assets/spry/sprymenubarhorizontal.css" rel="stylesheet" type="text/css" />
+<style type="text/css">
+
+body,td,th {
+	font-family: Arial, Helvetica, sans-serif;
+}
+</style>
+
 </head>
-<body bgcolor="#0C5D90">
-<li><a href="../view/imei_request_traced_details.html"><font color=#FDEFEF>Back</a></li>
-		</br>
+
+<body bgcolor="#5195BA">
+<div align="center">
+  <table width="1323" height="603" border="2">
+    <tr>
+      <td width="1349" height="595" align="left" valign="top"><table width="1313" height="140">
+        <tr>
+          <td width="1265" height="130" align="center" valign="bottom" background="../assets/images/topborder.jpg"><ul id="MenuBar1" class="MenuBarHorizontal">      </table>
+      <p>&nbsp;</p>
+      <table width="1021" height="157" align="center">
+        <tr>
+          <th height="25" align="center" valign="middle" background="../assets/images/border.jpg" scope="col">IMEI'S TRACED BETWEEN REQUEST DATES</th>
+        </tr>
+        <tr>
+          <th width="782" align="center" valign="middle" background="../assets/images/border.jpg" scope="col"><form id="form1" name="form1" method="post" action="imei_request_traced_details.php">
+        
+            Request From Date: 
+              <input type="text" name="FROM_DT" id="datepickerID" size="10" placeholder="yyyy/mm/dd" required="required"/>
+              Request To Date:
+              <input type="text" name="TO_DT" id="datepickerID1" size="10" placeholder="yyyy/mm/dd" required="required"/>
+              <input type="submit" name="BTN_SUM" id="BTN_SUM" value="Submit" />
+              
+          </form></th>
+        </tr>
+      </table>
+      <p>&nbsp;</p>
+      <p>&nbsp;</p></td>
+    </tr>
+  </table>
+<script type="text/javascript">
+var MenuBar1 = new Spry.Widget.MenuBar("MenuBar1", {imgDown:"../assets/spry/sprymenubardownhover.gif", imgRight:"../assets/spry/sprymenubarrighthover.gif"});
+</script>
+
+<?php if ($__submitted): ?>
+</br>
 <li><a href="home_imei.php"><font color=#FDEFEF>HOME</a></li>
 <?php
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
@@ -103,5 +171,6 @@ echo "</tr>";
 
 sqlsrv_free_stmt( $st3);
 ?>
+<?php endif; ?>
 </body>
 </html>
