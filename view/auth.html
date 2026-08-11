@@ -15,12 +15,10 @@ background-size: cover;
 }
 .aa{
 width: 300px;
-height: 300px;
 background-color: rgba(0,0,0,0.4);
 margin:0 auto;
 margin-top:40px;
-padding-top:10px;
-padding-left: 50px;
+padding:10px 50px 24px;
 border-radius: 15px;
 -webkit-border-radius: 15px;
 -moz-border-radius:15px;
@@ -52,25 +50,204 @@ cursor: pointer;
 }
 .aa label{ display:block; margin-bottom:4px; }
 .aa p{ margin:0 0 14px 0; }
+
+/* ---- states added for the in-page validation ---- */
+.aa input.is-invalid{ outline:2px solid #ff8a80; }
+/* per-field message, sits under its own input */
+.field-error{
+  display:none; margin:5px 0 0; padding:0;
+  font-size:13px; font-weight:normal; color:#ffc9c4;
+}
+.field-error.show{ display:block; }
+/* form-level message: wrong credentials, server unreachable */
+.form-msg{
+  display:none; margin:0 0 14px; padding:8px 10px;
+  width:200px; box-sizing:border-box;
+  border-radius:5px; font-size:13px; font-weight:normal; line-height:1.4;
+}
+.form-msg.show{ display:block; }
+.form-msg.error{ background:rgba(146,18,21,.85); color:#fff; }
+.form-msg.ok{ background:rgba(20,110,50,.85); color:#fff; }
+.aa input[type="submit"]:disabled{ opacity:.65; cursor:progress; }
+/* caps lock is the commonest cause of a password that "should" work */
+.hint{
+  display:none; margin:5px 0 0; font-size:12px;
+  font-weight:normal; color:#ffe08a;
+}
+.hint.show{ display:block; }
+.pw-wrap{ position:relative; width:210px; }
+.pw-toggle{
+  position:absolute; right:6px; top:0; height:35px;
+  border:0; background:none; cursor:pointer;
+  font-size:12px; font-weight:bold; color:#555;
+}
 </style>
 </head>
 <body>
 <marquee><h1>INTERROGATION REPORTS</h1></marquee>
 <div class="aa">
 <h2>Login</h2>
-<form action="../controller/login1.php" method="post">
+<!-- novalidate: the browser's own bubbles are replaced by the messages below,
+     so there is one style of error on this form rather than two. The action and
+     method stay, so the form still works if the script does not run. -->
+<form action="../controller/login1.php" method="post" id="loginForm" novalidate>
+<p class="form-msg" id="formMsg" role="alert"></p>
 <p>
 <label for="USERNAME">USERNAME:</label>
 <input type="text" name="USERNAME" id="USERNAME" placeholder="Please Enter username...."
-       autocomplete="username" required>
+       autocomplete="username" required autofocus
+       aria-describedby="errUser">
+<span class="field-error" id="errUser"></span>
 </p>
 <p>
 <label for="PASSWORD">PASSWORD:</label>
-<input type="password" name="PASSWORD" id="PASSWORD" placeholder="Please Enter Password...."
-       autocomplete="current-password" required>
+<span class="pw-wrap">
+  <input type="password" name="PASSWORD" id="PASSWORD" placeholder="Please Enter Password...."
+         autocomplete="current-password" required
+         aria-describedby="errPass capsHint">
+  <button type="button" class="pw-toggle" id="pwToggle"
+          aria-label="Show password">SHOW</button>
+</span>
+<span class="field-error" id="errPass"></span>
+<span class="hint" id="capsHint">Caps Lock is on</span>
 </p>
-<p><input type="submit" value="Login"></p>
+<p><input type="submit" value="Login" id="loginBtn"></p>
 </form>
 </div>
+
+<script>
+/* Sign in without leaving the page.
+ *
+ * The form posts normally when this script does not run -- the handler answers
+ * HTML in that case and JSON when asked, so both paths stay supported.
+ */
+(function () {
+  'use strict';
+
+  var form   = document.getElementById('loginForm');
+  var user   = document.getElementById('USERNAME');
+  var pass   = document.getElementById('PASSWORD');
+  var btn    = document.getElementById('loginBtn');
+  var msg    = document.getElementById('formMsg');
+  var caps   = document.getElementById('capsHint');
+  var errors = { USERNAME: document.getElementById('errUser'),
+                 PASSWORD: document.getElementById('errPass') };
+  var busy = false;
+
+  function setFieldError(input, text) {
+    var box = errors[input.id];
+    box.textContent = text || '';
+    box.classList.toggle('show', !!text);
+    input.classList.toggle('is-invalid', !!text);
+    input.setAttribute('aria-invalid', text ? 'true' : 'false');
+  }
+
+  function setFormMsg(text, kind) {
+    msg.textContent = text || '';
+    msg.className = 'form-msg' + (text ? ' show ' + kind : '');
+  }
+
+  function clearAll() {
+    setFieldError(user, '');
+    setFieldError(pass, '');
+    setFormMsg('');
+  }
+
+  // Returns the first invalid input, or null.
+  function validate() {
+    var bad = null;
+    setFieldError(user, '');
+    setFieldError(pass, '');
+
+    if (user.value.trim() === '') {
+      setFieldError(user, 'Enter your username.');
+      bad = bad || user;
+    } else if (/\s/.test(user.value.trim())) {
+      setFieldError(user, 'A username cannot contain spaces.');
+      bad = bad || user;
+    }
+
+    if (pass.value === '') {
+      setFieldError(pass, 'Enter your password.');
+      bad = bad || pass;
+    }
+    return bad;
+  }
+
+  // Clear a field's error as soon as the user starts fixing it.
+  [user, pass].forEach(function (el) {
+    el.addEventListener('input', function () {
+      if (el.classList.contains('is-invalid')) { setFieldError(el, ''); }
+      if (msg.classList.contains('show')) { setFormMsg(''); }
+    });
+  });
+
+  pass.addEventListener('keyup', function (e) {
+    var on = e.getModifierState && e.getModifierState('CapsLock');
+    caps.classList.toggle('show', !!on);
+  });
+  pass.addEventListener('blur', function () { caps.classList.remove('show'); });
+
+  document.getElementById('pwToggle').addEventListener('click', function () {
+    var shown = pass.type === 'text';
+    pass.type = shown ? 'password' : 'text';
+    this.textContent = shown ? 'SHOW' : 'HIDE';
+    this.setAttribute('aria-label', shown ? 'Show password' : 'Hide password');
+    pass.focus();
+  });
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (busy) { return; }
+
+    var bad = validate();
+    if (bad) { bad.focus(); return; }
+
+    busy = true;
+    btn.disabled = true;
+    btn.value = 'Signing in…';
+    setFormMsg('');
+
+    var body = new FormData(form);
+    body.append('ajax', '1');
+
+    fetch(form.action, {
+      method: 'POST',
+      body: body,
+      credentials: 'same-origin',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    }).then(function (r) {
+      return r.json().catch(function () {
+        throw new Error('The server did not answer as expected.');
+      });
+    }).then(function (data) {
+      if (data.ok) {
+        setFormMsg('Signed in. Opening your dashboard…', 'ok');
+        window.location.href = data.redirect;   // page stays put until this
+        return;
+      }
+      busy = false;
+      btn.disabled = false;
+      btn.value = 'Login';
+      if (data.field && errors[data.field]) {
+        setFieldError(document.getElementById(data.field), data.error);
+        document.getElementById(data.field).focus();
+      } else {
+        setFormMsg(data.error || 'Sign in failed.', 'error');
+        pass.value = '';
+        pass.focus();
+      }
+    }).catch(function (err) {
+      busy = false;
+      btn.disabled = false;
+      btn.value = 'Login';
+      setFormMsg('Could not reach the server. Check your connection and try again.', 'error');
+      if (window.console) { console.error(err); }
+    });
+  });
+
+  clearAll();
+}());
+</script>
 </body>
 </html>

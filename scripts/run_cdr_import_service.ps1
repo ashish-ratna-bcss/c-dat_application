@@ -1,9 +1,13 @@
 # Windows equivalent of run_cdr_import_service.sh.
 #
-# The DB env vars are NOT optional. cdr_import/config.py::load_db_config() only
-# falls back to db_config.php when an env value is empty, and its built-in
-# defaults (port 5432, database "postgres") are non-empty -- so without these
-# the service silently connects to the wrong PostgreSQL instance.
+# No database settings here. load_db_config() reads controller/db_config.php --
+# the same file the web app uses -- so the connection is configured in exactly
+# one place. Set CDR_DB_HOST / _PORT / _NAME / _USER / _PASSWORD only to point
+# this service somewhere other than the site's own database.
+#
+# This script used to carry them, including the password as a literal default.
+# It is inside the web root, so that password was being served over HTTP to
+# anyone who requested /scripts/run_cdr_import_service.ps1.
 
 $ErrorActionPreference = "Stop"
 
@@ -15,12 +19,7 @@ if (-not (Test-Path $Python)) {
     throw "Python not found at '$Python'. Set CDR_PYTHON to your python.exe."
 }
 
-$env:PYTHONPATH      = $Root
-$env:CDR_DB_HOST     = if ($env:CDR_DB_HOST)     { $env:CDR_DB_HOST }     else { "127.0.0.1" }
-$env:CDR_DB_PORT     = if ($env:CDR_DB_PORT)     { $env:CDR_DB_PORT }     else { "5433" }
-$env:CDR_DB_NAME     = if ($env:CDR_DB_NAME)     { $env:CDR_DB_NAME }     else { "postgress_db" }
-$env:CDR_DB_USER     = if ($env:CDR_DB_USER)     { $env:CDR_DB_USER }     else { "postgres" }
-$env:CDR_DB_PASSWORD = if ($env:CDR_DB_PASSWORD) { $env:CDR_DB_PASSWORD } else { "admin123" }
+$env:PYTHONPATH = $Root
 
 $ApiHost = if ($env:CDR_API_HOST) { $env:CDR_API_HOST } else { "127.0.0.1" }
 $ApiPort = if ($env:CDR_API_PORT) { $env:CDR_API_PORT } else { "8088" }
@@ -30,4 +29,12 @@ $ApiPort = if ($env:CDR_API_PORT) { $env:CDR_API_PORT } else { "8088" }
 # config.py default (cdatpcsuspect_staging) so uploads stage for review first.
 
 Set-Location (Join-Path $Root "cdr-import-service")
+
+# uvicorn writes its startup banner and every request line to stderr, which is
+# normal. Windows PowerShell wraps a native command's stderr in ErrorRecords, so
+# with ErrorActionPreference still "Stop" the first log line -- "Started server
+# process" -- terminates the script and takes the server with it. That only
+# shows up when stderr is redirected (piping to a log, running from a task
+# runner); in a plain console window it goes unnoticed until someone does.
+$ErrorActionPreference = "Continue"
 & $Python -m uvicorn app.main:app --host $ApiHost --port $ApiPort

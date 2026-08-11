@@ -51,6 +51,60 @@ function cdat_menu(): array
     return $menu;
 }
 
+/**
+ * Does the signed-in user hold $need?
+ *
+ *   ''          any signed-in user
+ *   'uploader'  admin or poweruser   (matches audit_require_uploader)
+ *   'admin'     admin                (matches audit_require_admin)
+ *
+ * Deliberately fails closed: an unknown role name grants nothing, so a typo in
+ * menu.php hides an entry rather than exposing one.
+ */
+function cdat_role_allows(string $need): bool
+{
+    if ($need === '') {
+        return true;
+    }
+    $role = strtolower($_SESSION['audit_role'] ?? '');
+    switch ($need) {
+        case 'admin':    return $role === 'admin';
+        case 'uploader': return $role === 'admin' || $role === 'poweruser';
+        default:         return false;
+    }
+}
+
+/**
+ * The menu with everything this user may not open removed. A group whose
+ * children are all filtered out goes with them -- an empty expander is worse
+ * than no expander.
+ */
+function cdat_menu_visible(): array
+{
+    static $visible = null;
+    if ($visible !== null) {
+        return $visible;
+    }
+    $visible = [];
+    foreach (cdat_menu() as $item) {
+        if (!cdat_role_allows($item['role'] ?? '')) {
+            continue;
+        }
+        if (!empty($item['children'])) {
+            $kids = array_values(array_filter(
+                $item['children'],
+                static fn(array $c): bool => cdat_role_allows($c['role'] ?? '')
+            ));
+            if (!$kids) {
+                continue;
+            }
+            $item['children'] = $kids;
+        }
+        $visible[] = $item;
+    }
+    return $visible;
+}
+
 function cdat_icon(string $name): string
 {
     // Inline so the page needs no icon font or sprite request.
@@ -128,7 +182,7 @@ function layout_begin(string $title = 'Call Data Analysis Tool', string $subtitl
     // ?: not ??  -- audit_fullname is set to '' when the LOGINS row has no
     // FULLNAME, and an empty name should fall through to the username.
     $user  = ($_SESSION['audit_fullname'] ?? '') ?: ($_SESSION['audit_username'] ?? '');
-    $menu  = cdat_menu();
+    $menu  = cdat_menu_visible();
     $t     = htmlspecialchars($title, ENT_QUOTES);
     $qlCount = $user !== '' ? count(cdat_ql_get()) : 0;
     ?>

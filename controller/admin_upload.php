@@ -1305,7 +1305,16 @@ layout_begin('Data Upload', 'Common Data Upload Framework', ob_get_clean());
     </tr>
   </table>
 </div>
-
+<style>
+    .upload-wrapper h3 {
+        color: #5b6b7c;
+        margin-bottom: 12px;
+    }
+    .upload-wrapper p {
+        color: #5b6b7c;
+        margin-bottom: 12px;
+    }
+    </style>
 <script type="text/javascript">
 // Initialize Navigation horizontal menu
 

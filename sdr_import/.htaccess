@@ -1,0 +1,13 @@
+# Server-side source, not web content. This directory sits inside the web root,
+# so without this every file in it is fetchable: the Python packages exposed
+# hostnames, database names and deployment paths, and scripts/ was serving the
+# live PostgreSQL password out of run_cdr_import_service.ps1.
+#
+# Denying HTTP access does not affect anything that matters -- the import
+# service imports these from the filesystem, and the launchers are run from a
+# shell. Nothing here is ever requested by a browser.
+Require all denied
+
+# Belt and braces: never hand these to the PHP parser, and never list the folder.
+SetHandler none
+Options -Indexes

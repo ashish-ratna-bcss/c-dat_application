@@ -18,8 +18,7 @@ layout_begin("Bulk Cdat Contacts");
                 </td>
         </tr>
       </table>
-      <p class="MenuBarItemHover">&nbsp;</p>
-      <p class="MenuBarItemHover">&nbsp;</p>
+     
       <table width="907" height="168">
         <tr>
           <th height="27" align="center" valign="middle" bgcolor="#A9D1F5" class="CDAT" scope="col" >BULK CDAT CONTACTS</th>

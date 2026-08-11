@@ -267,6 +267,7 @@ ob_start();
     color: #fff;
     display: inline-block;
 }
+.status-pending-verification { background-color: #dc3545; }
 .status-success { background-color: #28a745; }
 .status-partial { background-color: #ffc107; color: #333; }
 .status-failed { background-color: #dc3545; }

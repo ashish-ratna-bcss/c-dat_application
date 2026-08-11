@@ -48,6 +48,11 @@ function cdat_csrf_ok(string $sent): bool
 /**
  * Every linkable page in the menu, flattened, keyed by url.
  * Children carry their parent's label as the group and its icon.
+ *
+ * Built from the role-filtered menu, so this is also the whitelist a save is
+ * checked against: a user cannot pin a page their role hides, and if an
+ * account is demoted its tiles to pages it can no longer open stop being
+ * resolved and drop off the dashboard by themselves.
  */
 function cdat_ql_catalog(): array
 {
@@ -56,7 +61,7 @@ function cdat_ql_catalog(): array
         return $flat;
     }
     $flat = [];
-    foreach (cdat_menu() as $item) {
+    foreach (cdat_menu_visible() as $item) {
         $icon = $item['icon'] ?? 'grid';
         if (!empty($item['children'])) {
             foreach ($item['children'] as $c) {
@@ -279,7 +284,7 @@ function cdat_ql_render_modal(): void
     foreach (cdat_ql_get() as $l) {
         $chosen[] = $l['url'];
     }
-    $menu = cdat_menu();
+    $menu = cdat_menu_visible();   // the picker offers only what this role may open
     ?>
     <div class="ql-modal" id="qlModal" hidden>
       <div class="ql-backdrop" data-ql-close></div>
