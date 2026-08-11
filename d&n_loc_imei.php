@@ -2,9 +2,9 @@
 <head>
 </head>
 <body bgcolor="#0C5D90">
-<li><a href="DAY%26NIGHTLOC_IMEI.HTML"><font color=#FDEFEF>Back</a></li>
+<li><a href="day%26nightloc_imei.html"><font color=#FDEFEF>Back</a></li>
 	</br>
-<li><a href="home_imei.PHP"><font color=#FDEFEF>HOME</a></li>
+<li><a href="home_imei.php"><font color=#FDEFEF>HOME</a></li>
 <?php
 require_once __DIR__ . '/cdr_enrichment_sql.php';
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";

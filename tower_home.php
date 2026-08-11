@@ -3,9 +3,9 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <title>Untitled Document</title>
-<script src="SpryAssets/SpryMenuBar.js" type="text/javascript"></script>
-<link href="SpryAssets/SpryMenuBarHorizontal.css" rel="stylesheet" type="text/css" />
-<link href="SpryAssets/SpryMenuBarVertical.css" rel="stylesheet" type="text/css" />
+<script src="SpryAssets/sprymenubar.js" type="text/javascript"></script>
+<link href="SpryAssets/sprymenubarhorizontal.css" rel="stylesheet" type="text/css" />
+<link href="SpryAssets/sprymenubarvertical.css" rel="stylesheet" type="text/css" />
 
 </head>
 
@@ -15,7 +15,7 @@
 <tr>
   <td width="1349" height="595" align="left" valign="top"><table width="1313" height="120">
         <tr>
-          <td width="1260" height="110" align="center" background="IMAGES/TOPBORDER.JPG">
+          <td width="1260" height="110" align="center" background="IMAGES/topborder.jpg">
    </table>
 <marquee behavior="scroll" direction="left"> <font color="YELLOW" face=verdana size='2'><b> *** PLEASE MAIL RAW DATA TO crimelab@hyd.tspolice.gov.in TO VIEW REPORTS *** </b></font></marquee> 
         <table width="1307" height="347">
@@ -23,11 +23,11 @@
             <td width="450" rowspan="2" valign="top">
               <blockquote>
                 <ul class="MenuBarVertical">
-	  <li><a href="HOME.PHP">HOME</a></li>
-          <li><a href="SUSPECT_SEARCH.PHP">Sus Search In Dump</a></li>
-          <li><a href="OTHER_STATE_NUMBER.PHP">Other State Numbers In Dump</a></li>
-          <li><a href="INTER_TOWER_CALLS.PHP">Inter Tower Calls</a></li>
-          <li><a href="PRE_OFF_SEARCH.PHP">Previous Offenders In Dump</a></li>
+	  <li><a href="home.php">HOME</a></li>
+          <li><a href="suspect_search.php">Sus Search In Dump</a></li>
+          <li><a href="other_state_number.php">Other State Numbers In Dump</a></li>
+          <li><a href="inter_tower_calls.php">Inter Tower Calls</a></li>
+          <li><a href="pre_off_search.php">Previous Offenders In Dump</a></li>
                 </ul>
         <p>&nbsp; </p>
       </blockquote></td>
@@ -35,7 +35,7 @@
             <td width="62" rowspan="2">&nbsp;</td>
           </tr>
           <tr>
-            <td height="310" align="left" valign="top"><div align="center"><img src="IMAGES/TOWER2.jpeg" width="950" height="250" /></div></td>
+            <td height="310" align="left" valign="top"><div align="center"><img src="IMAGES/tower2.jpeg" width="950" height="250" /></div></td>
           </tr>
 
        </table>

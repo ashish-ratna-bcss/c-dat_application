@@ -56,7 +56,7 @@ RewriteRule ^(.*)\.(?:html?|php)$ $1.html [L,NC]
 #     served as plain text.
 #   - sqlsrv_compat is already loaded via auto_prepend_file, so requesting it
 #     directly loads it twice and fatals on "Cannot redeclare __sqlsrv_root()".
-<FilesMatch "(?i)^(db_config(\.example)?|sqlsrv_compat|activity_logger|cdr_upload_config|cdr_upload_parser|excel_converter|cdr_enrichment_sql|upload_verification_service|document_processing_client)\.(php|html?|htm)$">
+<FilesMatch "(?i)^(db_config(\.example)?|sqlsrv_compat|activity_logger|cdat_chrome|cdr_upload_config|cdr_upload_parser|excel_converter|cdr_enrichment_sql|upload_verification_service|document_processing_client)\.(php|html?|htm)$">
     Require all denied
 </FilesMatch>
 

@@ -3,9 +3,9 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <title>Untitled Document</title>
-<script src="SpryAssets/SpryMenuBar.js" type="text/javascript"></script>
-<link href="SpryAssets/SpryMenuBarHorizontal.css" rel="stylesheet" type="text/css" />
-<link href="SpryAssets/SpryMenuBarVertical.css" rel="stylesheet" type="text/css" />
+<script src="SpryAssets/sprymenubar.js" type="text/javascript"></script>
+<link href="SpryAssets/sprymenubarhorizontal.css" rel="stylesheet" type="text/css" />
+<link href="SpryAssets/sprymenubarvertical.css" rel="stylesheet" type="text/css" />
 <link rel="stylesheet" type="text/css" href="css_sparkle1.css">
 <style type="text/css">
 .FONT {

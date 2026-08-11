@@ -1,12 +1,24 @@
-<html>
-<head>
-</head>
-<body bgcolor="#0C5D90">
-<li><a href="cellid_search.php"><font color='#FDEFEF'>Back</a></li></b></b>
-<form action ='cellid_search.php'method='post'>
-<b><font size=4 face=verdana color='#F9FBFC'>Enter Celltower ID: <input type="text" name="CELLID" value=<?php echo $_POST['CELLID'] ?> />
+<?php
+// The form and the results are one page, but the search half only runs on a
+// submit. It used to run on every GET too, against $_POST keys that did not
+// exist yet -- three "Undefined array key" warnings above an empty table.
+$__submitted = ($_SERVER['REQUEST_METHOD'] === 'POST');
+
+// What the boxes show after a submit. h() escapes: these values are echoed
+// straight back into HTML, so a quote in the search term used to break out of
+// the attribute.
+function cs_val(string $key): string
+{
+    return htmlspecialchars(trim($_POST[$key] ?? ''), ENT_QUOTES);
+}
+
+require_once __DIR__ . '/cdat_chrome.php';
+cdat_page_top('Cellid Search');
+?>
+<form action ='cellid_search.php' method='post' class="cdat-form">
+<b><font size=4 face=verdana>Enter Celltower ID: <input type="text" name="CELLID" value="<?php echo cs_val('CELLID') ?>" />
 Operator : <select name="OPERATOR">
-<option value="<?php echo $_POST['OPERATOR'] ?>"><?php echo $_POST['OPERATOR'] ?></option>
+<option value="<?php echo cs_val('OPERATOR') ?>"><?php echo cs_val('OPERATOR') ?></option>
 <option value="AIRCEL_TOWER">AIRCEL_TOWER</option>
 <option value="AIRTEL_TOWER">AIRTEL_TOWER</option>
 <option value="BPL_TOWER">BPL_TOWER</option>
@@ -23,7 +35,7 @@ Operator : <select name="OPERATOR">
 </select>
 
 State: <select name="STATE">
-<option value="<?php echo $_POST['STATE'] ?>"><?php echo $_POST['STATE'] ?></option>
+<option value="<?php echo cs_val('STATE') ?>"><?php echo cs_val('STATE') ?></option>
 <option value="ANDAMAN AND NICOBAR ISLANDS">ANDAMAN AND NICOBAR ISLANDS</option>
 <option value="ANDHRA PRADESH">ANDHRA PRADESH</option>
 <option value="ARUNACHAL PRADESH">ARUNACHAL PRADESH</option>
@@ -64,6 +76,7 @@ State: <select name="STATE">
 <input type ="submit" value ="submit">
 <p> </p>
 
+<?php if ($__submitted): ?>
 <?php
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"CDATDUPL");
@@ -124,5 +137,5 @@ echo"</table>";
 
 sqlsrv_free_stmt( $st1);
 ?>
-</body>
-</html>
+<?php endif; ?>
+<?php cdat_page_bottom(); ?>

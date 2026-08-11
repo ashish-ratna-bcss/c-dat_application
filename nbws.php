@@ -4,8 +4,8 @@
 <title>Untitled Document</title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <title>Untitled Document</title>
-<script src="SpryAssets/SpryMenuBar.js" type="text/javascript"></script>
-<link href="SpryAssets/SpryMenuBarHorizontal.css" rel="stylesheet" type="text/css" />
+<script src="SpryAssets/sprymenubar.js" type="text/javascript"></script>
+<link href="SpryAssets/sprymenubarhorizontal.css" rel="stylesheet" type="text/css" />
 <style type="text/css">
 
 body,td,th {
@@ -42,17 +42,17 @@ $("document").ready(function() {
     <tr>
       <td width="1349" height="595" align="left" valign="top"><table width="1313" height="148">
         <tr>
-          <td width="1265" height="134" align="center" valign="bottom" background="IMAGES/TOPBORDER.jpg"><ul id="MenuBar1" class="MenuBarHorizontal">
+          <td width="1265" height="134" align="center" valign="bottom" background="IMAGES/topborder.jpg"><ul id="MenuBar1" class="MenuBarHorizontal">
             </td>
         </tr>
       </table>
       <p>&nbsp;</p>
       <table width="862" height="158" align="center">
         <tr>
-          <th height="25" align="center" valign="middle" background="IMAGES/BORDER.jpg" scope="col">NBWS/WARRANT SEARCH</th>
+          <th height="25" align="center" valign="middle" background="IMAGES/border.jpg" scope="col">NBWS/WARRANT SEARCH</th>
         </tr>
         <tr>
-          <th width="782" align="center" valign="middle" background="IMAGES/BORDER.jpg" scope="col"><form id="form1" name="form1" method="post" action="NBWS.PHP">
+          <th width="782" align="center" valign="middle" background="IMAGES/border.jpg" scope="col"><form id="form1" name="form1" method="post" action="nbws.php">
             <p>
             <label for="SUM" font face="verdana"> POLICE_STATION:</label>
               <select name="POLICE_STATION" id="POLICE_STATION" class="demoInputbox" onChange="GETPS(this.value);">

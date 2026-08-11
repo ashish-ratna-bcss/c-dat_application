@@ -1,0 +1,148 @@
+<html>
+<head>
+<table>
+        <tr>
+          <th width="1126" align="center" scope="col"><font size='5' color='#AED1F1'>IR PARTICULAR FORM</font></th>
+        </tr>
+</table>
+<title> IR PARTICULAR FORM </title>
+<link rel="stylesheet" type="text/css" href="jquery-ui-1.10.4.custom/css/dark-hive/jquery-ui-1.10.4.custom.min.css">
+<script type="text/javascript" src="jquery-ui-1.10.4.custom/js/jquery-1.10.2.js"></script>
+<script type="text/javascript" src="jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.js"></script>
+<script type="text/javascript" src="jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.min.js"></script>
+<script type="text/javascript">
+$("document").ready(function() {
+	$("#datepickerID").datepicker({dateFormat: "yy-mm-dd",
+		changeYear: true,
+		changeMonth: true,
+	}) 
+	$("#datepickerID1").datepicker({dateFormat: "yy-mm-dd",
+		changeYear: true,
+		changeMonth: true,
+	})    
+	
+});
+</script>
+<script src="SpryAssets/sprymenubar.js" type="text/javascript"></script>
+<link href="SpryAssets/sprymenubarhorizontal.css" rel="stylesheet" type="text/css" />
+<style>
+input[type=text], select {
+    width: 25%;
+    padding: 3px 10px;
+    margin: 4px 0;
+    display: inline-block;
+    border: 1px solid #ccc;
+    border-radius: 2px;
+    box-sizing: border-box;
+}
+
+input[type=submit] {
+    width: 15%;
+    background-color: ORANGE;
+    color: white;
+    padding: 4px 15px;
+    margin: 4px 0;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 25px;
+}
+
+div {
+    border-radius: 5px;
+    background-color: #f2f2f2;
+    padding: 5px;
+    width: 40%;
+    border-radius: 4px;
+    float:left;
+    width:200px;
+    text-align: left;
+        }
+       textarea{
+       width: 25%;
+       height: 25px;
+       }
+</style>
+</head>
+<body bgcolor="#808000">
+<table>
+        <tr>
+          <th width="1126" align="center" scope="col">IR PARTICULAR</th>
+        </tr>
+</table>
+<form action="irreport.php" Method="post">
+<div>NAME:</div><textarea type="text" name="NAME"  required="required"></textarea><br/><br/>
+<div>ALIAS_NAME:</div><textarea type="text" name="ALIAS_NAME"></textarea><br/><br/>
+<div>FATHER_NAME:</div><textarea type="text" name="FATHER_NAME"  required="required"></textarea><br/><br/>
+<div>AGE:</div><textarea type="text" name="AGE"  required="required"></textarea><br/><br/>
+<div>DATE_OF_BIRTH:</div><textarea type="text" name="DATE_OF_BIRTH"></textarea><br/><br/>
+<div>NATIONALITY:</div><textarea type="text" name="NATIONALITY"  required="required"></textarea><br/><br/>
+<div>RELIGION:</div><textarea type="text" name="RELIGION"  required="required"></textarea><br/><br/>
+<div>CASTE:</div><textarea type="text" name="CASTE"></textarea><br/><br/>
+<div>COMMUNITY:</div><textarea type="text" name="COMMUNITY"></textarea><br/><br/>
+<div>PRESENT_ADDRESS:</div><textarea type="text" name="PRESENT_ADDRESS"  required="required"></textarea><br/><br/>
+<div>PERMANENT_ADDRESS:</div><textarea type="text" name="PERMANENT_ADDRESS"></textarea><br/><br/>
+<div>MOBILE:</div><textarea type="text" name="MOBILE"></textarea><br/><br/>
+<div>EMAIL_ID:</div><textarea type="text" name="EMAIL_ID"></textarea><br/><br/>
+<div>SOCIAL_MEDIA_ACCOUNTS:</div><textarea type="text" name="SOCIAL_MEDIA_ACCOUNTS"></textarea><br/><br/>
+<div>AADHAR_NO:</div><textarea type="text" name="AADHAR_NO"></textarea><br/><br/>
+<div>RATION_CARD_NO:</div><textarea type="text" name="RATION_CARD_NO"></textarea><br/><br/>
+<div>VOTERID:</div><textarea type="text" name="VOTERID"></textarea><br/><br/>
+<div>PASSPORT:</div><textarea type="text" name="PASSPORT"></textarea><br/><br/>
+<div>PANCARD:</div><textarea type="text" name="PANCARD"></textarea><br/><br/>
+<div>ELECTRICITY_CONNECTION:</div><textarea type="text" name="ELECTRICITY_CONNECTIONE"></textarea><br/><br/>
+<div>GAS_CONNECTION:</div><textarea type="text" name="GAS_CONNECTION"></textarea><br/><br/>
+<div>VEHICLES:</div><textarea type="text" name="VEHICLES"></textarea><br/><br/>
+<div>DRIVING_LICENSE:</div><textarea type="text" name="DRIVING_LICENSE"></textarea><br/><br/>
+<div>OTHER_ID_PROOFS:</div><textarea type="text" name="OTHER_ID_PROOFS"></textarea><br/><br/>
+<div>SEX:</div><SELECT name="SEX" required="required">
+<option value=""></option>
+<option value="MALE">MALE</option>
+<option value="FEMALE">FEMALE</option>
+<option value="MALE">TRANSGENDER</option>
+</SELECT> <br/><br/>
+<div>BUILT:</div><textarea type="text" name="BUILT"></textarea><br/><br/>
+<div>HEIGHT:</div><textarea type="text" name="HEIGHT"></textarea><br/><br/>
+<div>EYES:</div><textarea type="text" name="EYES"></textarea><br/><br/>
+<div>HAIR:</div><textarea type="text" name="HAIR"></textarea><br/><br/>
+<div>FACE:</div><textarea type="text" name="FACE"></textarea><br/><br/>
+<div>COLOUR:</div><textarea type="text" name="COLOUR"></textarea><br/><br/>
+<div>TEETH:</div><textarea type="text" name="TEETH"></textarea><br/><br/>
+<div>NOSE:</div><textarea type="text" name="NOSE"></textarea><br/><br/>
+<div>BEARD:</div><textarea type="text" name="BEARD"></textarea><br/><br/>
+<div>MUSTACHES:</div><textarea type="text" name="MUSTACHES"></textarea><br/><br/>
+<div>EAR:</div><textarea type="text" name="EAR"></textarea><br/><br/>
+<div>IDENTIFICATION_MARKS:</div><textarea type="text" name="IDENTIFICATION_MARKS"></textarea><br/><br/>
+<div>DEFORMITIES_PECULIARITIES:</div><textarea type="text" name="DEFORMITIES_PECULIARITIES"></textarea><br/><br/>
+<div>LANGUAGE_DIALECT:</div><textarea type="text" name="LANGUAGE_DIALECT"></textarea><br/><br/>
+<div>BURN_MARKS:</div><textarea type="text" name="BURN_MARKS"></textarea><br/><br/>
+<div>LEUCODEMA:</div><textarea type="text" name="LEUCODEMA"></textarea><br/><br/>
+<div>MOLE:</div><textarea type="text" name="MOLE"></textarea><br/><br/>
+<div>SCAR:</div><textarea type="text" name="SCAR"></textarea><br/><br/>
+<div>TATTOO:</div><textarea type="text" name="TATTOO"></textarea><br/><br/>
+<div>LIVING_STATUS:</div><textarea type="text" name="LIVING_STATUS"></textarea><br/><br/>
+<div>MARITAL_STATUS:</div><textarea type="text" name="MARITAL_STATUS" required="required"></textarea><br/><br/>
+<div>EDUCATION_DETAILS:</div><textarea type="text" name="EDUCATION_DETAILS"></textarea><br/><br/>
+<div>OCCUPATION:</div><textarea type="text" name="OCCUPATION" required="required"></textarea><br/><br/>
+<div>INCOME_GROUP:</div><textarea type="text" name="INCOME_GROUP"></textarea><br/><br/>
+<div>REGULAR_HABITS:</div><textarea type="text" name="REGULAR_HABITS"></textarea><br/><br/>
+<div>CATEGORY:</div><textarea type="text" name="CATEGORY" required="required" PLACEHOLDER="A1 OR A2..."></textarea><br/><br/>
+<div>CC_OR_EXCC:</div>
+<SELECT name="CC_OR_EXCC" required="required">
+<option value=""></option>
+<option value="CC">CC</option>
+<option value="EXCC">EXCC</option>
+<option value="NOT GIVEN">NOT GIVEN</option>
+</SELECT> <br/><br/>
+<div>CCNO:</div><textarea type="tex30203t" name="CCNO"></textarea><br/><br/>
+<div>IR_ENTRY_DONE_BY:</div>
+<SELECT name="IR_ENTRY_DONE_BY" required="required">
+<option value=""></option><option value="A SUJANA WPC 31145 ">A SUJANA WPC 31145</option><option value="RAJESHWARI WPC 30203">RAJESHWARI WPC 30203</option>
+<option value="MOHD MAZHAR SAYEED PC 30568"> MOHD MAZHAR SAYEED PC 30568</option></SELECT> <br/><br/>
+     
+<input type="submit" value="insert">
+<br/><br/>
+
+ </form>
+</body>
+</html>

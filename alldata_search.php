@@ -38,8 +38,8 @@ div {
 </style>
 
 
-<li><a href="ALLDATA.PHP">Back</a></li></p>
-<form action ='ALLDATA_SEARCH.php'method='post'>
+<li><a href="alldata.php">Back</a></li></p>
+<form action ='alldata_search.php'method='post'>
 <b><font size=4 face=verdana text-align:'center' color='#ffb84d'>ENTER PHONE_NO : </b>
  <div class="form-group">
     <label class="sr-only" for="exampleInputEmail3"></label>

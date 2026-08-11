@@ -56,7 +56,7 @@ if(isset($_POST["btnclick"])){
 
         $_SESSION["USERNAME"] = $USERNAME;
         $_SESSION["status"]= true;
-        header("Location: LOGIN1.php");
+        header("Location: login1.php");
     }
     else{
         echo "invalid credentials";
