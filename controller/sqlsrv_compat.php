@@ -35,27 +35,28 @@ function __sqlsrv_cfg(): array
 function __sqlsrv_dbname(array $connectionInfo): string
 {
     $name = strtolower((string)($connectionInfo['Database'] ?? 'cdatdupl'));
+    $db = __sqlsrv_cfg()['database'];
     $map = [
-        'cdatdupl' => 'postgress_db',
-        'cdat' => 'postgress_db',
-        'postgres' => 'postgress_db',
-        'twrmdb' => 'postgress_db',
-        'irforms' => 'postgress_db',
-        'forms' => 'postgress_db',
-        'jrms' => 'postgress_db',
-        'pdact' => 'postgress_db',
-        'lostreport_hawkeye' => 'postgress_db',
-        'migrant_labours_form' => 'postgress_db',
-        'training_db' => 'postgress_db',
-        'cpms' => 'postgress_db',
-        'cafs' => 'postgress_db',
-        'cis_data_base' => 'postgress_db',
-        'cdat_import' => 'postgress_db',
-        'testing_db' => 'postgress_db',
-        'rough' => 'postgress_db',
-        'distributed_db' => 'postgress_db',
+        'cdatdupl' => $db,
+        'cdat' => $db,
+        'postgres' => $db,
+        'twrmdb' => $db,
+        'irforms' => $db,
+        'forms' => $db,
+        'jrms' => $db,
+        'pdact' => $db,
+        'lostreport_hawkeye' => $db,
+        'migrant_labours_form' => $db,
+        'training_db' => $db,
+        'cpms' => $db,
+        'cafs' => $db,
+        'cis_data_base' => $db,
+        'cdat_import' => $db,
+        'testing_db' => $db,
+        'rough' => $db,
+        'distributed_db' => $db,
     ];
-    return $map[$name] ?? 'postgress_db';
+    return $map[$name] ?? $db;
 }
 
 function sqlsrv_connect($serverName, array $connectionInfo = [])

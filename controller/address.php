@@ -1,134 +1,126 @@
 <?php
-// One page for both halves of this screen: the form, and the results.
-// Was view/address.htm (form) + controller/address.php (handler).
-// GET shows the form; a submit renders the form and the results below it.
-// !empty($_GET) covers links that pass parameters in the query string.
-$__submitted = ($_SERVER['REQUEST_METHOD'] === 'POST') || !empty($_GET);
-?>
-<?php
 require_once __DIR__ . '/includes/layout.php';
-layout_begin("Single Address");
-?>
-<div align="center">
-  <table width="1323" height="603" border="2">
-    <tr>
-      <td width="1349" height="595" align="center" valign="top"><table width="1313" height="148">
-        <tr>
-          <td width="1305" height="134" align="center" valign="bottom" background="../assets/images/topborder.jpg">
-                </td>
-        </tr>
-      </table>
-      <p class="MenuBarItemHover">&nbsp;</p>
-      <p class="MenuBarItemHover">&nbsp;</p>
-      <table width="625" height="100">
-        <tr>
-          <th height="27" bgcolor="#A9D1F5" class="CDAT" scope="col">ADDRESS</th>
-        </tr>
-        <tr>
-        <form id="form1" name="form1" method="post" action="address.php">
-                 <th width="555" bgcolor="#A9D1F5" class="CDAT" scope="col"> ADDRESS OF MOBILE NO:            <label for="textfield"></label>
-            <input type="text" name="PHONE_NO" id="ADDRESS" placeholder="Enter Mobile No" required="required"/>
-            <input type="submit" name="BTN_CDAT" id="BTN_CDAT" value="Submit" /></th>
-        </form></tr>
-      </table>
-      <p class="MenuBarItemHover">&nbsp;</p></td>
-    </tr>
-  </table>
-</div>
+require_once __DIR__ . '/includes/sum_ui.php';
 
+$isAjax = cdat_sum_is_ajax();
+$phone = trim((string) ($_POST['PHONE_NO'] ?? ''));
+$hasSearch = $phone !== '';
 
-<?php if ($__submitted): ?>
-<link href="../assets/css/w3.css" rel="stylesheet"/>
-<style>
-        .container{width:960px;margin:30px auto;}
-        thead select{border: 1px solid #ffffff;width:100%;}
-    </style>
+if ($hasSearch) {
+    if (!$isAjax) {
+        layout_begin('Single Address');
+        cdat_sum_page_open();
+        cdat_sum_search_card(
+            'Address of Mobile No',
+            'Look up the registered address for a mobile number.',
+            'address.php',
+            cdat_sum_field_phone($phone, 'ADDRESS'),
+            'BTN_CDAT',
+            'Search'
+        );
+    }
 
+    $serverName = "CPHYDERABAD1\DAU_HYD_2023";
+    $connectionInfo = array( "Database"=>"CDATDUPL");
+    $conn = sqlsrv_connect( $serverName, $connectionInfo );
+    if( $conn === false ) {
+        die( print_r( sqlsrv_errors(), true));
+    }
 
+    $number = $_POST['PHONE_NO'];
 
-<?php
-$serverName = "CPHYDERABAD1\DAU_HYD_2023";
-$connectionInfo = array( "Database"=>"CDATDUPL");
-$conn = sqlsrv_connect( $serverName, $connectionInfo );
-if( $conn === false ) {
-    die( print_r( sqlsrv_errors(), true));
+    $sql8="SELECT 'ADDRESS OF MOBILE NO: '+'$number' as PHONE1";
+
+    $sql9="SELECT  '$number' AS PHONE,'' AS FIRST_CALL,'' AS LAST_CALL,'' AS NICKNAME,''AS MO,''LAST_UPDATED,''INC_OFFICER INTO #T";
+
+    $sql10="SELECT A.PHONE,CONVERT(VARCHAR,MIN(STARTTIME),20) AS FIRST_CALL,CONVERT(VARCHAR,MAX(STARTTIME),20) AS LAST_CALL,B.NICKNAME+'_'+B.ROLE NICKNAME,MO,CONVERT(VARCHAR,MAX(A.ASONDATE),20) AS LAST_UPDATED,
+    INC_OFFICER 
+    INTO #S FROM CDATDUPL.DBO.CDATPCSUSPECT A LEFT JOIN CDATDUPL.DBO.CDATSUSPECT B ON A.PHONE=B.PHONE WHERE A.PHONE='$number' GROUP BY A.PHONE,B.NICKNAME,MO,B.ROLE, INC_OFFICER";
+
+    $sql11="SELECT DISTINCT A.PHONE,CASE WHEN A.PHONE=B.PHONE THEN B.FIRST_CALL ELSE A.FIRST_CALL END AS FIRST_CALL,
+    CASE WHEN A.PHONE=B.PHONE THEN B.LAST_CALL ELSE A.LAST_CALL END AS LAST_CALL,
+    CASE WHEN A.PHONE=B.PHONE THEN B.NICKNAME ELSE A.NICKNAME END AS NICKNAME,
+    CASE WHEN A.PHONE=B.PHONE THEN B.MO ELSE A.MO END AS MO,
+    CASE WHEN A.PHONE=B.PHONE THEN B.LAST_UPDATED ELSE A.LAST_UPDATED END AS LAST_UPDATED,
+    CASE WHEN A.PHONE=C.PHONE THEN ISNULL(C.FULLNAME,'')+', '+ISNULL(C.FULLADDRESS,'')+', DOA: '+ISNULL(CONVERT(VARCHAR,C.DOA,20),'')+', '+ISNULL(C.CATEGORY_TYPE,'')+', '+
+    (CASE WHEN C.OPERATOR IS NULL THEN ISNULL(AREADESCRIPTION,'') ELSE C.OPERATOR END)
+    WHEN A.PHONE=D.PHONE THEN ISNULL(D.FULLNAME,'')+', '+ISNULL(D.FULLADDRESS,'')+',DOA: '+ISNULL(CONVERT(VARCHAR,D.DOA,20),'')+', '+', '+ISNULL(D.CATEGORY_TYPE,'')+', '+
+    (CASE WHEN D.OPERATOR IS NULL THEN ISNULL(AREADESCRIPTION,'') ELSE D.OPERATOR END) ELSE ISNULL(AREADESCRIPTION,'') END AS ADDRESS,
+    CASE WHEN A.PHONE=B.PHONE THEN B.INC_OFFICER ELSE A.INC_OFFICER END AS INC_OFFICER FROM #T A
+    LEFT JOIN CDATDUPL.DBO.CDATADDRESS C WITH (NOLOCK) ON A.PHONE=C.PHONE AND C.EFF_TO_DATE IS NULL
+    LEFT JOIN CDATDUPL.DBO.ADDRESS_OTHER_STATE D WITH (NOLOCK) ON A.PHONE=D.PHONE AND D.EFF_TO_DATE IS NULL
+    LEFT JOIN CDATDUPL.DBO.CDATPHONEAREA ON CASE WHEN LEN(A.PHONE)=10 THEN A.PHONE ELSE CASE WHEN LEN(A.PHONE)>10 THEN '00'+A.PHONE ELSE 'POSSIBLE OF VOIP CALL OR SKYPE OR WIFI CALL' END END
+    LIKE PHONEPREFIX+'%'
+    LEFT JOIN #S B ON  A.PHONE=B.PHONE";
+
+    $st8 = sqlsrv_query( $conn, $sql8 );
+    $st9 = sqlsrv_query( $conn, $sql9 );
+    $st10 = sqlsrv_query( $conn, $sql10 );
+    $st11 = sqlsrv_query( $conn, $sql11 );
+
+    $bannerTitle = 'ADDRESS OF MOBILE NO: ' . $number;
+    if ($st8 && ($bannerRow = sqlsrv_fetch_array($st8, SQLSRV_FETCH_ASSOC))) {
+        $bannerTitle = (string) ($bannerRow['PHONE1'] ?? $bannerTitle);
+    }
+
+    $rows = cdat_sum_fetch_all($st11);
+
+    if (empty($rows)) {
+        cdat_sum_empty_state();
+    } else {
+        cdat_sum_results_open();
+        cdat_sum_report_banner($bannerTitle);
+        cdat_sum_generic_table_open(
+            'Address',
+            ['PHONE', 'FIRST_CALL', 'LAST_CALL', 'NICKNAME', 'MO', 'LAST_UPDATED', 'ADDRESS', 'IO NAME', 'QRCODE'],
+            'results_table',
+            'address.csv',
+            count($rows)
+        );
+        foreach ($rows as $row) {
+            $address = (string) ($row['ADDRESS'] ?? '');
+            $addrHtml = cdat_sum_address_lines($address);
+            $qrSrc = '../qrcode/php/qr_img.php?d=' . urlencode(
+                'PHONE NO:' . $number . '  ' . 'ADDRESS: ' . preg_replace('/[^A-Za-z0-9\-:]/', ' ', $address)
+            );
+            cdat_sum_table_row([
+                ['text' => (string) ($row['PHONE'] ?? ''), 'class' => 'sum-cell-num'],
+                ['text' => (string) ($row['FIRST_CALL'] ?? ''), 'class' => 'sum-cell-date'],
+                ['text' => (string) ($row['LAST_CALL'] ?? ''), 'class' => 'sum-cell-date'],
+                (string) ($row['NICKNAME'] ?? ''),
+                (string) ($row['MO'] ?? ''),
+                ['text' => (string) ($row['LAST_UPDATED'] ?? ''), 'class' => 'sum-cell-date'],
+                ['html' => $addrHtml !== '' ? $addrHtml : '—', 'class' => 'sum-address-cell'],
+                (string) ($row['INC_OFFICER'] ?? ''),
+                ['html' => '<img height="100" width="100" src="' . cdat_sum_h($qrSrc) . '">', 'class' => 'sum-cell-img'],
+            ]);
+        }
+        cdat_sum_generic_table_close();
+        cdat_sum_results_close();
+    }
+
+    if ($st11) {
+        sqlsrv_free_stmt($st11);
+    }
+
+    if ($isAjax) {
+        exit;
+    }
+
+    cdat_sum_page_close();
+    layout_end();
+    exit;
 }
 
-if (isset($_POST['PHONE_NO'])){
-
-$number=$_POST['PHONE_NO'];
-
-$sql8="SELECT 'ADDRESS OF MOBILE NO: '+'$number' as PHONE1";
-
-$sql9="SELECT  '$number' AS PHONE,'' AS FIRST_CALL,'' AS LAST_CALL,'' AS NICKNAME,''AS MO,''LAST_UPDATED,''INC_OFFICER INTO #T";
-
-$sql10="SELECT A.PHONE,CONVERT(VARCHAR,MIN(STARTTIME),20) AS FIRST_CALL,CONVERT(VARCHAR,MAX(STARTTIME),20) AS LAST_CALL,B.NICKNAME+'_'+B.ROLE NICKNAME,MO,CONVERT(VARCHAR,MAX(A.ASONDATE),20) AS LAST_UPDATED,
-INC_OFFICER 
-INTO #S FROM CDATDUPL.DBO.CDATPCSUSPECT A LEFT JOIN CDATDUPL.DBO.CDATSUSPECT B ON A.PHONE=B.PHONE WHERE A.PHONE='$number' GROUP BY A.PHONE,B.NICKNAME,MO,B.ROLE, INC_OFFICER";
-
-$sql11="SELECT DISTINCT A.PHONE,CASE WHEN A.PHONE=B.PHONE THEN B.FIRST_CALL ELSE A.FIRST_CALL END AS FIRST_CALL,
-CASE WHEN A.PHONE=B.PHONE THEN B.LAST_CALL ELSE A.LAST_CALL END AS LAST_CALL,
-CASE WHEN A.PHONE=B.PHONE THEN B.NICKNAME ELSE A.NICKNAME END AS NICKNAME,
-CASE WHEN A.PHONE=B.PHONE THEN B.MO ELSE A.MO END AS MO,
-CASE WHEN A.PHONE=B.PHONE THEN B.LAST_UPDATED ELSE A.LAST_UPDATED END AS LAST_UPDATED,
-CASE WHEN A.PHONE=C.PHONE THEN ISNULL(C.FULLNAME,'')+', '+ISNULL(C.FULLADDRESS,'')+', DOA: '+ISNULL(CONVERT(VARCHAR,C.DOA,20),'')+', '+ISNULL(C.CATEGORY_TYPE,'')+', '+
-(CASE WHEN C.OPERATOR IS NULL THEN ISNULL(AREADESCRIPTION,'') ELSE C.OPERATOR END)
-WHEN A.PHONE=D.PHONE THEN ISNULL(D.FULLNAME,'')+', '+ISNULL(D.FULLADDRESS,'')+',DOA: '+ISNULL(CONVERT(VARCHAR,D.DOA,20),'')+', '+', '+ISNULL(D.CATEGORY_TYPE,'')+', '+
-(CASE WHEN D.OPERATOR IS NULL THEN ISNULL(AREADESCRIPTION,'') ELSE D.OPERATOR END) ELSE ISNULL(AREADESCRIPTION,'') END AS ADDRESS,
-CASE WHEN A.PHONE=B.PHONE THEN B.INC_OFFICER ELSE A.INC_OFFICER END AS INC_OFFICER FROM #T A
-LEFT JOIN CDATDUPL.DBO.CDATADDRESS C WITH (NOLOCK) ON A.PHONE=C.PHONE AND C.EFF_TO_DATE IS NULL
-LEFT JOIN CDATDUPL.DBO.ADDRESS_OTHER_STATE D WITH (NOLOCK) ON A.PHONE=D.PHONE AND D.EFF_TO_DATE IS NULL
-LEFT JOIN CDATDUPL.DBO.CDATPHONEAREA ON CASE WHEN LEN(A.PHONE)=10 THEN A.PHONE ELSE CASE WHEN LEN(A.PHONE)>10 THEN '00'+A.PHONE ELSE 'POSSIBLE OF VOIP CALL OR SKYPE OR WIFI CALL' END END
-LIKE PHONEPREFIX+'%'
-LEFT JOIN #S B ON  A.PHONE=B.PHONE";
-
-$st8 = sqlsrv_query( $conn, $sql8 );
-$st9 = sqlsrv_query( $conn, $sql9 );
-$st10 = sqlsrv_query( $conn, $sql10 );
-$st11 = sqlsrv_query( $conn, $sql11 );
-
-while( $row = sqlsrv_fetch_array( $st8, SQLSRV_FETCH_ASSOC) ) {
-echo "<font size=4 face=verdana color='#F9FBFC'><td><center><b>". $row['PHONE1'] ."<center></td></font></br>";
-}
-
-echo "<table border=1 cellspacing=0 cellpadding=5 id=mytable class=w3-table-all>
-<tr>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>PHONE</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>FIRST_CALL</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>LAST_CALL</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>NICKNAME</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>MO</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>LAST_UPDATED</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>ADDRESS</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>IO NAME</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>QRCODE</font></th>
-</tr>";
-
-while( $row = sqlsrv_fetch_array( $st11, SQLSRV_FETCH_ASSOC) ) {
-echo "<tr>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['PHONE'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['FIRST_CALL'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['LAST_CALL'] ."<center></font></td>";
-echo "<td width=125px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['NICKNAME'] ."<center></font></td>";
-echo "<td width=0px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['MO'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['LAST_UPDATED'] ."<center></font></td>";
-echo "<td width=500px bgcolor=#AED1F1><font size=1 face=verdana>". $row['ADDRESS'] ."</font></td>";
-echo "<td width=125px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['INC_OFFICER'] ."<center></font></td>";
-echo "<td>";?> <?php echo '<img height="100" width="100" src="../qrcode/php/qr_img.php?d='.urlencode('PHONE NO:'.$number.'  '.'ADDRESS: '. preg_replace('/[^A-Za-z0-9\-:]/',' ',$row["ADDRESS"])).'"></img>'; ?> <?php "</td>";
-echo "</tr>";
-}
-
-sqlsrv_free_stmt( $st11);
-}
-
-?>
-</tbody>
-        </table>
-</div>
-<script src="../assets/vendor/drop-down-filter/jquery.min.js"></script>
-    <script src="../assets/vendor/drop-down-filter/ddtf.js"></script>
-    <script>
-        $('#mytable').ddTableFilter();
-    </script>
-<?php endif; ?>
-<?php layout_end(); ?>
+layout_begin('Single Address');
+cdat_sum_page_open();
+cdat_sum_search_card(
+    'Address of Mobile No',
+    'Look up the registered address for a mobile number.',
+    'address.php',
+    cdat_sum_field_phone('', 'ADDRESS'),
+    'BTN_CDAT',
+    'Search'
+);
+cdat_sum_page_close();
+layout_end();

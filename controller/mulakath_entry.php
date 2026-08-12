@@ -5,18 +5,18 @@
 // tried to insert from an empty $_POST.
 // POST only, unlike the search screens: an insert must never run off a link.
 $__submitted = ($_SERVER['REQUEST_METHOD'] === 'POST');
-?>
-<?php
-require_once __DIR__ . '/includes/layout.php';
-layout_begin("Mulakath Details");
-?>
 
-<table>
-   <tr>
-<th width="1126" align="center" scope="col">MULAKATH_DETAILS</th>
-   </tr>
-</table>
-<form action="mulakath_entry.php" Method="post">
+require_once __DIR__ . '/includes/layout.php';
+require_once __DIR__ . '/includes/sum_ui.php';
+layout_begin("Mulakath Details");
+cdat_sum_page_open();
+
+cdat_sum_entry_card_open(
+    'Mulakath Details',
+    'Enter mulakath (jail visit) record details.',
+    'mulakath_entry.php'
+);
+?>
 <div>JAIL_NAME:</div><textarea type="text" required="required" name="JAIL_NAME" placeholder="JAIL_NAME"></textarea><br/><br/>
 
 <div>PRISONER_NO:</div><textarea type="text" required="required" name="PRISONER_NO" placeholder="PRISONER_NO"></textarea><br/><br/>
@@ -44,11 +44,10 @@ layout_begin("Mulakath Details");
 
 <div>YEAR:</div><textarea type="text" name="YEAR" placeholder="YEAR"></textarea><br/><br/>
 <div>POLICE_STATION:</div><textarea type="text" name="POLICE_STATION" placeholder="POLICE_STATION"></textarea><br/><br/>
-<input type="submit" value="INSERT" style="padding:15px;"><br/><br/>
-</form>
-
-<?php if ($__submitted): ?>
 <?php
+cdat_sum_entry_card_close('INSERT');
+
+if ($__submitted):
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"JRMS");
 $conn = sqlsrv_connect( $serverName, $connectionInfo );
@@ -85,14 +84,13 @@ values('$JAIL_NAME','$PRISONER_NO','$PRISONER_NAME','$PRISONER_FATHER_NAME',
 '$VISITOR_NAME','$VISITOR_PHONE_NO','$VISITOR_ID','$VISITOR_NAME_2','$VISITOR_PHONE_NO_2','$VISITOR_ID_2','$VISITOR_NAME_3','$VISITOR_PHONE_NO_3','$VISITOR_ID_3','$VISITOR_NAME_4','$VISITOR_PHONE_NO_4','$VISITOR_ID_4','$DATE_OF_MULAKATH','$CRIME_NO','$YEAR','$POLICE_STATION')";
 if(!sqlsrv_query($conn,$sql))
 {
-echo "not inserted";
+cdat_sum_status_message('not inserted', false);
 }
 else
 {
-echo "inserted";
+cdat_sum_status_message('inserted');
 }
-// The old "refresh:30" bounce back to the form is gone: the form is on this
-// page now, and header() after output only raises a warning.
-?>
-<?php endif; ?>
-<?php layout_end(); ?>
+endif;
+
+cdat_sum_page_close();
+layout_end();

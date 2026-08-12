@@ -5,18 +5,18 @@
 // tried to insert from an empty $_POST.
 // POST only, unlike the search screens: an insert must never run off a link.
 $__submitted = ($_SERVER['REQUEST_METHOD'] === 'POST');
-?>
-<?php
-require_once __DIR__ . '/includes/layout.php';
-layout_begin("Local Contacts");
-?>
 
-<table>
-        <tr>
-          <th width="1126" align="center" scope="col">LOCAL CONTACTS AND FACILITATORS</th>
-        </tr>
-</table>
-<form action="local_contacts.php" Method="post">
+require_once __DIR__ . '/includes/layout.php';
+require_once __DIR__ . '/includes/sum_ui.php';
+
+layout_begin('Local Contacts');
+cdat_sum_page_open();
+cdat_sum_entry_card_open(
+    'Local Contacts and Facilitators',
+    'Enter local contacts and facilitators for an IR record.',
+    basename(__FILE__)
+);
+?>
 <div>IRKEY:</div><textarea  type="text" name="IRKEY" placeholder="IRKEY" style="float:center;"></textarea><br/><br/>
 <div>TOWN_CITY_OR_VILLAGE:</div><textarea type="text"  name="TOWN_CITY_OR_VILLAGE" placeholder="TOWN/CITY/VILLAGE"></textarea><br/><br/>
 <div>POLICE_STATION_LIMITS:</div><textarea type="text" name="POLICE_STATION_LIMITS" placeholder="POLICE STATION"></textarea><br/><br/>
@@ -30,13 +30,10 @@ layout_begin("Local Contacts");
 <div>SEC_OF_LAW:</div><textarea type="text" name="SEC_OF_LAW" placeholder="SEC OF LAW"></textarea><br/><br/>
 <div>POLICE_STATION:</div><textarea type="text" name="POLICE_STATION" placeholder="POLICE STATION"></textarea><br/><br/>
 <div>PHONE:</div><textarea type="text" name="PHONE" placeholder="PHONE"></textarea><br/><br/>
-<input type="submit" value="insert">
-<br/><br/>
-
-</form>
-
-<?php if ($__submitted): ?>
 <?php
+cdat_sum_entry_card_close('insert');
+
+if ($__submitted):
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"forms");
 $conn = sqlsrv_connect( $serverName, $connectionInfo );
@@ -64,14 +61,14 @@ values('$IRKEY','$TOWN_CITY_OR_VILLAGE','$POLICE_STATION_LIMITS','$NAME','$FATHE
 '$SEC_OF_LAW','$POLICE_STATION','$PHONE')";
 if(!sqlsrv_query($conn,$sql))
 {
-echo "not inserted";
+cdat_sum_status_message('not inserted', false);
 }
 else
 {
-echo "inserted";
+header("refresh:3; url=local_contacts.php");
+cdat_sum_status_message('inserted', true);
 }
-// The old "refresh:30" bounce back to the form is gone: the form is on this
-// page now, and header() after output only raises a warning.
-?>
-<?php endif; ?>
-<?php layout_end(); ?>
+endif;
+
+cdat_sum_page_close();
+layout_end();

@@ -17,11 +17,23 @@ if (!defined('CDAT_BASE')) {
 
 /**
  * Is this menu entry the page currently being viewed?
+ * Menu urls may use %26 for filenames with "&" (e.g. day%26nightloc.php);
+ * SCRIPT_NAME is decoded — compare after urldecode.
  */
 function cdat_is_active(string $url): bool
 {
-    $here = strtolower(basename($_SERVER['SCRIPT_NAME'] ?? ''));
-    return $here !== '' && strtolower(basename(parse_url($url, PHP_URL_PATH) ?: '')) === $here;
+    $here = strtolower(rawurldecode(basename((string) ($_SERVER['SCRIPT_NAME'] ?? ''))));
+    if ($here === '') {
+        $uri = (string) ($_SERVER['REQUEST_URI'] ?? '');
+        $path = parse_url($uri, PHP_URL_PATH) ?: '';
+        $here = strtolower(rawurldecode(basename($path)));
+    }
+    $targetPath = parse_url($url, PHP_URL_PATH);
+    if ($targetPath === null || $targetPath === false || $targetPath === '') {
+        $targetPath = $url;
+    }
+    $target = strtolower(rawurldecode(basename($targetPath)));
+    return $here !== '' && $target !== '' && $here === $target;
 }
 
 /**
@@ -173,6 +185,11 @@ function cdat_render_nav(array $items): void
 function layout_begin(string $title = 'Call Data Analysis Tool', string $subtitle = '',
                       string $head = ''): void
 {
+    $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+    if ($isAjax) {
+        return; // Skip rendering layout for single-page AJAX injections
+    }
+
     $base  = CDAT_BASE;
     // Before $user is read: this pulls in activity_logger.php, which starts the
     // session. Reading $_SESSION first meant the signed-in name -- and the
@@ -192,7 +209,10 @@ function layout_begin(string $title = 'Call Data Analysis Tool', string $subtitl
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= $t ?> &mdash; CDAT</title>
-<link rel="stylesheet" href="<?= $base ?>/assets/css/app.css">
+<link rel="icon" type="image/png" sizes="32x32" href="<?= $base ?>/assets/images/favicon.png">
+<link rel="apple-touch-icon" href="<?= $base ?>/assets/images/apple-touch-icon.png">
+<link href="https://cdn.jsdelivr.net/npm/simple-datatables@latest/dist/style.css" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="<?= $base ?>/assets/css/app.css?v=<?= time() ?>">
 <?= $head ?>
 </head>
 <body>
@@ -266,6 +286,11 @@ function layout_begin(string $title = 'Call Data Analysis Tool', string $subtitl
 
 function layout_end(): void
 {
+    $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+    if ($isAjax) {
+        return; // Skip rendering layout for single-page AJAX injections
+    }
+
     $base = CDAT_BASE;
     ?>
       </div>
@@ -283,7 +308,8 @@ cdat_ql_render_modal();
 window.CDAT_CSRF  = <?= json_encode(cdat_csrf()) ?>;
 window.CDAT_QLAPI = <?= json_encode($base . '/controller/quick_links_api.php') ?>;
 </script>
-<script src="<?= $base ?>/assets/js/app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/simple-datatables@latest" type="text/javascript"></script>
+<script src="<?= $base ?>/assets/js/app.js?v=<?= time() ?>"></script>
 </body>
 </html>
     <?php

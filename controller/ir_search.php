@@ -1,61 +1,44 @@
 <?php
-// One page for both halves of this screen: the form, and the results.
 require_once __DIR__ . '/includes/layout.php';
-layout_begin("IR Search By Name");
-?>
+require_once __DIR__ . '/includes/sum_ui.php';
 
-<div align="center">
-  <table width="1323" height="603" border="2">
-    <tr>
-      <td width="1349" height="595" align="left" valign="top">
-       
-        <!-- Search Form -->
-        <table width="800" height="100" align="center">
-          <tr>
-            <th height="27" bgcolor="#A9D1F5" class="CDAT" scope="col">OFFENDER IR SEARCH BY NAME</th>
-          </tr>
-          <tr>
-            <th width="555" bgcolor="#A9D1F5" class="CDAT" scope="col">
-              <form id="form1" name="form1" method="post" action="">
-                NAME OF THE OFFENDER:
-                <label for="textfield"></label>
-                <input type="text" name="NAME" id="NAME" placeholder="Enter NAME" required="required"
-                       value="<?php echo isset($_POST['NAME']) ? htmlspecialchars($_POST['NAME']) : ''; ?>"/>
-                <br><br>
-                CRIME HEAD:
-                <label for="textfield"></label>
-                <input type="text" name="CRIME_HEAD" id="CRIME_HEAD" placeholder="Enter CRIME HEAD" required="required"
-                       value="<?php echo isset($_POST['CRIME_HEAD']) ? htmlspecialchars($_POST['CRIME_HEAD']) : ''; ?>"/>
-                <input type="submit" name="BTN_CDAT" id="BTN_CDAT" value="Submit" />
-              </form>
-            </th>
-          </tr>
-        </table>
-        <p>&nbsp;</p>
-        
-        <?php
-        // Check if form was submitted
-        if (isset($_POST['NAME']) && !empty($_POST['NAME']) && isset($_POST['CRIME_HEAD']) && !empty($_POST['CRIME_HEAD'])) {
-            
-            $serverName = "10.10.46.14\DAU_HYD_2023";
-            $connectionInfo = array( "Database"=>"CDATDUPL");
-            $conn = sqlsrv_connect( $serverName, $connectionInfo );
-            
-            if( $conn === false ) {
-               // die( print_r( sqlsrv_errors(), true));
-            }
-            
-            // Sanitize input
-            $name = trim($_POST['NAME']);
-            $crime_head = trim($_POST['CRIME_HEAD']);
-            
-            // Use parameterized queries to prevent SQL injection
-            $sql8 = "SELECT 'DETAILS OF : ' + ? as PHONE1";
-            $params8 = array($name);
-            $st8 = sqlsrv_prepare($conn, $sql8, $params8);
-            sqlsrv_execute($st8);
-            
-            $sql9 = "SELECT DISTINCT A.IRKEY,
+$isAjax = cdat_sum_is_ajax();
+$name = trim((string) ($_POST['NAME'] ?? ''));
+$crimeHead = trim((string) ($_POST['CRIME_HEAD'] ?? ''));
+$hasSearch = $name !== '' && $crimeHead !== '';
+
+$fieldsHtml = cdat_sum_field_text('NAME', 'Name of the Offender', $name, 'NAME', 'Enter NAME')
+            . cdat_sum_field_text('CRIME_HEAD', 'Crime Head', $crimeHead, 'CRIME_HEAD', 'Enter CRIME HEAD');
+
+if ($hasSearch) {
+    if (!$isAjax) {
+        layout_begin('IR Search By Name');
+        cdat_sum_page_open();
+        cdat_sum_search_card(
+            'Offender IR Search By Name',
+            'Search IR records by offender name and crime head.',
+            'ir_search.php',
+            $fieldsHtml,
+            'BTN_CDAT',
+            'Submit'
+        );
+    }
+
+    $serverName = "10.10.46.14\DAU_HYD_2023";
+    $connectionInfo = array("Database" => "CDATDUPL");
+    $conn = sqlsrv_connect($serverName, $connectionInfo);
+
+    if ($conn === false) {
+        // die( print_r( sqlsrv_errors(), true));
+    }
+
+    // Use parameterized queries to prevent SQL injection
+    $sql8 = "SELECT 'DETAILS OF : ' + ? as PHONE1";
+    $params8 = array($name);
+    $st8 = sqlsrv_prepare($conn, $sql8, $params8);
+    sqlsrv_execute($st8);
+
+    $sql9 = "SELECT DISTINCT A.IRKEY,
                     (CASE WHEN A.IRKEY IN (SELECT DISTINCT REPLACE(IRKEY,' ','') FROM PDACT..PDACT_MAIN_TABLE
                     WHERE ISNUMERIC(IRKEY)=1) THEN 'PDACT IS IMPOSED CLICK HERE TO VIEW THE DETAILS' ELSE '' END) PDACT,
                     CASE WHEN A.IRKEY IN (SELECT DISTINCT REPLACE(IRKEY,' ','') FROM PDACT..PDACT_MAIN_TABLE
@@ -72,82 +55,96 @@ layout_begin("IR Search By Name");
                     AND LEN(REPLACE(?, ' ', '')) > '4' 
                     AND A.IRKEY = B.IRKEY 
                     ORDER BY DATE_OF_ARREST DESC";
-            
-            $params9 = array($name, $crime_head, $crime_head, $name, $name);
-            $st9 = sqlsrv_prepare($conn, $sql9, $params9);
-            sqlsrv_execute($st9);
-            
-            if ($st9 === false) {
-              //  die(print_r(sqlsrv_errors(), true));
-            }
-            
-            // Display header
-            while( $row = sqlsrv_fetch_array( $st8, SQLSRV_FETCH_ASSOC) ) {
-                echo "<div style='font-size: 18px; font-weight: bold; color: #F9FBFC; text-align: center; margin: 20px 0;'>" . htmlspecialchars($row['PHONE1']) . "</div>";
-            }
-            
-            // Display results table
-            echo "<div style='overflow-x: auto;'>";
-            echo "<table border='1' cellspacing='0' cellpadding='5' style='width: 100%; border-collapse: collapse; margin: 20px 0;'>
-            <tr bgcolor='#921215'>
-                <th style='color: #F9FBFC; padding: 10px;'>IRKEY</th>
-                <th style='color: #F9FBFC; padding: 10px;'>PDACT</th>
-                <th style='color: #F9FBFC; padding: 10px;'>ACCUSED NAME</th>
-                <th style='color: #F9FBFC; padding: 10px;'>ALIAS NAME</th>
-                <th style='color: #F9FBFC; padding: 10px;'>FATHER NAME</th>
-                <th style='color: #F9FBFC; padding: 10px;'>AGE</th>
-                <th style='color: #F9FBFC; padding: 10px;'>PRESENT ADDRESS</th>
-                <th style='color: #F9FBFC; padding: 10px;'>CRIME NO</th>
-                <th style='color: #F9FBFC; padding: 10px;'>YEAR</th>
-                <th style='color: #F9FBFC; padding: 10px;'>SEC_OF_LAW</th>
-                <th style='color: #F9FBFC; padding: 10px;'>POLICE STATION</th>
-                <th style='color: #F9FBFC; padding: 10px;'>CRIME HEAD</th>
-                <th style='color: #F9FBFC; padding: 10px;'>MO</th>
-                <th style='color: #F9FBFC; padding: 10px;'>DOA</th>
-            </tr>";
-            
-            $rowCount = 0;
-            while( $row = sqlsrv_fetch_array( $st9, SQLSRV_FETCH_ASSOC) ) {
-                $rowCount++;
-                $bgColor1 = ($rowCount % 2 == 0) ? '#AED1F1' : '#C2E0FB';
-                $bgColor2 = ($rowCount % 2 == 0) ? '#C2E0FB' : '#AED1F1';
-                
-                echo "<tr>";
-                echo "<td style='background-color: $bgColor1; padding: 5px; text-align: center;'><font size='1' face='verdana'><a href='ir.php?IRKEY=" . urlencode($row['IRKEY']) . "'>" . htmlspecialchars($row['IRKEY']) . "</a></font></td>";
-                echo "<td style='background-color: $bgColor2; padding: 5px; text-align: center;'><font size='1' face='verdana'><a href='pdact_main.php?PDACT_KEY=" . urlencode($row['PDACT_KEY']) . "'>" . htmlspecialchars($row['PDACT']) . "</a></font></td>";
-                echo "<td style='background-color: $bgColor1; padding: 5px; text-align: center;'><font size='1' face='verdana'>" . htmlspecialchars($row['NAME']) . "</font></td>";
-                echo "<td style='background-color: $bgColor2; padding: 5px; text-align: center;'><font size='1' face='verdana'>" . htmlspecialchars($row['ALIAS_NAME']) . "</font></td>";
-                echo "<td style='background-color: $bgColor1; padding: 5px; text-align: center;'><font size='1' face='verdana'>" . htmlspecialchars($row['FATHER_NAME']) . "</font></td>";
-                echo "<td style='background-color: $bgColor2; padding: 5px; text-align: center;'><font size='1' face='verdana'>" . htmlspecialchars($row['AGE']) . "</font></td>";
-                echo "<td style='background-color: $bgColor1; padding: 5px; text-align: center;'><font size='1' face='verdana'>" . htmlspecialchars($row['PRESENT_ADDRESS']) . "</font></td>";
-                echo "<td style='background-color: $bgColor2; padding: 5px; text-align: center;'><font size='1' face='verdana'>" . htmlspecialchars($row['CRIME_NO']) . "</font></td>";
-                echo "<td style='background-color: $bgColor1; padding: 5px; text-align: center;'><font size='1' face='verdana'>" . htmlspecialchars($row['YEAR']) . "</font></td>";
-                echo "<td style='background-color: $bgColor2; padding: 5px; text-align: center;'><font size='1' face='verdana'>" . htmlspecialchars($row['SEC_OF_LAW']) . "</font></td>";
-                echo "<td style='background-color: $bgColor1; padding: 5px; text-align: center;'><font size='1' face='verdana'>" . htmlspecialchars($row['POLICE_STATION']) . "</font></td>";
-                echo "<td style='background-color: $bgColor2; padding: 5px; text-align: center;'><font size='1' face='verdana'>" . htmlspecialchars($row['CRIME_HEAD']) . "</font></td>";
-                echo "<td style='background-color: $bgColor1; padding: 5px; text-align: center;'><font size='1' face='verdana'>" . htmlspecialchars($row['MO']) . "</font></td>";
-                echo "<td style='background-color: $bgColor2; padding: 5px; text-align: center;'><font size='1' face='verdana'>" . htmlspecialchars($row['DATE_OF_ARREST']) . "</font></td>";
-                echo "</tr>";
-            }
-            echo "</table>";
-            echo "</div>";
-            
-            if ($rowCount == 0) {
-                echo "<div style='text-align: center; margin: 20px 0;'>";
-                echo "<font size='4' face='verdana' color='#F9FBFC'><b>No records found for the search criteria</b></font>";
-                echo "</div>";
-            }
-            
-            sqlsrv_free_stmt($st9);
-            sqlsrv_close($conn);
-        }
-        ?>
-        
-        <p>&nbsp;</p>
-        <p>&nbsp;</p>
-      </td>
-    </tr>
-  </table>
-</div>
 
-<?php layout_end(); ?>
+    $params9 = array($name, $crimeHead, $crimeHead, $name, $name);
+    $st9 = sqlsrv_prepare($conn, $sql9, $params9);
+    sqlsrv_execute($st9);
+
+    if ($st9 === false) {
+        //  die(print_r(sqlsrv_errors(), true));
+    }
+
+    $bannerTitle = 'DETAILS OF : ' . $name;
+    if ($st8 && ($bannerRow = sqlsrv_fetch_array($st8, SQLSRV_FETCH_ASSOC))) {
+        $bannerTitle = (string) ($bannerRow['PHONE1'] ?? $bannerTitle);
+    }
+
+    $rows = cdat_sum_fetch_all($st9);
+
+    if (empty($rows)) {
+        cdat_sum_empty_state('No records found for the search criteria');
+    } else {
+        cdat_sum_results_open();
+        cdat_sum_report_banner($bannerTitle);
+        cdat_sum_generic_table_open(
+            'IR Search Results',
+            ['IRKEY', 'PDACT', 'ACCUSED NAME', 'ALIAS NAME', 'FATHER NAME', 'AGE', 'PRESENT ADDRESS', 'CRIME NO', 'YEAR', 'SEC_OF_LAW', 'POLICE STATION', 'CRIME HEAD', 'MO', 'DOA'],
+            'results_table',
+            'ir_search.csv',
+            count($rows)
+        );
+        foreach ($rows as $row) {
+            $irKey = (string) ($row['IRKEY'] ?? '');
+            $pdactKey = (string) ($row['PDACT_KEY'] ?? '');
+            $pdactText = (string) ($row['PDACT'] ?? '');
+            $addressHtml = cdat_sum_address_lines((string) ($row['PRESENT_ADDRESS'] ?? ''));
+
+            $irKeyCell = [
+                'html' => '<a href="ir.php?IRKEY=' . cdat_sum_h(urlencode($irKey)) . '">' . cdat_sum_h($irKey) . '</a>',
+                'class' => 'sum-cell-num',
+            ];
+            $pdactCell = $pdactText !== ''
+                ? [
+                    'html' => '<a href="pdact_main.php?PDACT_KEY=' . cdat_sum_h(urlencode($pdactKey)) . '">' . cdat_sum_h($pdactText) . '</a>',
+                ]
+                : '';
+
+            cdat_sum_table_row([
+                $irKeyCell,
+                $pdactCell,
+                (string) ($row['NAME'] ?? ''),
+                (string) ($row['ALIAS_NAME'] ?? ''),
+                (string) ($row['FATHER_NAME'] ?? ''),
+                ['text' => (string) ($row['AGE'] ?? ''), 'class' => 'sum-cell-num'],
+                ['html' => $addressHtml !== '' ? $addressHtml : '—', 'class' => 'sum-address-cell'],
+                (string) ($row['CRIME_NO'] ?? ''),
+                (string) ($row['YEAR'] ?? ''),
+                (string) ($row['SEC_OF_LAW'] ?? ''),
+                (string) ($row['POLICE_STATION'] ?? ''),
+                (string) ($row['CRIME_HEAD'] ?? ''),
+                (string) ($row['MO'] ?? ''),
+                (string) ($row['DATE_OF_ARREST'] ?? ''),
+            ]);
+        }
+        cdat_sum_generic_table_close();
+        cdat_sum_results_close();
+    }
+
+    if ($st9) {
+        sqlsrv_free_stmt($st9);
+    }
+    if ($conn) {
+        sqlsrv_close($conn);
+    }
+
+    if ($isAjax) {
+        exit;
+    }
+    cdat_sum_page_close();
+    layout_end();
+    exit;
+}
+
+layout_begin('IR Search By Name');
+cdat_sum_page_open();
+cdat_sum_search_card(
+    'Offender IR Search By Name',
+    'Search IR records by offender name and crime head.',
+    'ir_search.php',
+    cdat_sum_field_text('NAME', 'Name of the Offender', '', 'NAME', 'Enter NAME')
+        . cdat_sum_field_text('CRIME_HEAD', 'Crime Head', '', 'CRIME_HEAD', 'Enter CRIME HEAD'),
+    'BTN_CDAT',
+    'Submit'
+);
+cdat_sum_page_close();
+layout_end();

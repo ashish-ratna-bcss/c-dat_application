@@ -563,6 +563,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
 // The stylesheet and CDN tags below belong in <head>. Capture them and hand
 // them to layout_begin() so they can stay written as plain HTML here.
 require_once __DIR__ . '/includes/layout.php';
+require_once __DIR__ . '/includes/sum_ui.php';
 ob_start();
 ?>
 
@@ -581,7 +582,8 @@ ob_start();
 }
 /* Unified Theme Styles */
 .upload-wrapper {
-    width: 900px;
+    width: 98%;
+    max-width: 100%;
     margin: 10px auto;
     padding: 25px;
     background: rgba(255, 255, 255, 0.15);
@@ -927,20 +929,8 @@ ob_start();
 <link rel="stylesheet" href="../assets/css/upload.css">
 <?php
 layout_begin('Data Upload', 'Common Data Upload Framework', ob_get_clean());
+cdat_sum_page_open();
 ?>
-<div align="center">
-  <table width="1323" height="603" border="2">
-    <tr>
-      <td width="1349" height="595" align="left" valign="top">
-        
-
-        
-        <marquee behavior="scroll" direction="right"> 
-          <font color="YELLOW" face="verdana" size="2"><b> *** PLEASE MAIL RAW DATA TO cdranalysiswing@gmail.com TO VIEW REPORTS *** </b></font>
-        </marquee> 
-
-        <p align="center" class="FONT"> COMMON DATA UPLOAD FRAMEWORK </p>
-        
         <!-- SECTION / TAB TOGGLES -->
         <div class="nav-tabs">
             <button class="nav-tab-btn active" id="tab-btn-legacy" onclick="switchTab('legacy')"><i class="fa-solid fa-upload"></i> Standard Upload</button>
@@ -980,35 +970,37 @@ layout_begin('Data Upload', 'Common Data Upload Framework', ob_get_clean());
                   <form action="admin_upload.php" method="post" enctype="multipart/form-data" id="standard-upload-form" onsubmit="return handleStandardUploadSubmit(event)">
                     <input type="hidden" name="action" value="upload_file" />
                     
-                    <div class="form-group">
-                      <label for="module">Select Module</label>
-                      <select name="module" id="module" required="required" onchange="updateModuleHint(this.value)">
-                        <option value="">-- Choose Module --</option>
-                        <?php foreach ($modules as $key => $conf): ?>
-                          <option value="<?= htmlspecialchars($key) ?>"><?= htmlspecialchars($conf['name']) ?></option>
-                        <?php endforeach; ?>
-                      </select>
-                      <div id="module-hint" class="module-hint" style="display:none;"></div>
-                    </div>
-
-                    <!-- Network Selection Dropdown (Only shown when CDR is selected) -->
-                    <div class="form-group" id="standard-network-group" style="display: none; margin-top: 15px;">
-                      <label for="standard-network-select">Select Network <span style="color:#FFA500;">*</span></label>
-                      <select name="network" id="standard-network-select" required>
-                        <option value="">-- Select Network --</option>
-                        <option value="2">Airtel</option>
-                        <option value="15">Jio</option>
-                        <option value="12">VI</option>
-                        <option value="4">BSNL</option>
-                      </select>
-                      <div style="font-size:11px;color:#ccc;margin-top:6px;">
-                        Operator is taken from this dropdown only (not from the filename).
+                    <div style="display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap;">
+                      <div class="form-group" style="flex: 1; min-width: 250px;">
+                        <label for="module">Select Module</label>
+                        <select name="module" id="module" required="required" onchange="updateModuleHint(this.value)">
+                          <option value="">-- Choose Module --</option>
+                          <?php foreach ($modules as $key => $conf): ?>
+                            <option value="<?= htmlspecialchars($key) ?>"><?= htmlspecialchars($conf['name']) ?></option>
+                          <?php endforeach; ?>
+                        </select>
+                        <div id="module-hint" class="module-hint" style="display:none;"></div>
                       </div>
-                    </div>
 
-                    <div class="form-group">
-                      <label for="cdr_file" id="file-label">Select Upload File(s)</label>
-                      <input type="file" name="cdr_file[]" id="cdr_file" accept=".csv,.xls,.xlsx" multiple="multiple" required="required" />
+                      <!-- Network Selection Dropdown (Only shown when CDR is selected) -->
+                      <div class="form-group" id="standard-network-group" style="display: none; flex: 1; min-width: 250px;">
+                        <label for="standard-network-select">Select Network <span style="color:#FFA500;">*</span></label>
+                        <select name="network" id="standard-network-select" required>
+                          <option value="">-- Select Network --</option>
+                          <option value="2">Airtel</option>
+                          <option value="15">Jio</option>
+                          <option value="12">VI</option>
+                          <option value="4">BSNL</option>
+                        </select>
+                        <div style="font-size:11px;color:#ccc;margin-top:6px;">
+                          Operator is taken from this dropdown only (not from the filename).
+                        </div>
+                      </div>
+
+                      <div class="form-group" style="flex: 2; min-width: 300px;">
+                        <label for="cdr_file" id="file-label">Select Upload File(s)</label>
+                        <input type="file" name="cdr_file[]" id="cdr_file" accept=".csv,.xls,.xlsx" multiple="multiple" required="required" />
+                      </div>
                     </div>
 
                     <div style="text-align: right; margin-top: 20px;">
@@ -1300,11 +1292,6 @@ layout_begin('Data Upload', 'Common Data Upload Framework', ob_get_clean());
             </div>
         </div>
 
-        <p>&nbsp;</p>
-      </td>
-    </tr>
-  </table>
-</div>
 <style>
     .upload-wrapper h3 {
         color: #5b6b7c;
@@ -1541,7 +1528,7 @@ function previewEscapeHtml(s) {
 function buildPreviewTableHTML(data) {
     var columns = data.columns || [];
     var rows = data.rows || [];
-    var html = '<div class="preview-table-wrapper" style="max-height:300px;border:1px solid rgba(255,255,255,0.15);background:rgba(0,0,0,0.3);">'
+    var html = '<div class="preview-table-wrapper" style="max-height:300px;border:1px solid rgba(255,255,255,0.15);background:rgba(0,0,0,0.3);overflow-x:auto;max-width:100%;width:100%;">'
              + '<table class="preview-table"><thead><tr>';
     columns.forEach(function(col) { html += '<th>' + previewEscapeHtml(String(col).replace(/_/g, ' ')) + '</th>'; });
     html += '</tr></thead><tbody>';
@@ -1552,7 +1539,7 @@ function buildPreviewTableHTML(data) {
             html += '<tr>';
             columns.forEach(function(col) {
                 var val = row[col];
-                html += '<td class="preview-readonly">' + (val !== undefined && val !== null ? previewEscapeHtml(String(val)) : '') + '</td>';
+                html += '<td class="preview-readonly" style="white-space:nowrap;">' + (val !== undefined && val !== null ? previewEscapeHtml(String(val)) : '') + '</td>';
             });
             html += '</tr>';
         });
@@ -2265,4 +2252,7 @@ window.onload = function() {
 })();
 <?php endif; ?>
 </script>
-<?php layout_end(); ?>
+<?php
+cdat_sum_page_close();
+layout_end();
+?>

@@ -1,50 +1,41 @@
 <?php
-// Login gate. The .htaccess extension fallback resolves every spelling of this
-// page (.php / .html / .htm, any case) to this one file, so guarding it here
-// protects all of them. Must run before any output, or the redirect is lost.
 require_once __DIR__ . '/activity_logger.php';
 audit_require_session();
-?>
-<?php
+
 require_once __DIR__ . '/includes/layout.php';
-layout_begin("Dashboard");
+require_once __DIR__ . '/includes/sum_ui.php';
+
+layout_begin('Dashboard');
+cdat_sum_page_open('sum-dashboard');
 ?>
-<div align="center">
-  <table width="1323" height="603" border="2">
-<tr>
-  <td width="1349" height="595" align="left" valign="top"><table width="1313" height="148">
-        <tr>
-          <td width="1265" height="134" align="center" valign="bottom" background="../assets/images/topborder.jpg"></td>
-        </tr>
-      </table>
-<marquee behavior="scroll" direction="right"> <font color="YELLOW" face=verdana size='2'><b> *** PLEASE MAIL RAW DATA TO cdranalysiswing@gmail.com TO VIEW REPORTS *** </b></font></marquee> 
-        <table width="1307" height="347">
-          <tr>
-            <td width="214" rowspan="2" valign="top">
-              <blockquote>
-                
-        <p>&nbsp; </p>
-      </blockquote></td>
-            <td width="1015" height="24" align="left" valign="top"><p align="center" class="FONT">CALL DATA ANALYSIS TOOL</p></td>
-            <td width="62" rowspan="2">&nbsp;</td>
-          </tr>
-          <tr>
-            <!-- was a 950x250 decorative image; the user's own shortcuts are
-                 more use in the same space -->
-            <td height="310" align="left" valign="top"><?php cdat_ql_render_grid(); ?></td>
-          </tr>
+<section class="sum-dash-hero" aria-label="Dashboard">
+    <div class="sum-dash-hero__head">
+        <div class="sum-dash-hero__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 12h4l2-7 4 14 2-7h6"/>
+            </svg>
+        </div>
+        <div>
+            <h1 class="sum-dash-hero__title">Call Data Analysis Tool</h1>
+            <p class="sum-dash-hero__desc">Hyderabad City Police — quick access to your pinned pages.</p>
+        </div>
+    </div>
 
-       </table>
-     <table align="center"> <tr align="center">
-<td width="1015" height="24" align="center" valign="top"><font size="6" font color="YELLOW">*** mail to <font color="#B22222">natgrid-hyd@tspolice.gov.in</font> for Suspect Image search ***</font></td>
+    <div class="sum-dash-notices" role="region" aria-label="Notices">
+        <div class="sum-notice-bar" role="note">
+            Please mail raw data to <strong>cdranalysiswing@gmail.com</strong> to view reports.
+        </div>
+        <div class="sum-notice-bar sum-notice-bar--alt" role="note">
+            Mail to <strong>natgrid-hyd@tspolice.gov.in</strong> for Suspect Image search.
+        </div>
+    </div>
+</section>
 
-<marquee behavior="scroll" direction="left"> <font face=verdana size='2' class="confirm_selection"><!-----<b> *** NOW YOU CAN VIEW UNDETECTED CASES MATCHED WITH OLD OFFENDERS FINGER PRINTS LIST  (ADDED IN OFFENDERS LIST TAB) *** </b></font></marquee>
-<!-----<marquee behavior="scroll" direction="left"> <font face=verdana size='2' class="confirm_selection"><b> *** NOW YOU CAN VIEW HABITUAL OFFENDERS LIST  (ADDED IN OFFENDERS LIST TAB) *** </b></font></marquee>--> 
-</tr>
-</table>
-            
+<section class="sum-dash-links">
+    <?php cdat_ql_render_grid(); ?>
+</section>
 
-<p>&nbsp;</p>
-    
-  
-<?php layout_end(); ?>
+<?php
+cdat_sum_page_close();
+layout_end();

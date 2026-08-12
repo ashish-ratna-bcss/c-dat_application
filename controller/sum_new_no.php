@@ -1,24 +1,35 @@
 <?php
 require_once __DIR__ . '/includes/layout.php';
-layout_begin("Summary New No");
-?>
+require_once __DIR__ . '/includes/sum_ui.php';
 
-<li><a href="sum_new_nos.php"><font color=#FDEFEF>Back</a></li>
-<?php
-$serverName = "CPHYDERABAD1\DAU_HYD_2023";
-$connectionInfo = array( "Database"=>"CDATDUPL");
-$conn = sqlsrv_connect( $serverName, $connectionInfo );
-if( $conn === false ) {
-    die( print_r( sqlsrv_errors(), true));
+$isAjax = cdat_sum_is_ajax();
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header('Location: sum_new_nos.php');
+    exit;
 }
+
+if (!$isAjax) {
+    layout_begin('New Contacts');
+    cdat_sum_page_open();
+    cdat_sum_back_link('sum_new_nos.php');
+}
+
+$serverName = "CPHYDERABAD1\DAU_HYD_2023";
+$connectionInfo = array("Database" => "CDATDUPL");
+$conn = sqlsrv_connect($serverName, $connectionInfo);
+if ($conn === false) {
+    die(print_r(sqlsrv_errors(), true));
+}
+
 $number = $_POST['PHONE_NO'];
 $date = $_POST['FROM_DT'];
 
-$sql3 ="SELECT * INTO #TT FROM CDAT_DETAILS1 WHERE PHONE='$number' AND STARTTIME>'$date' AND OTHER NOT IN
+$sql3 = "SELECT * INTO #TT FROM CDAT_DETAILS1 WHERE PHONE='$number' AND STARTTIME>'$date' AND OTHER NOT IN
 (SELECT DISTINCT OTHER FROM CDATDUPL.DBO.CDATPCSUSPECT WHERE PHONE='$number' AND 
 STARTTIME < '$date')";
 
-$sql4 ="SELECT LTRIM(RTRIM(PHONE)) AS PHONE, LTRIM(RTRIM(OTHER)) AS OTHER, 
+$sql4 = "SELECT LTRIM(RTRIM(PHONE)) AS PHONE, LTRIM(RTRIM(OTHER)) AS OTHER, 
 SUM(CASE WHEN INCOMING='1' THEN 1 ELSE 0 END) AS 'IN',
 SUM(CASE WHEN INCOMING ='0'THEN 1 ELSE 0 END) AS 'OUT',
 COUNT(PHONE) AS CALLS,SUM(CAST(DURATION AS NUMERIC)) AS DUR, 
@@ -26,11 +37,11 @@ CONVERT(VARCHAR,MIN(STARTTIME),20) AS FIRSTCALL,
 CONVERT(VARCHAR,MAX(STARTTIME),20) AS LASTCALL INTO #RESULT FROM #TT 
 GROUP BY PHONE, OTHER ORDER BY CALLS DESC";
 
-$sql5 ="SELECT * INTO #RESULT1 FROM #RESULT WHERE OTHER NOT LIKE '140%' AND OTHER NOT IN (
+$sql5 = "SELECT * INTO #RESULT1 FROM #RESULT WHERE OTHER NOT LIKE '140%' AND OTHER NOT IN (
 SELECT DISTINCT OTHER  FROM #RESULT WHERE (CALLS=DUR OR CALLS>DUR)
 AND LEFT(OTHER,1) NOT IN ('9','8','7','G','I'))";
 
-$sql6="SELECT DISTINCT A.PHONE,
+$sql6 = "SELECT DISTINCT A.PHONE,
 CASE WHEN OTHER IN (SELECT PHONE FROM CDATDUPL.DBO.CDATSUSPECT) THEN OTHER+' - '+NICKNAME  
 ELSE OTHER END   AS  OTHER,[IN],[OUT],CALLS,DUR,
 FIRSTCALL,LASTCALL,
@@ -50,14 +61,12 @@ LEFT JOIN CDATDUPL.DBO.ADDRESS_OTHER_STATE D ON A.OTHER=D.PHONE AND D.EFF_TO_DAT
 LEFT JOIN CDATDUPL.DBO.CDATPHONEAREA E ON  CASE WHEN LEN(OTHER)=10 THEN OTHER ELSE CASE WHEN LEN(OTHER)>10 THEN '00'+OTHER ELSE 'POSSIBLE OF VOIP CALL OR SKYPE OR WIFI CALL' END END
  LIKE PHONEPREFIX+'%' ORDER BY CALLS DESC";
 
-$sql8="SELECT 'SUMMARY OF MOBILE NO: '+'$number '+' (NEW CONTACTS FROM: '+'$date'+')' as PHONE1";
+$sql9 = "SELECT  '$number' AS PHONE,'' AS FIRST_CALL,'' AS LAST_CALL,'' AS NICKNAME,''LAST_UPDATED INTO #T";
 
-$sql9="SELECT  '$number' AS PHONE,'' AS FIRST_CALL,'' AS LAST_CALL,'' AS NICKNAME,''LAST_UPDATED INTO #T";
-
-$sql10="SELECT A.PHONE,CONVERT(VARCHAR,MIN(STARTTIME),20) AS FIRST_CALL,CONVERT(VARCHAR,MAX(STARTTIME),20) AS LAST_CALL,B.NICKNAME,CONVERT(VARCHAR,MAX(A.ASONDATE),20) AS LAST_UPDATED 
+$sql10 = "SELECT A.PHONE,CONVERT(VARCHAR,MIN(STARTTIME),20) AS FIRST_CALL,CONVERT(VARCHAR,MAX(STARTTIME),20) AS LAST_CALL,B.NICKNAME,CONVERT(VARCHAR,MAX(A.ASONDATE),20) AS LAST_UPDATED 
 INTO #S FROM CDATDUPL.DBO.CDATPCSUSPECT A LEFT JOIN CDATDUPL.DBO.CDATSUSPECT B ON A.PHONE=B.PHONE WHERE A.PHONE='$number' GROUP BY A.PHONE,B.NICKNAME";
 
-$sql11="SELECT DISTINCT A.PHONE,CASE WHEN A.PHONE=B.PHONE THEN B.FIRST_CALL ELSE A.FIRST_CALL END AS FIRST_CALL,
+$sql11 = "SELECT DISTINCT A.PHONE,CASE WHEN A.PHONE=B.PHONE THEN B.FIRST_CALL ELSE A.FIRST_CALL END AS FIRST_CALL,
 CASE WHEN A.PHONE=B.PHONE THEN B.LAST_CALL ELSE A.LAST_CALL END AS LAST_CALL,
 CASE WHEN A.PHONE=B.PHONE THEN B.NICKNAME ELSE A.NICKNAME END AS NICKNAME,
 CASE WHEN A.PHONE=B.PHONE THEN B.LAST_UPDATED ELSE A.LAST_UPDATED END AS LAST_UPDATED,
@@ -71,72 +80,26 @@ LEFT JOIN CDATDUPL.DBO.CDATPHONEAREA ON CASE WHEN LEN(A.PHONE)=10 THEN A.PHONE E
  LIKE PHONEPREFIX+'%'
 LEFT JOIN #S B ON  A.PHONE=B.PHONE";
 
+$st3 = sqlsrv_query($conn, $sql3);
+$st4 = sqlsrv_query($conn, $sql4);
+$st5 = sqlsrv_query($conn, $sql5);
+$stmt = sqlsrv_query($conn, $sql6);
+$st9 = sqlsrv_query($conn, $sql9);
+$st10 = sqlsrv_query($conn, $sql10);
+$st11 = sqlsrv_query($conn, $sql11);
 
-$st3 = sqlsrv_query( $conn, $sql3 );
-$st4 = sqlsrv_query( $conn, $sql4 );
-$st5 = sqlsrv_query( $conn, $sql5 );
-$stmt = sqlsrv_query( $conn, $sql6 );
-$st8 = sqlsrv_query( $conn, $sql8 );
-$st9 = sqlsrv_query( $conn, $sql9 );
-$st10 = sqlsrv_query( $conn, $sql10 );
-$st11 = sqlsrv_query( $conn, $sql11 );
+$contactRows = cdat_sum_fetch_all($stmt);
+$headerRow = cdat_sum_fetch_one($st11) ?? ['PHONE' => $number, 'FIRST_CALL' => '', 'LAST_CALL' => '', 'NICKNAME' => '', 'ADDRESS' => ''];
 
-while( $row = sqlsrv_fetch_array( $st8, SQLSRV_FETCH_ASSOC) ) {
-echo "<font size=4 face=verdana color='#F9FBFC'><td><center><b>". $row['PHONE1'] ."<center></td></font></br>";
+cdat_sum_render_results($headerRow, $contactRows, 'new_contacts.csv', 'New Contacts Summary');
+
+if ($stmt) {
+    sqlsrv_free_stmt($stmt);
 }
 
-echo "<table border=1 cellspacing=0 cellpadding=5>
-<tr>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>PHONE</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>FIRST_CALL</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>LAST_CALL</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>NICKNAME</font></th>
-<!-- <th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>LAST_UPDATED</font></th> -->
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>ADDRESS</font></th>
-</tr>";
-
-while( $row = sqlsrv_fetch_array( $st11, SQLSRV_FETCH_ASSOC) ) {
-echo "<tr>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['PHONE'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['FIRST_CALL'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['LAST_CALL'] ."<center></font></td>";
-echo "<td width=125px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['NICKNAME'] ."<center></font></td>";
-/* echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['LAST_UPDATED'] ."<center></font></td>"; */
-echo "<td width=500px bgcolor=#C2E0FB><font size=1 face=verdana>". $row['ADDRESS'] ."</font></td>";
-echo "</tr>";
+if ($isAjax) {
+    exit;
 }
 
-echo"</table><br />";
-
-echo "<table border=1 cellspacing=0 cellpadding=5>
-<tr bgcolor=#921215>
-<th><font size=3 face=verdana color='#F9FBFC'>PHONE</font></th>
-<th><font size=3 face=verdana color='#F9FBFC'>OTHER</font></th>
-<th><font size=3 face=verdana color='#F9FBFC'>IN</font></th>
-<th><font size=3 face=verdana color='#F9FBFC'>OUT</font></th>
-<th><font size=3 face=verdana color='#F9FBFC'>CALLS</font></th>
-<th><font size=3 face=verdana color='#F9FBFC'>DUR</font></th>
-<th><font size=3 face=verdana color='#F9FBFC'>FIRST_CALL</font></th>
-<th><font size=3 face=verdana color='#F9FBFC'>LAST_CALL</font></th>
-<th><font size=3 face=verdana color='#F9FBFC'>ADDRESS</font></th>
-</tr>";
-
-while( $row = sqlsrv_fetch_array( $stmt, SQLSRV_FETCH_ASSOC) ) {
-echo "<tr>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['PHONE'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#C2E0FB><font size=1 face=verdana>". $row['OTHER'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['IN'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['OUT'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['CALLS'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['DUR'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['FIRSTCALL'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['LASTCALL'] ."<center></font></td>";
-echo "<td width=400px bgcolor=#AED1F1><font size=1 face=verdana>". $row['ADDRESS'] ."</font></td>";
-echo "</tr>";
-
-}
-echo"</table>";
-
-sqlsrv_free_stmt( $stmt);
-?>
-<?php layout_end(); ?>
+cdat_sum_page_close();
+layout_end();

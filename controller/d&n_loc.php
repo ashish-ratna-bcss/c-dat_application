@@ -1,14 +1,24 @@
 <?php
 require_once __DIR__ . '/includes/layout.php';
-layout_begin("D&n Loc");
-?>
-<li><a href="../view/day%26nightloc.html"><font color=#FDEFEF>Back</a></li>
-<?php
+require_once __DIR__ . '/includes/sum_ui.php';
 require_once __DIR__ . '/cdr_enrichment_sql.php';
 require_once __DIR__ . '/sql_safe.php';
 
-$serverName = "CPHYDERABAD1\\DAU_HYD_2023";
-$connectionInfo = array("Database" => "CDATDUPL");
+$isAjax = cdat_sum_is_ajax();
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header('Location: day%26nightloc.php');
+    exit;
+}
+
+if (!$isAjax) {
+    layout_begin('Day / Night Location');
+    cdat_sum_page_open();
+    cdat_sum_back_link('day%26nightloc.php');
+}
+
+$serverName = 'CPHYDERABAD1\\DAU_HYD_2023';
+$connectionInfo = ['Database' => 'CDATDUPL'];
 $conn = sqlsrv_connect($serverName, $connectionInfo);
 if ($conn === false) {
     die(print_r(sqlsrv_errors(), true));
@@ -16,7 +26,13 @@ if ($conn === false) {
 
 $number = sql_safe_phone($_POST['PHONE_NO'] ?? '');
 if ($number === '') {
-    die('<font color=#F9FBFC>Invalid mobile number.</font>');
+    cdat_sum_empty_state('Invalid mobile number.');
+    if ($isAjax) {
+        exit;
+    }
+    cdat_sum_page_close();
+    layout_end();
+    exit;
 }
 $numberSql = cdr_escape_sql_literal($number);
 
@@ -44,19 +60,22 @@ function dn_top_towers($conn, string $numberSql, string $timePredicate): array
     return $rows;
 }
 
-function dn_render_table(array $rows, array $towerMap): void
+function dn_render_loc_table(array $rows, array $towerMap, string $title, string $tableId, string $exportName): void
 {
-    echo "<table border=1 cellspacing=0 cellpadding=5>
-<tr>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>PHONE</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>CELLTOWERID</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>CALLS</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>AREADESCRIPTION</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>LAT</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>LONG</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>AZM</font></th>
-</tr>";
+    if (empty($rows)) {
+        cdat_sum_report_banner($title);
+        cdat_sum_empty_state('No location records found');
+        return;
+    }
 
+    cdat_sum_report_banner($title);
+    cdat_sum_generic_table_open(
+        $title,
+        ['PHONE', 'CELLTOWERID', 'CALLS', 'AREADESCRIPTION', 'LAT', 'LONG', 'AZM'],
+        $tableId,
+        $exportName,
+        count($rows)
+    );
     foreach ($rows as $row) {
         $cid = $row['CELLTOWERID'] ?? '';
         $tower = $towerMap[$cid] ?? [
@@ -65,17 +84,17 @@ function dn_render_table(array $rows, array $towerMap): void
             'long' => '',
             'azimuth' => '',
         ];
-        echo "<tr>";
-        echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>" . htmlspecialchars((string)($row['PHONE'] ?? ''), ENT_QUOTES) . "<center></td>";
-        echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>" . htmlspecialchars((string)$cid, ENT_QUOTES) . "</td>";
-        echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>" . htmlspecialchars((string)($row['CALLS'] ?? ''), ENT_QUOTES) . "<center></td>";
-        echo "<td width=800px bgcolor=#C2E0FB><font size=1 face=verdana>" . htmlspecialchars((string)$tower['areadescription'], ENT_QUOTES) . "</td>";
-        echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>" . htmlspecialchars((string)$tower['lat'], ENT_QUOTES) . "<center></td>";
-        echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>" . htmlspecialchars((string)$tower['long'], ENT_QUOTES) . "<center></td>";
-        echo "<td width=15px bgcolor=#AED1F1><font size=1 face=verdana><center>" . htmlspecialchars((string)$tower['azimuth'], ENT_QUOTES) . "<center></font></td>";
-        echo "</tr>";
+        cdat_sum_table_row([
+            ['text' => (string) ($row['PHONE'] ?? ''), 'class' => 'sum-cell-num'],
+            ['text' => (string) $cid, 'class' => 'sum-cell-num'],
+            ['text' => (string) ($row['CALLS'] ?? ''), 'class' => 'sum-cell-num sum-cell-calls'],
+            ['html' => cdat_sum_address_lines((string) $tower['areadescription']), 'class' => 'sum-address-cell'],
+            (string) $tower['lat'],
+            (string) $tower['long'],
+            (string) $tower['azimuth'],
+        ]);
     }
-    echo "</table></br>";
+    cdat_sum_generic_table_close();
 }
 
 $dayPred = "CONVERT(CHAR(8),STARTTIME,108)<'22:00:00' AND CONVERT(CHAR(8),STARTTIME,108)>'05:00:00'";
@@ -90,14 +109,16 @@ $towerIds = array_merge(
 );
 $towerMap = cdat_fetch_tower_map($conn, $towerIds);
 
-echo "<font size=4 face=verdana color='#F9FBFC'><td><center><b>DAY LOCATION OF MOBILE NO: "
-    . htmlspecialchars($number, ENT_QUOTES)
-    . "<center></td></font></br>";
-dn_render_table($dayRows, $towerMap);
+echo '<div class="sum-results">';
+dn_render_loc_table($dayRows, $towerMap, 'Day Location of Mobile No: ' . $number, 'day_loc_table', 'day_location.csv');
+dn_render_loc_table($nightRows, $towerMap, 'Night Location of Mobile No: ' . $number, 'night_loc_table', 'night_location.csv');
+echo '</div>';
 
-echo "<font size=4 face=verdana color='#F9FBFC'><td><center><b>NIGHT LOCATION OF MOBILE NO: "
-    . htmlspecialchars($number, ENT_QUOTES)
-    . "<center></td></font></br>";
-dn_render_table($nightRows, $towerMap);
-?>
-<?php layout_end(); ?>
+sqlsrv_close($conn);
+
+if ($isAjax) {
+    exit;
+}
+
+cdat_sum_page_close();
+layout_end();

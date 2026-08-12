@@ -1,21 +1,15 @@
 <?php
 // One page for both halves of this screen: the form, and the results.
 // Was view/irreport.html (form) + controller/irreport.php (handler).
-// GET shows the form; a submit renders the form and the results below it.
-// !empty($_GET) covers links that pass parameters in the query string.
-$__submitted = ($_SERVER['REQUEST_METHOD'] === 'POST') || !empty($_GET);
-?>
-<?php
+// GET shows the form; POST submit renders the form and status below it.
 require_once __DIR__ . '/includes/layout.php';
-layout_begin("Irreport");
-?>
+require_once __DIR__ . '/includes/sum_ui.php';
 
-<table>
-        <tr>
-          <th width="1126" align="center" scope="col">IR PARTICULAR</th>
-        </tr>
-</table>
-<form action="irreport.php" Method="post">
+layout_begin("Irreport");
+cdat_sum_page_open();
+
+cdat_sum_entry_card_open('IR Particular', 'Enter interrogation report particulars.', 'irreport.php');
+?>
 <div>NAME:</div><textarea type="text" name="NAME"  required="required"></textarea><br/><br/>
 <div>ALIAS_NAME:</div><textarea type="text" name="ALIAS_NAME"></textarea><br/><br/>
 <div>FATHER_NAME:</div><textarea type="text" name="FATHER_NAME"  required="required"></textarea><br/><br/>
@@ -84,14 +78,10 @@ layout_begin("Irreport");
 <SELECT name="IR_ENTRY_DONE_BY" required="required">
 <option value=""></option><option value="A SUJANA WPC 31145 ">A SUJANA WPC 31145</option><option value="RAJESHWARI WPC 30203">RAJESHWARI WPC 30203</option>
 <option value="MOHD MAZHAR SAYEED PC 30568"> MOHD MAZHAR SAYEED PC 30568</option></SELECT> <br/><br/>
-     
-<input type="submit" value="insert">
-<br/><br/>
-
- </form>
-
-<?php if ($__submitted): ?>
 <?php
+cdat_sum_entry_card_close('insert');
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"FORMS");
 $conn = sqlsrv_connect( $serverName, $connectionInfo );
@@ -170,13 +160,14 @@ values('$NAME','$ALIAS_NAME','$FATHER_NAME','$AGE','$DATE_OF_BIRTH','$NATIONALIT
 '$EDUCATION_DETAILS','$OCCUPATION','$INCOME_GROUP','$REGULAR_HABITS','$CATEGORY','$CC_OR_EXCC','$CCNO',GETDATE(),'$IR_ENTRY_DONE_BY')";
 if(!sqlsrv_query($conn,$sql))
 {
-echo "not inserted";
+cdat_sum_status_message('not inserted', false);
 }
 else
 {
-echo "inserted";
+cdat_sum_status_message('inserted', true);
 }
-header("refresh:30; url=../view/irreport.html");
-?>
-<?php endif; ?>
-<?php layout_end(); ?>
+header("refresh:30; url=irreport.php");
+}
+
+cdat_sum_page_close();
+layout_end();

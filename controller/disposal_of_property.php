@@ -5,18 +5,18 @@
 // page that tried to insert from an empty $_POST.
 // POST only, unlike the search screens: an insert must never run off a link.
 $__submitted = ($_SERVER['REQUEST_METHOD'] === 'POST');
-?>
-<?php
-require_once __DIR__ . '/includes/layout.php';
-layout_begin("Property Details");
-?>
 
-<table>
-        <tr>
-          <th width="1126" align="center" scope="col">DISPOSAL OF PROPERTY</th>
-        </tr>
-</table>
-<form action="disposal_of_property.php" Method="post">
+require_once __DIR__ . '/includes/layout.php';
+require_once __DIR__ . '/includes/sum_ui.php';
+layout_begin("Property Details");
+cdat_sum_page_open();
+
+cdat_sum_entry_card_open(
+    'Disposal of Property',
+    'Enter property disposal and recovery details.',
+    'disposal_of_property.php'
+);
+?>
 <div>IRKEY:</div><textarea  type="text" name="IRKEY" placeholder="IRKEY" style="float:center;"></textarea>
      <br/><br/>
 <div>PROPERTY_STOLEN:</div><textarea type="text" name="PROPERTY_STOLEN" placeholder="PROPERTY STOLEN"></textarea>
@@ -37,13 +37,10 @@ layout_begin("Property Details");
 <br/><br/>
 <div>POLICE_STATION:</div><textarea type="text" name="POLICE_STATION" placeholder="POLICE_STATION"></textarea>
 <br/><br/>
-	<input type="submit" value="INSERT" style="padding:15px;">
-    <br/><br/>
-
-</form>
-
-<?php if ($__submitted): ?>
 <?php
+cdat_sum_entry_card_close('INSERT');
+
+if ($__submitted):
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"FORMS");
 $conn = sqlsrv_connect( $serverName, $connectionInfo );
@@ -66,14 +63,13 @@ values('$IRKEY', '$PROPERTY_STOLEN', '$PROPERTY_RECOVERED', '$RECEIVER_NAME', '$
 '$HOW_SHARE_IS_SPENT', '$REMARKS','$CRIME_NO','$YEAR','$POLICE_STATION')";
 if(!sqlsrv_query($conn,$sql))
 {
-echo "not inserted";
+cdat_sum_status_message('not inserted', false);
 }
 else
 {
-echo "inserted";
+cdat_sum_status_message('inserted');
 }
-// The old "refresh:30" bounce back to the form is gone: the form is on this
-// page now, and header() after output only raises a warning.
-?>
-<?php endif; ?>
-<?php layout_end(); ?>
+endif;
+
+cdat_sum_page_close();
+layout_end();

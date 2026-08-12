@@ -1,32 +1,14 @@
-﻿
-<?php
+﻿<?php
 require_once __DIR__ . '/includes/layout.php';
-layout_begin("Day&nightloc");
-?>
-<div align="center">
-  <table width="1323" height="603" border="2">
-    <tr>
-      <td width="1349" height="595" align="left" valign="top"><table width="1313" height="148">
-        <tr>
-          <td width="1265" height="134" align="center" valign="bottom" background="../assets/images/topborder.jpg"></td>
-        </tr>
-      </table>
-      <p>&nbsp;</p>
-      <table width="1126" height="144" align="center">
-        <tr>
-          <th height="25" align="center" valign="middle" background="../assets/images/border.jpg" scope="col">TOP 10 DAY AND NIGHT LOCATIONS</th>
-        </tr>
-        <tr>
-          <th align="center" valign="middle" background="../assets/images/border.jpg" scope="col"><form id="form1" name="form1" method="post" action="d&n_loc.php">
-            <label for="SUM" font face="verdana">Mobile No:</label>
-              <input type="text" name="PHONE_NO" id="calls" placeholder="Enter Mobile No" required="required"/>
-                            <input type="submit" name="BTN_SUM" id="BTN_SUM" value="Submit" />
-          </form></th>
-        </tr>
-      </table>
-      <p>&nbsp;</p>
-      <p>&nbsp;</p></td>
-    </tr>
-  </table>
-</div>
-<?php layout_end(); ?>
+require_once __DIR__ . '/includes/sum_ui.php';
+
+layout_begin('Day / Night Location');
+cdat_sum_page_open();
+cdat_sum_search_card(
+    'Top 10 Day and Night Locations',
+    'Find the top day and night cell tower locations for a mobile number.',
+    'd%26n_loc.php',
+    cdat_sum_field_phone()
+);
+cdat_sum_page_close();
+layout_end();

@@ -4,19 +4,18 @@
 // GET shows the form; a submit renders the form and the results below it.
 // !empty($_GET) covers links that pass parameters in the query string.
 $__submitted = ($_SERVER['REQUEST_METHOD'] === 'POST') || !empty($_GET);
-?>
-<DOCHTML>
-<?php
-require_once __DIR__ . '/includes/layout.php';
-layout_begin("Offence Details");
-?>
 
-<table>
-   <tr>
-<th width="1126" align="center" scope="col">OFFENCE DETAILS</th>
-   </tr>
-</table>
-<form action="offence_details.php" Method="post">
+require_once __DIR__ . '/includes/layout.php';
+require_once __DIR__ . '/includes/sum_ui.php';
+
+layout_begin('Offence Details');
+cdat_sum_page_open();
+cdat_sum_entry_card_open(
+    'Offence Details',
+    'Enter offence details for an IR record.',
+    basename(__FILE__)
+);
+?>
 <div>IRKEY:</div><textarea  type="text" name="IRKEY" required="required" placeholder="IRKEY" style="float:center;"></textarea><br/><br/>
 <div>PERIOD_OF_OFFENCE:</div><textarea type="text" required="required" name="PERIOD_OF_OFFENCE" placeholder="PERIOD OF OFF"></textarea><br/><br/>
 <div>REGULAR_RESIDENCE:</div><textarea type="text" required="required" name="REGULAR_RESIDENCE" placeholder="REGULAR RESIDENCE"></textarea><br/><br/>
@@ -70,13 +69,10 @@ layout_begin("Offence Details");
 <option value="NIL">NIL</option>
 </SELECT>
 <br/><br/>
-<input type="submit" value="INSERT" style="padding:15px;">
-<br/><br/>
-
-</form>
-
-<?php if ($__submitted): ?>
 <?php
+cdat_sum_entry_card_close('INSERT');
+
+if ($__submitted):
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"forms");
 $conn = sqlsrv_connect( $serverName, $connectionInfo );
@@ -113,13 +109,14 @@ CRIME_NO, YEAR, SEC_OF_LAW, POLICE_STATION,ARREST_TYPE) values('$IRKEY','$PERIOD
 '$ARRESTED_BY','$INTERROGATED_BY','$OTHERS_WHO_CAN_IDENTIFY','$CRIME_NO','$YEAR','$SEC_OF_LAW','$POLICE_STATION','$ARREST_TYPE')";
 if(!sqlsrv_query($conn,$sql))
 {
-echo "not inserted";
+cdat_sum_status_message('not inserted', false);
 }
 else
 {
-echo "inserted";
+header("refresh:3; url=offence_details.php");
+cdat_sum_status_message('inserted', true);
 }
-header("refresh:30; url=../view/offence_details.html");
-?>
-<?php endif; ?>
-<?php layout_end(); ?>
+endif;
+
+cdat_sum_page_close();
+layout_end();

@@ -172,252 +172,86 @@ try {
 ?>
 <?php
 require_once __DIR__ . '/includes/layout.php';
-layout_begin("SQL Query Console");
+require_once __DIR__ . '/includes/sum_ui.php';
+
+layout_begin('SQL Query Console');
+cdat_sum_page_open('sum-admin-layout');
 ?>
-<div align="center">
-  <table width="1323" height="603" border="2">
-    <tr>
-      <td width="1349" height="595" align="left" valign="top">
+<div class="sum-admin-grid">
+  <div class="sum-admin-grid__main">
+    <section class="sum-console-panel" aria-label="SQL Query Console">
+      <h2 class="sum-console-panel__title">SQL Query Console (PostgreSQL)</h2>
+      <form id="sqlForm" name="sqlForm" method="post" action="admin_sql_console.php" class="no-ajax" data-no-ajax>
+        <textarea id="sql_query" name="sql_query" class="sum-console-editor" placeholder="Type your SELECT query here... e.g. SELECT * FROM user_sessions LIMIT 100;"><?= htmlspecialchars($query) ?></textarea>
+        <div class="sum-console-actions">
+          <input type="submit" name="BTN_EXECUTE" id="BTN_EXECUTE" value="Execute Query" class="sum-console-btn" />
+          <input type="button" value="Clear" class="sum-console-btn sum-console-btn--secondary" onclick="document.getElementById('sql_query').value='';" />
+          <input type="button" value="Copy Query" class="sum-console-btn sum-console-btn--secondary" onclick="navigator.clipboard.writeText(document.getElementById('sql_query').value); alert('Query copied to clipboard!');" />
+        </div>
+      </form>
+    </section>
 
-        <!-- ═══ TOP NAVIGATION ═══ -->
-        <table width="1313" height="148">
-          <tr>
-            <td width="1265" height="134" align="center" valign="bottom" background="../assets/images/topborder.jpg">
-              
-            </td>
-          </tr>
-        </table>
+    <?php if ($error !== ''): ?>
+      <?php cdat_sum_status_message('Error: ' . $error, false); ?>
+    <?php endif; ?>
 
-        <p>&nbsp;</p>
+    <?php if ($limit_warning): ?>
+      <div class="sum-status" role="status">Showing first 1000 records.</div>
+    <?php endif; ?>
 
-        <!-- ═══ CONSOLE GRID ═══ -->
-        <table width="1280" align="center" border="0" cellpadding="5" cellspacing="0">
-          <tr>
-            <!-- Left Console Panel (Query Editor + Results) -->
-            <td width="980" align="left" valign="top">
-              
-              <table width="100%" border="0" cellpadding="0" cellspacing="0">
-                <tr>
-                  <th height="25" align="center" valign="middle" background="../assets/images/border.jpg" scope="col">
-                    <font color="#FFFFFF">SQL QUERY CONSOLE (POSTGRESQL)</font>
-                  </th>
-                </tr>
-                <tr>
-                  <td bgcolor="#C2E0FB" style="padding: 15px; border: 1px solid #75a7d3;">
-                    <form id="sqlForm" name="sqlForm" method="post" action="admin_sql_console.php">
-                      <textarea id="sql_query" name="sql_query" class="console-editor" placeholder="Type your SELECT query here... e.g. SELECT * FROM user_sessions LIMIT 100;"><?= htmlspecialchars($query) ?></textarea>
-                      <br/><br/>
-                      <input type="submit" name="BTN_EXECUTE" id="BTN_EXECUTE" value="Execute Query" class="btn-console" />
-                      <input type="button" value="Clear" class="btn-console btn-clear" onclick="document.getElementById('sql_query').value='';" />
-                      <input type="button" value="Copy Query" class="btn-console btn-secondary" onclick="navigator.clipboard.writeText(document.getElementById('sql_query').value); alert('Query copied to clipboard!');" />
-                    </form>
-                  </td>
-                </tr>
-              </table>
+    <?php if ($_SERVER['REQUEST_METHOD'] === 'POST' && $error === '' && isset($_POST['BTN_EXECUTE'])): ?>
+      <div class="sum-console-actions" style="justify-content: flex-end; margin-bottom: .65rem;">
+        <form method="post" action="admin_sql_console.php" class="no-ajax" data-no-ajax style="display:inline; margin:0;">
+          <input type="hidden" name="sql_query" value="<?= htmlspecialchars($query) ?>" />
+          <input type="hidden" name="export" value="1" />
+          <input type="hidden" name="export_type" value="csv" />
+          <input type="submit" value="Export CSV" class="sum-console-btn" />
+        </form>
+        <form method="post" action="admin_sql_console.php" class="no-ajax" data-no-ajax style="display:inline; margin:0;">
+          <input type="hidden" name="sql_query" value="<?= htmlspecialchars($query) ?>" />
+          <input type="hidden" name="export" value="1" />
+          <input type="hidden" name="export_type" value="excel" />
+          <input type="submit" value="Export Excel" class="sum-console-btn" />
+        </form>
+      </div>
 
-              <br/>
+      <?php if ($total_rows > 0): ?>
+        <?php
+        $panelTitle = 'Results: ' . $total_rows . ' Rows | Execution Time: ' . round($execution_time, 4) . ' Seconds';
+        cdat_sum_generic_table_open($panelTitle, $columns, 'sql_console_results', 'query_export.csv', $total_rows);
+        foreach ($results as $row) {
+            $cells = [];
+            foreach ($columns as $col) {
+                $cells[] = $row[$col] ?? '—';
+            }
+            cdat_sum_table_row($cells);
+        }
+        cdat_sum_generic_table_close();
+        ?>
+      <?php else: ?>
+        <?php cdat_sum_empty_state('No records returned.'); ?>
+      <?php endif; ?>
+    <?php endif; ?>
+  </div>
 
-              <!-- Display Errors -->
-              <?php if ($error !== ''): ?>
-                <div style="background-color: #F8D7DA; color: #721C24; border: 1px solid #F5C6CB; padding: 10px; border-radius: 4px; font-weight: bold; font-family: verdana; font-size: 13px;">
-                  Error: <?= htmlspecialchars($error) ?>
-                </div>
-                <br/>
-              <?php endif; ?>
-
-              <!-- Display Limit Warning -->
-              <?php if ($limit_warning): ?>
-                <div style="background-color: #FFF3CD; color: #856404; border: 1px solid #FFEBAA; padding: 10px; border-radius: 4px; font-weight: bold; font-family: verdana; font-size: 13px; margin-bottom: 10px;">
-                  ⚠️ Showing first 1000 records.
-                </div>
-              <?php endif; ?>
-
-              <!-- ═══ RESULTS SECTION ═══ -->
-              <?php if ($_SERVER['REQUEST_METHOD'] === 'POST' && $error === '' && isset($_POST['BTN_EXECUTE'])): ?>
-                
-                <table width="100%" border="0" cellpadding="0" cellspacing="0">
-                  <tr>
-                    <td bgcolor="#921215" height="30" style="padding: 5px 10px;">
-                      <table width="100%" border="0">
-                        <tr>
-                          <td>
-                            <font color="#FFFFFF" size="2" face="verdana">
-                              <b>Results: <?= $total_rows ?> Rows | Execution Time: <?= round($execution_time, 4) ?> Seconds</b>
-                            </font>
-                          </td>
-                          <td align="right">
-                            <form method="post" action="admin_sql_console.php" style="display:inline; margin:0;">
-                              <input type="hidden" name="sql_query" value="<?= htmlspecialchars($query) ?>" />
-                              <input type="hidden" name="export" value="1" />
-                              <input type="hidden" name="export_type" value="csv" />
-                              <input type="submit" value="Export CSV" class="btn-console" style="padding:2px 8px; font-size:11px;" />
-                            </form>
-                            &nbsp;
-                            <form method="post" action="admin_sql_console.php" style="display:inline; margin:0;">
-                              <input type="hidden" name="sql_query" value="<?= htmlspecialchars($query) ?>" />
-                              <input type="hidden" name="export" value="1" />
-                              <input type="hidden" name="export_type" value="excel" />
-                              <input type="submit" value="Export Excel" class="btn-console" style="padding:2px 8px; font-size:11px;" />
-                            </form>
-                          </td>
-                        </tr>
-                      </table>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td bgcolor="#C2E0FB" style="padding: 10px; border: 1px solid #75a7d3;">
-                      <?php if ($total_rows > 0): ?>
-                        <div style="overflow-x: auto; max-width: 950px;">
-                          <table border="1" cellspacing="0" cellpadding="5" style="border-collapse: collapse; background-color: white; font-size: 12px; width: 100%;">
-                            <thead>
-                              <tr bgcolor="#921215">
-                                <?php foreach ($columns as $col): ?>
-                                  <th><font color="#FFFFFF"><?= htmlspecialchars($col) ?></font></th>
-                                <?php endforeach; ?>
-                              </tr>
-                            </thead>
-                            <tbody id="resultsBody">
-                              <?php foreach ($results as $i => $row): $bg = ($i % 2 === 0) ? '#AED1F1' : '#C2E0FB'; ?>
-                                <tr bgcolor="<?= $bg ?>">
-                                  <?php foreach ($columns as $col): ?>
-                                    <td><?= htmlspecialchars($row[$col] ?? '—') ?></td>
-                                  <?php endforeach; ?>
-                                </tr>
-                              <?php endforeach; ?>
-                            </tbody>
-                          </table>
-                        </div>
-                        <div id="paginationControls" align="right" style="margin-top: 10px; font-family: verdana; font-size: 12px;"></div>
-                        
-                        <script type="text/javascript">
-                        (function() {
-                            var rowsPerPage = 50;
-                            var tbody = document.getElementById('resultsBody');
-                            if (!tbody) return;
-                            var rows = tbody.getElementsByTagName('tr');
-                            var totalRows = rows.length;
-                            var totalPages = Math.ceil(totalRows / rowsPerPage);
-                            if (totalPages <= 1) return; // No pagination needed if <= 50 rows
-
-                            var currentPage = 1;
-
-                            function showPage(page) {
-                                currentPage = page;
-                                var start = (page - 1) * rowsPerPage;
-                                var end = start + rowsPerPage;
-
-                                for (var i = 0; i < totalRows; i++) {
-                                    if (i >= start && i < end) {
-                                        rows[i].style.display = '';
-                                    } else {
-                                        rows[i].style.display = 'none';
-                                    }
-                                }
-                                renderControls();
-                            }
-
-                            function renderControls() {
-                                var controlsDiv = document.getElementById('paginationControls');
-                                if (!controlsDiv) return;
-                                
-                                var html = '';
-                                
-                                // Prev button
-                                if (currentPage > 1) {
-                                    html += '<a href="javascript:void(0)" onclick="window.sqlConsoleShowPage(' + (currentPage - 1) + ')" style="padding: 4px 8px; margin: 2px; border: 1px solid #75a7d3; background-color: #AED1F1; text-decoration: none; color: black; font-weight: bold; border-radius: 3px;">Prev</a> ';
-                                } else {
-                                    html += '<span style="padding: 4px 8px; margin: 2px; border: 1px solid #ccc; background-color: #f0f0f0; color: #888; border-radius: 3px; cursor: not-allowed;">Prev</span> ';
-                                }
-
-                                // Page numbers
-                                var startPage = Math.max(1, currentPage - 2);
-                                var endPage = Math.min(totalPages, currentPage + 2);
-
-                                if (startPage > 1) {
-                                    html += '<a href="javascript:void(0)" onclick="window.sqlConsoleShowPage(1)" style="padding: 4px 8px; margin: 2px; border: 1px solid #75a7d3; background-color: #AED1F1; text-decoration: none; color: black; border-radius: 3px;">1</a> ';
-                                    if (startPage > 2) {
-                                        html += '<span style="padding: 4px; margin: 2px; color: #555;">...</span> ';
-                                    }
-                                }
-
-                                for (var p = startPage; p <= endPage; p++) {
-                                    if (p === currentPage) {
-                                        html += '<span style="padding: 4px 8px; margin: 2px; border: 1px solid #921215; background-color: #921215; color: white; font-weight: bold; border-radius: 3px;">' + p + '</span> ';
-                                    } else {
-                                        html += '<a href="javascript:void(0)" onclick="window.sqlConsoleShowPage(' + p + ')" style="padding: 4px 8px; margin: 2px; border: 1px solid #75a7d3; background-color: #AED1F1; text-decoration: none; color: black; border-radius: 3px;">' + p + '</a> ';
-                                    }
-                                }
-
-                                if (endPage < totalPages) {
-                                    if (endPage < totalPages - 1) {
-                                        html += '<span style="padding: 4px; margin: 2px; color: #555;">...</span> ';
-                                    }
-                                    html += '<a href="javascript:void(0)" onclick="window.sqlConsoleShowPage(' + totalPages + ')" style="padding: 4px 8px; margin: 2px; border: 1px solid #75a7d3; background-color: #AED1F1; text-decoration: none; color: black; border-radius: 3px;">' + totalPages + '</a> ';
-                                }
-
-                                // Next button
-                                if (currentPage < totalPages) {
-                                    html += '<a href="javascript:void(0)" onclick="window.sqlConsoleShowPage(' + (currentPage + 1) + ')" style="padding: 4px 8px; margin: 2px; border: 1px solid #75a7d3; background-color: #AED1F1; text-decoration: none; color: black; font-weight: bold; border-radius: 3px;">Next</a>';
-                                } else {
-                                    html += '<span style="padding: 4px 8px; margin: 2px; border: 1px solid #ccc; background-color: #f0f0f0; color: #888; border-radius: 3px; cursor: not-allowed;">Next</span>';
-                                }
-
-                                // Record range text
-                                var startRec = (currentPage - 1) * rowsPerPage + 1;
-                                var endRec = Math.min(currentPage * rowsPerPage, totalRows);
-                                html = '<span style="font-family: verdana; font-size: 11px; margin-right: 15px; color: #333;">Showing ' + startRec + ' to ' + endRec + ' of ' + totalRows + ' records</span>' + html;
-
-                                controlsDiv.innerHTML = html;
-                            }
-
-                            window.sqlConsoleShowPage = showPage;
-                            showPage(1);
-                        })();
-                        </script>
-                      <?php else: ?>
-                        <font size="2" face="verdana">No records returned.</font>
-                      <?php endif; ?>
-                    </td>
-                  </tr>
-                </table>
-
-              <?php endif; ?>
-
-            </td>
-
-            <!-- Right Sidebar Panel (Query History) -->
-            <td width="300" align="left" valign="top" style="padding-left: 15px;">
-              <table width="100%" border="0" cellpadding="0" cellspacing="0">
-                <tr>
-                  <th height="25" align="center" valign="middle" background="../assets/images/border.jpg" scope="col">
-                    <font color="#FFFFFF">RECENT QUERIES</font>
-                  </th>
-                </tr>
-                <tr>
-                  <td bgcolor="#C2E0FB" style="padding: 10px; border: 1px solid #75a7d3; min-height: 400px;" align="center" valign="top">
-                    <?php if (!empty($history)): ?>
-                      <?php foreach ($history as $h): ?>
-                        <div class="history-item" onclick="document.getElementById('sql_query').value = this.getAttribute('data-query');" data-query="<?= htmlspecialchars($h['query_text']) ?>" title="Click to copy query to editor">
-                          <b><?= htmlspecialchars($h['username']) ?></b> (<?= round((float)$h['execution_time'], 3) ?>s)<br/>
-                          <font color="#555"><?= date('d-m-Y h:i A', strtotime($h['created_at'])) ?></font><br/>
-                          <code><?= htmlspecialchars(substr($h['query_text'], 0, 80)) ?><?= strlen($h['query_text']) > 80 ? '...' : '' ?></code>
-                        </div>
-                      <?php endforeach; ?>
-                    <?php else: ?>
-                      <font size="2" face="verdana" color="#555">No queries run yet.</font>
-                    <?php endif; ?>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-
-        <p>&nbsp;</p>
-        <p>&nbsp;</p>
-
-      </td>
-    </tr>
-  </table>
+  <aside class="sum-admin-grid__side">
+    <section class="sum-console-panel" aria-label="Recent Queries">
+      <h2 class="sum-console-panel__title">Recent Queries</h2>
+      <?php if (!empty($history)): ?>
+        <?php foreach ($history as $h): ?>
+          <div class="sum-history-item" onclick="document.getElementById('sql_query').value = this.getAttribute('data-query');" data-query="<?= htmlspecialchars($h['query_text']) ?>" title="Click to copy query to editor">
+            <b><?= htmlspecialchars($h['username']) ?></b> (<?= round((float)$h['execution_time'], 3) ?>s)<br/>
+            <span><?= date('d-m-Y h:i A', strtotime($h['created_at'])) ?></span>
+            <code><?= htmlspecialchars(substr($h['query_text'], 0, 80)) ?><?= strlen($h['query_text']) > 80 ? '...' : '' ?></code>
+          </div>
+        <?php endforeach; ?>
+      <?php else: ?>
+        <p class="sum-console-panel__empty">No queries run yet.</p>
+      <?php endif; ?>
+    </section>
+  </aside>
 </div>
-<?php layout_end(); ?>
+<?php
+cdat_sum_page_close();
+layout_end();
+?>

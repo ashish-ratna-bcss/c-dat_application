@@ -1,10 +1,11 @@
 <?php
 require_once __DIR__ . '/includes/layout.php';
-layout_begin("Bulk Address");
-?>
+require_once __DIR__ . '/includes/sum_ui.php';
 
-<li><a href="bulkaddress.php"><font color=#FDEFEF>Back</a></li>
-<?php
+layout_begin('Bulk Address');
+cdat_sum_page_open();
+cdat_sum_back_link('bulkaddress.php', 'Back to search');
+
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"CDATDUPL");
 $conn = sqlsrv_connect( $serverName, $connectionInfo );
@@ -15,9 +16,6 @@ $number= $_POST['PHONE_NO'];
 
 $number2 = str_replace(",","','","$number");
 $number3 = str_replace(",","' INSERT INTO #T1 SELECT '","$number");
-
-echo "<font size=4 face=verdana  color='#F9FBFC'><td><center><b>ADDRESSES OF MOBILE NOS<center></td></font></br>";
-
 
 $sql1= "CREATE TABLE #T1 (PHONE NVARCHAR (20) NULL)";
 
@@ -63,30 +61,40 @@ $st6 = sqlsrv_query( $conn, $sql6 );
 $st7 = sqlsrv_query( $conn, $sql7 );
 $st8 = sqlsrv_query( $conn, $sql8 );
 
+$rows = cdat_sum_fetch_all($st8);
 
-echo "<table border=1 cellspacing=0 cellpadding=5>
-<tr>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>PHONE</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>FIRST_CALL</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>LAST_CALL</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>LAST_UPDATED</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>NICKNAME</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>ADDRESS</font></th>
-</tr>";
+cdat_sum_results_open();
+cdat_sum_report_banner('ADDRESSES OF MOBILE NOS');
 
-while( $row = sqlsrv_fetch_array( $st8, SQLSRV_FETCH_ASSOC) ) {
-echo "<tr>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['PHONE'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['FIRST_CALL'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['LAST_CALL'] ."<center></font></td>";
-echo "<td width=0px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['LAST_UPDATED'] ."<center></font></td>";
-echo "<td width=0px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['NICKNAME'] ."<center></font></td>";
-echo "<td width=0px bgcolor=#C2E0FB><font size=1 face=verdana>". $row['ADDRESS'] ."</font></td>";
-echo "</tr>";
-
+if (empty($rows)) {
+    cdat_sum_empty_state();
+} else {
+    cdat_sum_generic_table_open(
+        'Bulk Addresses',
+        ['PHONE', 'FIRST_CALL', 'LAST_CALL', 'LAST_UPDATED', 'NICKNAME', 'ADDRESS'],
+        'results_table',
+        'bulk_address.csv',
+        count($rows)
+    );
+    foreach ($rows as $row) {
+        $addrHtml = cdat_sum_address_lines((string) ($row['ADDRESS'] ?? ''));
+        cdat_sum_table_row([
+            ['text' => (string) ($row['PHONE'] ?? ''), 'class' => 'sum-cell-num'],
+            ['text' => (string) ($row['FIRST_CALL'] ?? ''), 'class' => 'sum-cell-date'],
+            ['text' => (string) ($row['LAST_CALL'] ?? ''), 'class' => 'sum-cell-date'],
+            ['text' => (string) ($row['LAST_UPDATED'] ?? ''), 'class' => 'sum-cell-date'],
+            (string) ($row['NICKNAME'] ?? ''),
+            ['html' => $addrHtml !== '' ? $addrHtml : '—', 'class' => 'sum-address-cell'],
+        ]);
+    }
+    cdat_sum_generic_table_close();
 }
-echo"</table>";
 
-sqlsrv_free_stmt( $st8);
-?>
-<?php layout_end(); ?>
+cdat_sum_results_close();
+
+if ($st8) {
+    sqlsrv_free_stmt($st8);
+}
+
+cdat_sum_page_close();
+layout_end();

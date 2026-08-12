@@ -64,272 +64,102 @@ function fmt_dur(?int $sec): string
 ?>
 <?php
 require_once __DIR__ . '/includes/layout.php';
+require_once __DIR__ . '/includes/sum_ui.php';
 layout_begin("User Activity");
-?>
-<div align="center">
-  <table width="1323" height="603" border="2">
-    <tr>
-      <td width="1349" height="595" align="left" valign="top">
+cdat_sum_page_open('sum-admin-layout');
 
-        <!-- ═══ TOP NAVIGATION ═══ -->
-        <table width="1313" height="148">
-          <tr>
-            <td width="1265" height="134" align="center" valign="bottom" background="../assets/images/topborder.jpg">
-              
-            </td>
-          </tr>
-        </table>
+$userOptions = ['' => 'Select user'];
+foreach ($users as $u) {
+    $uname = (string) $u['username'];
+    $userOptions[$uname] = $uname;
+}
+$userSelect = cdat_sum_searchable_select(
+    'filter_user',
+    'Select User',
+    $userOptions,
+    $filter_user,
+    'Select user',
+    true
+);
 
-        <p>&nbsp;</p>
+$fieldsHtml = $userSelect
+    . cdat_sum_field_date_native('filter_from', 'Date From', $filter_from)
+    . cdat_sum_field_date_native('filter_to', 'Date To', $filter_to);
 
-        <!-- ═══ SEARCH FORM ═══ -->
-        <table width="700" height="90" align="center">
-          <tr>
-            <th height="25" align="center" valign="middle" background="../assets/images/border.jpg" scope="col">
-              USER ACTIVITY LOG
-            </th>
-          </tr>
-          <tr>
-            <th align="center" valign="middle" background="../assets/images/border.jpg" scope="col">
-              <form id="form1" name="form1" method="post" action="admin_activity_log.php">
-                <p>
-                  <label for="filter_user" style="font-family:verdana;font-size:13px;">Select User:</label>
-                  <select name="filter_user" id="filter_user" style="height:24px;font-size:12px;margin:0 6px;" required="required">
-                    <option value="">-- Select User --</option>
-                    <?php foreach ($users as $u): ?>
-                      <option value="<?= htmlspecialchars($u['username']) ?>"
-                        <?= $filter_user === $u['username'] ? 'selected="selected"' : '' ?>>
-                        <?= htmlspecialchars($u['username']) ?>
-                      </option>
-                    <?php endforeach; ?>
-                  </select>
-                  &nbsp;
-                  Date From:
-                  <input type="date" name="filter_from" id="filter_from" value="<?= htmlspecialchars($filter_from) ?>" max="<?= date('Y-m-d') ?>" style="height:24px;font-size:12px;" />
-                  &nbsp;To:
-                  <input type="date" name="filter_to" id="filter_to" value="<?= htmlspecialchars($filter_to) ?>" max="<?= date('Y-m-d') ?>" style="height:24px;font-size:12px;" />
-                  &nbsp;
-                  <input type="submit" name="BTN_SEARCH" id="BTN_SEARCH" value="Submit" />
-                </p>
-              </form>
-            </th>
-          </tr>
-        </table>
+cdat_sum_search_card(
+    'User Activity Log',
+    'Filter sessions and activity by user and date range.',
+    'admin_activity_log.php',
+    $fieldsHtml,
+    'BTN_SEARCH',
+    'Search',
+    'get'
+);
 
-        <p>&nbsp;</p>
+if ($filter_user !== '') {
+    $userLabel = strtoupper($filter_user);
+    $hasSessions = !empty($sessions);
+    $hasLogs = !empty($logs);
 
-        <?php if ($filter_user !== ''): ?>
+    if ($hasSessions) {
+        cdat_sum_report_banner('Session History of User: ' . $userLabel);
+        cdat_sum_generic_table_open(
+            'Sessions',
+            ['SESSION ID', 'USERNAME', 'LOGIN TIME', 'LOGOUT TIME', 'DURATION', 'IP ADDRESS', 'DEVICE'],
+            'sessions_table',
+            'sessions.csv',
+            count($sessions)
+        );
+        foreach ($sessions as $sess) {
+            cdat_sum_table_row([
+                ['text' => (string) $sess['id'], 'class' => 'sum-cell-num'],
+                $sess['username'],
+                ['text' => fmt_dt($sess['login_time']), 'class' => 'sum-cell-date'],
+                ['text' => fmt_dt($sess['logout_time']), 'class' => 'sum-cell-date'],
+                fmt_dur($sess['session_duration'] ? (int) $sess['session_duration'] : null),
+                $sess['ip_address'] ?? '—',
+                $sess['device_info'] ?? '—',
+            ]);
+        }
+        cdat_sum_generic_table_close();
+    }
 
-        <!-- ═══ SESSIONS TABLE ═══ -->
-        <table width="1280" align="center" border="0" cellspacing="0" cellpadding="0">
-          <tr>
-            <td align="center">
+    if ($hasLogs) {
+        cdat_sum_report_banner('Activity Log of User: ' . $userLabel);
+        cdat_sum_generic_table_open(
+            'Activity Log',
+            ['S.NO', 'SESSION ID', 'MODULE', 'ACTION', 'SEARCH DATA', 'TIMESTAMP'],
+            'logs_table',
+            'activity_log.csv',
+            count($logs)
+        );
+        foreach ($logs as $i => $log) {
+            $paramStr = '';
+            if ($log['search_data']) {
+                $data = json_decode($log['search_data'], true) ?? [];
+                $parts = [];
+                foreach ($data as $k => $v) {
+                    if ($k === 'ip') continue;
+                    $parts[] = strtoupper(str_replace('_', ' ', $k)) . ': ' . $v;
+                }
+                $paramStr = implode(' | ', $parts);
+            }
+            cdat_sum_table_row([
+                ['text' => (string) ($i + 1), 'class' => 'sum-cell-num'],
+                ['text' => (string) ($log['session_id'] ?? '—'), 'class' => 'sum-cell-num'],
+                $log['module_name'],
+                $log['action_type'],
+                $paramStr !== '' ? $paramStr : '—',
+                ['text' => fmt_dt($log['created_at']), 'class' => 'sum-cell-date'],
+            ]);
+        }
+        cdat_sum_generic_table_close();
+    }
 
-              <?php if (!empty($sessions)): ?>
-              <font size="4" face="verdana" color="#F9FBFC">
-                <center><b>SESSION HISTORY OF USER: <?= htmlspecialchars(strtoupper($filter_user)) ?></b></center>
-              </font><br/>
-              <table border="1" cellspacing="0" cellpadding="5" align="center">
-                <thead>
-                  <tr>
-                    <th bgcolor="#921215"><font size="2" face="verdana" color="#F9FBFC">SESSION ID</font></th>
-                    <th bgcolor="#921215"><font size="2" face="verdana" color="#F9FBFC">USERNAME</font></th>
-                    <th bgcolor="#921215"><font size="2" face="verdana" color="#F9FBFC">LOGIN TIME</font></th>
-                    <th bgcolor="#921215"><font size="2" face="verdana" color="#F9FBFC">LOGOUT TIME</font></th>
-                    <th bgcolor="#921215"><font size="2" face="verdana" color="#F9FBFC">DURATION</font></th>
-                    <th bgcolor="#921215"><font size="2" face="verdana" color="#F9FBFC">IP ADDRESS</font></th>
-                    <th bgcolor="#921215"><font size="2" face="verdana" color="#F9FBFC">DEVICE</font></th>
-                  </tr>
-                </thead>
-                <tbody id="sessionsBody">
-                  <?php foreach ($sessions as $i => $sess): $bg = ($i % 2 === 0) ? '#AED1F1' : '#C2E0FB'; ?>
-                  <tr>
-                    <td width="80px" bgcolor="<?= $bg ?>"><font size="1" face="verdana"><center><?= $sess['id'] ?><center></font></td>
-                    <td width="100px" bgcolor="<?= $bg ?>"><font size="1" face="verdana"><center><?= htmlspecialchars($sess['username']) ?><center></font></td>
-                    <td width="160px" bgcolor="<?= $bg ?>"><font size="1" face="verdana"><center><?= fmt_dt($sess['login_time']) ?><center></font></td>
-                    <td width="160px" bgcolor="<?= $bg ?>"><font size="1" face="verdana"><center><?= fmt_dt($sess['logout_time']) ?><center></font></td>
-                    <td width="100px" bgcolor="<?= $bg ?>"><font size="1" face="verdana"><center><?= fmt_dur($sess['session_duration'] ? (int)$sess['session_duration'] : null) ?><center></font></td>
-                    <td width="120px" bgcolor="<?= $bg ?>"><font size="1" face="verdana"><center><?= htmlspecialchars($sess['ip_address'] ?? '—') ?><center></font></td>
-                    <td width="100px" bgcolor="<?= $bg ?>"><font size="1" face="verdana"><center><?= htmlspecialchars($sess['device_info'] ?? '—') ?><center></font></td>
-                  </tr>
-                  <?php endforeach; ?>
-                </tbody>
-                <tfoot>
-                  <tr>
-                    <td colspan="7" align="right" bgcolor="#C2E0FB" style="padding: 10px; border: 1px solid #75a7d3;">
-                      <div id="sessionsPaginationControls" style="font-family: verdana; font-size: 12px; font-weight: bold; color: black;"></div>
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
-              <?php endif; ?>
+    if (!$hasSessions && !$hasLogs) {
+        cdat_sum_empty_state('*** NO ACTIVITY FOUND FOR USER: ' . $userLabel . ' ***');
+    }
+}
 
-              <br/>
-
-              <!-- ═══ ACTIVITY LOGS TABLE ═══ -->
-              <?php if (!empty($logs)): ?>
-              <font size="4" face="verdana" color="#F9FBFC">
-                <center><b>ACTIVITY LOG OF USER: <?= htmlspecialchars(strtoupper($filter_user)) ?></b></center>
-              </font><br/>
-              <table border="1" cellspacing="0" cellpadding="5" align="center">
-                <thead>
-                  <tr>
-                    <th bgcolor="#921215"><font size="2" face="verdana" color="#F9FBFC">S.NO</font></th>
-                    <th bgcolor="#921215"><font size="2" face="verdana" color="#F9FBFC">SESSION ID</font></th>
-                    <th bgcolor="#921215"><font size="2" face="verdana" color="#F9FBFC">MODULE</font></th>
-                    <th bgcolor="#921215"><font size="2" face="verdana" color="#F9FBFC">ACTION</font></th>
-                    <th bgcolor="#921215"><font size="2" face="verdana" color="#F9FBFC">SEARCH DATA</font></th>
-                    <th bgcolor="#921215"><font size="2" face="verdana" color="#F9FBFC">TIMESTAMP</font></th>
-                  </tr>
-                </thead>
-                <tbody id="logsBody">
-                  <?php foreach ($logs as $i => $log):
-                    $bg = ($i % 2 === 0) ? '#AED1F1' : '#C2E0FB';
-                    // Format search_data JSON nicely
-                    $paramStr = '';
-                    if ($log['search_data']) {
-                        $data = json_decode($log['search_data'], true) ?? [];
-                        $parts = [];
-                        foreach ($data as $k => $v) {
-                            if ($k === 'ip') continue;
-                            $parts[] = strtoupper(str_replace('_', ' ', $k)) . ': ' . $v;
-                        }
-                        $paramStr = implode(' | ', $parts);
-                    }
-                  ?>
-                  <tr>
-                    <td width="50px" bgcolor="<?= $bg ?>"><font size="1" face="verdana"><center><?= $i + 1 ?><center></font></td>
-                    <td width="80px" bgcolor="<?= $bg ?>"><font size="1" face="verdana"><center><?= $log['session_id'] ?? '—' ?><center></font></td>
-                    <td width="180px" bgcolor="<?= $bg ?>"><font size="1" face="verdana"><center><?= htmlspecialchars($log['module_name']) ?><center></font></td>
-                    <td width="120px" bgcolor="<?= $bg ?>"><font size="1" face="verdana"><center><?= htmlspecialchars($log['action_type']) ?><center></font></td>
-                    <td width="400px" bgcolor="<?= $bg ?>"><font size="1" face="verdana"><?= htmlspecialchars($paramStr ?: '—') ?></font></td>
-                    <td width="160px" bgcolor="<?= $bg ?>"><font size="1" face="verdana"><center><?= fmt_dt($log['created_at']) ?><center></font></td>
-                  </tr>
-                  <?php endforeach; ?>
-                </tbody>
-                <tfoot>
-                  <tr>
-                    <td colspan="6" align="right" bgcolor="#C2E0FB" style="padding: 10px; border: 1px solid #75a7d3;">
-                      <div id="logsPaginationControls" style="font-family: verdana; font-size: 12px; font-weight: bold; color: black;"></div>
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
-              
-              <script type="text/javascript">
-              function setupPagination(tbodyId, controlsId, rowsPerPage) {
-                  var tbody = document.getElementById(tbodyId);
-                  if (!tbody) return;
-                  var rows = tbody.getElementsByTagName('tr');
-                  var totalRows = rows.length;
-                  var totalPages = Math.ceil(totalRows / rowsPerPage);
-                  if (totalPages <= 1) return;
-
-                  var currentPage = 1;
-
-                  function showPage(page) {
-                      currentPage = page;
-                      var start = (page - 1) * rowsPerPage;
-                      var end = start + rowsPerPage;
-
-                      for (var i = 0; i < totalRows; i++) {
-                          if (i >= start && i < end) {
-                              rows[i].style.display = '';
-                          } else {
-                              rows[i].style.display = 'none';
-                          }
-                      }
-                      renderControls();
-                  }
-
-                  function renderControls() {
-                      var controlsDiv = document.getElementById(controlsId);
-                      if (!controlsDiv) return;
-                      
-                      var html = '';
-                      
-                      // Prev button
-                      if (currentPage > 1) {
-                          html += '<a href="javascript:void(0)" class="page-btn" data-page="' + (currentPage - 1) + '" style="padding: 4px 8px; margin: 2px; border: 1px solid #75a7d3; background-color: #AED1F1; text-decoration: none; color: black; font-weight: bold; border-radius: 3px;">Prev</a> ';
-                      } else {
-                          html += '<span style="padding: 4px 8px; margin: 2px; border: 1px solid #ccc; background-color: #f0f0f0; color: #888; border-radius: 3px; cursor: not-allowed;">Prev</span> ';
-                      }
-
-                      // Page numbers
-                      var startPage = Math.max(1, currentPage - 2);
-                      var endPage = Math.min(totalPages, currentPage + 2);
-
-                      if (startPage > 1) {
-                          html += '<a href="javascript:void(0)" class="page-btn" data-page="1" style="padding: 4px 8px; margin: 2px; border: 1px solid #75a7d3; background-color: #AED1F1; text-decoration: none; color: black; border-radius: 3px;">1</a> ';
-                          if (startPage > 2) {
-                              html += '<span style="padding: 4px; margin: 2px; color: #fff;">...</span> ';
-                          }
-                      }
-
-                      for (var p = startPage; p <= endPage; p++) {
-                          if (p === currentPage) {
-                              html += '<span style="padding: 4px 8px; margin: 2px; border: 1px solid #921215; background-color: #921215; color: white; font-weight: bold; border-radius: 3px;">' + p + '</span> ';
-                          } else {
-                              html += '<a href="javascript:void(0)" class="page-btn" data-page="' + p + '" style="padding: 4px 8px; margin: 2px; border: 1px solid #75a7d3; background-color: #AED1F1; text-decoration: none; color: black; border-radius: 3px;">' + p + '</a> ';
-                          }
-                      }
-
-                      if (endPage < totalPages) {
-                          if (endPage < totalPages - 1) {
-                              html += '<span style="padding: 4px; margin: 2px; color: #fff;">...</span> ';
-                          }
-                          html += '<a href="javascript:void(0)" class="page-btn" data-page="' + totalPages + '" style="padding: 4px 8px; margin: 2px; border: 1px solid #75a7d3; background-color: #AED1F1; text-decoration: none; color: black; border-radius: 3px;">' + totalPages + '</a> ';
-                      }
-
-                      // Next button
-                      if (currentPage < totalPages) {
-                          html += '<a href="javascript:void(0)" class="page-btn" data-page="' + (currentPage + 1) + '" style="padding: 4px 8px; margin: 2px; border: 1px solid #75a7d3; background-color: #AED1F1; text-decoration: none; color: black; font-weight: bold; border-radius: 3px;">Next</a>';
-                      } else {
-                          html += '<span style="padding: 4px 8px; margin: 2px; border: 1px solid #ccc; background-color: #f0f0f0; color: #888; border-radius: 3px; cursor: not-allowed;">Next</span>';
-                      }
-
-                      // Record range text
-                      var startRec = (currentPage - 1) * rowsPerPage + 1;
-                      var endRec = Math.min(currentPage * rowsPerPage, totalRows);
-                      html = '<span style="font-family: verdana; font-size: 11px; margin-right: 15px; color: #333;">Showing ' + startRec + ' to ' + endRec + ' of ' + totalRows + ' records</span>' + html;
-
-                      controlsDiv.innerHTML = html;
-
-                      // Bind clicks
-                      var btns = controlsDiv.getElementsByClassName('page-btn');
-                      for (var j = 0; j < btns.length; j++) {
-                          btns[j].addEventListener('click', function(e) {
-                              var targetPage = parseInt(this.getAttribute('data-page'));
-                              showPage(targetPage);
-                          });
-                      }
-                  }
-
-                  showPage(1);
-              }
-
-              // Run pagination logic
-              setupPagination('sessionsBody', 'sessionsPaginationControls', 10);
-              setupPagination('logsBody', 'logsPaginationControls', 25);
-              </script>
-              
-              <?php elseif ($filter_user !== ''): ?>
-                <font size="3" face="verdana" color="#F9FBFC">
-                  <center><b>*** NO ACTIVITY FOUND FOR USER: <?= htmlspecialchars(strtoupper($filter_user)) ?> ***</b></center>
-                </font>
-              <?php endif; ?>
-
-            </td>
-          </tr>
-        </table>
-
-        <?php endif; ?>
-
-        <p>&nbsp;</p>
-        <p>&nbsp;</p>
-
-      </td>
-    </tr>
-  </table>
-</div>
-<?php layout_end(); ?>
+cdat_sum_page_close();
+layout_end();

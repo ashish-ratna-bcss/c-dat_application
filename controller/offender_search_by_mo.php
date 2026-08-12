@@ -1,117 +1,117 @@
 <?php
 require_once __DIR__ . '/includes/layout.php';
-layout_begin("Offender Search By MO");
-?>
+require_once __DIR__ . '/includes/sum_ui.php';
 
-<div align="center">
-  <table width="1323" height="603" border="2">
-    <tr>
-      <td width="1349" height="595" align="left" valign="top">
-        
-        <!-- Search Form -->
-        <table width="800" height="100" align="center">
-          <tr>
-            <th height="27" bgcolor="#A9D1F5" class="CDAT" scope="col">OFFENDER SEARCH BY SUB CLASSIFICATION</th>
-          </tr>
-          <tr>
-            <th width="555" bgcolor="#A9D1F5" class="CDAT" scope="col">
-              <form id="form1" name="form1" method="post" action="">
-                MO SUB CLASSIFICATION:
-                <label for="textfield"></label>
-                <input type="text" name="MO" id="NAME" placeholder="SUB CLASSIFICATION" required="required"
-                       value="<?php echo isset($_POST['MO']) ? htmlspecialchars($_POST['MO']) : ''; ?>"/>
-                <input type="submit" name="BTN_CDAT" id="BTN_CDAT" value="Submit" />
-              </form>
-            </th>
-          </tr>
-        </table>
-        <p>&nbsp;</p>
-        
-        <?php
-        // Check if form was submitted
-        if (isset($_POST['MO']) && !empty($_POST['MO'])) {
-            
-            $serverName = "CPHYDERABAD1\DAU_HYD_2023";
-            $connectionInfo = array( "Database"=>"CDATDUPL");
-            $conn = sqlsrv_connect( $serverName, $connectionInfo );
-            
-            if( $conn === false ) {
-               // die( print_r( sqlsrv_errors(), true));
-            }
-            
-            $number = trim($_POST['MO']);
-            
-            // Use parameterized queries to prevent SQL injection
-            $sql8 = "SELECT 'DETAILS OF : ' + ? as PHONE1";
-            $params8 = array($number);
-            $st8 = sqlsrv_prepare($conn, $sql8, $params8);
-            sqlsrv_execute($st8);
-            
-            $sql9 = "SELECT DISTINCT MO_KEY, ACC_NAME AS ACCUSED_NAME, FATHER_NAME, AGE, MO1, MO2, POLICE_STATION 
-                    FROM CDATDUPL..COMPLETE_MO_CLASSIFICATION
-                    WHERE (MO1 LIKE ? OR MO2 LIKE ? OR CRIME_HEAD LIKE ?)";
-            $searchPattern = '%' . str_replace(' ', '%', $number) . '%';
-            $params9 = array($searchPattern, $searchPattern, $searchPattern);
-            $st9 = sqlsrv_prepare($conn, $sql9, $params9);
-            sqlsrv_execute($st9);
-            
-            if ($st9 === false) {
-              //  die(print_r(sqlsrv_errors(), true));
-            }
-            
-            // Display header
-            while( $row = sqlsrv_fetch_array( $st8, SQLSRV_FETCH_ASSOC) ) {
-                echo "<div style='font-size: 18px; font-weight: bold; color: #4b495a; text-align: center; margin: 20px 0;'>" . htmlspecialchars($row['PHONE1']) . "</div>";
-            }
-            
-            // Display results table
-            echo "<div style='overflow-x: auto;'>";
-            echo "<table border='1' cellspacing='0' cellpadding='5' style='width: 100%; border-collapse: collapse; margin: 20px 0;'>
-            <tr bgcolor='#921215'>
-                <th style='color: #4b495a; padding: 10px;'>MO_KEY</th>
-                <th style='color: #4b495a; padding: 10px;'>ACCUSED NAME</th>
-                <th style='color: #4b495a; padding: 10px;'>FATHER_NAME</th>
-                <th style='color: #4b495a; padding: 10px;'>AGE</th>
-                <th style='color: #4b495a; padding: 10px;'>MO_SUB_CLASSIFICATION1</th>
-                <th style='color: #4b495a; padding: 10px;'>MO_SUB_CLASSIFICATION2</th>
-                <th style='color: #4b495a; padding: 10px;'>POLICE_STATION</th>
-            </tr>";
-            
-            $rowCount = 0;
-            while( $row = sqlsrv_fetch_array( $st9, SQLSRV_FETCH_ASSOC) ) {
-                $rowCount++;
-                $bgColor1 = ($rowCount % 2 == 0) ? '#AED1F1' : '#C2E0FB';
-                $bgColor2 = ($rowCount % 2 == 0) ? '#C2E0FB' : '#AED1F1';
-                
-                echo "<tr>";
-                echo "<td style='background-color: $bgColor1; padding: 5px; text-align: center;'><font size='1' face='verdana'><a href='offender_fd.php?MO_KEY=" . urlencode($row['MO_KEY']) . "'>" . htmlspecialchars($row['MO_KEY']) . "</a></font></td>";
-                echo "<td style='background-color: $bgColor2; padding: 5px; text-align: center;'><font size='1' face='verdana'>" . htmlspecialchars($row['ACCUSED_NAME']) . "</font></td>";
-                echo "<td style='background-color: $bgColor1; padding: 5px; text-align: center;'><font size='1' face='verdana'>" . htmlspecialchars($row['FATHER_NAME']) . "</font></td>";
-                echo "<td style='background-color: $bgColor2; padding: 5px; text-align: center;'><font size='1' face='verdana'>" . htmlspecialchars($row['AGE']) . "</font></td>";
-                echo "<td style='background-color: $bgColor1; padding: 5px; text-align: center;'><font size='1' face='verdana'>" . htmlspecialchars($row['MO1']) . "</font></td>";
-                echo "<td style='background-color: $bgColor2; padding: 5px; text-align: center;'><font size='1' face='verdana'>" . htmlspecialchars($row['MO2']) . "</font></td>";
-                echo "<td style='background-color: $bgColor1; padding: 5px; text-align: center;'><font size='1' face='verdana'>" . htmlspecialchars($row['POLICE_STATION']) . "</font></td>";
-                echo "</tr>";
-            }
-            echo "</table>";
-            echo "</div>";
-            
-            if ($rowCount == 0) {
-                echo "<div style='text-align: center; margin: 20px 0;'>";
-                echo "<font size='4' face='verdana' color='#4b495a'><b>No records found for: " . htmlspecialchars($number) . "</b></font>";
-                echo "</div>";
-            }
-            
-            sqlsrv_free_stmt($st9);
-            sqlsrv_close($conn);
+$isAjax = cdat_sum_is_ajax();
+$mo = trim((string) ($_POST['MO'] ?? ''));
+$hasSearch = $mo !== '';
+
+$fieldsHtml = cdat_sum_field_text('MO', 'MO Sub Classification', $mo, 'NAME', 'SUB CLASSIFICATION');
+
+if ($hasSearch) {
+    if (!$isAjax) {
+        layout_begin('Offender Search By MO');
+        cdat_sum_page_open();
+        cdat_sum_search_card(
+            'Offender Search By Sub Classification',
+            'Search offenders by MO sub classification.',
+            'offender_search_by_mo.php',
+            $fieldsHtml,
+            'BTN_CDAT',
+            'Search'
+        );
+    }
+
+    $serverName = "CPHYDERABAD1\DAU_HYD_2023";
+    $connectionInfo = array( "Database"=>"CDATDUPL");
+    $conn = sqlsrv_connect( $serverName, $connectionInfo );
+
+    if( $conn === false ) {
+       // die( print_r( sqlsrv_errors(), true));
+    }
+
+    $number = trim($_POST['MO']);
+
+    // Use parameterized queries to prevent SQL injection
+    $sql8 = "SELECT 'DETAILS OF : ' + ? as PHONE1";
+    $params8 = array($number);
+    $st8 = sqlsrv_prepare($conn, $sql8, $params8);
+    sqlsrv_execute($st8);
+
+    $sql9 = "SELECT DISTINCT MO_KEY, ACC_NAME AS ACCUSED_NAME, FATHER_NAME, AGE, MO1, MO2, POLICE_STATION 
+            FROM CDATDUPL..COMPLETE_MO_CLASSIFICATION
+            WHERE (MO1 LIKE ? OR MO2 LIKE ? OR CRIME_HEAD LIKE ?)";
+    $searchPattern = '%' . str_replace(' ', '%', $number) . '%';
+    $params9 = array($searchPattern, $searchPattern, $searchPattern);
+    $st9 = sqlsrv_prepare($conn, $sql9, $params9);
+    sqlsrv_execute($st9);
+
+    if ($st9 === false) {
+      //  die(print_r(sqlsrv_errors(), true));
+    }
+
+    $bannerTitle = 'DETAILS OF : ' . $number;
+    if ($st8 && ($bannerRow = sqlsrv_fetch_array($st8, SQLSRV_FETCH_ASSOC))) {
+        $bannerTitle = (string) ($bannerRow['PHONE1'] ?? $bannerTitle);
+    }
+
+    $rows = cdat_sum_fetch_all($st9);
+
+    if (empty($rows)) {
+        cdat_sum_empty_state('No records found for: ' . $number);
+    } else {
+        cdat_sum_results_open();
+        cdat_sum_report_banner($bannerTitle);
+        cdat_sum_generic_table_open(
+            'Offender MO Results',
+            ['MO_KEY', 'ACCUSED NAME', 'FATHER_NAME', 'AGE', 'MO_SUB_CLASSIFICATION1', 'MO_SUB_CLASSIFICATION2', 'POLICE_STATION'],
+            'results_table',
+            'offender_mo.csv',
+            count($rows)
+        );
+        foreach ($rows as $row) {
+            $moKey = (string) ($row['MO_KEY'] ?? '');
+            cdat_sum_table_row([
+                [
+                    'html' => '<a href="offender_fd.php?MO_KEY=' . cdat_sum_h(urlencode($moKey)) . '">' . cdat_sum_h($moKey) . '</a>',
+                    'class' => 'sum-cell-num',
+                ],
+                (string) ($row['ACCUSED_NAME'] ?? ''),
+                (string) ($row['FATHER_NAME'] ?? ''),
+                ['text' => (string) ($row['AGE'] ?? ''), 'class' => 'sum-cell-num'],
+                (string) ($row['MO1'] ?? ''),
+                (string) ($row['MO2'] ?? ''),
+                (string) ($row['POLICE_STATION'] ?? ''),
+            ]);
         }
-        ?>
-        
-        <p>&nbsp;</p>
-        <p>&nbsp;</p>
-      </td>
-    </tr>
-  </table>
-</div>
+        cdat_sum_generic_table_close();
+        cdat_sum_results_close();
+    }
 
-<?php layout_end(); ?>
+    if ($st9) {
+        sqlsrv_free_stmt($st9);
+    }
+    if ($conn) {
+        sqlsrv_close($conn);
+    }
+
+    if ($isAjax) {
+        exit;
+    }
+    cdat_sum_page_close();
+    layout_end();
+    exit;
+}
+
+layout_begin('Offender Search By MO');
+cdat_sum_page_open();
+cdat_sum_search_card(
+    'Offender Search By Sub Classification',
+    'Search offenders by MO sub classification.',
+    'offender_search_by_mo.php',
+    cdat_sum_field_text('MO', 'MO Sub Classification', '', 'NAME', 'SUB CLASSIFICATION'),
+    'BTN_CDAT',
+    'Search'
+);
+cdat_sum_page_close();
+layout_end();

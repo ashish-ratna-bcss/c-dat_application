@@ -1,37 +1,21 @@
-﻿
-<?php
+﻿<?php
 require_once __DIR__ . '/includes/layout.php';
-layout_begin("Bulk Addresses");
-?>
-<div align="center">
-  <table width="1323" height="603" border="2">
-    <tr>
-      <td width="1349" height="595" align="center" valign="top"><table width="1313" height="148">
-        <tr>
-          <td width="1305" height="134" align="center" valign="bottom" background="../assets/images/topborder.jpg">
-                </td>
-        </tr>
-      </table>
-      <p class="MenuBarItemHover">&nbsp;</p>
-      <p class="MenuBarItemHover">&nbsp;</p>
-      <table width="907" height="168">
-        <tr>
-          <th height="27" align="center" valign="middle" bgcolor="#A9D1F5" class="CDAT" scope="col" >BULK ADDRESSES</th>
-        </tr>
-        <tr>
-        <form id="form1" name="form1" method="post" action="bulk_address.php">
-                 <th width="764" align="center" valign="middle" bgcolor="#A9D1F5" class="CDAT" scope="col" > ADDRESSES OF MOBILE NUMBERS:            <style>
-label textarea{
-font: normal 15px courier;
-vertical-align: middle;
-}
-</style>
-<label> <textarea rows=3 cols=50 name='PHONE_NO'  id="BULK_ADDRESS" placeholder="Enter Mobile Numbers Seperated by comma without space Ex: 9989xxxxxx,7899xxxxxx,8977xxxxxx" required="required"></textarea></label>
-            <input type="submit" name="BTN_CDAT" id="BTN_CDAT" value="Submit" /></th>
-        </form></tr>
-      </table>
-      <p class="MenuBarItemHover">&nbsp;</p></td>
-    </tr>
-  </table>
-</div>
-<?php layout_end(); ?>
+require_once __DIR__ . '/includes/sum_ui.php';
+
+layout_begin('Bulk Addresses');
+cdat_sum_page_open();
+cdat_sum_search_card(
+    'Bulk Addresses',
+    'Enter comma-separated mobile numbers to look up addresses.',
+    'bulk_address.php',
+    cdat_sum_field_textarea(
+        'PHONE_NO',
+        'Addresses of Mobile Numbers',
+        '',
+        'Enter Mobile Numbers Seperated by comma without space Ex: 9989xxxxxx,7899xxxxxx,8977xxxxxx'
+    ),
+    'BTN_CDAT',
+    'Search'
+);
+cdat_sum_page_close();
+layout_end();

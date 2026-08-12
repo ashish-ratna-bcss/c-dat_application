@@ -1,215 +1,117 @@
 <?php
-// One page for both halves of this screen: the form, and the results.
-// Was view/cellid_search.htm (form) + controller/cellid_search.php (handler).
-// GET shows the form; a submit renders the form and the results below it.
-// !empty($_GET) covers links that pass parameters in the query string.
-$__submitted = ($_SERVER['REQUEST_METHOD'] === 'POST') || !empty($_GET);
-?>
-<?php
 require_once __DIR__ . '/includes/layout.php';
-layout_begin("Cell ID Search");
-?>
-<div align="center">
-  <table width="1323" height="603" border="2">
-    <tr>
-      <td width="1349" height="595" align="left" valign="top"><table width="1313" height="148">
-        <tr>
-          <td width="1265" height="134" align="center" valign="bottom" background="../assets/images/topborder.jpg"></td>
-        </tr>
-      </table>
-      <p>&nbsp;</p>
-      <table width="1126" height="126" align="center">
-        <tr>
-          <th height="27" align="center" valign="middle" background="../assets/images/border.jpg" scope="col">CELLID SEARCH</th>
-        </tr>
-        <tr>
-          <th align="center" valign="middle" background="../assets/images/border.jpg" scope="col"><form id="form1" name="form1" method="post" action="cellid_search.php">
-            <label for="SUM" font face="verdana">CELLID:</label>
-              <input type="text" name="CELLID" id="calls" placeholder="Enter Cellid" required="required"/>
-              Operator : <select name="OPERATOR">
-<option value=""></option>
-<option value="AIRCEL_TOWER">AIRCEL_TOWER</option>
-<option value="AIRTEL_TOWER">AIRTEL_TOWER</option>
-<option value="BPL_TOWER">BPL_TOWER</option>
-<option value="CELLONE_TOWER">CELLONE_TOWER</option>
-<option value="ETISALAT_TOWER">ETISALAT_TOWER</option>
-<option value="IDEA_TOWER">IDEA_TOWER</option>
-<option value="JIO_TOWER">JIO_TOWER</option>
-<option value="MTS_TOWER">MTS_TOWER</option>
-<option value="RELIANCE_TOWER">RELIANCE_TOWER</option>
-<option value="TATA_TOWER">TATA_TOWER</option>
-<option value="UNINOR_TOWER">UNINOR_TOWER</option>
-<option value="VIDEOCON_TOWER">VIDEOCON_TOWER</option>
-<option value="VODAFONE_TOWER">VODAFONE_TOWER</option>
-</select>
-              State : 
-<select name="STATE">
-<option value=""></option>
-<option value="ANDAMAN AND NICOBAR ISLANDS">ANDAMAN AND NICOBAR ISLANDS</option>
-<option value="ANDHRA PRADESH">ANDHRA PRADESH</option>
-<option value="ARUNACHAL PRADESH">ARUNACHAL PRADESH</option>
-<option value="ASSAM">ASSAM</option>
-<option value="BIHAR">BIHAR</option>
-<option value="CHENNAI">CHENNAI</option>
-<option value="CHHATTISGARH">CHHATTISGARH</option>
-<option value="DELHI">DELHI</option>
-<option value="GUJARAT">GUJARAT</option>
-<option value="HARYANA">HARYANA</option>
-<option value="HIMACHAL PRADESH">HIMACHAL PRADESH</option>
-<option value="JAMMU_KASHMIR">JAMMU_KASHMIR</option>
-<option value="JHARKHAND">JHARKHAND</option>
-<option value="KARNATAKA">KARNATAKA</option>
-<option value="KERALA">KERALA</option>
-<option value="KOLKATA">KOLKATA</option>
-<option value="MADHYA PRADESH">MADHYA PRADESH</option>
-<option value="MAHARASHTRA">MAHARASHTRA</option>
-<option value="MANIPUR">MANIPUR</option>
-<option value="MEGHALAYA">MEGHALAYA</option>
-<option value="MIZORAM">MIZORAM</option>
-<option value="MUMBAI">MUMBAI</option>
-<option value="NAGALAND">NAGALAND</option>
-<option value="NORTH_EAST">NORTH_EAST</option>
-<option value="ORISSA">ORISSA</option>
-<option value="PUNJAB">PUNJAB</option>
-<option value="RAJASTHAN">RAJASTHAN</option>
-<option value="TAMILNADU">TAMILNADU</option>
-<option value="TRIPURA">TRIPURA</option>
-<option value="UP_EAST">UP_EAST</option>
-<option value="UP_WEST">UP_WEST</option>
-<option value="WEST BENGAL">WEST BENGAL</option>
-</select>
-              <input type="submit" name="BTN_SUM" id="BTN_SUM" value="Submit" />
-          </form></th>
-        </tr>
-      </table>
-      <p>&nbsp;</p>
-      <p>&nbsp;</p></td>
-    </tr>
-  </table>
-</div>
+require_once __DIR__ . '/includes/sum_ui.php';
 
+$isAjax = cdat_sum_is_ajax();
+$cellid = trim((string) ($_POST['CELLID'] ?? ''));
+$operator = trim((string) ($_POST['OPERATOR'] ?? ''));
+$state = trim((string) ($_POST['STATE'] ?? ''));
+$hasSearch = $cellid !== '';
 
-<?php if ($__submitted): ?>
-</b></b>
-<?php echo $_POST['CELLID'] ?> />
-Operator : <select name="OPERATOR">
-<option value="<?php echo $_POST['OPERATOR'] ?>"><?php echo $_POST['OPERATOR'] ?></option>
-<option value="AIRCEL_TOWER">AIRCEL_TOWER</option>
-<option value="AIRTEL_TOWER">AIRTEL_TOWER</option>
-<option value="BPL_TOWER">BPL_TOWER</option>
-<option value="CELLONE_TOWER">CELLONE_TOWER</option>
-<option value="ETISALAT_TOWER">ETISALAT_TOWER</option>
-<option value="IDEA_TOWER">IDEA_TOWER</option>
-<option value="JIO_TOWER">JIO_TOWER</option>
-<option value="MTS_TOWER">MTS_TOWER</option>
-<option value="RELIANCE_TOWER">RELIANCE_TOWER</option>
-<option value="TATA_TOWER">TATA_TOWER</option>
-<option value="UNINOR_TOWER">UNINOR_TOWER</option>
-<option value="VIDEOCON_TOWER">VIDEOCON_TOWER</option>
-<option value="VODAFONE_TOWER">VODAFONE_TOWER</option>
-</select>
+$fieldsHtml = cdat_sum_field_text('CELLID', 'Cell ID', $cellid, 'calls', 'Enter Cellid')
+            . cdat_sum_field_operator($operator)
+            . cdat_sum_field_call_state($state);
 
-State: <select name="STATE">
-<option value="<?php echo $_POST['STATE'] ?>"><?php echo $_POST['STATE'] ?></option>
-<option value="ANDAMAN AND NICOBAR ISLANDS">ANDAMAN AND NICOBAR ISLANDS</option>
-<option value="ANDHRA PRADESH">ANDHRA PRADESH</option>
-<option value="ARUNACHAL PRADESH">ARUNACHAL PRADESH</option>
-<option value="ASSAM">ASSAM</option>
-<option value="BIHAR">BIHAR</option>
-<option value="CHENNAI">CHENNAI</option>
-<option value="CHHATTISGARH">CHHATTISGARH</option>
-<option value="DELHI">DELHI</option>
-<option value="GUJARAT">GUJARAT</option>
-<option value="HARYANA">HARYANA</option>
-<option value="HIMACHAL PRADESH">HIMACHAL PRADESH</option>
-<option value="JAMMU_KASHMIR">JAMMU_KASHMIR</option>
-<option value="JHARKHAND">JHARKHAND</option>
-<option value="KARNATAKA">KARNATAKA</option>
-<option value="KERALA">KERALA</option>
-<option value="KOLKATA">KOLKATA</option>
-<option value="MADHYA PRADESH">MADHYA PRADESH</option>
-<option value="MAHARASHTRA">MAHARASHTRA</option>
-<option value="MANIPUR">MANIPUR</option>
-<option value="MEGHALAYA">MEGHALAYA</option>
-<option value="MIZORAM">MIZORAM</option>
-<option value="MUMBAI">MUMBAI</option>
-<option value="NAGALAND">NAGALAND</option>
-<option value="NORTH_EAST">NORTH_EAST</option>
-<option value="ORISSA">ORISSA</option>
-<option value="PUNJAB">PUNJAB</option>
-<option value="RAJASTHAN">RAJASTHAN</option>
-<option value="TAMILNADU">TAMILNADU</option>
-<option value="TRIPURA">TRIPURA</option>
-<option value="UP_EAST">UP_EAST</option>
-<option value="UP_WEST">UP_WEST</option>
-<option value="WEST BENGAL">WEST BENGAL</option>
-</select>
+if ($hasSearch) {
+    if (!$isAjax) {
+        layout_begin('Cell ID Search');
+        cdat_sum_page_open();
+        cdat_sum_search_card(
+            'Cell ID Search',
+            'Search cell tower details by Cell ID, operator, and state.',
+            'cellid_search.php',
+            $fieldsHtml,
+            'BTN_SUM',
+            'Search'
+        );
+    }
 
+    $serverName = "CPHYDERABAD1\DAU_HYD_2023";
+    $connectionInfo = array( "Database"=>"CDATDUPL");
+    $conn = sqlsrv_connect( $serverName, $connectionInfo );
+    if( $conn === false ) {
+        die( print_r( sqlsrv_errors(), true));
+    }
 
+    $cellidEsc = str_replace("'", "''", $cellid);
+    $likePattern = (strpos($cellid, '%') !== false || strpos($cellid, '_') !== false)
+        ? $cellidEsc
+        : $cellidEsc . '%';
+    $opFilter = $operator !== '' ? "AND OPERATOR='".str_replace("'", "''", $operator)."'" : '';
+    $stateFilter = $state !== '' ? "AND STATE='".str_replace("'", "''", $state)."'" : '';
 
-
-<input type ="submit" value ="submit">
-<p> </p>
-
-<?php
-$serverName = "CPHYDERABAD1\DAU_HYD_2023";
-$connectionInfo = array( "Database"=>"CDATDUPL");
-$conn = sqlsrv_connect( $serverName, $connectionInfo );
-if( $conn === false ) {
-    die( print_r( sqlsrv_errors(), true));
-}
-
-$cellid 	= trim($_POST['CELLID'] ?? '');
-$operator	= trim($_POST['OPERATOR'] ?? '');
-$state		= trim($_POST['STATE'] ?? '');
-
-$cellidEsc = str_replace("'", "''", $cellid);
-$likePattern = (strpos($cellid, '%') !== false || strpos($cellid, '_') !== false)
-    ? $cellidEsc
-    : $cellidEsc . '%';
-$opFilter = $operator !== '' ? "AND OPERATOR='".str_replace("'", "''", $operator)."'" : '';
-$stateFilter = $state !== '' ? "AND STATE='".str_replace("'", "''", $state)."'" : '';
-
-$sql1 ="select DISTINCT CELLTOWERID,BTS_ID,AREADESCRIPTION,SITEADDRESS,LAT,LONG,AZIMUTH,OPERATOR,STATE, OTYPE 
+    $sql1 ="select DISTINCT CELLTOWERID,BTS_ID,AREADESCRIPTION,SITEADDRESS,LAT,LONG,AZIMUTH,OPERATOR,STATE, OTYPE 
 from cdatdupl.dbo.CDATCELLTOWERAREANEW
 WHERE CELLTOWERID LIKE '{$likePattern}' {$opFilter} {$stateFilter}
 ORDER BY LASTUPDATE DESC";
 
-$st1 = sqlsrv_query( $conn, $sql1 );
+    $st1 = sqlsrv_query( $conn, $sql1 );
+    $rows = cdat_sum_fetch_all($st1);
 
-echo "<table border=1 cellspacing=0 cellpadding=5>
-<tr>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>CELLTOWERID</font</th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>BTS_ID</font</th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>AREA DESCRIPTION</font</th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>SITE ADDRESS</font</th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>LAT</font</th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>LONG</font</th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>AZIMUTH</font</th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>OPERATOR</font</th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>STATE</font</th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>OTYPE</font</th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>qrcode</font></th>
-</tr>";
+    if (empty($rows)) {
+        cdat_sum_empty_state();
+    } else {
+        cdat_sum_results_open();
+        cdat_sum_report_banner('Cell ID Search: ' . $cellid);
+        cdat_sum_generic_table_open(
+            'Cell Tower Results',
+            ['CELLTOWERID', 'BTS_ID', 'AREA DESCRIPTION', 'SITE ADDRESS', 'LAT', 'LONG', 'AZIMUTH', 'OPERATOR', 'STATE', 'OTYPE', 'QRCODE'],
+            'results_table',
+            'cellid_search.csv',
+            count($rows)
+        );
+        foreach ($rows as $row) {
+            $areaHtml = cdat_sum_address_lines((string) ($row['AREADESCRIPTION'] ?? ''));
+            $siteHtml = cdat_sum_address_lines((string) ($row['SITEADDRESS'] ?? ''));
+            $qrSrc = '../qrcode/php/qr_img.php?d=' . urlencode(
+                'CELLTOWERID: ' . $row['CELLTOWERID']
+                . ' SITEADDRESS:' . preg_replace('/[^A-Za-z0-9\-:]/', ' ', (string) $row['SITEADDRESS'])
+                . ' LAT:' . $row['LAT']
+                . ' LONG:' . $row['LONG']
+                . ' AZIMUTH: ' . $row['AZIMUTH']
+            );
+            cdat_sum_table_row([
+                ['text' => (string) ($row['CELLTOWERID'] ?? ''), 'class' => 'sum-cell-num'],
+                ['text' => (string) ($row['BTS_ID'] ?? ''), 'class' => 'sum-cell-num'],
+                ['html' => $areaHtml !== '' ? $areaHtml : '—', 'class' => 'sum-address-cell'],
+                ['html' => $siteHtml !== '' ? $siteHtml : '—', 'class' => 'sum-address-cell'],
+                (string) ($row['LAT'] ?? ''),
+                (string) ($row['LONG'] ?? ''),
+                (string) ($row['AZIMUTH'] ?? ''),
+                (string) ($row['OPERATOR'] ?? ''),
+                (string) ($row['STATE'] ?? ''),
+                (string) ($row['OTYPE'] ?? ''),
+                ['html' => '<img height="100" width="100" src="' . cdat_sum_h($qrSrc) . '">', 'class' => 'sum-cell-img'],
+            ]);
+        }
+        cdat_sum_generic_table_close();
+        cdat_sum_results_close();
+    }
 
-while( $row = sqlsrv_fetch_array( $st1, SQLSRV_FETCH_ASSOC) ) {
-echo "<tr>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['CELLTOWERID'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana>". $row['BTS_ID'] ."<center></font></td>";
-echo "<td width=200px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['AREADESCRIPTION'] ."<center></font></td>";
-echo "<td width=450px bgcolor=#C2E0FB><font size=1 face=verdana>". $row['SITEADDRESS'] ."</font></td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['LAT'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['LONG'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['AZIMUTH'] ."<center></font></td>";
-echo "<td width=100px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['OPERATOR'] ."<center></font></td>";
-echo "<td width=100px bgcolor=#AED1F1><font size=1 face=verdana>". $row['STATE'] ."</font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana>". $row['OTYPE'] ."</font></td>";
-echo "<td>";?> <?php echo '<img height="100" width="100" src="../qrcode/php/qr_img.php?d='.'CELLTOWERID: '.$row["CELLTOWERID"].' SITEADDRESS:'. preg_replace('/[^A-Za-z0-9\-:]/',' ',$row["SITEADDRESS"]).' LAT:'.$row["LAT"].' '.'LONG:'.$row["LONG"].' AZIMUTH: '.$row["AZIMUTH"].'"></img>'; ?> <?php "</td>";
-echo "</tr>";
+    if ($st1) {
+        sqlsrv_free_stmt($st1);
+    }
+    sqlsrv_close($conn);
+
+    if ($isAjax) {
+        exit;
+    }
+    cdat_sum_page_close();
+    layout_end();
+    exit;
 }
-echo"</table>";
 
-sqlsrv_free_stmt( $st1);
-?>
-<?php endif; ?>
-<?php layout_end(); ?>
+layout_begin('Cell ID Search');
+cdat_sum_page_open();
+cdat_sum_search_card(
+    'Cell ID Search',
+    'Search cell tower details by Cell ID, operator, and state.',
+    'cellid_search.php',
+    cdat_sum_field_text('CELLID', 'Cell ID', '', 'calls', 'Enter Cellid')
+        . cdat_sum_field_operator()
+        . cdat_sum_field_call_state(),
+    'BTN_SUM',
+    'Search'
+);
+cdat_sum_page_close();
+layout_end();

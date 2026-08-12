@@ -35,14 +35,17 @@ def load_db_config() -> dict[str, str]:
         1. environment variables      (deployment overrides)
         2. controller/db_config.php   (what the web app itself uses)
         3. built-in defaults          (host/port/db/user only, never a password)
-
-    The env defaults used to be applied in step 1, which meant they were never
-    empty and so step 2 could not fill host, port, database or user -- only the
-    password. The service therefore had to be handed CDR_DB_* explicitly or it
-    would connect to port 5432 / database "postgres" without complaint, and the
-    launcher scripts duplicated the credentials to work around it. One of them
-    ended up carrying the live password as a literal.
     """
+    # Auto-load .env file if it exists so we don't rely on the terminal
+    env_file = BASE_DIR / '.env'
+    if env_file.exists():
+        for line in env_file.read_text(encoding='utf-8', errors='ignore').splitlines():
+            line = line.strip()
+            if line and not line.startswith('#') and '=' in line:
+                k, v = line.split('=', 1)
+                # Override terminal environment in case it has \r formatting issues from bad exports
+                os.environ[k.strip()] = v.strip()
+
     cfg: dict[str, str] = {}
     for key, env in _DB_ENV.items():
         value = os.environ.get(env, '')

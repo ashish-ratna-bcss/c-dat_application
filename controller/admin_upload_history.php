@@ -158,6 +158,7 @@ function renderApprovalStatus(array $log): array
 // The stylesheet below belongs in <head>; capture it and pass it to
 // layout_begin() so it can stay written as plain CSS in this file.
 require_once __DIR__ . '/includes/layout.php';
+require_once __DIR__ . '/includes/sum_ui.php';
 ob_start();
 ?>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
@@ -326,28 +327,8 @@ ob_start();
 <link rel="stylesheet" href="../assets/css/upload.css">
 <?php
 layout_begin('Upload History', 'Previous uploads and their status', ob_get_clean());
+cdat_sum_page_open();
 ?>
-<div align="center">
-  <table width="1323" height="603" border="2">
-    <tr>
-      <td width="1349" height="595" align="left" valign="top">
-        
-        <!-- Header Section -->
-
-        
-        <marquee behavior="scroll" direction="right"> 
-          <font color="YELLOW" face="verdana" size="2"><b> *** PLEASE MAIL RAW DATA TO cdranalysiswing@gmail.com TO VIEW REPORTS *** </b></font>
-        </marquee> 
-        
-        <table width="1307" height="347" border="0" align="center">
-          <tr>
-            <td height="24" align="center" valign="top">
-              <p align="center" class="FONT"> <?= $type === 'custom' ? 'CUSTOM TABLE UPLOADS HISTORY' : 'STANDARD UPLOADS HISTORY' ?> </p>
-            </td>
-          </tr>
-          <tr>
-            <td align="center" valign="top">
-              
               <div class="history-wrapper">
                 
                 <!-- Filter Bar -->
@@ -550,15 +531,6 @@ layout_begin('Upload History', 'Previous uploads and their status', ob_get_clean
 
               </div>
 
-            </td>
-          </tr>
-        </table>
-        <p>&nbsp;</p>
-      </td>
-    </tr>
-  </table>
-</div>
-
 <script type="text/javascript">
 
 // Dynamic date range limit adjustment
@@ -675,4 +647,7 @@ document.getElementById('filterForm').addEventListener('submit', function(e) {
     sync();
 })();
 </script>
-<?php layout_end(); ?>
+<?php
+cdat_sum_page_close();
+layout_end();
+?>

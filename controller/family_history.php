@@ -4,19 +4,18 @@
 // GET shows the form; a submit renders the form and the results below it.
 // !empty($_GET) covers links that pass parameters in the query string.
 $__submitted = ($_SERVER['REQUEST_METHOD'] === 'POST') || !empty($_GET);
-?>
-<DOCHTML>
-<?php
-require_once __DIR__ . '/includes/layout.php';
-layout_begin("Family History");
-?>
 
-<table>
-        <tr>
-          <th width="1200" align="center" scope="col">FAMILY HISTORY</th>
-        </tr>
-</table>
-<form action="family_history.php" Method="post">
+require_once __DIR__ . '/includes/layout.php';
+require_once __DIR__ . '/includes/sum_ui.php';
+
+layout_begin('Family History');
+cdat_sum_page_open();
+cdat_sum_entry_card_open(
+    'Family History',
+    'Enter family member details for an IR record.',
+    basename(__FILE__)
+);
+?>
 <div>IRKEY:</div><textarea  type="text" name="IRKEY" placeholder="IRKEY" style="float:center;" required="required"></textarea><br/><br/>
 <div>RELATIONSHIP:</div><textarea type="text"  name="RELATIONSHIP" placeholder="RELATION" required="required"></textarea><br/><br/>
 <div>NAME:</div><textarea type="text" name="NAME" placeholder="NAME" required="required"></textarea><br/><br/>
@@ -28,13 +27,10 @@ layout_begin("Family History");
 <div>STATUS:</div><textarea type="text" name="STATUS" placeholder="STATUS LIKE ALIVE OR EXPIRED"></textarea><br/><br/>
 <div>PRESENT_ADDRESS:</div><textarea type="text" name="PRESENT_ADDRESS" required="required" placeholder="PRESENT ADDRESS"></textarea><br/><br/>
 <div>PERMANENT_ADDRESS:</div><textarea type="text" name="PERMANENT_ADDRESS" placeholder="PERMANENT ADDRESS"></textarea><br/><br/>
-<input type="submit" value="insert">
-     			<br/><br/>
-
-</form>
-
-<?php if ($__submitted): ?>
 <?php
+cdat_sum_entry_card_close('insert');
+
+if ($__submitted):
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"forms");
 $conn = sqlsrv_connect( $serverName, $connectionInfo );
@@ -60,13 +56,14 @@ CRIMINAL_BACKGROUND, STATUS, PRESENT_ADDRESS, PERMANENT_ADDRESS
 ";
 if(!sqlsrv_query($conn,$sql))
 {
-echo "not inserted";
+cdat_sum_status_message('not inserted', false);
 }
 else
 {
-echo "inserted";
+header("refresh:3; url=family_history.php");
+cdat_sum_status_message('inserted', true);
 }
-header("refresh:30; url=../view/family_history.html");
-?>
-<?php endif; ?>
-<?php layout_end(); ?>
+endif;
+
+cdat_sum_page_close();
+layout_end();

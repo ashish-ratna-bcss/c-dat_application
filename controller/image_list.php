@@ -4,32 +4,31 @@
 // GET shows the form; a submit renders the form and the results below it.
 // !empty($_GET) covers links that pass parameters in the query string.
 $__submitted = ($_SERVER['REQUEST_METHOD'] === 'POST') || !empty($_GET);
-?>
-<?php
-require_once __DIR__ . '/includes/layout.php';
-layout_begin("Image List");
-?>
 
-<table>
-    <tr>
-    <th width="1126" align="center" scope="col">IMAGE LIST</th>
-    </tr>
-</table>
-<form action="image_list.php" Method="post" enctype="multipart/form-data">
+require_once __DIR__ . '/includes/layout.php';
+require_once __DIR__ . '/includes/sum_ui.php';
+layout_begin("Image List");
+cdat_sum_page_open();
+
+cdat_sum_entry_card_open(
+    'Image List',
+    'Upload and view images linked to an IR record.',
+    'image_list.php',
+    'post',
+    'multipart/form-data'
+);
+?>
 <div>IRKEY:</div><textarea type="text"  name="IRKEY"></textarea>
     <br/><br/>
 <div>CATEGORY:</div><textarea type="text"  name="CATEGORY"></textarea>
     <br/><br/>
 <div>CCNO:</div><textarea type="text"  name="CCNO"></textarea>
     <br/><br/>
-<input type="file" name="image"/>
-	<br/><br/>
-<input type="submit" value="insert">
-    <br/><br/>
-     </form>
-
-<?php if ($__submitted): ?>
+<?= cdat_sum_field_image('image', 'Image') ?>
 <?php
+cdat_sum_entry_card_close('insert', 'insert');
+
+if ($__submitted):
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"FORMS");
 $conn = sqlsrv_connect( $serverName, $connectionInfo );
@@ -48,7 +47,7 @@ $CATEGORY=$_POST['CATEGORY'] ?? '';
 $CCNO=$_POST['CCNO'] ?? '';
 if(!$hasImage)
 {
-echo "please select an Image";
+cdat_sum_status_message('please select an Image', false);
 }
 else
 {
@@ -59,11 +58,12 @@ $sql="insert into FORMS.dbo.IMAGE_TABLE (IRKEY, CATEGORY, CCNO, IMAGE)
 VALUES('$IRKEY','$CATEGORY','$CCNO','$image')";
 if(!sqlsrv_query($conn,$sql))
 {
-echo "not inserted";
+cdat_sum_status_message('not inserted', false);
 }
 else
 {
-echo "inserted";
+cdat_sum_status_message('inserted');
+header("refresh:30; url=image_list.php");
 }
 }
 $sql1="select IMAGE from FORMS.DBO.IMAGE_TABLE WHERE IRKEY='$IRKEY' AND CATEGORY='$CATEGORY'";
@@ -76,6 +76,7 @@ echo '<img height="300" width="300" src="'.cdat_base64_image_src($row['IMAGE']).
 }
 }
 }
-?>
-<?php endif; ?>
-<?php layout_end(); ?>
+endif;
+
+cdat_sum_page_close();
+layout_end();

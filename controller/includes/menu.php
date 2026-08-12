@@ -71,8 +71,8 @@ return [
 
     ['label' => 'Day / Night Loc', 'icon' => 'map', 'children' => [
         // ['label' => 'Cell ID Search',           'url' => 'cellid_search.php'],
-        ['label' => 'Top 10 Day Night Loc',     'url' => '../controller/day%26nightloc.html'],
-        ['label' => 'Top 10 Day Night Loc Between Dates','url' => '../controller/day%26nightloc_btwn_dates.html'],
+        ['label' => 'Top 10 Day Night Loc',     'url' => 'day%26nightloc.php'],
+        ['label' => 'Top 10 Day Night Loc Between Dates','url' => 'day%26nightloc_btwn_dates.php'],
         // ['label' => 'Nearest Cell IDs',         'url' => 'nearest_cellids.php'],
     ]],
 
@@ -84,14 +84,14 @@ return [
         ['label' => 'User Activity',            'url' => 'admin_activity_log.php',  'role' => 'admin'],
         ['label' => 'SQL Query Console',        'url' => 'admin_sql_console.php',   'role' => 'admin'],
          ['label' => 'Vehicle Search Criteria',          'url' => 'vehicle_search_criteria.php'],
-        // ['label' => 'Top 10 Day Night Loc',     'url' => '../controller/day%26nightloc.html'],
-        // ['label' => 'Top 10 Day Night Loc Between Dates','url' => '../controller/day%26nightloc_btwn_dates.html'],
+        // ['label' => 'Top 10 Day Night Loc',     'url' => 'day%26nightloc.php'],
+        // ['label' => 'Top 10 Day Night Loc Between Dates','url' => 'day%26nightloc_btwn_dates.php'],
         // ['label' => 'Nearest Cell IDs',         'url' => 'nearest_cellids.php'],
     ]],
 
     ['label' => 'Interrogation Reports', 'icon' => 'file', 'children' => [
         // ['label' => 'IR Home',                  'url' => '../controller/home_ir.php'],
-        ['label' => 'IR Search By Name',        'url' => '../controller/ir_search.php'],
+        ['label' => 'IR Search By Name',        'url' => 'ir_search.php'],
         // ['label' => 'IR Module',                'url' => '../controller/ir_module.php'],
         // ['label' => 'IR Forms',                 'url' => '../controller/bulk_irsearch_irkey.php'],
         // The entry screens the old IR home carried in its own menu bar. Its

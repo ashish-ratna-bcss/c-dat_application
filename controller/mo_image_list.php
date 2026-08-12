@@ -4,31 +4,27 @@
 // GET shows the form; a submit renders the form and the results below it.
 // !empty($_GET) covers links that pass parameters in the query string.
 $__submitted = ($_SERVER['REQUEST_METHOD'] === 'POST') || !empty($_GET);
-?>
-<?php
+
 require_once __DIR__ . '/includes/layout.php';
+require_once __DIR__ . '/includes/sum_ui.php';
 layout_begin("Mo Image List");
+cdat_sum_page_open();
+
+cdat_sum_entry_card_open(
+    'MO Image List',
+    'Upload and view MO-linked images.',
+    'mo_image_list.php',
+    'post',
+    'multipart/form-data'
+);
 ?>
-
-<table>
-    <tr>
-    <th width="1126" align="center" scope="col">MO IMAGE LIST</th>
-    </tr>
-</table>
-<form action="mo_image_list.php" Method="post" enctype="multipart/form-data">
-<label>MO_KEY:</label><input type="text"  name="MO_KEY">
-    <br/>
-    <br/>
-<label>MO_KEY:</label>
-<input type="file" name="image"/>
-	<br/>
-	<br/>
-<input type="submit" value="insert">
-    <br/>
-    </form>
-
-<?php if ($__submitted): ?>
+<div>MO_KEY:</div><input type="text" name="MO_KEY" required="required" autocomplete="off" />
+<br/><br/>
+<?= cdat_sum_field_image('image', 'Image') ?>
 <?php
+cdat_sum_entry_card_close('insert', 'insert');
+
+if ($__submitted):
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"CDATDUPL");
 $conn = sqlsrv_connect( $serverName, $connectionInfo );
@@ -44,7 +40,7 @@ $hasImage = isset($_POST['insert'])
     && getimagesize($_FILES['image']['tmp_name']) !== FALSE;
 if(!$hasImage)
 {
-echo "please select an Image";
+cdat_sum_status_message('please select an Image', false);
 }
 else
 {
@@ -56,23 +52,26 @@ $sql="insert into CDATDUPL.dbo.MO_IMAGE_TABLE (MO_KEY, IMAGE)
 VALUES('$MO_KEY','$image')";
 if(!sqlsrv_query($conn,$sql))
 {
-echo "not inserted";
+cdat_sum_status_message('not inserted', false);
 }
 else
 {
-echo "inserted";
+cdat_sum_status_message('inserted');
 }
 }
 $sql1="select IMAGE from CDATDUPL.DBO.MO_IMAGE_TABLE";
 $result=sqlsrv_query($conn,$sql1);
 if($result)
 {
+echo '<div class="sum-image-gallery">';
 while($row = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC) )
 {
 echo '<img height="300" width="300" src="'.cdat_base64_image_src($row['IMAGE']).'">';
 }
+echo '</div>';
 }
 }
-?>
-<?php endif; ?>
-<?php layout_end(); ?>
+endif;
+
+cdat_sum_page_close();
+layout_end();

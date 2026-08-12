@@ -1,451 +1,132 @@
 <?php
-// One page for both halves of this screen: the form, and the results.
-// Was view/movements.html (form) + controller/movements.php (handler).
-// GET shows the form; a submit renders the form and the results below it.
-// !empty($_GET) covers links that pass parameters in the query string.
-$__submitted = ($_SERVER['REQUEST_METHOD'] === 'POST') || !empty($_GET);
-?>
-<?php
 require_once __DIR__ . '/includes/layout.php';
-layout_begin("Movements");
-?>
-<div align="center">
-  <table width="1323" height="603" border="2">
-    <tr>
-      <td width="1349" height="595" align="left" valign="top"><table width="1313" height="148">
-        <tr>
-          <td width="1265" height="134" align="center" valign="bottom" background="../assets/images/topborder.jpg"></td>
-        </tr>
-      </table>
-      <p>&nbsp;</p>
-      <table width="500" height="120" align="center">
-        <tr>
-          <th height="21" align="center" valign="middle" background="../assets/images/border.jpg" scope="col">MOVEMENTS OF MOBILE NUMBER</th>
-        </tr>
-        <tr>
-          <th align="center" valign="middle" background="../assets/images/border.jpg" scope="col"><form id="form1" name="form1" method="POST" action="movements.php">
-            <label for="SUM" font face="verdana">Movements of Mobile No:</label>
-              <input type="text" name="PHONE_NO" id="calls" placeholder="Enter Mobile No" required="required"/>
-              
-              <input type="submit" name="BTN_SUM" id="BTN_SUM" value="Submit" />
-          </form></th>
-        </tr>
-      </table>
-      <p>&nbsp;</p>
-      <p>&nbsp;</p></td>
-    </tr>
-  </table>
-</div>
+require_once __DIR__ . '/includes/sum_ui.php';
 
+$isAjax = cdat_sum_is_ajax();
+$number = trim((string) ($_POST['PHONE_NO'] ?? ''));
+$hasSearch = $number !== '';
 
-<?php if ($__submitted): ?>
-<title>MOVEMENTS REPORT</title>
-
-<style>
-
-body{
-    background:#0C5D90;
-    font-family:Verdana;
-    margin:0;
-    padding:10px;
-}
-
-a{
-    text-decoration:none;
-}
-
-table{
-    border-collapse:collapse;
-    width:100%;
-    table-layout:auto;
-    background:white;
-}
-
-th{
-    background:#921215;
-    color:#F9FBFC;
-    font-size:12px;
-    position:sticky;
-    top:0;
-    z-index:2;
-    padding:6px;
-}
-
-td{
-    font-size:11px;
-    padding:5px;
-    text-align:center;
-    border:1px solid #000;
-    white-space:nowrap;
-}
-
-th,td{
-    border:1px solid #000;
-}
-
-.container{
-    overflow:auto;
-    height:650px;
-    background:white;
-}
-
-.heading{
-    color:#F9FBFC;
-    text-align:center;
-    margin-bottom:10px;
-}
-
-.back{
-    margin-bottom:10px;
-}
-
-.filter-box{
-    width:95%;
-    font-size:11px;
-    padding:3px;
-}
-
-.area-col{
-    min-width:450px;
-    max-width:700px;
-    white-space:normal;
-    word-wrap:break-word;
-}
-
-.small-col{
-    min-width:100px;
-}
-
-.medium-col{
-    min-width:150px;
-}
-
-.large-col{
-    min-width:220px;
-}
-
-</style>
-
-<script>
-
-function filterTable(col)
-{
-    var input, filter, table, tr, td, i, txtValue;
-
-    input = document.getElementById("filter"+col);
-
-    filter = input.value.toUpperCase();
-
-    table = document.getElementById("cdrTable");
-
-    tr = table.getElementsByTagName("tr");
-
-    for(i=2;i<tr.length;i++)
-    {
-        td = tr[i].getElementsByTagName("td")[col];
-
-        if(td)
-        {
-            txtValue = td.textContent || td.innerText;
-
-            if(txtValue.toUpperCase().indexOf(filter) > -1)
-            {
-                tr[i].style.display = "";
-            }
-            else
-            {
-                tr[i].style.display = "none";
-            }
-        }
+if ($hasSearch) {
+    if (!$isAjax) {
+        layout_begin('Movements');
+        cdat_sum_page_open();
+        cdat_sum_search_card(
+            'Movements of Mobile Number',
+            'View detailed call movements for a mobile number.',
+            'movements.php',
+            cdat_sum_field_phone($number)
+        );
     }
-}
 
-</script>
-
-
-
-
-
-<div class="back">
-<a href="movements.php">
-<font color="white"><b>Back</b></font>
-</a>
-</div>
-
-<?php
-
-set_time_limit(0);
-require_once __DIR__ . '/activity_logger.php';
-require_once __DIR__ . '/cdr_enrichment_sql.php';
-
-/*
-==================================================
-SQL SERVER CONNECTION
-==================================================
-*/
-
-$serverName = "CPHYDERABAD1\\DAU_HYD_2023";
-
-$connectionInfo = array(
-    "Database"=>"CDATDUPL"
-);
-
-$conn = sqlsrv_connect($serverName,$connectionInfo);
-
-if($conn === false)
-{
-    die(print_r(sqlsrv_errors(),true));
-}
-
-/*
-==================================================
-GET MOBILE NUMBER
-==================================================
-*/
-
-$number='';
-
-if(isset($_POST['PHONE_NO']))
-{
-    $number = trim($_POST['PHONE_NO']);
+    set_time_limit(0);
+    require_once __DIR__ . '/activity_logger.php';
+    require_once __DIR__ . '/cdr_enrichment_sql.php';
     audit_log('Movements / Call Details', 'Search', ['phone_number' => $number]);
-}
 
-if($number=='')
-{
-    die("<center><font color='white'><h3>Phone Number Missing</h3></font></center>");
-}
+    $serverName = 'CPHYDERABAD1\\DAU_HYD_2023';
+    $connectionInfo = ['Database' => 'CDATDUPL'];
+    $conn = sqlsrv_connect($serverName, $connectionInfo);
+    if ($conn === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
 
-/*
-==================================================
-PAGINATION
-==================================================
-*/
+    $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
+    if ($page <= 0) {
+        $page = 1;
+    }
+    $limit = 100000;
+    $offset = ($page - 1) * $limit;
 
-$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-
-if($page <= 0)
-{
-    $page = 1;
-}
-
-$limit = 100000;
-
-$offset = ($page - 1) * $limit;
-
-/*
-==================================================
-MAIN FAST QUERY
-==================================================
-*/
-
-$sql = "
-
+    $sql = "
 SELECT DISTINCT
-
-    A.PHONE,
-
-    A.OTHER,
-
-    ISNULL(C.NICKNAME,'') AS NICKNAME,
-
+    A.PHONE, A.OTHER, ISNULL(C.NICKNAME,'') AS NICKNAME,
     CONVERT(VARCHAR(10),A.STARTTIME,120) AS DATE1,
-
     CONVERT(VARCHAR(8),A.STARTTIME,108) AS TIME1,
-
     CONVERT(VARCHAR,A.STARTTIME,120) AS STARTTIME,
-
     A.DURATION,
-
-    CASE
-        WHEN A.INCOMING='1' THEN 'IN'
-        ELSE 'OUT'
-    END AS TYPE,
-
-    A.IMEINUMBER,
-
-    A.CELLTOWERID
-
+    CASE WHEN A.INCOMING='1' THEN 'IN' ELSE 'OUT' END AS TYPE,
+    A.IMEINUMBER, A.CELLTOWERID
 FROM CDATDUPL.dbo.CDATPCSUSPECT A WITH (NOLOCK)
-
-LEFT JOIN CDATDUPL.dbo.CDATSUSPECT C WITH (NOLOCK)
-
-ON A.OTHER = C.PHONE
-
+LEFT JOIN CDATDUPL.dbo.CDATSUSPECT C WITH (NOLOCK) ON A.OTHER = C.PHONE
 WHERE A.PHONE = ?
-
 ORDER BY STARTTIME ASC
+OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
 
-OFFSET ? ROWS
-FETCH NEXT ? ROWS ONLY
+    $st = sqlsrv_query($conn, $sql, [$number, $offset, $limit], ['Scrollable' => SQLSRV_CURSOR_KEYSET]);
+    if ($st === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
 
-";
+    $count_stmt = sqlsrv_query($conn, 'SELECT COUNT(*) AS TOTAL FROM CDATDUPL.dbo.CDATPCSUSPECT WITH (NOLOCK) WHERE PHONE = ?', [$number]);
+    $count_row = sqlsrv_fetch_array($count_stmt, SQLSRV_FETCH_ASSOC);
+    $total_records = (int) ($count_row['TOTAL'] ?? 0);
 
-$params = array($number,$offset,$limit);
+    $rows = [];
+    while ($row = sqlsrv_fetch_array($st, SQLSRV_FETCH_ASSOC)) {
+        $rows[] = $row;
+    }
+    $towerMap = cdat_fetch_tower_map($conn, array_column($rows, 'CELLTOWERID'));
 
-$options = array(
-    "Scrollable" => SQLSRV_CURSOR_KEYSET
+    if (empty($rows)) {
+        cdat_sum_empty_state();
+    } else {
+        echo '<div class="sum-results">';
+        cdat_sum_report_banner(
+            'Call Details of Mobile No: ' . $number,
+            'Total Records: ' . number_format($total_records)
+        );
+        cdat_sum_generic_table_open(
+            'Movements',
+            ['PHONE', 'OTHER', 'NICKNAME', 'DATE', 'TIME', 'STARTTIME', 'DURATION', 'TYPE', 'IMEI', 'CELLID', 'OPERATOR', 'STATE', 'AREA DESCRIPTION', 'LAT', 'LONG', 'AZM'],
+            'contact_results_table',
+            'movements.csv',
+            count($rows)
+        );
+        foreach ($rows as $row) {
+            $tower = $towerMap[$row['CELLTOWERID']] ?? [
+                'operator' => '', 'state' => '', 'areadescription' => '', 'lat' => '', 'long' => '', 'azimuth' => '',
+            ];
+            cdat_sum_table_row([
+                ['text' => $row['PHONE'], 'class' => 'sum-cell-num'],
+                ['text' => $row['OTHER'], 'class' => 'sum-cell-other'],
+                $row['NICKNAME'],
+                ['text' => $row['DATE1'], 'class' => 'sum-cell-date'],
+                ['text' => $row['TIME1'], 'class' => 'sum-cell-date'],
+                ['text' => $row['STARTTIME'], 'class' => 'sum-cell-date'],
+                ['text' => (string) $row['DURATION'], 'class' => 'sum-cell-num'],
+                $row['TYPE'],
+                ['text' => (string) $row['IMEINUMBER'], 'class' => 'sum-cell-num'],
+                ['text' => (string) $row['CELLTOWERID'], 'class' => 'sum-cell-num'],
+                $tower['operator'],
+                $tower['state'],
+                ['html' => cdat_sum_address_lines((string) $tower['areadescription']), 'class' => 'sum-address-cell'],
+                $tower['lat'],
+                $tower['long'],
+                $tower['azimuth'],
+            ]);
+        }
+        cdat_sum_generic_table_close();
+        echo '</div>';
+    }
+
+    sqlsrv_free_stmt($st);
+    sqlsrv_close($conn);
+
+    if ($isAjax) {
+        exit;
+    }
+    cdat_sum_page_close();
+    layout_end();
+    exit;
+}
+
+layout_begin('Movements');
+cdat_sum_page_open();
+cdat_sum_search_card(
+    'Movements of Mobile Number',
+    'View detailed call movements for a mobile number.',
+    'movements.php',
+    cdat_sum_field_phone()
 );
-
-$st = sqlsrv_query($conn,$sql,$params,$options);
-
-if($st === false)
-{
-    die(print_r(sqlsrv_errors(),true));
-}
-
-/*
-==================================================
-TOTAL RECORDS
-==================================================
-*/
-
-$count_sql = "
-
-SELECT COUNT(*) AS TOTAL
-
-FROM CDATDUPL.dbo.CDATPCSUSPECT WITH (NOLOCK)
-
-WHERE PHONE = ?
-
-";
-
-$count_stmt = sqlsrv_query($conn,$count_sql,array($number));
-
-$count_row = sqlsrv_fetch_array($count_stmt,SQLSRV_FETCH_ASSOC);
-
-$total_records = $count_row['TOTAL'];
-
-$total_pages = ceil($total_records / $limit);
-
-/*
-==================================================
-HEADING
-==================================================
-*/
-
-echo "
-
-<div class='heading'>
-
-<h2>CALL DETAILS OF MOBILE NO : $number</h2>
-
-<h3>Total Records : $total_records</h3>
-
-</div>
-
-";
-
-/*
-==================================================
-TABLE
-==================================================
-*/
-
-echo "
-
-<div class='container'>
-
-<table id='cdrTable'>
-
-<tr>
-
-<th>PHONE</th>
-<th>OTHER</th>
-<th>NICKNAME</th>
-<th>DATE</th>
-<th>TIME</th>
-<th>STARTTIME</th>
-<th>DURATION</th>
-<th>TYPE</th>
-<th>IMEI</th>
-<th>CELLID</th>
-<th>OPERATOR</th>
-<th>STATE</th>
-<th class='area-col'>AREA DESCRIPTION</th>
-<th>LAT</th>
-<th>LONG</th>
-<th>AZM</th>
-
-</tr>
-
-<tr>
-
-<th><input type='text' id='filter0' class='filter-box' onkeyup='filterTable(0)'></th>
-<th><input type='text' id='filter1' class='filter-box' onkeyup='filterTable(1)'></th>
-<th><input type='text' id='filter2' class='filter-box' onkeyup='filterTable(2)'></th>
-<th><input type='text' id='filter3' class='filter-box' onkeyup='filterTable(3)'></th>
-<th><input type='text' id='filter4' class='filter-box' onkeyup='filterTable(4)'></th>
-<th><input type='text' id='filter5' class='filter-box' onkeyup='filterTable(5)'></th>
-<th><input type='text' id='filter6' class='filter-box' onkeyup='filterTable(6)'></th>
-<th><input type='text' id='filter7' class='filter-box' onkeyup='filterTable(7)'></th>
-<th><input type='text' id='filter8' class='filter-box' onkeyup='filterTable(8)'></th>
-<th><input type='text' id='filter9' class='filter-box' onkeyup='filterTable(9)'></th>
-<th><input type='text' id='filter10' class='filter-box' onkeyup='filterTable(10)'></th>
-<th><input type='text' id='filter11' class='filter-box' onkeyup='filterTable(11)'></th>
-<th><input type='text' id='filter12' class='filter-box' onkeyup='filterTable(12)'></th>
-<th><input type='text' id='filter13' class='filter-box' onkeyup='filterTable(13)'></th>
-<th><input type='text' id='filter14' class='filter-box' onkeyup='filterTable(14)'></th>
-<th><input type='text' id='filter15' class='filter-box' onkeyup='filterTable(15)'></th>
-
-</tr>
-
-";
-
-/*
-==================================================
-FETCH DATA
-==================================================
-*/
-
-$rows = [];
-while ($row = sqlsrv_fetch_array($st, SQLSRV_FETCH_ASSOC)) {
-    $rows[] = $row;
-}
-
-$towerMap = cdat_fetch_tower_map($conn, array_column($rows, 'CELLTOWERID'));
-
-foreach ($rows as $row)
-{
-    $tower = $towerMap[$row['CELLTOWERID']] ?? [
-        'operator' => '',
-        'state' => '',
-        'areadescription' => '',
-        'lat' => '',
-        'long' => '',
-        'azimuth' => '',
-    ];
-
-    echo "<tr>";
-
-    echo "<td bgcolor='#AED1F1'>".$row['PHONE']."</td>";
-    echo "<td bgcolor='#C2E0FB'>".$row['OTHER']."</td>";
-    echo "<td bgcolor='#AED1F1'>".$row['NICKNAME']."</td>";
-    echo "<td bgcolor='#C2E0FB'>".$row['DATE1']."</td>";
-    echo "<td bgcolor='#C2E0FB'>".$row['TIME1']."</td>";
-    echo "<td bgcolor='#C2E0FB'>".$row['STARTTIME']."</td>";
-    echo "<td bgcolor='#AED1F1'>".$row['DURATION']."</td>";
-    echo "<td bgcolor='#C2E0FB'>".$row['TYPE']."</td>";
-    echo "<td bgcolor='#AED1F1'>".$row['IMEINUMBER']."</td>";
-    echo "<td bgcolor='#C2E0FB'>".$row['CELLTOWERID']."</td>";
-    echo "<td bgcolor='#AED1F1'>".htmlspecialchars($tower['operator'])."</td>";
-    echo "<td bgcolor='#AED1F1'>".htmlspecialchars($tower['state'])."</td>";
-    echo "<td bgcolor='#C2E0FB' class='area-col'>".htmlspecialchars($tower['areadescription'])."</td>";
-    echo "<td bgcolor='#C2E0FB'>".htmlspecialchars($tower['lat'])."</td>";
-    echo "<td bgcolor='#C2E0FB'>".htmlspecialchars($tower['long'])."</td>";
-    echo "<td bgcolor='#C2E0FB'>".htmlspecialchars($tower['azimuth'])."</td>";
-
-    echo "</tr>";
-}
-
-echo "</table>";
-
-echo "</div>";
-
-sqlsrv_free_stmt($st);
-
-sqlsrv_close($conn);
-
-?>
-<?php endif; ?>
-<?php layout_end(); ?>
+cdat_sum_page_close();
+layout_end();

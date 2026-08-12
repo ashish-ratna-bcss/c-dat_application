@@ -4,19 +4,18 @@
 // GET shows the form; a submit renders the form and the results below it.
 // !empty($_GET) covers links that pass parameters in the query string.
 $__submitted = ($_SERVER['REQUEST_METHOD'] === 'POST') || !empty($_GET);
-?>
-<DOCHTML>
-<?php
-require_once __DIR__ . '/includes/layout.php';
-layout_begin("Relation With Other Associates And Gangs");
-?>
 
-<table>
-   <tr>
-<th width="1126" align="center" scope="col">RELATION WITH OTHER ASSOCIATES</th>
-   </tr>
-</table>
-<form action="relation_with_other_associates_and_gangs.php" Method="post">
+require_once __DIR__ . '/includes/layout.php';
+require_once __DIR__ . '/includes/sum_ui.php';
+layout_begin("Relation With Other Associates And Gangs");
+cdat_sum_page_open();
+
+cdat_sum_entry_card_open(
+    'Relation With Other Associates',
+    'Enter associate and gang relationship details.',
+    'relation_with_other_associates_and_gangs.php'
+);
+?>
 <div>IRKEY:</div><textarea  type="text" name="IRKEY" placeholder="IRKEY" style="float:center;"></textarea><br/><br/>
 <div>GANG:</div><textarea type="text"  name="GANG" placeholder="GANG"></textarea><br/><br/>
 <div>CATEGORY:</div><textarea type="text" name="CATEGORY" placeholder="CATEGORY"></textarea><br/><br/>
@@ -28,12 +27,10 @@ layout_begin("Relation With Other Associates And Gangs");
 <div>PHONE:</div><textarea type="text" name="PHONE" placeholder="PHONE"></textarea><br/><br/>
 <div>RELATIONSHIP:</div><textarea type="text" name="RELATIONSHIP" placeholder="RELATIONSHIP"></textarea><br/><br/>
 <div>REMARKS:</div><textarea type="text" name="REMARKS" placeholder="REMARKS"></textarea><br/><br/>
-<input type="submit" value="INSERT" style="padding:15px;"><br/><br/>
-
-</form>
-
-<?php if ($__submitted): ?>
 <?php
+cdat_sum_entry_card_close('INSERT');
+
+if ($__submitted):
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"FORMS");
 $conn = sqlsrv_connect( $serverName, $connectionInfo );
@@ -59,13 +56,14 @@ values('$IRKEY','$GANG','$CATEGORY','$MEMBER',
 '$PHONE','$RELATIONSHIP','$REMARKS')";
 if(!sqlsrv_query($conn,$sql))
 {
-echo "not inserted";
+cdat_sum_status_message('not inserted', false);
 }
 else
 {
-echo "inserted";
+cdat_sum_status_message('inserted');
+header("refresh:30; url=relation_with_other_associates_and_gangs.php");
 }
-header("refresh:30; url=../view/relation_with_other_associates_and_gangs.htm");
-?>
-<?php endif; ?>
-<?php layout_end(); ?>
+endif;
+
+cdat_sum_page_close();
+layout_end();

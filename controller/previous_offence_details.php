@@ -4,19 +4,18 @@
 // GET shows the form; a submit renders the form and the results below it.
 // !empty($_GET) covers links that pass parameters in the query string.
 $__submitted = ($_SERVER['REQUEST_METHOD'] === 'POST') || !empty($_GET);
-?>
-<DOCHTML>
-<?php
-require_once __DIR__ . '/includes/layout.php';
-layout_begin("Previous Offence Details");
-?>
 
-<table>
-   <tr>
-<th width="1126" align="center" scope="col">PREVIOUS OFFENCE DETAILS</th>
-   </tr>
-</table>
-<form action="previous_offence_details.php" Method="post">
+require_once __DIR__ . '/includes/layout.php';
+require_once __DIR__ . '/includes/sum_ui.php';
+
+layout_begin('Previous Offence Details');
+cdat_sum_page_open();
+cdat_sum_entry_card_open(
+    'Previous Offence Details',
+    'Enter previous offence details for an IR record.',
+    basename(__FILE__)
+);
+?>
 <div>IRKEY:</div><textarea  type="text" name="IRKEY" required="required" placeholder="IRKEY" style="float:center;"></textarea><br/><br/>
 <div>DISTRICT:</div><textarea type="text"  required="required" name="DISTRICT" placeholder="DISTRICT"></textarea><br/><br/>
 <div>CONFESSED_POLICE_STATION:</div><textarea type="text" required="required" name="CONFESSED_POLICE_STATION" placeholder="CONFESSED_PS"></textarea><br/><br/>
@@ -32,12 +31,10 @@ layout_begin("Previous Offence Details");
 <div>CRIME_NO:</div><textarea type="text" name="CRIME_NO" placeholder="CRIME_NO"></textarea><br/><br/>
 <div>YEAR:</div><textarea type="text" name="YEAR" placeholder="YEAR"></textarea><br/><br/>
 <div>POLICE_STATION:</div><textarea type="text" name="POLICE_STATION" placeholder="POLICE_STATION"></textarea><br/><br/>
-
-
-<input type="submit" value="INSERT" style="padding:15px;"><br/><br/></form>
-
-<?php if ($__submitted): ?>
 <?php
+cdat_sum_entry_card_close('INSERT');
+
+if ($__submitted):
 $serverName = "CPHYDERABAD1\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"FORMS");
 $conn = sqlsrv_connect( $serverName, $connectionInfo );
@@ -67,13 +64,14 @@ values('$IRKEY','$DISTRICT','$CONFESSED_POLICE_STATION','$CONFESSED_CRIME_NO','$
 '$CRIME_NO','$YEAR','$POLICE_STATION')";
 if(!sqlsrv_query($conn,$sql))
 {
-echo "not inserted";
+cdat_sum_status_message('not inserted', false);
 }
 else
 {
-echo "inserted";
+header("refresh:3; url=previous_offence_details.php");
+cdat_sum_status_message('inserted', true);
 }
-header("refresh:30; url=../view/previous_offence_details.htm");
-?>
-<?php endif; ?>
-<?php layout_end(); ?>
+endif;
+
+cdat_sum_page_close();
+layout_end();
