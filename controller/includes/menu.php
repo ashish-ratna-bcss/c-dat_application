@@ -72,7 +72,7 @@ return [
     ['label' => 'Day / Night Loc', 'icon' => 'map', 'children' => [
         // ['label' => 'Cell ID Search',           'url' => 'cellid_search.php'],
         ['label' => 'Top 10 Day Night Loc',     'url' => '../controller/day%26nightloc.php'],
-        ['label' => 'Top 10 Day Night Loc Between Dates','url' => '../controller/day%26nightloc_btwn_dates.html'],
+        ['label' => 'Top 10 Day Night Loc Between Dates','url' => '../controller/day%26nightloc_btwn_dates.php'],
         // ['label' => 'Nearest Cell IDs',         'url' => 'nearest_cellids.php'],
     ]],
 
