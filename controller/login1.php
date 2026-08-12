@@ -87,7 +87,7 @@ audit_login(
 // Root-relative, so it is correct whoever posted the form -- view/auth.html
 // sits one directory over from this handler.
 $landing = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/')
-         . '/home_ir.php';
+         . '/home.php';
 
 if ($wantsJson) {
     header('Content-Type: application/json');
