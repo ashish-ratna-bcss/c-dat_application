@@ -1,61 +1,40 @@
 <?php
 require_once __DIR__ . '/includes/layout.php';
-layout_begin("JRMS");
-?>
-<?php
-require_once("dbcontroller.php");
+require_once __DIR__ . '/includes/sum_ui.php';
+require_once __DIR__ . '/dbcontroller.php';
+
 $db_handle = new DBController();
 $query ="SELECT distinct HEADOFCRIME FROM JRMS..JRMS_TOTAL_2012_TO_2017 
 WHERE HEADOFCRIME!='' ORDER BY HEADOFCRIME";
-$results = $db_handle->runQuery($query);
-?>
-<div align="center">
-  <table width="1323" height="100" border="2">
-    <tr>
-      <td width="1349" height="595" align="left" valign="top"><table width="1313" height="148">
-        <tr>
-          <td width="1265" height="134" align="center" valign="bottom" background="../assets/images/topborder.jpg"></td>
-        </tr>
-
-  </table>
-        <table width="1307" height="35">
-<tr>
-
-            <td width="214" rowspan="2" valign="top">
-              <blockquote>
-                
-</tr>
-</table>
-
-      <p>&nbsp;</p>
-<table width="1021" height="163" align="center">
-        <tr>
-          <th height="31" align="center" valign="middle" background="../assets/images/border.jpg" scope="col">JAIL RELEASE BETWEEN DATES</th>
-        </tr>
-        <tr>
-          <th width="782" align="center" valign="middle" background="../assets/images/border.jpg" scope="col"><form id="form1" name="form1" method="post" action="jrms_search.php">
-                      Date From: 
-              <input type="text" name="FROM_DT" id="datepickerID" size="10" placeholder="yyyy/mm/dd" required="required"/>
-              To:
-              <input type="text" name="TO_DT" id="datepickerID1" size="10" placeholder="yyyy/mm/dd" required="required"/>
-              CrimeHead: <select name="CRIMEHEAD">
-<option value="">Select CrimeHead</option>
-<?php
-foreach($results as $HEADOFCRIME) {
-?>
-<option value="<?php echo $HEADOFCRIME["HEADOFCRIME"]; ?>"> <?php echo $HEADOFCRIME["HEADOFCRIME"]; ?> </option>
-<?php
+$results = $db_handle->runQuery($query) ?: [];
+$crimeOptions = ['' => 'Select CrimeHead'];
+foreach ($results as $HEADOFCRIME) {
+    $v = (string) ($HEADOFCRIME['HEADOFCRIME'] ?? '');
+    if ($v !== '') {
+        $crimeOptions[$v] = $v;
+    }
 }
-?>
-</select>
-              <input type="submit" name="BTN_SUM" id="BTN_SUM" value="Submit" />     
-          </form></th>
-        </tr>
-     
- 
- 
-<?php
-$serverName = "CPHYDERABAD1\DAU_HYD_2023";
+
+layout_begin('JRMS');
+cdat_sum_page_open();
+cdat_sum_entry_card_open(
+    'Jail Release Between Dates',
+    'Search JRMS releases by date range and crime head.',
+    'jrms_search.php'
+);
+echo cdat_sum_field_date('FROM_DT', 'Date From', 'datepickerID')
+   . cdat_sum_field_date('TO_DT', 'Date To', 'datepickerID1')
+   . cdat_sum_searchable_select(
+        'CRIMEHEAD',
+        'CrimeHead',
+        $crimeOptions,
+        '',
+        'Select CrimeHead',
+        false
+    );
+cdat_sum_entry_card_close('Submit', 'BTN_SUM');
+
+$serverName = "CPHYDERABAD1\\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"CDATDUPL");
 $conn = sqlsrv_connect( $serverName, $connectionInfo );
 if( $conn === false ) {
@@ -84,43 +63,46 @@ $st9 = sqlsrv_query( $conn, $sql9 );
 $st10 = sqlsrv_query( $conn, $sql10 );
 $st8 = sqlsrv_query( $conn, $sql8 );
 
-while( $row = sqlsrv_fetch_array( $st8, SQLSRV_FETCH_ASSOC) ) {
-echo "<font size=4 face=verdana color='#F9FBFC'><td><center><b>". $row['PHONE1'] ."<center></td></font></br>";
+$banner = 'RECENTLY RELEASED ACCUSED FROM JAIL (CHERLAPALLI AND CHANCHALGUDA)';
+if ($st8 && ($b = sqlsrv_fetch_array($st8, SQLSRV_FETCH_ASSOC))) {
+    $banner = (string) ($b['PHONE1'] ?? $banner);
 }
+$rows = cdat_sum_fetch_all($st10);
+if (empty($rows)) {
+    cdat_sum_empty_state('No recently released JRMS records found.');
+} else {
+    cdat_sum_results_open();
+    cdat_sum_report_banner($banner);
+    cdat_sum_generic_table_open(
+        'JRMS Recently Released',
+        ['PSARRESTED', 'NAME', 'CRIMENOS', 'HEADOFCRIME', 'PHONE', 'IDPROOF', 'ADDR_DURING_RELEASE', 'JAILNAME', 'ADD_TO_JAIL', 'IMAGE', 'IRFORM'],
+        'results_table',
+        'jrms_recent.csv',
+        count($rows)
+    );
 
-echo "<table border=1 cellspacing=0 cellpadding=5>
-<tr>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>PSARRESTED</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>NAME</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>CRIMENOS</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>HEADOFCRIME</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>PHONE</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>IDPROOF</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>ADDR_DURING_RELEASE</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>JAILNAME</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>ADD_TO_JAIL</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>IMAGE</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>IRFORM</font></th>
-</tr>";
+    foreach ($rows as $row) {
+        $irKey = (string) ($row['IRKEY'] ?? '');
+        $irForm = (string) ($row['IRFORM'] ?? '');
+        $phone = (string) ($row['PHONE'] ?? '');
+        cdat_sum_table_row([
+            (string) ($row['PSARRESTED'] ?? ''),
+            (string) ($row['NAME'] ?? ''),
+            (string) ($row['CRIMENOS'] ?? ''),
+            (string) ($row['HEADOFCRIME'] ?? ''),
+            ['html' => '<a href="cdatcnts.php?PHONE_NO=' . cdat_sum_h(urlencode($phone)) . '">' . cdat_sum_h($phone) . '</a>', 'class' => 'sum-cell-num'],
+            (string) ($row['IDPROOF'] ?? ''),
+            ['html' => cdat_sum_address_lines((string) ($row['ADDR_DURING_RELEASE'] ?? '')) ?: '—', 'class' => 'sum-address-cell'],
+            (string) ($row['JAILNAME'] ?? ''),
+            ['text' => (string) ($row['ADD_TO_JAIL'] ?? ''), 'class' => 'sum-cell-date'],
+            ['html' => cdat_sum_img_html($row['PHOTO'] ?? '', 100, 100), 'class' => 'sum-cell-img'],
+            ['html' => $irForm !== '' ? '<a href="ir.php?IRKEY=' . cdat_sum_h(urlencode($irKey)) . '">' . cdat_sum_h($irForm) . '</a>' : ''],
+        ]);
+    }
 
-while( $row = sqlsrv_fetch_array( $st10, SQLSRV_FETCH_ASSOC) ) {
-echo "<tr>";
-echo "<td width=25px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['PSARRESTED'] ."<center></font></td>";
-echo "<td width=10px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['NAME'] ."<center></font></td>";
-echo "<td width=10px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['CRIMENOS'] ."<center></font></td>";
-echo "<td width=10px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['HEADOFCRIME'] ."<center></font></td>";
-echo "<td width=10px bgcolor=#AED1F1><font size=1 face=verdana><center><a href=".'cdatcnts2.php?PHONE_NO='.($row['PHONE']).">". $row['PHONE'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['IDPROOF'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['ADDR_DURING_RELEASE'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['JAILNAME'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana>". $row['ADD_TO_JAIL'] ."</font></td>";
-echo "<td>";?> <?php echo '<img  height="100" width="100" src="'.cdat_base64_image_src($row['PHOTO']).'"></img>' ?> <?php "</td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center><a href=".'ir.php?IRKEY='.($row['IRKEY']).">". $row['IRFORM'] ."</font></td>";
-echo "</tr>";
+    cdat_sum_generic_table_close();
+    cdat_sum_results_close();
 }
-?> 
- </table>
-      <p>&nbsp;</p>
-      <p>&nbsp;</p></td>
-    </tr>
-<?php layout_end(); ?>
+sqlsrv_close($conn);
+cdat_sum_page_close();
+layout_end();

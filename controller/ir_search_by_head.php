@@ -1,30 +1,40 @@
 <?php
 require_once __DIR__ . '/includes/layout.php';
-layout_begin("IR Search By Head");
-?>
+require_once __DIR__ . '/includes/sum_ui.php';
 
-<li><a href="ir_search.php"><font color=#FDEFEF>Back</a></li>
-<form action ='ir_search_by_head.php'method='post'>
-<b><font size=3 face=verdana color='#F9FBFC'>CRIME_HEAD : </b>
-<input type='text' name='CRIME_HEAD' value=''>
-<input type ='submit' value='Submit'/>
+$isAjax = cdat_sum_is_ajax();
+$crimeHead = trim((string) ($_POST['CRIME_HEAD'] ?? ''));
+$hasSearch = $crimeHead !== '';
+$fieldsHtml = cdat_sum_field_text('CRIME_HEAD', 'Crime Head', $crimeHead, 'CRIME_HEAD', 'Enter crime head');
 
-<?php
-$serverName ="10.10.46.14\DAU_HYD_2023";
-$connectionInfo = array( "Database"=>"CDATDUPL");
-$conn = sqlsrv_connect( $serverName, $connectionInfo );
-if( $conn === false ) {
-    die( print_r( sqlsrv_errors(), true));
-}
+if ($hasSearch) {
+    if (!$isAjax) {
+        layout_begin('IR Search By Head');
+        cdat_sum_page_open();
+        cdat_sum_back_link('ir_search.php', 'Back');
+        cdat_sum_search_card(
+            'IR Search By Crime Head',
+            'Search IR records by crime head.',
+            'ir_search_by_head.php',
+            $fieldsHtml,
+            'BTN_SUM',
+            'Submit'
+        );
+    }
 
-if (isset($_POST['CRIME_HEAD'])){
+    $serverName = "10.10.46.14\\DAU_HYD_2023";
+    $connectionInfo = array("Database" => "CDATDUPL");
+    $conn = sqlsrv_connect($serverName, $connectionInfo);
+    if ($conn === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
 
-$number1=$_POST['CRIME_HEAD'];
+    $number1 = $crimeHead;
 
-$sql8="SELECT 'DETAILS OF : '+'$number1' as PHONE1";
+    $sql8 = "SELECT 'DETAILS OF : '+'$number1' as PHONE1";
 
 
-$sql9="SELECT A.IRKEY,(CASE WHEN A.IRKEY IN (SELECT DISTINCT REPLACE(IRKEY,' ','') FROM PDACT..PDACT_MAIN_TABLE
+    $sql9 = "SELECT A.IRKEY,(CASE WHEN A.IRKEY IN (SELECT DISTINCT REPLACE(IRKEY,' ','') FROM PDACT..PDACT_MAIN_TABLE
 WHERE ISNUMERIC(IRKEY)=1) THEN 'PDACT IS IMPOSED CLICK HERE TO VIEW THE DETAILS' ELSE '' END) PDACT,CASE WHEN A.IRKEY IN (SELECT DISTINCT REPLACE(IRKEY,' ','') FROM PDACT..PDACT_MAIN_TABLE
 WHERE ISNUMERIC(IRKEY)=1) THEN (SELECT DISTINCT CONVERT(VARCHAR(20), MAX(PDACT_KEY)) FROM PDACT..PDACT_MAIN_TABLE 
 WHERE REPLACE(IRKEY,' ','')=A.IRKEY AND ISNUMERIC(IRKEY)='1') 
@@ -36,46 +46,71 @@ INNER JOIN FORMS..OFFENCE_DETAILS B ON  B.CRIME_HEAD LIKE '%'+REPLACE('$number1'
 ltrim(rtrim('$number1'))!='' and len(replace('$number1',' ',''))>'4' AND A.IRKEY=B.IRKEY
 LEFT JOIN FORMS..IMAGE_TABLE C ON CONVERT(VARCHAR(20),A.IRKEY)=CONVERT(VARCHAR(20),C.IRKEY)";
 
+    $st8 = sqlsrv_query($conn, $sql8);
+    $st9 = sqlsrv_query($conn, $sql9);
 
+    $banner = 'DETAILS OF : ' . $number1;
+    if ($st8 && ($b = sqlsrv_fetch_array($st8, SQLSRV_FETCH_ASSOC))) {
+        $banner = (string) ($b['PHONE1'] ?? $banner);
+    }
+    $rows = cdat_sum_fetch_all($st9);
 
-$st8 = sqlsrv_query( $conn, $sql8 );
-$st9 = sqlsrv_query( $conn, $sql9 );
+    if (empty($rows)) {
+        cdat_sum_empty_state('No IR records found for: ' . $crimeHead);
+    } else {
+        cdat_sum_results_open();
+        cdat_sum_report_banner($banner);
+        cdat_sum_generic_table_open(
+            'IR Search By Head',
+            ['IRKEY', 'PDACT', 'IMAGE', 'ACCUSED NAME', 'ALIAS NAME', 'FATHER NAME', 'AGE', 'POLICE STATION', 'CRIME HEAD', 'MO'],
+            'results_table',
+            'ir_search_by_head.csv',
+            count($rows)
+        );
+        foreach ($rows as $row) {
+            $irKey = (string) ($row['IRKEY'] ?? '');
+            $pdactKey = (string) ($row['PDACT_KEY'] ?? '');
+            $pdactText = (string) ($row['PDACT'] ?? '');
+            cdat_sum_table_row([
+                ['html' => '<a href="ir.php?IRKEY=' . cdat_sum_h(urlencode($irKey)) . '">' . cdat_sum_h($irKey) . '</a>', 'class' => 'sum-cell-num'],
+                ['html' => $pdactText !== '' ? '<a href="pdact_main.php?PDACT_KEY=' . cdat_sum_h(urlencode($pdactKey)) . '">' . cdat_sum_h($pdactText) . '</a>' : ''],
+                ['html' => cdat_sum_img_html($row['IMAGE'] ?? '', 100, 100), 'class' => 'sum-cell-img'],
+                (string) ($row['NAME'] ?? ''),
+                (string) ($row['ALIAS_NAME'] ?? ''),
+                (string) ($row['FATHER_NAME'] ?? ''),
+                ['text' => (string) ($row['AGE'] ?? ''), 'class' => 'sum-cell-num'],
+                (string) ($row['POLICE_STATION'] ?? ''),
+                (string) ($row['CRIME_HEAD'] ?? ''),
+                (string) ($row['MO'] ?? ''),
+            ]);
+        }
+        cdat_sum_generic_table_close();
+        cdat_sum_results_close();
+    }
 
+    if ($st9) {
+        sqlsrv_free_stmt($st9);
+    }
+    sqlsrv_close($conn);
 
-while( $row = sqlsrv_fetch_array( $st8, SQLSRV_FETCH_ASSOC) ) {
-echo "<font size=4 face=verdana color='#F9FBFC'><td><center><b>". $row['PHONE1'] ."<center></td></font></br>";
+    if ($isAjax) {
+        exit;
+    }
+    cdat_sum_page_close();
+    layout_end();
+    exit;
 }
 
-echo "<table border=1 cellspacing=0 cellpadding=5>
-<tr>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>IRKEY</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>PDACT</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>IMAGE</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>ACCUSED NAME</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>ALIAS NAME</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>FATHER NAME</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>AGE</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>POLICE STATION</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>CRIME HEAD</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>MO</font></th>
-</tr>";
-
-while( $row = sqlsrv_fetch_array( $st9, SQLSRV_FETCH_ASSOC) ) {
-echo "<tr>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center><a href=".'ir.php?IRKEY='.($row['IRKEY']).">". $row['IRKEY'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center><a href=".'pdact_main.php?PDACT_KEY='.($row['PDACT_KEY']).">". $row['PDACT'] ."<center></font></td>";
-echo "<td>";?> <?php echo '<img  height="100" width="100" src="'.cdat_base64_image_src($row['IMAGE']).'"></img>' ?> <?php "</td>";
-echo "<td width=25px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['NAME'] ."<center></font></td>";
-echo "<td width=10px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['ALIAS_NAME'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['FATHER_NAME'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['AGE'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['POLICE_STATION'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['CRIME_HEAD'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['MO'] ."<center></font></td>";
-echo "</tr>";
-}
-
-sqlsrv_free_stmt( $st9);
-}
-?>
-<?php layout_end(); ?>
+layout_begin('IR Search By Head');
+cdat_sum_page_open();
+cdat_sum_back_link('ir_search.php', 'Back');
+cdat_sum_search_card(
+    'IR Search By Crime Head',
+    'Search IR records by crime head.',
+    'ir_search_by_head.php',
+    cdat_sum_field_text('CRIME_HEAD', 'Crime Head', '', 'CRIME_HEAD', 'Enter crime head'),
+    'BTN_SUM',
+    'Submit'
+);
+cdat_sum_page_close();
+layout_end();

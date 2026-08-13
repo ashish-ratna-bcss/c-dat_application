@@ -1,108 +1,109 @@
 <?php
-// One page for both halves of this screen: the form, and the results.
-// Was view/name_search.htm (form) + controller/name_search.php (handler).
-// GET shows the form; a submit renders the form and the results below it.
-// !empty($_GET) covers links that pass parameters in the query string.
-$__submitted = ($_SERVER['REQUEST_METHOD'] === 'POST') || !empty($_GET);
-?>
-<?php
 require_once __DIR__ . '/includes/layout.php';
-layout_begin("Name Search");
-?>
-<div align="center">
-  <table width="1323" height="603" border="2">
-    <tr>
-      <td width="1349" height="595" align="center" valign="top"><table width="1313" height="148">
-        <tr>
-          <td width="1305" height="134" align="center" valign="bottom" background="../assets/images/topborder.jpg">
-                </td>
-        </tr>
-       <p class="MenuBarItemHover">&nbsp;</p>
-      <p class="MenuBarItemHover">&nbsp;</p>
-      <table width="800" height="100">
-        <tr>
-          <th height="27" bgcolor="#A9D1F5" class="CDAT" scope="col">OFFENDER SEARCH BY NAME</th>
-        </tr>
-        <tr>
-        <form id="form1" name="form1" method="post" action="name_search.php">
-                 <th width="555" bgcolor="#A9D1F5" class="CDAT" scope="col"> NAME OF THE OFFENDER:            <label for="textfield"></label>
-            <input type="text" name="NAME" id="NAME" placeholder="Enter NAME" required="required"/>
-	CRIME HEAD:            	<label for="textfield"></label>
-            <input type="text" name="CRIME_HEAD" id="CRIME_HEAD" placeholder="Enter CRIME HEAD" required="required"/>
-            <input type="submit" name="BTN_CDAT" id="BTN_CDAT" value="Submit" /></th>
-        </form></tr>
-      </table>
-      <p class="MenuBarItemHover">&nbsp;</p></td>
-    </tr>
-  </table>
-</div>
+require_once __DIR__ . '/includes/sum_ui.php';
 
+$isAjax = cdat_sum_is_ajax();
+$name = trim((string) ($_POST['NAME'] ?? ''));
+$crimeHead = trim((string) ($_POST['CRIME_HEAD'] ?? ''));
+$hasSearch = $name !== '' && $crimeHead !== '';
 
-<?php if ($__submitted): ?>
-<?php
-$serverName = "CPHYDERABAD1\DAU_HYD_2023";
-$connectionInfo = array( "Database"=>"CDATDUPL");
-$conn = sqlsrv_connect( $serverName, $connectionInfo );
-if( $conn === false ) {
-    die( print_r( sqlsrv_errors(), true));
-}
+$fieldsHtml = cdat_sum_field_text('NAME', 'Name of the Offender', $name, 'NAME', 'Enter NAME')
+            . cdat_sum_field_text('CRIME_HEAD', 'Crime Head', $crimeHead, 'CRIME_HEAD', 'Enter CRIME HEAD');
 
-if (isset($_POST['NAME'])){
+if ($hasSearch) {
+    if (!$isAjax) {
+        layout_begin('Name Search');
+        cdat_sum_page_open();
+        cdat_sum_search_card(
+            'Offender Search By Name',
+            'Search offender records by name and crime head.',
+            'name_search.php',
+            $fieldsHtml,
+            'BTN_CDAT',
+            'Submit'
+        );
+    }
 
-$number=$_POST['NAME'];
-$number1=$_POST['CRIME_HEAD'];
+    $serverName = "CPHYDERABAD1\\DAU_HYD_2023";
+    $connectionInfo = array("Database" => "CDATDUPL");
+    $conn = sqlsrv_connect($serverName, $connectionInfo);
+    if ($conn === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
 
-$sql8="SELECT 'DETAILS OF : '+'$number' as PHONE1";
+    $number = $name;
+    $number1 = $crimeHead;
 
-$sql9="SELECT DISTINCT NICKNAME ACCUSED_NAME,ROLE,FNAME,ADDRESS,STATE,CRIME_NO,YEAR,SEC_OF_LAW,UNIT,CRIME_HEAD,MO,ORGANISATION 
+    $sql8 = "SELECT 'DETAILS OF : '+'$number' as PHONE1";
+
+    $sql9 = "SELECT DISTINCT NICKNAME ACCUSED_NAME,ROLE,FNAME,ADDRESS,STATE,CRIME_NO,YEAR,SEC_OF_LAW,UNIT,CRIME_HEAD,MO,ORGANISATION 
 FROM CDATDUPL..CDATSUSPECT WHERE NICKNAME LIKE '%'+REPLACE('$number',' ','%')+'%' AND CRIME_HEAD LIKE '%'+REPLACE('$number1',' ','%')+'%' AND 
 ltrim(rtrim('$number'))!='' and len(replace('$number',' ',''))>'5'";
 
+    $st8 = sqlsrv_query($conn, $sql8);
+    $st9 = sqlsrv_query($conn, $sql9);
 
-$st8 = sqlsrv_query( $conn, $sql8 );
-$st9 = sqlsrv_query( $conn, $sql9 );
+    $banner = 'DETAILS OF : ' . $number;
+    if ($st8 && ($b = sqlsrv_fetch_array($st8, SQLSRV_FETCH_ASSOC))) {
+        $banner = (string) ($b['PHONE1'] ?? $banner);
+    }
+    $rows = cdat_sum_fetch_all($st9);
 
-while( $row = sqlsrv_fetch_array( $st8, SQLSRV_FETCH_ASSOC) ) {
-echo "<font size=4 face=verdana color='#F9FBFC'><td><center><b>". $row['PHONE1'] ."<center></td></font></br>";
+    if (empty($rows)) {
+        cdat_sum_empty_state('No offender records found for: ' . $name);
+    } else {
+        cdat_sum_results_open();
+        cdat_sum_report_banner($banner);
+        cdat_sum_generic_table_open(
+            'Offender Name Search',
+            ['ACCUSED NAME', 'ROLE', 'FNAME', 'ADDRESS', 'STATE', 'CRIME_NO', 'YEAR', 'SEC_OF_LAW', 'UNIT', 'CRIME_HEAD', 'MO', 'ORGANISATION'],
+            'results_table',
+            'name_search.csv',
+            count($rows)
+        );
+        foreach ($rows as $row) {
+            cdat_sum_table_row([
+                (string) ($row['ACCUSED_NAME'] ?? ''),
+                (string) ($row['ROLE'] ?? ''),
+                (string) ($row['FNAME'] ?? ''),
+                ['html' => cdat_sum_address_lines((string) ($row['ADDRESS'] ?? '')) ?: '—', 'class' => 'sum-address-cell'],
+                (string) ($row['STATE'] ?? ''),
+                ['text' => (string) ($row['CRIME_NO'] ?? ''), 'class' => 'sum-cell-num'],
+                (string) ($row['YEAR'] ?? ''),
+                (string) ($row['SEC_OF_LAW'] ?? ''),
+                (string) ($row['UNIT'] ?? ''),
+                (string) ($row['CRIME_HEAD'] ?? ''),
+                (string) ($row['MO'] ?? ''),
+                (string) ($row['ORGANISATION'] ?? ''),
+            ]);
+        }
+        cdat_sum_generic_table_close();
+        cdat_sum_results_close();
+    }
+
+    if ($st9) {
+        sqlsrv_free_stmt($st9);
+    }
+    sqlsrv_close($conn);
+
+    if ($isAjax) {
+        exit;
+    }
+    cdat_sum_page_close();
+    layout_end();
+    exit;
 }
 
-echo "<table border=1 cellspacing=0 cellpadding=5>
-<tr>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>ACCUSED NAME</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>ROLE</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>FNAME</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>ADDRESS</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>STATE</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>CRIME_NO</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>YEAR</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>SEC_OF_LAW</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>UNIT</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>CRIME_HEAD</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>MO</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>ORGANISATION</font></th>
-</tr>";
-
-while( $row = sqlsrv_fetch_array( $st9, SQLSRV_FETCH_ASSOC) ) {
-echo "<tr>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['ACCUSED_NAME'] ."<center></font></td>";
-echo "<td width=25px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['ROLE'] ."<center></font></td>";
-echo "<td width=10px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['FNAME'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['ADDRESS'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['STATE'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['CRIME_NO'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana>". $row['YEAR'] ."</font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['SEC_OF_LAW'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['UNIT'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['CRIME_HEAD'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['MO'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['ORGANISATION'] ."<center></font></td>";
-echo "</tr>";
-}
-
-sqlsrv_free_stmt( $st9);
-}
-?>
-
-dy>
-<?php endif; ?>
-<?php layout_end(); ?>
+layout_begin('Name Search');
+cdat_sum_page_open();
+cdat_sum_search_card(
+    'Offender Search By Name',
+    'Search offender records by name and crime head.',
+    'name_search.php',
+    cdat_sum_field_text('NAME', 'Name of the Offender', '', 'NAME', 'Enter NAME')
+        . cdat_sum_field_text('CRIME_HEAD', 'Crime Head', '', 'CRIME_HEAD', 'Enter CRIME HEAD'),
+    'BTN_CDAT',
+    'Submit'
+);
+cdat_sum_page_close();
+layout_end();

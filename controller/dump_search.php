@@ -1,217 +1,88 @@
 <?php
-// One page for both halves of this screen: the form, and the results.
-// Was view/dump_search.htm (form) + controller/dump_search.php (handler).
-// GET shows the form; a submit renders the form and the results below it.
-// !empty($_GET) covers links that pass parameters in the query string.
-$__submitted = ($_SERVER['REQUEST_METHOD'] === 'POST') || !empty($_GET);
-?>
-<?php
 require_once __DIR__ . '/includes/layout.php';
-layout_begin("Dump Search");
-?>
+require_once __DIR__ . '/includes/sum_ui.php';
 
-<div align="center">
-  <table width="1323" height="603" border="2">
-    <tr>
-      <td width="1349" height="595" align="left" valign="top"><table width="1313" height="148">
-        <tr>
-          <td width="1265" height="134" align="center" valign="bottom" background="../assets/images/topborder.jpg"><ul id="MenuBar1" class="MenuBarHorizontal">
-            </td>
-        </tr>
-      </table>
-      <p>&nbsp;</p>
-      <table width="862" height="158" align="center">
-        <tr>
-          <th height="25" align="center" valign="middle" background="../assets/images/border.jpg" scope="col">SUSPECT NUMBER SEARCH IN TOWER DUMP</th>
-        </tr>
-        <tr>
-          <th width="782" align="center" valign="middle" background="../assets/images/border.jpg" scope="col"><form id="form1" name="form1" method="post" action="dump_search.php">
-            <p>
-              <label for="SUM" font face="verdana"> Police Station:</label>
-<select>
-              <option value=""></option>
-<option value="Abids">Abids</option>
-<option value="Begum Bazar">Begum Bazar</option>
-<option value="Narayanaguda">Narayanaguda</option>
-<option value="Chikkadpally">Chikkadpally</option>
-<option value="Gandhi Nagar">Gandhi Nagar</option>
-<option value="Musheerabad">Musheerabad</option>
-<option value="Nampally">Nampally</option>
-<option value="Ramgopalpet">Ramgopalpet</option>
-<option value="Saifabad">Saifabad</option>
-<option value="Kachiguda">Kachiguda</option>
-<option value="Nallakunta">Nallakunta</option>
-<option value="O.U.Sity">O.U.Sity</option>
-<option value="Amberpet">Amberpet</option>
-<option value="Malakpet">Malakpet</option>
-<option value="Saidabad">Saidabad</option>
-<option value="Afzalgunj">Afzalgunj</option>
-<option value="Chaderghat">Chaderghat</option>
-<option value="Sultanbazar">Sultanbazar</option>
-<option value="Begumpet">Begumpet</option>
-<option value="Bollaram">Bollaram</option>
-<option value="Bowenpally">Bowenpally</option>
-<option value="Tirumalgherry">Tirumalgherry</option>
-<option value="WPS Begumpet">WPS Begumpet</option>
-<option value="Chilkalguda">Chilkalguda</option>
-<option value="Gopalpuram">Gopalpuram</option>
-<option value="Lalaguda">Lalaguda</option>
-<option value="Tukkaramgate">Tukkaramgate</option>
-<option value="Karkhana">Karkhana</option>
-<option value="Mahankali">Mahankali</option>
-<option value="Market">Market</option>
-<option value="Marredpally">Marredpally</option>
-<option value="Bahadurpura">Bahadurpura</option>
-<option value="Charminar">Charminar</option>
-<option value="Hussainialam">Hussainialam</option>
-<option value="Kalapattar">Kalapattar</option>
-<option value="Kamatipura">Kamatipura</option>
-<option value="WPS South Zone">WPS South Zone</option>
-<option value="Chandrayangutta">Chandrayangutta</option>
-<option value="Chatrinaka">Chatrinaka</option>
-<option value="Falaknuma">Falaknuma</option>
-<option value="Shalialibanda">Shalialibanda</option>
-<option value="Dabeerpura">Dabeerpura</option>
-<option value="Mirchowk">Mirchowk</option>
-<option value="Moghalpura">Moghalpura</option>
-<option value="Reinbazar">Reinbazar</option>
-<option value="BhavaniNagar">BhavaniNagar</option>
-<option value="Kanchanbagh">Kanchanbagh</option>
-<option value="Madannapet">Madannapet</option>
-<option value="SantoshNagar">SantoshNagar</option>
-<option value="Asif Nagar">Asif Nagar</option>
-<option value="Golconda">Golconda</option>
-<option value="Humayunnagar">Humayunnagar</option>
-<option value="Langerhouz">Langerhouz</option>
-<option value="Tappachabutra">Tappachabutra</option>
-<option value="BanjaraHills">BanjaraHills</option>
-<option value="Jubille Hills">Jubille Hills</option>
-<option value="Habeebnagar">Habeebnagar</option>
-<option value="Kulsumpura">Kulsumpura</option>
-<option value="Mangalhat">Mangalhat</option>
-<option value="Shahinayathgunj">Shahinayathgunj</option>
-<option value="Panjagutta">Panjagutta</option>
-<option value="S.R.Nagar">S.R.Nagar</option>
-<option value="CCS">CCS</option>
-<option value="CYBER CRIME PS">CYBER CRIMES</option>
-<option value="TASK FORCE EAST ZONE">TASK FORCE EAST ZONE</option>
-<option value="TASK FORCE WEST ZONE">TASK FORCE WEST ZONE</option>
-<option value="TASK FORCE NORTH ZONE">TASK FORCE NORHT ZONE</option>
-<option value="TASK FORCE SOUTH ZONE">TASK FORCE SOUTH ZONE</option>
-</select>
-<label for="SUM" font face="verdana"> Crime No:
-              <select>  
-             <option value=""></option>                   
-              <option ><?php
+$year = trim((string) ($_POST['Y'] ?? ''));
+
+$psStations = [
+    'Abids', 'Begum Bazar', 'Narayanaguda', 'Chikkadpally', 'Gandhi Nagar', 'Musheerabad',
+    'Nampally', 'Ramgopalpet', 'Saifabad', 'Kachiguda', 'Nallakunta', 'O.U.Sity', 'Amberpet',
+    'Malakpet', 'Saidabad', 'Afzalgunj', 'Chaderghat', 'Sultanbazar', 'Begumpet', 'Bollaram',
+    'Bowenpally', 'Tirumalgherry', 'WPS Begumpet', 'Chilkalguda', 'Gopalpuram', 'Lalaguda',
+    'Tukkaramgate', 'Karkhana', 'Mahankali', 'Market', 'Marredpally', 'Bahadurpura', 'Charminar',
+    'Hussainialam', 'Kalapattar', 'Kamatipura', 'WPS South Zone', 'Chandrayangutta', 'Chatrinaka',
+    'Falaknuma', 'Shalialibanda', 'Dabeerpura', 'Mirchowk', 'Moghalpura', 'Reinbazar',
+    'BhavaniNagar', 'Kanchanbagh', 'Madannapet', 'SantoshNagar', 'Asif Nagar', 'Golconda',
+    'Humayunnagar', 'Langerhouz', 'Tappachabutra', 'BanjaraHills', 'Jubille Hills', 'Habeebnagar',
+    'Kulsumpura', 'Mangalhat', 'Shahinayathgunj', 'Panjagutta', 'S.R.Nagar', 'CCS',
+];
+$psOptions = ['' => ''];
+foreach ($psStations as $ps) {
+    $psOptions[$ps] = $ps;
+}
+$psOptions['CYBER CRIME PS'] = 'CYBER CRIMES';
+$psOptions['TASK FORCE EAST ZONE'] = 'TASK FORCE EAST ZONE';
+$psOptions['TASK FORCE WEST ZONE'] = 'TASK FORCE WEST ZONE';
+$psOptions['TASK FORCE NORTH ZONE'] = 'TASK FORCE NORHT ZONE';
+$psOptions['TASK FORCE SOUTH ZONE'] = 'TASK FORCE SOUTH ZONE';
+
+$crimeOptions = ['' => ''];
 $serverName = "CPHYDERABAD1";
-$connectionInfo = array( "Database"=>"TWRMDB");
-$conn = sqlsrv_connect( $serverName, $connectionInfo );
-if( $conn === false ) {
-    die( print_r( sqlsrv_errors(), true));
+$connectionInfo = array("Database" => "TWRMDB");
+$conn = sqlsrv_connect($serverName, $connectionInfo);
+if ($conn === false) {
+    die(print_r(sqlsrv_errors(), true));
 }
- $sql="select distinct crime_no from offence_details";
- $st1 = sqlsrv_query( $conn, $sql);
-?>
-<select>
-<?php while( $row = sqlsrv_fetch_array( $st1, SQLSRV_FETCH_ASSOC) ) {
-?>
-<option><?php echo $row["crime_no"] ; ?></option>
-<?php
+$sql = "select distinct crime_no from offence_details";
+$st1 = sqlsrv_query($conn, $sql);
+if ($st1) {
+    while ($row = sqlsrv_fetch_array($st1, SQLSRV_FETCH_ASSOC)) {
+        $c = (string) ($row['crime_no'] ?? '');
+        if ($c !== '') {
+            $crimeOptions[$c] = $c;
+        }
+    }
+    sqlsrv_free_stmt($st1);
 }
-?>
-</select>
-</option>
-</select>
-</label>
-              <label for="SUM" font face="verdana"> YEAR:</label>
-              <input type="text" name="Y" id="SUM" placeholder="Enter Mobile No" required="required"/>
-             
-              </p>
-          </form>
-            <div align="justify">
-              <table width="734" height="25">
-                <tr>
-                  <th width="40" scope="col">&nbsp;</th>
-                  <th width="8" scope="col">&nbsp;</th>
-                  <th width="79" scope="col">&nbsp;</th>
-                  <th width="368" scope="col">&nbsp;</th>
-                  </tr>
-              </table>
-            </div></th>
-        </tr>
-      </table>
-      <p>&nbsp;</p>
-      <p>&nbsp;</p></td>
-    </tr>
-  </table>
-</div>
+sqlsrv_close($conn);
 
-
-<?php if ($__submitted): ?>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>Untitled Document</title>
-<link rel="stylesheet" type="text/css" href="../assets/vendor/jquery-ui-1.10.4.custom/css/dark-hive/jquery-ui-1.10.4.custom.min.css">
-<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-1.10.2.js"></script>
-<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.js"></script>
-<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.min.js"></script>
-<script type="text/javascript">
-$("document").ready(function() {
-	$("#datepickerID").datepicker({dateFormat: "hh:mm:ss",
-		changehours: true,
-		changeminutes: true,
-	}) 
-	$("#datepickerID1").datepicker({dateFormat: "hh:mm:ss",
-		changehours: true,
-		changeminutes: true,
-	})    
-	
-});
-</script>
-
-
-<style type="text/css">
-
-body,td,th {
-	font-family: Arial, Helvetica, sans-serif;
+$psHtml = '<div class="sum-search-form__field">'
+    . '<label for="POLICE_STATION">Police Station</label>'
+    . '<select id="POLICE_STATION" class="sum-select" data-searchable-select="1" data-placeholder="Select Police Station">'
+    . '<option value="" data-placeholder="1"></option>';
+foreach ($psOptions as $value => $label) {
+    if ((string) $value === '') {
+        continue;
+    }
+    $psHtml .= '<option value="' . cdat_sum_h((string) $value) . '">' . cdat_sum_h((string) $label) . '</option>';
 }
-</style>
+$psHtml .= '</select></div>';
 
+$crimeHtml = '<div class="sum-search-form__field">'
+    . '<label for="CRIME_NO">Crime No</label>'
+    . '<select id="CRIME_NO" class="sum-select" data-searchable-select="1" data-placeholder="Select Crime No">'
+    . '<option value="" data-placeholder="1"></option>';
+foreach ($crimeOptions as $value => $label) {
+    if ((string) $value === '') {
+        continue;
+    }
+    $crimeHtml .= '<option value="' . cdat_sum_h((string) $value) . '">' . cdat_sum_h((string) $label) . '</option>';
+}
+$crimeHtml .= '</select></div>';
 
+$fieldsHtml = $psHtml
+            . $crimeHtml
+            . cdat_sum_field_text('Y', 'Year', $year, 'SUM', 'Enter Year');
 
-
-<div align="center">
-  <table width="1323" height="603" border="2">
-    <tr>
-      <td width="1349" height="595" align="left" valign="top"><table width="1313" height="148">
-        <tr>
-          <td width="1265" height="134" align="center" valign="bottom" background="../assets/images/topborder.jpg"><ul id="MenuBar1" class="MenuBarHorizontal">
-            </td>
-        </tr>
-      </table>
-      <p>&nbsp;</p>
-      <table width="862" height="158" align="center">
-        <tr>
-          <th height="25" align="center" valign="middle" background="../assets/images/border.jpg" scope="col">SUSPECT NUMBER SEARCH IN TOWER DUMP</th>
-        </tr>
-        <tr>
-          <th width="782" align="center" valign="middle" background="../assets/images/border.jpg" scope="col">
-            <div align="justify">
-              <table width="734" height="25">
-                <tr>
-                  <th width="40" scope="col">&nbsp;</th>
-                  <th width="8" scope="col">&nbsp;</th>
-                  <th width="79" scope="col">&nbsp;</th>
-                  <th width="368" scope="col">&nbsp;</th>
-                  </tr>
-              </table>
-            </div></th>
-        </tr>
-      </table>
-      <p>&nbsp;</p>
-      <p>&nbsp;</p></td>
-    </tr>
-  </table>
-</div>
-
-<?php endif; ?>
-<?php layout_end(); ?>
+layout_begin('Dump Search');
+cdat_sum_page_open();
+cdat_sum_search_card(
+    'Suspect Number Search in Tower Dump',
+    'Search tower dump records by police station, crime number, and year.',
+    'dump_search.php',
+    $fieldsHtml,
+    'BTN_SUM',
+    'Submit'
+);
+cdat_sum_page_close();
+layout_end();

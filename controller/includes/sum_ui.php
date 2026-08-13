@@ -113,6 +113,31 @@ function cdat_sum_searchable_select(string $name, string $label, array $options,
     return $html;
 }
 
+function cdat_sum_field_hms(string $hName, string $mName, string $sName, string $label,
+                            string $h = '00', string $m = '00', string $s = '00',
+                            bool $required = true): string
+{
+    $req = $required ? ' required="required"' : '';
+    return '<div class="sum-search-form__field sum-search-form__field--hms">'
+         . '<label>' . cdat_sum_h($label) . '</label>'
+         . '<div class="sum-hms">'
+         . '<input type="number" name="' . cdat_sum_h($hName) . '" min="0" max="23" value="'
+         . cdat_sum_h($h) . '"' . $req . ' />'
+         . '<span>:</span>'
+         . '<input type="number" name="' . cdat_sum_h($mName) . '" min="0" max="59" value="'
+         . cdat_sum_h($m) . '"' . $req . ' />'
+         . '<span>:</span>'
+         . '<input type="number" name="' . cdat_sum_h($sName) . '" min="0" max="59" value="'
+         . cdat_sum_h($s) . '"' . $req . ' />'
+         . '</div></div>';
+}
+
+function cdat_sum_tower_cascade_script(): void
+{
+    echo '<script src="../assets/js/jquerydynamic.js"></script>'
+       . '<script>function getps(val){jQuery.ajax({type:"POST",url:"get_crno.php",data:"POLICE_STATION="+val,success:function(data){jQuery("#Crime-list").html(data);}});}function getyear(val1){jQuery.ajax({type:"POST",url:"get_year.php",data:"CRIME_NO="+val1,success:function(data){jQuery("#YEAR").html(data);}});}</script>';
+}
+
 function cdat_sum_field_date(string $name, string $label, string $id = '', string $value = '',
                              bool $required = true): string
 {
@@ -122,8 +147,8 @@ function cdat_sum_field_date(string $name, string $label, string $id = '', strin
          . '<label for="' . cdat_sum_h($idAttr) . '">' . cdat_sum_h($label) . '</label>'
          . '<input type="text" name="' . cdat_sum_h($name) . '" id="' . cdat_sum_h($idAttr) . '"'
          . ' class="sum-date-input" data-date-picker="1" placeholder="yyyy-mm-dd"'
-         . ' pattern="^\d{4}-\d{2}-\d{2}$" inputmode="numeric" autocomplete="off"'
-         . ' title="Date must be in yyyy-mm-dd format"' . $req
+         . ' pattern="^\d{4}-\d{2}-\d{2}$" readonly="readonly" inputmode="none" autocomplete="off"'
+         . ' title="Select a date from the calendar"' . $req
          . ' value="' . cdat_sum_h($value) . '"/>'
          . '</div>';
 }
@@ -585,4 +610,35 @@ function cdat_sum_status_message(string $message, bool $success = true): void
 {
     $class = $success ? 'sum-status--success' : 'sum-status--error';
     echo '<div class="sum-status ' . $class . '" role="status">' . cdat_sum_h($message) . '</div>';
+}
+
+function cdat_sum_hub_card(string $title, string $desc = '', string $image = '',
+                           string $notice = ''): void
+{
+    echo '<section class="sum-search-card sum-hub-card" aria-label="' . cdat_sum_h($title) . '">';
+    echo '<div class="sum-search-card__head">';
+    echo '<div class="sum-search-card__icon" aria-hidden="true">';
+    echo '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"'
+       . ' stroke-linecap="round" stroke-linejoin="round">'
+       . '<path d="M3 12h4l2-7 4 14 2-7h6"/></svg>';
+    echo '</div><div>';
+    echo '<h2 class="sum-search-card__title">' . cdat_sum_h($title) . '</h2>';
+    if ($desc !== '') {
+        echo '<p class="sum-search-card__desc">' . cdat_sum_h($desc) . '</p>';
+    }
+    echo '</div></div>';
+    if ($notice !== '') {
+        echo '<div class="sum-notice-bar" role="note">' . $notice . '</div>';
+    }
+    if ($image !== '') {
+        echo '<div class="sum-hub-card__media"><img src="' . cdat_sum_h($image)
+           . '" alt="" /></div>';
+    }
+    echo '</section>';
+}
+
+function cdat_sum_img_html($src, int $width = 120, int $height = 120): string
+{
+    $url = cdat_base64_image_src($src);
+    return '<img height="' . $height . '" width="' . $width . '" src="' . cdat_sum_h($url) . '" alt="">';
 }

@@ -1,85 +1,69 @@
 <?php
 require_once __DIR__ . '/includes/layout.php';
-layout_begin("Fp List");
-?>
+require_once __DIR__ . '/includes/sum_ui.php';
 
-<li><a href="ir_module.php"><font color=#FDEFEF>Back</a></li>
-<script>
-function bigImg(x) { 
-x.style.height="450px";
-x.style.width="450px";
-}
-function normalImg(x) { 
-x.style.height="200px";
-x.style.width="220px";
-}
-</script>
-<script type="text/javascript" src="ajax/libs/jquery/1/jquery.min.js"></script>
-<script type="text/javascript">
-$(function() {
-    $(this).bind("contextmenu", function(e) {
-        e.preventDefault();
-    });
-}); 
-</script>
-<?php
-$serverName = "CPHYDERABAD1\DAU_HYD_2023";
-$connectionInfo = array( "Database"=>"CDATDUPL");
-$conn = sqlsrv_connect( $serverName, $connectionInfo );
-if( $conn === false ) {
-    die( print_r( sqlsrv_errors(), true));
+layout_begin('Undetected Cases List');
+cdat_sum_page_open();
+
+$serverName = "CPHYDERABAD1\\DAU_HYD_2023";
+$connectionInfo = array('Database' => 'CDATDUPL');
+$conn = sqlsrv_connect($serverName, $connectionInfo);
+if ($conn === false) {
+    die(print_r(sqlsrv_errors(), true));
 }
 
-
-$sql8="select 'UNDETECTED CASES MATCHED WITH OLD OFFENDERS FINGER PRINT LIST' PHONE1";
-
-$sql9="select SNO, POLICE_STATION, ZONE, CRIME_NO, SECTION, TIN_NO, DATE_OF_IDENTITY, 
+$sql8 = "select 'UNDETECTED CASES MATCHED WITH OLD OFFENDERS FINGER PRINT LIST' PHONE1";
+$sql9 = "select SNO, POLICE_STATION, ZONE, CRIME_NO, SECTION, TIN_NO, DATE_OF_IDENTITY,
 LOSS_OF_PROPERTY, NAME_AND_PARTICULARS, IRKEY, CCNO, DOA, REMARKS,IMAGE  from IRFORMS..FINGERPRINT_MATCHED_UNDETECTED_CASES_WITHIMAGE
 ORDER BY ZONE,IRKEY";
 
-$st8 = sqlsrv_query( $conn, $sql8 );
-$st9 = sqlsrv_query( $conn, $sql9 );
+$st8 = sqlsrv_query($conn, $sql8);
+$st9 = sqlsrv_query($conn, $sql9);
 
-while( $row = sqlsrv_fetch_array( $st8, SQLSRV_FETCH_ASSOC) ) {
-echo "<font size=4 face=verdana color='#F9FBFC'><td><center><b>". $row['PHONE1'] ."<center></td></font></br>";
+$banner = 'UNDETECTED CASES MATCHED WITH OLD OFFENDERS FINGER PRINT LIST';
+if ($st8 && ($b = sqlsrv_fetch_array($st8, SQLSRV_FETCH_ASSOC))) {
+    $banner = (string) ($b['PHONE1'] ?? $banner);
 }
 
-echo "<table border=1 cellspacing=0 cellpadding=5>
-<tr>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>POLICE_STATION</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>ZONE</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>CRIME_NO</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>SECTION</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>TIN_NO</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>DATE_OF_IDENTITY</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>LOSS_OF_PROPERTY</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>NAME_AND_PARTICULARS</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>IMAGE</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>IRKEY</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>CCNO</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>DOA</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>REMARKS</font></th>
-</tr>";
-
-while( $row = sqlsrv_fetch_array( $st9, SQLSRV_FETCH_ASSOC) ) {
-echo "<tr>";
-echo "<td width=25px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['POLICE_STATION'] ."<center></font></td>";
-echo "<td width=10px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['ZONE'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['CRIME_NO'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['SECTION'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['TIN_NO'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['DATE_OF_IDENTITY'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['LOSS_OF_PROPERTY'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['NAME_AND_PARTICULARS'] ."<center></font></td>";
-echo "<td height=200px width=200px>";?> <?php echo '<img onmouseover="bigImg(this)" onmouseout="normalImg(this)" height="200" width="220" src="'.cdat_base64_image_src($row['IMAGE']).'"></img>' ?> <?php "</td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center><a href=".'ir.php?IRKEY='.($row['IRKEY']).">". $row['IRKEY'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['CCNO'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['DOA'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['REMARKS'] ."<center></font></td>";
-echo "</tr>";
+$rows = cdat_sum_fetch_all($st9);
+if (empty($rows)) {
+    cdat_sum_empty_state('No fingerprint-matched undetected cases found.');
+} else {
+    cdat_sum_results_open();
+    cdat_sum_report_banner($banner);
+    cdat_sum_generic_table_open(
+        'Undetected Cases',
+        ['POLICE_STATION', 'ZONE', 'CRIME_NO', 'SECTION', 'TIN_NO', 'DATE_OF_IDENTITY', 'LOSS_OF_PROPERTY', 'NAME_AND_PARTICULARS', 'IMAGE', 'IRKEY', 'CCNO', 'DOA', 'REMARKS'],
+        'results_table',
+        'fp_list.csv',
+        count($rows)
+    );
+    foreach ($rows as $row) {
+        $irKey = (string) ($row['IRKEY'] ?? '');
+        cdat_sum_table_row([
+            (string) ($row['POLICE_STATION'] ?? ''),
+            (string) ($row['ZONE'] ?? ''),
+            (string) ($row['CRIME_NO'] ?? ''),
+            (string) ($row['SECTION'] ?? ''),
+            (string) ($row['TIN_NO'] ?? ''),
+            ['text' => (string) ($row['DATE_OF_IDENTITY'] ?? ''), 'class' => 'sum-cell-date'],
+            (string) ($row['LOSS_OF_PROPERTY'] ?? ''),
+            (string) ($row['NAME_AND_PARTICULARS'] ?? ''),
+            ['html' => cdat_sum_img_html($row['IMAGE'] ?? '', 120, 120), 'class' => 'sum-cell-img'],
+            ['html' => '<a href="ir.php?IRKEY=' . cdat_sum_h(urlencode($irKey)) . '">' . cdat_sum_h($irKey) . '</a>', 'class' => 'sum-cell-num'],
+            (string) ($row['CCNO'] ?? ''),
+            (string) ($row['DOA'] ?? ''),
+            (string) ($row['REMARKS'] ?? ''),
+        ]);
+    }
+    cdat_sum_generic_table_close();
+    cdat_sum_results_close();
 }
 
-sqlsrv_free_stmt( $st9);
+if ($st9) {
+    sqlsrv_free_stmt($st9);
+}
+sqlsrv_close($conn);
 
-?>
-<?php layout_end(); ?>
+cdat_sum_page_close();
+layout_end();

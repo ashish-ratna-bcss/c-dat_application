@@ -1,62 +1,60 @@
 <?php
 require_once __DIR__ . '/includes/layout.php';
-layout_begin("Bulk Gang Id Search");
-?>
+require_once __DIR__ . '/includes/sum_ui.php';
 
-<script>
-//*function bigImg(x) { 
-x.style.height="400px";
-x.style.width="400px";
-}
-function normalImg(x) { 
-x.style.height="200px";
-x.style.width="220px";
-}
-</script>;*//
-<script type="text/javascript" src="ajax/libs/jquery/1/jquery.min.js"></script>
-<script type="text/javascript">
-$(function() {
-    $(this).bind("contextmenu", function(e) {
-        e.preventDefault();
-    });
-}); 
-</script>
-
-<?php
-$serverName = "CPHYDERABAD1\DAU_HYD_2023";
-$connectionInfo = array( "Database"=>"CDATDUPL");
-$conn = sqlsrv_connect( $serverName, $connectionInfo );
-if( $conn === false ) {
-    die( print_r( sqlsrv_errors(), true));
+$isAjax = cdat_sum_is_ajax();
+if (!$isAjax) {
+    layout_begin('Bulk Gang Id Search');
+    cdat_sum_page_open();
+    cdat_sum_back_link('bulk_gang_id.php');
 }
 
-if (isset($_POST['IRKEY'])){
-
-$number= $_POST['IRKEY'];
-
-$number2 = str_replace(",","','","$number");
-
-echo "<font size=4 face=verdana  color='#F9FBFC'><td><center><b>BULK IR SEARCH<center></td></font></br>";
-
-
-$sql10="SELECT PHOTO_ID_1,BASE64_IMAGE FROM GANG_FILES_MASTER_TABLE.DBO.IMAGES_BASE64_FORMAT  WHERE PHOTO_ID_1 IN ('$number2')";
-
-$st10 = sqlsrv_query( $conn, $sql10);
-
-echo "<table border=1 cellspacing=0 cellpadding=5>
-<tr>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>IRKEY</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>IMAGE</font></th>
-</tr>";
-
-while( $row = sqlsrv_fetch_array( $st10, SQLSRV_FETCH_ASSOC) ) {
-echo "<tr>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center><a href=".'ir.php?IRKEY='.($row['PHOTO_ID_1']).">". $row['PHOTO_ID_1'] ."<center></font></td>";
-echo "<td height=100px width=100px>";?> <?php echo '<img onmouseover="bigImg(this)" onmouseout="normalImg(this)" height="100" width="100" src="'.cdat_base64_image_src($row['BASE64_IMAGE']).'"></img>' ?> <?php "</td>";
-echo "</tr>";
+$serverName = "CPHYDERABAD1\\DAU_HYD_2023";
+$connectionInfo = array("Database" => "CDATDUPL");
+$conn = sqlsrv_connect($serverName, $connectionInfo);
+if ($conn === false) {
+    die(print_r(sqlsrv_errors(), true));
 }
 
+if (isset($_POST['IRKEY'])) {
+    $number = $_POST['IRKEY'];
+    $number2 = str_replace(",", "','", "$number");
+
+    $sql10 = "SELECT PHOTO_ID_1,BASE64_IMAGE FROM GANG_FILES_MASTER_TABLE.DBO.IMAGES_BASE64_FORMAT  WHERE PHOTO_ID_1 IN ('$number2')";
+
+    $st10 = sqlsrv_query($conn, $sql10);
+    $rows = cdat_sum_fetch_all($st10);
+
+    cdat_sum_results_open();
+    cdat_sum_report_banner('BULK IR SEARCH');
+    if (empty($rows)) {
+        cdat_sum_empty_state('No gang ID images found for the given keys.');
+    } else {
+        cdat_sum_generic_table_open(
+            'Bulk Gang ID Search',
+            ['IRKEY', 'IMAGE'],
+            'results_table',
+            'bulk_gang_id.csv',
+            count($rows)
+        );
+        foreach ($rows as $row) {
+            $photoId = (string) ($row['PHOTO_ID_1'] ?? '');
+            cdat_sum_table_row([
+                ['html' => '<a href="ir.php?IRKEY=' . cdat_sum_h(urlencode($photoId)) . '">' . cdat_sum_h($photoId) . '</a>', 'class' => 'sum-cell-num'],
+                ['html' => cdat_sum_img_html($row['BASE64_IMAGE'] ?? '', 100, 100), 'class' => 'sum-cell-img'],
+            ]);
+        }
+        cdat_sum_generic_table_close();
+    }
+    cdat_sum_results_close();
+} else {
+    cdat_sum_empty_state('Enter IR keys to search.');
 }
-echo "</table>";
-?>
-<?php layout_end(); ?>
+
+sqlsrv_close($conn);
+
+if ($isAjax) {
+    exit;
+}
+cdat_sum_page_close();
+layout_end();

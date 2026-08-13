@@ -1,158 +1,96 @@
 <?php
-// One page for both halves of this screen: the form, and the results.
-// Was view/pdact_search.htm (form) + controller/pdact_search.php (handler).
-// GET shows the form; a submit renders the form and the results below it.
-// !empty($_GET) covers links that pass parameters in the query string.
-$__submitted = ($_SERVER['REQUEST_METHOD'] === 'POST') || !empty($_GET);
-?>
-<?php
 require_once __DIR__ . '/includes/layout.php';
-layout_begin("PDACT Search");
-?>
-<div align="center">
-  <table width="1323" height="603" border="2">
-    <tr>
-      <td width="1349" height="595" align="left" valign="top"><table width="1313" height="148">
-        <tr>
-          <td width="1265" height="134" align="center" valign="bottom" background="../assets/images/topborder.jpg"></td>
-        </tr>
-      </table>
-      <p>&nbsp;</p>
-      <table width="862" height="158" align="center">
-        <tr>
-          <th height="25" align="center" valign="middle" background="../assets/images/border.jpg" scope="col">PDACT SEARCH BY NAME</th>
-        </tr>
-        <tr>
-          <th width="782" align="center" valign="middle" background="../assets/images/border.jpg" scope="col"><form id="form1" name="form1" method="POST" action="pdact_search.php">
-            <p>
-               ACCUSED NAME:
-<input type="TEXT" name="NAME" placeholder="PLZ ENTER THE NAME">
- <input type="submit" value="Submit">
+require_once __DIR__ . '/includes/sum_ui.php';
 
-              </p>
-          </form>
-            <div align="justify">
-              <table width="734" height="25">
-                <tr>
-                  <th width="40" scope="col">&nbsp;</th>
-                  <th width="8" scope="col">&nbsp;</th>
-                  <th width="79" scope="col">&nbsp;</th>
-                  <th width="368" scope="col">&nbsp;</th>
-                  </tr>
-              </table>
-            </div></th>
-        </tr>
-      </table>
-      <p>&nbsp;</p>
-      <p>&nbsp;</p></td>
-    </tr>
-  </table>
-</div>
+$isAjax = cdat_sum_is_ajax();
+$name = trim((string) ($_POST['NAME'] ?? ''));
+$hasSearch = $name !== '';
+$fieldsHtml = cdat_sum_field_text('NAME', 'Accused Name', $name, 'NAME', 'Enter name');
 
+if ($hasSearch) {
+    if (!$isAjax) {
+        layout_begin('PDACT Name Search');
+        cdat_sum_page_open();
+        cdat_sum_search_card(
+            'PDACT Search By Name',
+            'Search PDACT records by accused name.',
+            'pdact_search.php',
+            $fieldsHtml,
+            'BTN_CDAT',
+            'Submit'
+        );
+    }
 
-<?php if ($__submitted): ?>
-<script>
-function bigImg(x) { 
-x.style.height="400px";
-x.style.width="400px";
-}
-function normalImg(x) { 
-x.style.height="200px";
-x.style.width="220px";
-}
-</script>;
-<script type="text/javascript" src="ajax/libs/jquery/1/jquery.min.js"></script>
-<script type="text/javascript">
-$(function() {
-    $(this).bind("contextmenu", function(e) {
-        e.preventDefault();
-    });
-}); 
-</script>
-<script type="text/JavaScript"> 
-    function killCopy(e){ return false } 
-    function reEnable(){ return true } 
-    document.onselectstart=new Function ("return false"); 
-    if (window.sidebar)
-    { 
-        document.onmousedown=killCopy; 
-        document.onclick=reEnable; 
-    } 
-</script>
-<script language="javascript">
-document.onmousedown=disableclick;
-status="Right Click Disabled";
-function disableclick(e)
-{
-if(event.button="2")
-{
-alter(status);
-return false;
-}
-}
-</script>
+    $serverName = "CPHYDERABAD1\\DAU_HYD_2023";
+    $connectionInfo = array('Database' => 'PDACT');
+    $conn = sqlsrv_connect($serverName, $connectionInfo);
+    if ($conn === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+    $number = $name;
 
-<?php
-$serverName = "CPHYDERABAD1\DAU_HYD_2023";
-$connectionInfo = array( "Database"=>"PDACT");
-$conn = sqlsrv_connect( $serverName, $connectionInfo );
-if( $conn === false ) {
-    die( print_r( sqlsrv_errors(), true));
-}
-$number=$_POST['NAME'];
-
-
-$sql0="select distinct PDACT_KEY,REPLACE(IRKEY,' ','') AS IRKEY,NAME,FATHER_NAME,AGE,DISTRICT AS NATIVE_DISTRICT,STATE AS NATIVE_STATE,PD_ACT_PS,
+    $sql0 = "select distinct PDACT_KEY,REPLACE(IRKEY,' ','') AS IRKEY,NAME,FATHER_NAME,AGE,DISTRICT AS NATIVE_DISTRICT,STATE AS NATIVE_STATE,PD_ACT_PS,
 CONVERT(VARCHAR(20),Date_Of_Arrest) AS DATE_OF_PDACT into #temp from PDACT_MAIN_TABLE WHERE NAME LIKE '%$number%'";
 
-$sql1="select PDACT_KEY,A.IRKEY,NAME,FATHER_NAME,AGE,NATIVE_DISTRICT,NATIVE_STATE,PD_ACT_PS,
+    $sql1 = "select PDACT_KEY,A.IRKEY,NAME,FATHER_NAME,AGE,NATIVE_DISTRICT,NATIVE_STATE,PD_ACT_PS,
 CONVERT(VARCHAR(20),DATE_OF_PDACT) AS DATE_OF_PDACT,CASE WHEN CONVERT(VARCHAR(20),A.IRKEY)=CONVERT(VARCHAR(20),B.IRKEY)
 THEN IMAGE ELSE (SELECT IMAGE FROM FORMS..IMAGE_TABLE WHERE IRKEY='113769')END  AS IMAGE
 FROM #TEMP A LEFT JOIN FORMS..IMAGE_TABLE B ON CONVERT(VARCHAR(20),A.IRKEY)=CONVERT(VARCHAR(20),B.IRKEY) ";
 
+    sqlsrv_query($conn, $sql0);
+    $st1 = sqlsrv_query($conn, $sql1);
+    $rows = cdat_sum_fetch_all($st1);
 
-$st0 = sqlsrv_query( $conn, $sql0 );
-$st1 = sqlsrv_query( $conn, $sql1 );
+    if (empty($rows)) {
+        cdat_sum_empty_state('No PDACT records found for: ' . $name);
+    } else {
+        cdat_sum_results_open();
+        cdat_sum_report_banner('ACCUSED INFORMATION');
+        cdat_sum_generic_table_open(
+            'PDACT Name Search',
+            ['PDACT_KEY', 'IRKEY', 'NAME', 'IMAGE', 'FATHER_NAME', 'AGE', 'NATIVE_DISTRICT', 'NATIVE_STATE', 'PD_ACT_PS', 'DATE_OF_PDACT'],
+            'results_table',
+            'pdact_search.csv',
+            count($rows)
+        );
+        foreach ($rows as $row) {
+            $pdactKey = (string) ($row['PDACT_KEY'] ?? '');
+            $irKey = (string) ($row['IRKEY'] ?? '');
+            cdat_sum_table_row([
+                ['html' => '<a href="pdact_main.php?PDACT_KEY=' . cdat_sum_h(urlencode($pdactKey)) . '">' . cdat_sum_h($pdactKey) . '</a>'],
+                ['html' => '<a href="ir.php?IRKEY=' . cdat_sum_h(urlencode($irKey)) . '">' . cdat_sum_h($irKey) . '</a>', 'class' => 'sum-cell-num'],
+                (string) ($row['NAME'] ?? ''),
+                ['html' => cdat_sum_img_html($row['IMAGE'] ?? '', 120, 120), 'class' => 'sum-cell-img'],
+                (string) ($row['FATHER_NAME'] ?? ''),
+                ['text' => (string) ($row['AGE'] ?? ''), 'class' => 'sum-cell-num'],
+                (string) ($row['NATIVE_DISTRICT'] ?? ''),
+                (string) ($row['NATIVE_STATE'] ?? ''),
+                (string) ($row['PD_ACT_PS'] ?? ''),
+                ['text' => (string) ($row['DATE_OF_PDACT'] ?? ''), 'class' => 'sum-cell-date'],
+            ]);
+        }
+        cdat_sum_generic_table_close();
+        cdat_sum_results_close();
+    }
+    sqlsrv_close($conn);
 
-
-echo "<table border=1 cellspacing=0 cellpadding=5>
-<tr  bgcolor=#921215>
-<th width=1320px ><font size=3 face=verdana color='#F9FBFC'>ACCUSED INFORMATION</font></th>
-</tr>";
-echo "</table>";
-
-echo "<table width=815px border=1 cellspacing=0 cellpadding=5>
-<tr>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>PDACT_KEY</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>IRKEY</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>NAME</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>IMAGE</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>FATHER_NAME</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>AGE</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>NATIVE_DISTRICT</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>NATIVE_STATE</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>PD_ACT_PS</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>DATE_OF_PDACT</font></th>
-</tr>";
-
-while( $row = sqlsrv_fetch_array( $st1, SQLSRV_FETCH_ASSOC) ) {
-echo "<tr>";
-echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana ><center><a href=".'pdact_main.php?PDACT_KEY='.($row['PDACT_KEY']).">". $row['PDACT_KEY'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#C2E0FB><font size=1 face=verdana><center><a href=".'ir.php?IRKEY='.($row['IRKEY']).">". $row['IRKEY'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['NAME'] ."<center></font></td>";
-echo "<td height=150px width=150px>";?> <?php echo '<img onmouseover="bigImg(this)" onmouseout="normalImg(this)" height="200" width="220" src="'.cdat_base64_image_src($row['IMAGE']).'"></img>' ?> <?php "</td>";
-echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['FATHER_NAME'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['AGE'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['NATIVE_DISTRICT'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['NATIVE_STATE'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['PD_ACT_PS'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['DATE_OF_PDACT'] ."<center></font></td>";
-
-echo "</tr>";
+    if ($isAjax) {
+        exit;
+    }
+    cdat_sum_page_close();
+    layout_end();
+    exit;
 }
-echo "</table>";
 
-
-?>
-<?php endif; ?>
-<?php layout_end(); ?>
+layout_begin('PDACT Name Search');
+cdat_sum_page_open();
+cdat_sum_search_card(
+    'PDACT Search By Name',
+    'Search PDACT records by accused name.',
+    'pdact_search.php',
+    cdat_sum_field_text('NAME', 'Accused Name', '', 'NAME', 'Enter name'),
+    'BTN_CDAT',
+    'Submit'
+);
+cdat_sum_page_close();
+layout_end();

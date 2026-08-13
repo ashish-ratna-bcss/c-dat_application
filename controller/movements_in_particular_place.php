@@ -1,135 +1,64 @@
 <?php
-// One page for both halves of this screen: the form, and the results.
-// Was view/movements_in_particular_place.htm (form) + controller/movements_in_particular_place.php (handler).
-// GET shows the form; a submit renders the form and the results below it.
-// !empty($_GET) covers links that pass parameters in the query string.
-$__submitted = ($_SERVER['REQUEST_METHOD'] === 'POST') || !empty($_GET);
-?>
-<?php
 require_once __DIR__ . '/includes/layout.php';
-layout_begin("Movements In Particular Place");
-?>
-<div align="center">
-  <table width="1323" height="603" border="2">
-    <tr>
-      <td width="1349" height="595" align="center" valign="top"><table width="1313" height="148">
-        <tr>
-          <td width="1305" height="134" align="center" valign="bottom" background="../assets/images/topborder.jpg">
-                </td>
-        </tr>
-      </table>
-      <p class="MenuBarItemHover">&nbsp;</p>
-      <p class="MenuBarItemHover">&nbsp;</p>
-      <table width="1126" height="144" align="center">
-        <tr>
-          <th height="25" align="center" valign="middle" background="../assets/images/border.jpg" scope="col">MOVEMENTS IN PARTICULAR LAT LONG</th>
-        </tr>
-        <tr>
-          <th align="center" valign="middle" background="../assets/images/border.jpg" scope="col"><form id="form1" name="form1" method="post" action="movements_in_particular_place.php">
-              <label  font face="verdana">PHONE:</label>
-              <input type="text" name="PHONE" id="PHONE" placeholder="Enter PHONE NO" required="required"/>
-              <label  font face="verdana">LAT:</label>
-              <input type="text" name="LAT" id="LAT" placeholder="Enter LAT" required="required"/>
-             <label  font face="verdana">LONG:</label>
-              <input type="text" name="LONG" id="LONG" placeholder="Enter LONG" required="required"/>
-              RANGE IN MTS : 
-<select name="RANGE">
-<option value=""></option>
-<option value="100">100</option>
-<option value="200">200</option>
-<option value="300">300</option>
-<option value="400">400</option>
-<option value="500">500</option>
-<option value="600">600</option>
-<option value="700">700</option>
-<option value="800">800</option>
-<option value="900">900</option>
-<option value="1000">1000</option>
-<option value="1100">1100</option>
-<option value="1200">1200</option>
-<option value="1300">1300</option>
-<option value="1400">1400</option>
-<option value="1500">1500</option>
-<option value="1600">1600</option>
-<option value="1700">1700</option>
-<option value="1800">1800</option>
-<option value="1900">1900</option>
-<option value="2000">2000</option>
-<option value="2100">2100</option>
-<option value="2200">2200</option>
-<option value="2300">2300</option>
-<option value="2400">2400</option>
-<option value="2500">2500</option>
-<option value="2600">2600</option>
-<option value="2700">2700</option>
-<option value="2800">2800</option>
-<option value="2900">2900</option>
-<option value="3000">3000</option>
-<option value="3100">3100</option>
-<option value="3200">3200</option>
-<option value="3300">3300</option>
-<option value="3400">3400</option>
-<option value="3500">3500</option>
-<option value="3600">3600</option>
-<option value="3700">3700</option>
-<option value="3800">3800</option>
-<option value="3900">3900</option>
-<option value="4000">4000</option>
-<option value="4100">4100</option>
-<option value="4200">4200</option>
-<option value="4300">4300</option>
-<option value="4400">4400</option>
-<option value="4500">4500</option>
-<option value="4600">4600</option>
-<option value="4700">4700</option>
-<option value="4800">4800</option>
-<option value="4900">4900</option>
-<option value="5000">5000</option>
+require_once __DIR__ . '/includes/sum_ui.php';
 
+$isAjax = cdat_sum_is_ajax();
+$phone = trim((string) ($_POST['PHONE'] ?? ''));
+$lat = trim((string) ($_POST['LAT'] ?? ''));
+$long = trim((string) ($_POST['LONG'] ?? ''));
+$range = trim((string) ($_POST['RANGE'] ?? ''));
+$hasSearch = $phone !== '' && $lat !== '' && $long !== '';
 
-
-</select>
-              <input type="submit" name="BTN_SUM" id="BTN_SUM" value="Submit" />
-          </form></th>
-        </tr>
-      </table>
-      <p>&nbsp;</p>
-      <p>&nbsp;</p></td>
-    </tr>
-  </table>
-</div>
-
-
-<?php if ($__submitted): ?>
-<?php
-require_once __DIR__ . '/cdr_enrichment_sql.php';
-$serverName = "CPHYDERABAD1\DAU_HYD_2023";
-$connectionInfo = array( "Database"=>"CDATDUPL");
-$conn = sqlsrv_connect( $serverName, $connectionInfo );
-if( $conn === false ) {
-    die( print_r( sqlsrv_errors(), true));
+$rangeOptions = ['' => 'Select range'];
+for ($i = 100; $i <= 5000; $i += 100) {
+    $rangeOptions[(string) $i] = (string) $i;
 }
-$number = $_POST['PHONE'];
-$LAT = $_POST['LAT'];
-$LONG = $_POST['LONG'];
-$RANGE = $_POST['RANGE'];
 
+$fieldsHtml = cdat_sum_field_text('PHONE', 'Phone', $phone, 'PHONE', 'Enter PHONE NO', true, 'tel')
+            . cdat_sum_field_text('LAT', 'LAT', $lat, 'LAT', 'Enter LAT')
+            . cdat_sum_field_text('LONG', 'LONG', $long, 'LONG', 'Enter LONG')
+            . cdat_sum_searchable_select('RANGE', 'Range in MTS', $rangeOptions, $range, 'Select range', false);
 
+if ($hasSearch) {
+    if (!$isAjax) {
+        layout_begin('Movements In Particular Place');
+        cdat_sum_page_open();
+        cdat_sum_search_card(
+            'Movements in Particular Lat Long',
+            'Find movements of a mobile number near a latitude and longitude.',
+            'movements_in_particular_place.php',
+            $fieldsHtml,
+            'BTN_SUM',
+            'Submit'
+        );
+    }
 
-$sql1="SELECT 'MOVEMENTS IN: '+'$LAT' + ' AND ' + '$LONG' as PHONE1";
+    require_once __DIR__ . '/cdr_enrichment_sql.php';
+    $serverName = "CPHYDERABAD1\\DAU_HYD_2023";
+    $connectionInfo = array("Database" => "CDATDUPL");
+    $conn = sqlsrv_connect($serverName, $connectionInfo);
+    if ($conn === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+    $number = $_POST['PHONE'];
+    $LAT = $_POST['LAT'];
+    $LONG = $_POST['LONG'];
+    $RANGE = $_POST['RANGE'];
 
-$sql10="SELECT DISTINCT A.PHONE,CONVERT(VARCHAR,MIN(STARTTIME),20) AS FIRST_CALL,CONVERT(VARCHAR,MAX(STARTTIME),20) AS LAST_CALL,B.NICKNAME,B.MO,CATEGORY,CONVERT(VARCHAR,MAX(A.ASONDATE),20) AS LAST_UPDATED,
+    $sql1 = "SELECT 'MOVEMENTS IN: '+'$LAT' + ' AND ' + '$LONG' as PHONE1";
+
+    $sql10 = "SELECT DISTINCT A.PHONE,CONVERT(VARCHAR,MIN(STARTTIME),20) AS FIRST_CALL,CONVERT(VARCHAR,MAX(STARTTIME),20) AS LAST_CALL,B.NICKNAME,B.MO,CATEGORY,CONVERT(VARCHAR,MAX(A.ASONDATE),20) AS LAST_UPDATED,
 INC_OFFICER 
 INTO #S FROM CDATDUPL.DBO.CDATPCSUSPECT A LEFT JOIN CDATDUPL.DBO.CDATSUSPECT B ON A.PHONE=B.PHONE WHERE A.PHONE='$number' GROUP BY A.PHONE,B.NICKNAME,MO,CATEGORY, INC_OFFICER";
 
 
-$sql2 ="SELECT DISTINCT PHONE,OTHER,CONVERT(VARCHAR,STARTTIME,20) AS STARTTIME,DURATION,
+    $sql2 = "SELECT DISTINCT PHONE,OTHER,CONVERT(VARCHAR,STARTTIME,20) AS STARTTIME,DURATION,
 CASE WHEN INCOMING='1' THEN 'IN' ELSE 'OUT' END AS TYPE,
 IMEINUMBER,CELLTOWERID,STATE_KEY,PROVIDER_KEY  INTO #TT FROM CDATDUPL.DBO.CDATPCSUSPECT WHERE PHONE='$number' ";
 
-$sql3 = cdr_sql_enrich_tt('', '', ['with_last_update' => true, 'with_lat_long' => true, 'output_table' => '#TTP']);
+    $sql3 = cdr_sql_enrich_tt('', '', ['with_last_update' => true, 'with_lat_long' => true, 'output_table' => '#TTP']);
 
-$sql4 ="declare @lat decimal(14,10),@long decimal(14,10),@radius decimal(15,10)
+    $sql4 = "declare @lat decimal(14,10),@long decimal(14,10),@radius decimal(15,10)
 set @lat='$LAT'
 set @long='$LONG'
 set @radius='$RANGE'
@@ -142,56 +71,76 @@ ISNUMERIC(LAT)=1 AND LAT IS NOT NULL AND ISNUMERIC(LONG)=1 AND LONG IS NOT NULL 
 DBO.CALCULATEDISTANCE(@long,@lat,LONG,LAT)*1000<@radius
 ORDER BY STARTTIME";
 
+    $st1 = sqlsrv_query($conn, $sql1);
+    $st2 = sqlsrv_query($conn, $sql10);
+    $st3 = sqlsrv_query($conn, $sql2);
+    $st4 = sqlsrv_query($conn, $sql3);
+    $st5 = sqlsrv_query($conn, $sql4);
 
-$st1 = sqlsrv_query( $conn, $sql1);
-$st2 = sqlsrv_query( $conn, $sql10);
-$st3 = sqlsrv_query( $conn, $sql2);
-$st4 = sqlsrv_query( $conn, $sql3);
-$st5 = sqlsrv_query( $conn, $sql4);
+    $banner = 'MOVEMENTS IN: ' . $LAT . ' AND ' . $LONG;
+    if ($st1 && ($b = sqlsrv_fetch_array($st1, SQLSRV_FETCH_ASSOC))) {
+        $banner = (string) ($b['PHONE1'] ?? $banner);
+    }
+    $rows = cdat_sum_fetch_all($st5);
 
-while( $row = sqlsrv_fetch_array( $st1, SQLSRV_FETCH_ASSOC) ) {
-echo "<font size=4 face=verdana color='#F9FBFC'><td><center><b>". $row['PHONE1'] ."<center></td></font></br>";
+    if (empty($rows)) {
+        cdat_sum_empty_state('No movements found for that location.');
+    } else {
+        cdat_sum_results_open();
+        cdat_sum_report_banner($banner);
+        cdat_sum_generic_table_open(
+            'Movements',
+            ['PHONE', 'OTHER', 'STARTTIME', 'DURATION', 'TYPE', 'CELLTOWERID', 'DIST', 'BR', 'AREADESCRIPTION', 'OPERATOR', 'LAT', 'LONG', 'AZIMUTH'],
+            'results_table',
+            'movements_in_particular_place.csv',
+            count($rows)
+        );
+        foreach ($rows as $row) {
+            cdat_sum_table_row([
+                ['text' => (string) ($row['PHONE'] ?? ''), 'class' => 'sum-cell-num'],
+                ['text' => (string) ($row['OTHER'] ?? ''), 'class' => 'sum-cell-num'],
+                ['text' => (string) ($row['STARTTIME'] ?? ''), 'class' => 'sum-cell-date'],
+                ['text' => (string) ($row['DURATION'] ?? ''), 'class' => 'sum-cell-num'],
+                (string) ($row['TYPE'] ?? ''),
+                ['text' => (string) ($row['CELLTOWERID'] ?? ''), 'class' => 'sum-cell-num'],
+                ['text' => (string) ($row['DIST'] ?? ''), 'class' => 'sum-cell-num'],
+                (string) ($row['BR'] ?? ''),
+                ['html' => cdat_sum_address_lines((string) ($row['AREADESCRIPTION'] ?? '')) ?: '—', 'class' => 'sum-address-cell'],
+                (string) ($row['OPERATOR'] ?? ''),
+                (string) ($row['LAT'] ?? ''),
+                (string) ($row['LONG'] ?? ''),
+                (string) ($row['AZM'] ?? ''),
+            ]);
+        }
+        cdat_sum_generic_table_close();
+        cdat_sum_results_close();
+    }
+
+    if ($st2) {
+        sqlsrv_free_stmt($st2);
+    }
+    sqlsrv_close($conn);
+
+    if ($isAjax) {
+        exit;
+    }
+    cdat_sum_page_close();
+    layout_end();
+    exit;
 }
 
-echo "<table border=1 cellspacing=0 cellpadding=5>
-<tr>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>PHONE</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>OTHER</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>STARTTIME</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>DURATION</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>TYPE</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>CELLTOWERID</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>DIST</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>BR</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>AREADESCRIPTION</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>OPERATOR</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>LAT</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>LONG</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>AZIMUTH</font></th>
-</tr>";
-
-
-while( $row = sqlsrv_fetch_array( $st5, SQLSRV_FETCH_ASSOC) ) {
-echo "<tr>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['PHONE'] ."<center></td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['OTHER'] ."<center></td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['STARTTIME'] ."<center></td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['DURATION'] ."<center></td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['TYPE'] ."<center></td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['CELLTOWERID'] ."<center></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['DIST'] ."</td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['BR'] ."<center></td>";
-echo "<td width=800px bgcolor=#C2E0FB><font size=1 face=verdana>". $row['AREADESCRIPTION'] ."</td>";
-echo "<td width=800px bgcolor=#C2E0FB><font size=1 face=verdana>". $row['OPERATOR'] ."</td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['LAT'] ."<center></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['LONG'] ."<center></td>";
-echo "<td width=15px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['AZM'] ."<center></font></td>";
-echo "</tr>";
-
-} 
-echo"</table></br>";
-
-sqlsrv_free_stmt( $st2);
-?>
-<?php endif; ?>
-<?php layout_end(); ?>
+layout_begin('Movements In Particular Place');
+cdat_sum_page_open();
+cdat_sum_search_card(
+    'Movements in Particular Lat Long',
+    'Find movements of a mobile number near a latitude and longitude.',
+    'movements_in_particular_place.php',
+    cdat_sum_field_text('PHONE', 'Phone', '', 'PHONE', 'Enter PHONE NO', true, 'tel')
+        . cdat_sum_field_text('LAT', 'LAT', '', 'LAT', 'Enter LAT')
+        . cdat_sum_field_text('LONG', 'LONG', '', 'LONG', 'Enter LONG')
+        . cdat_sum_searchable_select('RANGE', 'Range in MTS', $rangeOptions, '', 'Select range', false),
+    'BTN_SUM',
+    'Submit'
+);
+cdat_sum_page_close();
+layout_end();

@@ -1,11 +1,15 @@
 <?php
 require_once __DIR__ . '/includes/layout.php';
-layout_begin("Inter Tower Calls Twr");
-?>
+require_once __DIR__ . '/includes/sum_ui.php';
 
-<li><a href="suspect_search.php"><font color='#FDEFEF'>Back</a></li></b></b>
-<?php
-$serverName = "CPHYDERABAD1\DAU_HYD_2023";
+$isAjax = cdat_sum_is_ajax();
+if (!$isAjax) {
+    layout_begin('Inter Tower Calls Twr');
+    cdat_sum_page_open();
+    cdat_sum_back_link('suspect_search.php');
+}
+
+$serverName = "CPHYDERABAD1\\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"TWRMDB");
 $conn = sqlsrv_connect( $serverName, $connectionInfo );
 if( $conn === false ) {
@@ -57,38 +61,46 @@ $st11 = sqlsrv_query( $conn,$sql11 );
 $st4 = sqlsrv_query( $conn, $sql2 );
 $st5 = sqlsrv_query( $conn, $sql3 );
 $st6 = sqlsrv_query( $conn, $sql4 );
-
-
-
-while( $row = sqlsrv_fetch_array( $st0, SQLSRV_FETCH_ASSOC) ) {
-echo "<font size=4 face=verdana color='#F9FBFC'><td><center><b>". $row['SEARCH'] ."<center></td></font></br>";
-} 
-
-echo "<table border=1 cellspacing=0 cellpadding=5>
-<tr>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>PHONE</font</th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>OTHER</font</th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>STARTTIME</font</th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>DURATION</font</th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>CALL_TYPE</font</th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>IMEINUMBER</font</th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>ADDRESS</font</th>
-</tr>";
-
-while( $row = sqlsrv_fetch_array( $st6, SQLSRV_FETCH_ASSOC) ) {
-echo "<tr>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['PHONE'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['OTHER'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['STARTTIME'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['DURATION'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['CALL_TYPE'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['IMEINUMBER'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['ADDRESS'] ."<center></font></td>";
-echo "</tr>";
-
+$banner = 'INTER TOWER CALLS SEARCH IN TOWER DUMP';
+if ($st0 && ($b = sqlsrv_fetch_array($st0, SQLSRV_FETCH_ASSOC))) {
+    $banner = (string) ($b['SEARCH'] ?? $banner);
 }
-echo"</table>";
+$rows = cdat_sum_fetch_all($st6);
 
-sqlsrv_free_stmt( $st1);
-?>
-<?php layout_end(); ?>
+cdat_sum_results_open();
+cdat_sum_report_banner($banner);
+if (empty($rows)) {
+    cdat_sum_empty_state('No inter-tower calls found.');
+} else {
+    cdat_sum_generic_table_open(
+        'Inter Tower Calls',
+        ['PHONE', 'OTHER', 'STARTTIME', 'DURATION', 'CALL_TYPE', 'IMEINUMBER', 'ADDRESS'],
+        'inter_tower_twr_table',
+        'inter_tower_calls_twr.csv',
+        count($rows)
+    );
+    foreach ($rows as $row) {
+        cdat_sum_table_row([
+            ['text' => (string) ($row['PHONE'] ?? ''), 'class' => 'sum-cell-num'],
+            ['text' => (string) ($row['OTHER'] ?? ''), 'class' => 'sum-cell-other'],
+            ['text' => (string) ($row['STARTTIME'] ?? ''), 'class' => 'sum-cell-date'],
+            ['text' => (string) ($row['DURATION'] ?? ''), 'class' => 'sum-cell-num'],
+            (string) ($row['CALL_TYPE'] ?? ''),
+            ['text' => (string) ($row['IMEINUMBER'] ?? ''), 'class' => 'sum-cell-num'],
+            ['html' => cdat_sum_address_lines((string) ($row['ADDRESS'] ?? '')) ?: '—', 'class' => 'sum-address-cell'],
+        ]);
+    }
+    cdat_sum_generic_table_close();
+}
+cdat_sum_results_close();
+
+if ($st1) {
+    sqlsrv_free_stmt($st1);
+}
+sqlsrv_close($conn);
+
+if ($isAjax) {
+    exit;
+}
+cdat_sum_page_close();
+layout_end();

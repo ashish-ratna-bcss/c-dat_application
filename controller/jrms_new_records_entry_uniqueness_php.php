@@ -1,14 +1,16 @@
 <?php
 require_once __DIR__ . '/includes/layout.php';
-layout_begin("JRMS New Records Entry Uniqueness Php");
+require_once __DIR__ . '/includes/sum_ui.php';
+
+layout_begin('JRMS New Records Entry Uniqueness Php');
+cdat_sum_page_open();
+cdat_sum_entry_card_open(
+    'JRMS New Record',
+    'Enter a new JRMS uniqueness record.',
+    'jrms_new_records_entry_uniqueness.php'
+);
 ?>
 
-<table>
-        <tr>
-          <th width="1126" align="center" scope="col">JRMS</th>
-        </tr>
-</table>
-<form action="jrms_new_records_entry_uniqueness.php" Method="post">
 <div>NAME:</div><textarea type="text" required="required"name="NAME"></textarea><br/><br/>
 
 <div>FATHER_NAME:</div><textarea type="text" required="required"name="FATHER_NAME"></textarea><br/><br/>
@@ -208,9 +210,7 @@ layout_begin("JRMS New Records Entry Uniqueness Php");
 
 
 
-<input type="submit" value="insert">
-<br/><br/>
-
- </form>
-
-<?php layout_end(); ?>
+<?php
+cdat_sum_entry_card_close('insert');
+cdat_sum_page_close();
+layout_end();

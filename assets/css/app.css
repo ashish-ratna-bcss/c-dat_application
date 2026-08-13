@@ -495,6 +495,19 @@ mark.hit { background: #ffd44d; color: #10243a; border-radius: 3px; padding: 0 1
     border: 1px solid transparent; border-radius: 8px; cursor: pointer;
 }
 .content input[type=submit]:hover, .content button:hover { background: #12559f; }
+.content .sum-dp button,
+.content .sum-dp__panel button {
+    background: #f4f7fb !important;
+    color: #1b2733 !important;
+    border: 1px solid transparent !important;
+    box-shadow: none !important;
+    font-weight: 600 !important;
+}
+.content .sum-dp button:hover,
+.content .sum-dp__panel button:hover {
+    background: #e8eef6 !important;
+    color: #1b2733 !important;
+}
 /* A form label is not secondary text -- it was too faint to read next to its
    own field. */
 .content label { color: var(--ink); font-weight: 600; }
@@ -850,34 +863,48 @@ mark.hit { background: #ffd44d; color: #10243a; border-radius: 3px; padding: 0 1
 /* Shared date picker component */
 .sum-dp {
     position: relative; width: 100%;
-    display: flex; align-items: stretch; gap: .35rem;
+    display: flex; align-items: stretch;
+    background: #fff;
+    border: 1px solid #d5e2ef;
+    border-radius: 8px;
+}
+.sum-dp.is-open,
+.sum-dp:focus-within {
+    border-color: #1668c3;
+    box-shadow: 0 0 0 3px rgba(22,104,195,.16);
 }
 .sum-dp .sum-date-input,
 .content .sum-dp .sum-date-input,
 .sum-search-form__field .sum-dp input[type="text"],
-.sum-entry-form .sum-dp input[type="text"] {
+.sum-entry-form .sum-dp input[type="text"],
+input.sum-date-input[readonly] {
     flex: 1 1 auto; width: auto !important; min-width: 0; margin: 0 !important;
+    padding: .55rem .5rem .55rem .75rem !important;
+    cursor: pointer !important; caret-color: transparent; user-select: none;
+    background: transparent !important;
+    border: 0 !important; border-radius: 8px 0 0 8px !important;
+    box-shadow: none !important; outline: none !important;
 }
 .content .sum-dp__icon,
 .content button.sum-dp__icon,
 .sum-dp__icon {
-    flex: 0 0 auto; width: 2.35rem; margin: 0 !important; padding: 0 !important;
+    flex: 0 0 2.4rem; width: 2.4rem; margin: 0 !important; padding: 0 !important;
     display: inline-flex; align-items: center; justify-content: center;
-    color: #0f172a !important; background: #fff !important;
-    border: 1px solid #d5e2ef !important; border-radius: 8px !important;
-    cursor: pointer; font-family: inherit;
+    color: #64748b !important; background: transparent !important;
+    border: 0 !important; border-radius: 0 8px 8px 0 !important;
+    cursor: pointer; font-family: inherit; box-shadow: none !important;
 }
 .content .sum-dp__icon:hover,
 .content button.sum-dp__icon:hover,
-.sum-dp__icon:hover {
-    background: #e8f1fb !important; color: #12559f !important;
-}
+.sum-dp__icon:hover,
+.content .sum-dp__icon:focus,
 .sum-dp__icon:focus {
-    outline: 2px solid rgba(22,104,195,.5); outline-offset: 1px;
+    background: transparent !important; color: #12559f !important;
+    outline: none;
 }
 .sum-dp__panel {
-    position: absolute; z-index: 45; left: 0; top: calc(100% + 4px);
-    width: min(280px, calc(100vw - 2rem));
+    position: absolute; z-index: 80; left: 0; top: calc(100% + 4px);
+    width: min(300px, calc(100vw - 2rem));
     background: #fff; border-radius: 10px;
     box-shadow: 0 10px 28px rgba(15, 40, 70, .22);
     border: 1px solid #dbe7f3; overflow: hidden;
@@ -886,7 +913,57 @@ mark.hit { background: #ffd44d; color: #10243a; border-radius: 3px; padding: 0 1
 .sum-dp.is-open .sum-dp__panel { display: block; }
 .sum-dp__head {
     display: flex; align-items: center; justify-content: space-between;
-    gap: .35rem; margin-bottom: .45rem;
+    gap: .3rem; margin-bottom: .45rem;
+}
+.sum-dp__selects {
+    display: flex; align-items: center; justify-content: center;
+    gap: .3rem; flex: 1; min-width: 0;
+}
+.content .sum-dp__switch,
+.content button.sum-dp__switch,
+.sum-dp__switch {
+    margin: 0 !important; padding: .2rem .45rem !important;
+    font-size: .88rem !important; font-weight: 700 !important;
+    color: #1b2733 !important; background: transparent !important;
+    border: 0 !important; border-radius: 6px !important;
+    cursor: pointer; line-height: 1.2;
+}
+.content .sum-dp__switch:hover,
+.content button.sum-dp__switch:hover,
+.sum-dp__switch:hover {
+    background: #eef2f6 !important; color: #1b2733 !important;
+}
+.sum-dp__range {
+    font-size: .88rem; font-weight: 700; color: #1b2733;
+}
+.sum-dp__month-grid,
+.sum-dp__year-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: .4rem;
+    min-height: 10.5rem;
+}
+.content .sum-dp__pick,
+.content button.sum-dp__pick,
+.sum-dp__pick {
+    margin: 0 !important; padding: .7rem .2rem !important;
+    font-size: .84rem !important; font-weight: 600 !important;
+    color: #1b2733 !important; background: #f4f7fb !important;
+    border: 1px solid #e6edf5 !important; border-radius: 8px !important;
+    cursor: pointer;
+}
+.content .sum-dp__pick:hover,
+.content button.sum-dp__pick:hover,
+.sum-dp__pick:hover {
+    background: #eef2f6 !important; color: #1b2733 !important;
+    border-color: #d5e2ef !important;
+}
+.content .sum-dp__pick.is-selected,
+.content button.sum-dp__pick.is-selected,
+.sum-dp__pick.is-selected {
+    background: #e8f1fb !important; color: #12559f !important;
+    border-color: #b9d4f0 !important; font-weight: 700 !important;
+}
+.sum-dp__pick.is-empty {
+    visibility: hidden; pointer-events: none;
 }
 .sum-dp__title {
     font-size: .92rem; font-weight: 700; color: #0f172a; text-align: center;
@@ -976,6 +1053,16 @@ mark.hit { background: #ffd44d; color: #10243a; border-radius: 3px; padding: 0 1
 }
 .sum-search-form__field--state { flex: 1 1 220px; }
 .sum-search-form__field--date { flex: 1 1 160px; }
+.sum-search-form__field--hms { flex: 1 1 200px; }
+.sum-hms {
+    display: flex; align-items: center; gap: .35rem;
+}
+.sum-hms input[type="number"] {
+    width: 4.2rem; margin: 0; padding: .55rem .45rem; text-align: center;
+    font-size: .95rem; color: var(--ink); background: #fff;
+    border: 1px solid #d5e2ef; border-radius: 8px;
+}
+.sum-hms span { color: var(--muted); font-weight: 600; }
 .sum-back-link {
     margin: 0 0 .75rem; font-size: .88rem;
 }
@@ -1198,6 +1285,15 @@ mark.hit { background: #ffd44d; color: #10243a; border-radius: 3px; padding: 0 1
     margin: 0 0 .85rem; font-size: 1.15rem; font-weight: 700; color: #0f172a;
     text-align: left;
 }
+.sum-hub-card .sum-notice-bar { margin: .85rem 0 0; }
+.sum-hub-card__media {
+    margin-top: .95rem; border-radius: 10px; overflow: hidden;
+    border: 1px solid var(--line); background: #f8fafc;
+}
+.sum-hub-card__media img {
+    display: block; width: 100%; max-height: 320px; object-fit: cover;
+}
+.sum-cell-img img { max-width: 120px; height: auto; border-radius: 6px; }
 
 /* Admin console panels */
 .sum-admin-layout { max-width: 1280px; }

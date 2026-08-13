@@ -1,43 +1,122 @@
 <?php
 require_once __DIR__ . '/includes/layout.php';
-layout_begin("Rowdy Sheeter By PS");
-?>
-<?php
-require_once("dbcontroller.php");
-$db_handle = new DBController();
-$query ="SELECT DISTINCT UPPER(LTRIM(RTRIM(POLICE_STATION))) POLICE_STATION FROM CDATDUPL..ROWDY_SHEETER_DATA1";
-$results = $db_handle->runQuery($query);
-?>
-<div align="center">
-  <table width="1323" height="100" border="2">
-    <tr>
-      <td width="1349" height="595" align="left" valign="top"><table width="1313" height="148">
-        <tr>
-          <td width="1265" height="134" align="center" valign="bottom" background="../assets/images/topborder.jpg"></td>
-        </tr>
+require_once __DIR__ . '/includes/sum_ui.php';
+require_once __DIR__ . '/dbcontroller.php';
 
-  </table>
-      <p>&nbsp;</p>
-<table width="1021" height="163" align="center">
-        <tr>
-          <th height="31" align="center" valign="middle" background="../assets/images/border.jpg" scope="col">ROWDYSHEET SEARCH BY POLICE STATION</th>
-        </tr>
-        <tr>
-          <th width="782" align="center" valign="middle" background="../assets/images/border.jpg" scope="col"><form id="form1" name="form1" method="post" action="rowdysheeter_ps_wise_search_php.php">
-                     
-             POLICE_STATION: <select name="POLICE_STATION">
-<option value="">Select Police Station</option>
-<?php
-foreach($results as $POLICE_STATION) {
-?>
-<option value="<?php echo $POLICE_STATION["POLICE_STATION"]; ?>"> <?php echo $POLICE_STATION["POLICE_STATION"]; ?> </option>
-<?php
+$isAjax = cdat_sum_is_ajax();
+$ps = trim((string) ($_POST['POLICE_STATION'] ?? ''));
+$hasSearch = $ps !== '';
+
+$db_handle = new DBController();
+$query = "SELECT DISTINCT UPPER(LTRIM(RTRIM(POLICE_STATION))) POLICE_STATION FROM CDATDUPL..ROWDY_SHEETER_DATA1";
+$psRows = $db_handle->runQuery($query) ?: [];
+$psOptions = ['' => 'Select Police Station'];
+foreach ($psRows as $r) {
+    $v = (string) ($r['POLICE_STATION'] ?? '');
+    if ($v !== '') {
+        $psOptions[$v] = $v;
+    }
 }
-?>
-</select>
-              <input type="submit" name="BTN_SUM" id="BTN_SUM" value="Submit" />     
-          </form></th>
-        </tr>
-     
- 
-<?php layout_end(); ?>
+
+$fieldsHtml = cdat_sum_searchable_select(
+    'POLICE_STATION',
+    'Police Station',
+    $psOptions,
+    $ps,
+    'Select Police Station',
+    true
+);
+
+if ($hasSearch) {
+    if (!$isAjax) {
+        layout_begin('Rowdy Sheeter By PS');
+        cdat_sum_page_open();
+        cdat_sum_search_card(
+            'Rowdy Sheet Search By Police Station',
+            'Search rowdy sheeter records for a police station.',
+            'rowdysheeter_ps_wise_search.php',
+            $fieldsHtml,
+            'BTN_SUM',
+            'Submit'
+        );
+    }
+
+    $serverName = "CPHYDERABAD1\\DAU_HYD_2023";
+    $connectionInfo = array('Database' => 'CDATDUPL');
+    $conn = sqlsrv_connect($serverName, $connectionInfo);
+    if ($conn === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+    $number = $ps;
+
+    $sql0 = "SELECT DISTINCT IRKEY,PDACT_KEY,NAME,AGE,FATHER_NAME,PHONE,PRESENT_ADDRESS,LAT_P PRESENT_ADDRESS_LAT,
+LONG_P PRESENT_ADDRESS_LONG,PERMANENT_ADDRESS,LAT PERMANENT_ADD_LAT,LONG PERMANENT_ADD_LONG,ID_PROOF_TYPE+' '+ID_NO IDPROOF,
+COMMUNAL_NONCOMMUNAL COMMUNAL_STATUS,LATEST_BIND_OVER_DATE BIND_OVER_DATE,POLICE_STATION,PRESENT_ACTIVITY,DATE_OF_OPENING_RWD INTO #TEMP FROM ROWDY_SHEETER_DATA1
+WHERE POLICE_STATION LIKE '%$number%'";
+
+    $sql1 = "select PDACT_KEY,A.IRKEY,NAME,FATHER_NAME,AGE,PHONE,PRESENT_ADDRESS,PERMANENT_ADDRESS,PRESENT_ACTIVITY,IDPROOF,COMMUNAL_STATUS,
+CONVERT(VARCHAR(20),DATE_OF_OPENING_RWD) AS DATE_OF_OPENING_RWD,POLICE_STATION,CASE WHEN CONVERT(VARCHAR(20),A.IRKEY)=CONVERT(VARCHAR(20),B.IRKEY)
+THEN IMAGE ELSE (SELECT IMAGE FROM FORMS..IMAGE_TABLE WHERE IRKEY='113769')END  AS IMAGE
+FROM #TEMP A LEFT JOIN FORMS..IMAGE_TABLE B ON CONVERT(VARCHAR(20),A.IRKEY)=CONVERT(VARCHAR(20),B.IRKEY) ";
+
+    sqlsrv_query($conn, $sql0);
+    $st1 = sqlsrv_query($conn, $sql1);
+    $rows = cdat_sum_fetch_all($st1);
+
+    if (empty($rows)) {
+        cdat_sum_empty_state('No rowdy sheeter records found for: ' . $ps);
+    } else {
+        cdat_sum_results_open();
+        cdat_sum_report_banner('ROWDY SHEET INFORMATION');
+        cdat_sum_generic_table_open(
+            'Rowdy Sheeter',
+            ['NAME', 'FATHER_NAME', 'AGE', 'PHONE', 'PRESENT ADDRESS', 'PERMANENT_ADDRESS', 'PRESENT ACTIVITY', 'IDPROOF', 'DATE OF OPENING RWD', 'POLICE STATION', 'PDACT KEY', 'IRKEY', 'IMAGE'],
+            'results_table',
+            'rowdysheeter.csv',
+            count($rows)
+        );
+        foreach ($rows as $row) {
+            $pdactKey = (string) ($row['PDACT_KEY'] ?? '');
+            $irKey = (string) ($row['IRKEY'] ?? '');
+            cdat_sum_table_row([
+                (string) ($row['NAME'] ?? ''),
+                (string) ($row['FATHER_NAME'] ?? ''),
+                ['text' => (string) ($row['AGE'] ?? ''), 'class' => 'sum-cell-num'],
+                ['text' => (string) ($row['PHONE'] ?? ''), 'class' => 'sum-cell-num'],
+                ['html' => cdat_sum_address_lines((string) ($row['PRESENT_ADDRESS'] ?? '')) ?: '—', 'class' => 'sum-address-cell'],
+                ['html' => cdat_sum_address_lines((string) ($row['PERMANENT_ADDRESS'] ?? '')) ?: '—', 'class' => 'sum-address-cell'],
+                (string) ($row['PRESENT_ACTIVITY'] ?? ''),
+                (string) ($row['IDPROOF'] ?? ''),
+                ['text' => (string) ($row['DATE_OF_OPENING_RWD'] ?? ''), 'class' => 'sum-cell-date'],
+                (string) ($row['POLICE_STATION'] ?? ''),
+                ['html' => '<a href="pdact_main.php?PDACT_KEY=' . cdat_sum_h(urlencode($pdactKey)) . '">' . cdat_sum_h($pdactKey) . '</a>'],
+                ['html' => '<a href="ir.php?IRKEY=' . cdat_sum_h(urlencode($irKey)) . '">' . cdat_sum_h($irKey) . '</a>', 'class' => 'sum-cell-num'],
+                ['html' => cdat_sum_img_html($row['IMAGE'] ?? '', 120, 120), 'class' => 'sum-cell-img'],
+            ]);
+        }
+        cdat_sum_generic_table_close();
+        cdat_sum_results_close();
+    }
+
+    sqlsrv_close($conn);
+
+    if ($isAjax) {
+        exit;
+    }
+    cdat_sum_page_close();
+    layout_end();
+    exit;
+}
+
+layout_begin('Rowdy Sheeter By PS');
+cdat_sum_page_open();
+cdat_sum_search_card(
+    'Rowdy Sheet Search By Police Station',
+    'Search rowdy sheeter records for a police station.',
+    'rowdysheeter_ps_wise_search.php',
+    $fieldsHtml,
+    'BTN_SUM',
+    'Submit'
+);
+cdat_sum_page_close();
+layout_end();

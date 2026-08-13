@@ -139,6 +139,7 @@ $canVerify = $batch && ($batch['verification_status'] ?? 'pending') === 'pending
 // The stylesheet below belongs in <head>; capture it and pass it to
 // layout_begin() so it can stay written as plain CSS in this file.
 require_once __DIR__ . '/includes/layout.php';
+require_once __DIR__ . '/includes/sum_ui.php';
 ob_start();
 ?>
 <style type="text/css">
@@ -261,26 +262,14 @@ ob_start();
 <link rel="stylesheet" href="../assets/css/upload.css">
 <?php
 layout_begin('Staging Preview & Edit', 'Review rows before they load into production', ob_get_clean());
+cdat_sum_page_open();
+cdat_sum_hub_card(
+    'Staging Preview & Edit',
+    'Review rows before they load into production.',
+    '',
+    'Please mail raw data to <strong>cdranalysiswing@gmail.com</strong> to view reports.'
+);
 ?>
-<div align="center">
-  <table width="1323" height="603" border="2">
-    <tr>
-      <td width="1349" height="595" align="left" valign="top">
-
-
-
-        <marquee behavior="scroll" direction="right">
-          <font color="YELLOW" face="verdana" size="2"><b> *** PLEASE MAIL RAW DATA TO cdranalysiswing@gmail.com TO VIEW REPORTS *** </b></font>
-        </marquee>
-
-        <table width="1307" height="347" border="0" align="center">
-          <tr>
-            <td height="24" align="center" valign="top">
-              <p align="center" class="FONT">STAGING PREVIEW &amp; EDIT</p>
-            </td>
-          </tr>
-          <tr>
-            <td align="center" valign="top">
               <div class="verify-wrapper">
   <?php if (!$batch): ?>
     <div class="alert alert-warn">Upload record not found or has no staging data.</div>
@@ -334,14 +323,7 @@ layout_begin('Staging Preview & Edit', 'Review rows before they load into produc
     <div id="message"></div>
   <?php endif; ?>
               </div>
-            </td>
-          </tr>
-        </table>
-        <p>&nbsp;</p>
-      </td>
-    </tr>
-  </table>
-</div>
+<?php cdat_sum_page_close(); ?>
 
 <script>
 const logId = <?= (int)$logId ?>;

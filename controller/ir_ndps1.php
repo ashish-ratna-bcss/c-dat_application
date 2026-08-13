@@ -1,40 +1,41 @@
 <?php
 require_once __DIR__ . '/includes/layout.php';
-layout_begin("IR Ndps1");
-?>
+require_once __DIR__ . '/includes/sum_ui.php';
 
-<script>
-function bigImg(x) { 
-x.style.height="400px";
-x.style.width="400px";
+function ir_ndps1_kv_table(string $title, array $pairs, string $tableId): void
+{
+    cdat_sum_generic_table_open($title, ['Field', 'Value'], $tableId, $tableId . '.csv', count($pairs));
+    foreach ($pairs as $label => $value) {
+        $text = (string) $value;
+        $isAddr = stripos((string) $label, 'ADDRESS') !== false;
+        cdat_sum_table_row([
+            (string) $label,
+            $isAddr
+                ? ['html' => cdat_sum_address_lines($text) ?: '—', 'class' => 'sum-address-cell']
+                : $text,
+        ]);
+    }
+    cdat_sum_generic_table_close();
 }
-function normalImg(x) { 
-x.style.height="200px";
-x.style.width="220px";
+
+$isAjax = cdat_sum_is_ajax();
+if (!$isAjax) {
+    layout_begin('IR Ndps1');
+    cdat_sum_page_open();
+    cdat_sum_back_link('bulk_irkey_ndps.php');
 }
-</script>;
-<script type="text/javascript" src="ajax/libs/jquery/1/jquery.min.js"></script>
-<script type="text/javascript">
-$(function() {
-    $(this).bind("contextmenu", function(e) {
-        e.preventDefault();
-    });
-}); 
-</script>
 
-<?php
-$serverName = "CPHYDERABAD1\DAU_HYD_2023";
-$connectionInfo = array( "Database"=>"IRFORMS");
-$conn = sqlsrv_connect( $serverName, $connectionInfo );
-if( $conn === false ) {
-    die( print_r( sqlsrv_errors(), true));
+$serverName = "CPHYDERABAD1\\DAU_HYD_2023";
+$connectionInfo = array("Database" => "IRFORMS");
+$conn = sqlsrv_connect($serverName, $connectionInfo);
+if ($conn === false) {
+    die(print_r(sqlsrv_errors(), true));
 }
-$number=$_GET['IRKEY'];
+$number = $_GET['IRKEY'];
 
+$sql0 = "SELECT NAME,FATHER_NAME,IMAGE,B.CCNO FROM IR_PARTICULARS A LEFT JOIN IMAGE_TABLE B ON A.IRKEY=B.IRKEY WHERE A.IRKEY='$number'";
 
-$sql0="SELECT NAME,FATHER_NAME,IMAGE,B.CCNO FROM IR_PARTICULARS A LEFT JOIN IMAGE_TABLE B ON A.IRKEY=B.IRKEY WHERE A.IRKEY='$number'";
-
-$sql1="SELECT DISTINCT 
+$sql1 = "SELECT DISTINCT 
 IRKEY, NAME, ALIAS_NAME, FATHER_NAME, AGE, CONVERT(VARCHAR,DATE_OF_BIRTH,20) DATE_OF_BIRTH, NATIONALITY, 
 RELIGION, CASTE, COMMUNITY, PRESENT_ADDRESS, PERMANENT_ADDRESS, MOBILE, 
 EMAIL_ID, SOCIAL_MEDIA_ACCOUNTS, AADHAR_NO, RATION_CARD_NO, VOTERID, PASSPORT, 
@@ -45,538 +46,328 @@ BURN_MARKS, LEUCODEMA, MOLE, SCAR, TATTOO, LIVING_STATUS, MARITAL_STATUS, EDUCAT
 OCCUPATION, INCOME_GROUP, REGULAR_HABITS, CATEGORY FROM IRFORMS..IR_PARTICULARS
 WHERE IRKEY='$number'";
 
-
-$sql2="SELECT DISTINCT RELATIONSHIP RELATION,NAME+' FATHER_OR_SPOUSE: '+FATHER_OR_SPOUSE+' OCCUPATION: '+OCCUPATION
+$sql2 = "SELECT DISTINCT RELATIONSHIP RELATION,NAME+' FATHER_OR_SPOUSE: '+FATHER_OR_SPOUSE+' OCCUPATION: '+OCCUPATION
 +' PHONE_NO: '+PHONE+' AGE: '+AGE NAME,PRESENT_ADDRESS ADDRESS,CRIMINAL_BACKGROUND,STATUS FROM FAMILY_HISTORY WHERE IRKEY='$number' ORDER BY RELATION";
 
-$sql3="SELECT DISTINCT PERIOD_OF_OFFENCE FROM OFFENCE_DETAILS WHERE IRKEY='$number'";
+$sql3 = "SELECT DISTINCT PERIOD_OF_OFFENCE FROM OFFENCE_DETAILS WHERE IRKEY='$number'";
 
-$sql4="SELECT DISTINCT TOWN_CITY_OR_VILLAGE,POLICE_STATION_LIMITS,NAME+' S/O '+FATHER_NAME+' AGE: '+AGE+' OCCUPATION: '+OCCUPATION NAME 
+$sql4 = "SELECT DISTINCT TOWN_CITY_OR_VILLAGE,POLICE_STATION_LIMITS,NAME+' S/O '+FATHER_NAME+' AGE: '+AGE+' OCCUPATION: '+OCCUPATION NAME 
 ,PHONE,ADDRESS_OF_CONTACT_PERSON ADDRESS FROM LOCAL_CONTACTS_FACILITATORS
 WHERE IRKEY='$number'";
 
-$sql5="SELECT DISTINCT REGULAR_HABITS FROM IR_PARTICULARS WHERE IRKEY='$number'";
+$sql5 = "SELECT DISTINCT REGULAR_HABITS FROM IR_PARTICULARS WHERE IRKEY='$number'";
 
-$sql6="SELECT DISTINCT INDULGANCE_BEFORE_OFFENCE FROM OFFENCE_DETAILS
+$sql6 = "SELECT DISTINCT INDULGANCE_BEFORE_OFFENCE FROM OFFENCE_DETAILS
 WHERE IRKEY='$number'";
 
-$sql7="SELECT DISTINCT CRIME_HEAD,SUB_TYPE SUB_HEAD,MO FROM OFFENCE_DETAILS
+$sql7 = "SELECT DISTINCT CRIME_HEAD,SUB_TYPE SUB_HEAD,MO FROM OFFENCE_DETAILS
 WHERE IRKEY='$number'";
 
-$sql8="SELECT DISTINCT REGULAR_RESIDENCE,PREPARATION_OF_OFFENCE,AFTER_OFFENCE FROM OFFENCE_DETAILS
+$sql8 = "SELECT DISTINCT REGULAR_RESIDENCE,PREPARATION_OF_OFFENCE,AFTER_OFFENCE FROM OFFENCE_DETAILS
 WHERE IRKEY='$number'";
 
-$sql9="SELECT DISTINCT PROPERTY_STOLEN,PROPERTY_RECOVERED,RECEIVER_NAME,RECEIVER_ADDRESS,REMARKS FROM DISPOSAL_OF_PROPERTY
+$sql9 = "SELECT DISTINCT PROPERTY_STOLEN,PROPERTY_RECOVERED,RECEIVER_NAME,RECEIVER_ADDRESS,REMARKS FROM DISPOSAL_OF_PROPERTY
 WHERE IRKEY='$number'";
 
-$sql10="SELECT DISTINCT HOW_SHARE_IS_SPENT FROM DISPOSAL_OF_PROPERTY
+$sql10 = "SELECT DISTINCT HOW_SHARE_IS_SPENT FROM DISPOSAL_OF_PROPERTY
 WHERE IRKEY='$number'";
 
-$sql11="SELECT DISTINCT DISTRICT,CONFESSED_POLICE_STATION,CONFESSED_CRIME_NO,CONFESSED_YEAR,CONFESSED_SEC_OF_LAW,ASSOCIATES,PROPERTY_STOLEN,PROPERTY_RECOVERED,
+$sql11 = "SELECT DISTINCT DISTRICT,CONFESSED_POLICE_STATION,CONFESSED_CRIME_NO,CONFESSED_YEAR,CONFESSED_SEC_OF_LAW,ASSOCIATES,PROPERTY_STOLEN,PROPERTY_RECOVERED,
 REMARKS FROM PREVIOUS_OFFENCE_DETAILS WHERE IRKEY='$number'";
 
-$sql12="SELECT DISTINCT CONVERT(VARCHAR,DATE_OF_ARREST) DATE_OF_ARREST,PLACE_OF_ARREST,'CRIME_NO: '+CONVERT(VARCHAR,CRIME_NO)+'/'+CONVERT(VARCHAR,YEAR)+' SEC_OF_LAW:'+SEC_OF_LAW
+$sql12 = "SELECT DISTINCT CONVERT(VARCHAR,DATE_OF_ARREST) DATE_OF_ARREST,PLACE_OF_ARREST,'CRIME_NO: '+CONVERT(VARCHAR,CRIME_NO)+'/'+CONVERT(VARCHAR,YEAR)+' SEC_OF_LAW:'+SEC_OF_LAW
 [CRIME_NO_SEC_OF_LAW],POLICE_STATION,SUB_DIVISION,DISTRICT_OR_UNIT,
 ARRESTED_BY,INTERROGATED_BY,OTHERS_WHO_CAN_IDENTIFY FROM OFFENCE_DETAILS
 WHERE IRKEY='$number'";
 
-$sql13="SELECT DISTINCT BRIEF_FACTS1+'
+$sql13 = "SELECT DISTINCT BRIEF_FACTS1+'
 '+BRIEF_FACTS2+'
 '+BRIEF_FACTS3 BRIEF_FACTS FROM BRIEF_FACTS
 WHERE IRKEY='$number'";
 
-$sql20="select DISTINCT IRKEY,COUNT(*) TOTAL_NBWS_PENDING,FIRST_HEARING_DATE,DECISION_DATE,CASE_STATUS,NEXT_HEARING_DATE,NATURE_OF_DISPOSAL,COURT_NUMBER_AND_JUDGE,STAGE_OF_CASE,
+$sql20 = "select DISTINCT IRKEY,COUNT(*) TOTAL_NBWS_PENDING,FIRST_HEARING_DATE,DECISION_DATE,CASE_STATUS,NEXT_HEARING_DATE,NATURE_OF_DISPOSAL,COURT_NUMBER_AND_JUDGE,STAGE_OF_CASE,
 PETITIONER_RESPONDENT,ACT_AND_SEC from nbws_verify_data_important
 WHERE CASE_STATUS LIKE '%PENDING%' AND IRKEY='$number'
 GROUP BY IRKEY,FIRST_HEARING_DATE,DECISION_DATE,CASE_STATUS,NEXT_HEARING_DATE,NATURE_OF_DISPOSAL,COURT_NUMBER_AND_JUDGE,STAGE_OF_CASE,
 PETITIONER_RESPONDENT,ACT_AND_SEC";
 
-$st0 = sqlsrv_query( $conn, $sql0 );
-$st1 = sqlsrv_query( $conn, $sql1 );
-$st2 = sqlsrv_query( $conn, $sql1 );
-$st3 = sqlsrv_query( $conn, $sql1 );
-$st4 = sqlsrv_query( $conn, $sql1 );
-$st5 = sqlsrv_query( $conn, $sql2 );
-$st6 = sqlsrv_query( $conn, $sql3 );
-$st7 = sqlsrv_query( $conn, $sql4 );
-$st8 = sqlsrv_query( $conn, $sql5 );
-$st9 = sqlsrv_query( $conn, $sql6 );
-$st10 = sqlsrv_query( $conn, $sql7 );
-$st11 = sqlsrv_query( $conn, $sql8 );
-$st12 = sqlsrv_query( $conn, $sql9 );
-$st13 = sqlsrv_query( $conn, $sql10 );
-$st14 = sqlsrv_query( $conn, $sql11 );
-$st15 = sqlsrv_query( $conn, $sql12 );
-$st20 = sqlsrv_query( $conn, $sql20 );
-$st16 = sqlsrv_query( $conn, $sql13 );
-
-
-echo "<table border=2 cellspacing=0 cellpadding=5>
-<tr  bgcolor=#921215>
-<th width=800px ><font size=3 face=verdana color='#F9FBFC'>NDPS ACT SUSPECT PROFILE</font></th>
-</tr>";
-echo "</table>";
-echo "</br>";
-
-echo "<table width=815px border=1 cellspacing=0 cellpadding=5>
-<tr>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>NAME</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>FATHER NAME</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>EXCC/CCNO</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>IMAGE</font></th>
-</tr>";
-
-while( $row = sqlsrv_fetch_array( $st0, SQLSRV_FETCH_ASSOC) ) {
-echo "<tr>";
-echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana ><center>". $row['NAME'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['FATHER_NAME'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['CCNO'] ."<center></font></td>";
-echo "<td height=200px width=200px>";?> <?php echo '<img onmouseover="bigImg(this)" onmouseout="normalImg(this)" height="200" width="220" src="'.cdat_base64_image_src($row['IMAGE']).'"></img>' ?> <?php "</td>";
-echo "</tr>";
-}
-echo "</table>";
-echo "</br>";
-
-
-echo "<table border=1 cellspacing=0 cellpadding=5>";
-echo "<tr  bgcolor=#921215>";
-echo "<th width=800px ><font size=3 face=verdana color='#F9FBFC'> INDIVIDUAL PARTICULARS </font></th>";
-echo "</tr>";
-echo "</table>";
-
-echo "<table border=1 cellspacing=0 cellpadding=5>";
-while( $row = sqlsrv_fetch_array( $st1, SQLSRV_FETCH_ASSOC) ) {
-echo "<center>";
-echo "<tr>"; 
-echo "<th width=50px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>IRKEY</font></th>"; 
-echo "<td width=638px bgcolor=#AED1F1><font size=1 face=verdana><center>".$row['IRKEY']."<center></font></td>";
-echo "</tr>";
-echo "</center>";
-
-echo "<tr>"; 
-echo "<th width=150px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>NAME</font></th>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>".$row['NAME']."<center></font></td>"; 
-echo "</tr>";
-
-
-echo "<tr>"; echo "<th width=150px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>ALIAS_NAME</font></th>"; 
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>".$row['ALIAS_NAME']."<center></font></td>";
-echo "</tr>";
- 
-
-echo "<tr>"; 
-echo "<th width=150px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>FATHER_NAME</font></th>"; 
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>".$row['FATHER_NAME']."<center></font></td>"; 
-echo "</tr>";
-
-
-echo "<tr>"; 
-echo "<th width=150px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>AGE</font></th>"; 
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>".$row['AGE']."<center></font></td>"; 
-echo "</tr>";
-
-
-echo "<tr>"; 
-echo "<th width=150px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>DATE_OF_BIRTH</font></th>"; 
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>".$row['DATE_OF_BIRTH']."<center></font></td>"; 
-echo "</tr>";
-
-
-echo "<tr>"; 
-echo "<th width=150px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>NATIONALITY</font></th>"; 
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>".$row['NATIONALITY']."<center></font></td>";
-echo "</tr>";
- 
-
-echo "<tr>"; 
-echo "<th width=150px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>RELIGION</font></th>"; 
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>".$row['RELIGION']."<center></font></td>"; 
-echo "</tr>";
-
-
-echo "<tr>"; 
-echo "<th width=150px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>CASTE</font></th>"; 
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>".$row['CASTE']."<center></font></td>"; 
-echo "</tr>";
-
-
-echo "<tr>"; 
-echo "<th width=150px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>COMMUNITY</font></th>"; 
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>".$row['COMMUNITY']."<center></font></td>";
-echo "</tr>";
- 
-
-echo "<tr>"; 
-echo "<th width=150px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>PRESENT ADDRESS</font></th>"; 
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>".$row['PRESENT_ADDRESS']."<center></font></td>"; 
-echo "</tr>";
-
-
-echo "<tr>"; 
-echo "<th width=150px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>PERMANENT ADDRESS</font></th>"; 
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>".$row['PERMANENT_ADDRESS']."<center></font></td>"; 
-echo "</tr>";
-}
-echo "</table>";
-echo "</br>";
-
-echo "<table border=1 cellspacing=0 cellpadding=5>";
-echo "<tr  bgcolor=#921215>";
-echo "<th width=725px ><font size=3 face=verdana color='#F9FBFC'> UNIQUE IDENTIFICATIONS / IDPROOFS </font></th>";
-echo "</tr>";
-echo "</table>";
-
-
-echo "<table border=1 cellspacing=0 cellpadding=5>";
-
-while( $row = sqlsrv_fetch_array( $st2, SQLSRV_FETCH_ASSOC) )
-{
-
-echo "<tr>"; 
-echo "<th width=50px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>IDPROOFS</font></th>"; 
-echo "<td width=620px bgcolor=#AED1F1><font size=1 face=verdana><center>MOBILE NO :".$row['MOBILE']." && EMAIL ID: ".$row['EMAIL_ID']." && AADHAR NO: ".$row['AADHAR_NO']." && RATION CARD NO: ".$row['RATION_CARD_NO']." && VOTER ID: ".$row['VOTERID']." && PASSPORT: ".$row['PASSPORT']." && PANCAR: ".$row['PANCARD']." && GAS CONNECTION: ".$row['GAS_CONNECTION']."   && DRIVING LICENSE: ".$row['DRIVING_LICENSE']."<center></font></td>"; 
-echo "</tr>";
- 
-}
-echo "</table>";
-echo "</br>";
-
-echo "<table border=1 cellspacing=0 cellpadding=5>";
-echo "<tr  bgcolor=#921215>";
-echo "<th width=800px ><font size=3 face=verdana color='#F9FBFC'>PHYSICAL FEATURES</font></th>";
-echo "</tr>";
-echo "</table>";
-
-echo "<table border=1 cellspacing=0 cellpadding=5>";
-
-while( $row = sqlsrv_fetch_array( $st3, SQLSRV_FETCH_ASSOC) )
-{
-echo "<tr>"; 
-echo "<th width=50px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>SEX</font></th>"; 
-echo "<td width=510px bgcolor=#AED1F1><font size=1 face=verdana><center>".$row['SEX']."<center></font></td>";
-echo "</tr>";
- 
-
-echo "<tr>"; 
-echo "<th width=50px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>BUILT</font></th>"; 
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>".$row['BUILT']."<center></font></td>";
-echo "</tr>";
- 
-
-echo "<tr>"; 
-echo "<th width=50px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>HEIGHT</font></th>"; 
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>".$row['HEIGHT']."<center></font></td>";
-echo "</tr>";
- 
-
-echo "<tr>"; 
-echo "<th width=50px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>EYES</font></th>"; 
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>".$row['EYES']."<center></font></td>"; 
-echo "</tr>";
-
-
-echo "<tr>"; 
-echo "<th width=50px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>HAIR</font></th>"; 
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>".$row['HAIR']."<center></font></td>";
-echo "</tr>";
-
-
-echo "<tr>"; 
-echo "<th width=50px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>FACE</font></th>"; 
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>".$row['FACE']."<center></font></td>";
-echo "</tr>";
- 
-
-echo "<tr>"; 
-echo "<th width=50px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>COLOUR</font></th>"; 
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>".$row['COLOUR']."<center></font></td>";
-echo "</tr>";
- 
-
-echo "<tr>"; 
-echo "<th width=50px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>TEETH</font></th>"; 
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>".$row['TEETH']."<center></font></td>";
-echo "</tr>";
-
-
-echo "<tr>"; 
-echo "<th width=50px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>NOSE</font></th>"; 
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>".$row['NOSE']."<center></font></td>"; 
-echo "</tr>";
-
-
-echo "<tr>"; 
-echo "<th width=50px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>BEARD</font></th>"; 
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>".$row['BEARD']."<center></font></td>";
-echo "</tr>";
-
-
-echo "<tr>"; 
-echo "<th width=50px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>MUSTACHES</font></th>"; 
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>".$row['MUSTACHES']."<center></font></td>"; 
-echo "</tr>";
-
-
-echo "<tr>"; 
-echo "<th width=50px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>EAR</font></th>"; 
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>".$row['EAR']."<center></font></td>"; 
-echo "</tr>";
-
-
-echo "<tr>"; 
-echo "<th width=50px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>IDENTIFICATION_MARKS</font></th>"; 
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>".$row['IDENTIFICATION_MARKS']."<center></font></td>"; 
-echo "</tr>";
-
-
-echo "<tr>"; 
-echo "<th width=50px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>DEFORMITIES_PECULIARITIES</font></th>"; 
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>".$row['DEFORMITIES_PECULIARITIES']."<center></font></td>"; 
-echo "</tr>";
-
-
-echo "<tr>"; 
-echo "<th width=50px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>LANGUAGE_DIALECT</font></th>"; 
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>".$row['LANGUAGE_DIALECT']."<center></font></td>"; 
-echo "</tr>";
-
-
-echo "<tr>"; 
-echo "<th width=50px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>BURN_MARKS</font></th>"; 
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>".$row['BURN_MARKS']."<center></font></td>"; 
-echo "</tr>";
-
-
-echo "<tr>"; 
-echo "<th width=50px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>LEUCODEMA</font></th>"; 
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>".$row['LEUCODEMA']."<center></font></td>"; 
-echo "</tr>";
-
-
-echo "<tr>"; 
-echo "<th width=50px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>MOLE</font></th>"; 
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>".$row['MOLE']."<center></font></td>"; 
-echo "</tr>";
-
-
-echo "<tr>"; 
-echo "<th width=50px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>SCAR</font></th>"; 
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>".$row['SCAR']."<center></font></td>"; 
-echo "</tr>";
-
-
-echo "<tr>"; 
-echo "<th width=50px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>TATTOO</font></th>"; 
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>".$row['TATTOO'] ."<center></font></td>"; 
-echo "</tr>";
-}
-echo "</table>";
-echo "</br>";
-
-echo "<table border=1 cellspacing=0 cellpadding=5>";
-echo "<tr  bgcolor=#921215>";
-echo "<th width=800px ><font size=3 face=verdana color='#F9FBFC'> SOCIO/ECONOMIC PROFILE </font></th>";
-echo "</tr>";
-echo "</table>";
-
-echo "<table border=1 cellspacing=0 cellpadding=5>";
-while( $row = sqlsrv_fetch_array( $st4, SQLSRV_FETCH_ASSOC) )
-{
-
-echo "<tr>"; 
-echo "<th width=50px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>LIVING_STATUS</font></th>"; 
-echo "<td width=595px bgcolor=#AED1F1><font size=1 face=verdana><center>".$row['LIVING_STATUS']."<center></font></td>"; 
-echo "</tr>";
-
-echo "<tr>"; 
-echo "<th width=50px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>MARITAL_STATUS</font></th>"; 
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>".$row['MARITAL_STATUS']."<center></font></td>"; 
-echo "</tr>";
-
-echo "<tr>"; 
-echo "<th width=50px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>EDUCATION_DETAILS</font></th>"; 
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>".$row['EDUCATION_DETAILS']."<center></font></td>"; 
-echo "</tr>";
-
-echo "<tr>"; 
-echo "<th width=50px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>OCCUPATION</font></th>"; 
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>".$row['OCCUPATION']."<center></font></td>"; 
-echo "</tr>";
-
-echo "<tr>"; 
-echo "<th width=50px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>INCOME_GROUP</font></th>"; 
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>".$row['INCOME_GROUP']."<center></font></td>"; 
-echo "</tr>";
-
-echo "<tr>"; 
-echo "<th width=50px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>REGULAR_HABITS</font></th>"; 
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>".$row['REGULAR_HABITS']."<center></font></td>"; 
-echo "</tr>";
-
-echo "<tr>"; 
-echo "<th width=50px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>CATEGORY</font></th>"; 
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>".$row['CATEGORY']."<center></font></td>";
-echo "</tr>";
-
+$st0 = sqlsrv_query($conn, $sql0);
+$st1 = sqlsrv_query($conn, $sql1);
+$st2 = sqlsrv_query($conn, $sql1);
+$st3 = sqlsrv_query($conn, $sql1);
+$st4 = sqlsrv_query($conn, $sql1);
+$st5 = sqlsrv_query($conn, $sql2);
+$st6 = sqlsrv_query($conn, $sql3);
+$st7 = sqlsrv_query($conn, $sql4);
+$st8 = sqlsrv_query($conn, $sql5);
+$st9 = sqlsrv_query($conn, $sql6);
+$st10 = sqlsrv_query($conn, $sql7);
+$st11 = sqlsrv_query($conn, $sql8);
+$st12 = sqlsrv_query($conn, $sql9);
+$st13 = sqlsrv_query($conn, $sql10);
+$st14 = sqlsrv_query($conn, $sql11);
+$st15 = sqlsrv_query($conn, $sql12);
+$st20 = sqlsrv_query($conn, $sql20);
+$st16 = sqlsrv_query($conn, $sql13);
+
+$heroRows = cdat_sum_fetch_all($st0);
+$part1 = cdat_sum_fetch_all($st1);
+$part2 = cdat_sum_fetch_all($st2);
+$part3 = cdat_sum_fetch_all($st3);
+$part4 = cdat_sum_fetch_all($st4);
+$familyRows = cdat_sum_fetch_all($st5);
+$periodRows = cdat_sum_fetch_all($st6);
+$moRows = cdat_sum_fetch_all($st10);
+$dispRows = cdat_sum_fetch_all($st12);
+$prevRows = cdat_sum_fetch_all($st14);
+$arrestRows = cdat_sum_fetch_all($st15);
+cdat_sum_fetch_all($st7);
+cdat_sum_fetch_all($st8);
+cdat_sum_fetch_all($st9);
+cdat_sum_fetch_all($st11);
+cdat_sum_fetch_all($st13);
+cdat_sum_fetch_all($st20);
+cdat_sum_fetch_all($st16);
+
+cdat_sum_results_open();
+cdat_sum_report_banner('NDPS ACT SUSPECT PROFILE');
+
+if (empty($heroRows)) {
+    cdat_sum_empty_state('No NDPS header record found.');
+} else {
+    cdat_sum_generic_table_open(
+        'NDPS Suspect Profile',
+        ['NAME', 'FATHER NAME', 'EXCC/CCNO', 'IMAGE'],
+        'ndps1_hero_table',
+        'ndps1_header.csv',
+        count($heroRows)
+    );
+    foreach ($heroRows as $row) {
+        cdat_sum_table_row([
+            (string) ($row['NAME'] ?? ''),
+            (string) ($row['FATHER_NAME'] ?? ''),
+            (string) ($row['CCNO'] ?? ''),
+            ['html' => cdat_sum_img_html($row['IMAGE'] ?? '', 220, 200), 'class' => 'sum-cell-img'],
+        ]);
+    }
+    cdat_sum_generic_table_close();
 }
 
-echo "</table>";
-
-echo "</br>";
-
-echo "<table border=1 cellspacing=0 cellpadding=5>";
-echo "<tr  bgcolor=#921215>";
-echo "<th width=800px ><font size=3 face=verdana color='#F9FBFC'> FAMILY HISTORY </font></th>";
-echo "</tr>";
-echo "</table>";
-echo "<table width=815px border=1 cellspacing=0 cellpadding=5>
-<tr>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>RELATION</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>NAME</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>ADDRESS</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>CRIMINAL_BACKGROUND</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>STATUS</font></th>
-</tr>";
-
-while( $row = sqlsrv_fetch_array( $st5, SQLSRV_FETCH_ASSOC) ) {
-echo "<tr>";
-echo "<td width=50px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'><center>". $row['RELATION'] ."<center></font></td>";
-echo "<td width=250px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['NAME'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['ADDRESS'] ."<center></font></td>";
-echo "<td width=125px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['CRIMINAL_BACKGROUND'] ."<center></font></td>";
-echo "<td width=0px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['STATUS'] ."<center></font></td>";
-echo "</tr>";
-}
-echo "</table>";
-echo "</br>";
-
-echo "<table border=1 cellspacing=0 cellpadding=5>";
-echo "<tr  bgcolor=#921215>";
-echo "<th width=800px ><font size=3 face=verdana color='#F9FBFC'> PERIOD OF OFFENCE </font></th>";
-echo "</tr>";
-echo "</table>";
-echo "<table width=815px border=1 cellspacing=0 cellpadding=5>";
-
-while( $row = sqlsrv_fetch_array( $st6, SQLSRV_FETCH_ASSOC) ) {
-echo "<tr>";
-echo "<th width=50px bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>PERIOD OF OFFENCE</font></th>";
-echo "<td width=125px bgcolor=#C2E0FB><font size=3 face=verdana><center>". $row['PERIOD_OF_OFFENCE'] ."<center></font></td>";
-echo"<tr>";
-}
-echo "</table>";
-echo "</br>";
-echo "<table width=815px border=1 cellspacing=0 cellpadding=5>
-<tr>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>MODUS OPERANDI</font></th>
-</tr>";
-echo "</table>";
-
-echo "<table width=815px border=1 cellspacing=0 cellpadding=5>
-<tr>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>CRIME_HEAD</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>SUB_HEAD</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>MO</font></th>
-</tr>";
-
-while( $row = sqlsrv_fetch_array( $st10, SQLSRV_FETCH_ASSOC) ) {
-echo "<tr>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana ><center>". $row['CRIME_HEAD'] ."<center></font></td>";
-echo "<td width=250px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['SUB_HEAD'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['MO'] ."<center></font></td>";
-echo "</tr>";
-}
-echo "</table>";
-echo "</br>";
-
-echo "<table width=815px border=1 cellspacing=0 cellpadding=5>
-<tr>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>DISPOSAL OF PROPERTY</font></th>
-</tr>";
-echo "</table>";
-
-echo "<table width=815px border=1 cellspacing=0 cellpadding=5>
-<tr>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>PROPERTY STOLEN</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>PROPERTY RECOVERED</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>RECEIVER NAME</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>RECEIVER ADDRESS</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>REMARKS</font></th>
-</tr>";
-
-while( $row = sqlsrv_fetch_array( $st12, SQLSRV_FETCH_ASSOC) ) {
-echo "<tr>";
-echo "<td width=100px bgcolor=#AED1F1><font size=2 face=verdana ><center>". $row['PROPERTY_STOLEN'] ."<center></font></td>";
-echo "<td width=250px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['PROPERTY_RECOVERED'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['RECEIVER_NAME'] ."<center></font></td>";
-echo "<td width=125px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['RECEIVER_ADDRESS'] ."<center></font></td>";
-echo "<td width=125px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['REMARKS'] ."<center></font></td>";
-echo "</tr>";
-}
-echo "</table>";
-echo "</br>";
-
-echo "<table width=825px border=1 cellspacing=0 cellpadding=5>
-<tr>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>CASES CONFESSED / PREVIOUS OFFENCE DETAILS</font></th>
-</tr>";
-echo "</table>";
-
-echo "<table width=815px border=1 cellspacing=0 cellpadding=5>
-<tr>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>DISTRICT</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>CONFESSED POLICE STATION</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>CONFESSED CRIME NO</font></th>
-<th bgcolor=#921215><font size=3 face=verdana 
-color='#F9FBFC'>CONFESSED YEAR</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>CONFESSED SEC OF LAW</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>ASSOCIATES</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>PROPERTY RECOVERED</font></th>
-</tr>";
-
-while( $row = sqlsrv_fetch_array( $st14, SQLSRV_FETCH_ASSOC) ) {
-echo "<tr>";
-echo "<td width=100px bgcolor=#AED1F1><font size=2 face=verdana ><center>". $row['DISTRICT'] ."<center></font></td>";
-echo "<td width=250px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['CONFESSED_POLICE_STATION'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['CONFESSED_CRIME_NO'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['CONFESSED_YEAR'] ."<center></font></td>";
-echo "<td width=125px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['CONFESSED_SEC_OF_LAW'] ."<center></font></td>";
-echo "<td width=125px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['ASSOCIATES'] ."<center></font></td>";
-echo "<td width=125px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['PROPERTY_RECOVERED'] ."<center></font></td>";
-echo "</tr>";
-}
-echo "</table>";
-echo "</br>";
-
-echo "<table width=820px border=1 cellspacing=0 cellpadding=5>
-<tr>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>ARREST PARTICULARS</font></th>
-</tr>";
-echo "</table>";
-
-echo "<table width=815px border=1 cellspacing=0 cellpadding=5>
-<tr>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>DATE OF ARREST</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>PLACE OF ARREST</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>CRIME NO AND SEC OF LAW</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>POLICE STATION</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>SUB DIVISION</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>ARRESTED BY</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>OTHERS WHO CAN IDENTIFY</font></th>
-</tr>";
-
-
-while( $row = sqlsrv_fetch_array( $st15, SQLSRV_FETCH_ASSOC) ) {
-echo "<tr>";
-echo "<td width=100px bgcolor=#AED1F1><font size=2 face=verdana ><center>".$row['DATE_OF_ARREST'] ."<center></font></td>";
-echo "<td width=250px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['PLACE_OF_ARREST'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['CRIME_NO_SEC_OF_LAW'] ."<center></font></td>";
-echo "<td width=125px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['POLICE_STATION'] ."<center></font></td>";
-echo "<td width=125px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['SUB_DIVISION'] ."<center></font></td>";
-echo "<td width=125px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['ARRESTED_BY'] ."<center></font></td>";
-echo "<td width=125px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['OTHERS_WHO_CAN_IDENTIFY'] ."<center></font></td>";
-echo "</tr>";
+$p = $part1[0] ?? null;
+if ($p) {
+    ir_ndps1_kv_table('Individual Particulars', [
+        'IRKEY' => $p['IRKEY'] ?? '',
+        'NAME' => $p['NAME'] ?? '',
+        'ALIAS_NAME' => $p['ALIAS_NAME'] ?? '',
+        'FATHER_NAME' => $p['FATHER_NAME'] ?? '',
+        'AGE' => $p['AGE'] ?? '',
+        'DATE_OF_BIRTH' => $p['DATE_OF_BIRTH'] ?? '',
+        'NATIONALITY' => $p['NATIONALITY'] ?? '',
+        'RELIGION' => $p['RELIGION'] ?? '',
+        'CASTE' => $p['CASTE'] ?? '',
+        'COMMUNITY' => $p['COMMUNITY'] ?? '',
+        'PRESENT ADDRESS' => $p['PRESENT_ADDRESS'] ?? '',
+        'PERMANENT ADDRESS' => $p['PERMANENT_ADDRESS'] ?? '',
+    ], 'ndps1_particulars_table');
+} else {
+    cdat_sum_report_banner('INDIVIDUAL PARTICULARS');
+    cdat_sum_empty_state('No individual particulars found.');
 }
 
-echo "</table>";
-?>
-<?php layout_end(); ?>
+$p2 = $part2[0] ?? null;
+if ($p2) {
+    $idText = 'MOBILE NO :' . ($p2['MOBILE'] ?? '') . ' && EMAIL ID: ' . ($p2['EMAIL_ID'] ?? '')
+        . ' && AADHAR NO: ' . ($p2['AADHAR_NO'] ?? '') . ' && RATION CARD NO: ' . ($p2['RATION_CARD_NO'] ?? '')
+        . ' && VOTER ID: ' . ($p2['VOTERID'] ?? '') . ' && PASSPORT: ' . ($p2['PASSPORT'] ?? '')
+        . ' && PANCAR: ' . ($p2['PANCARD'] ?? '') . ' && GAS CONNECTION: ' . ($p2['GAS_CONNECTION'] ?? '')
+        . '   && DRIVING LICENSE: ' . ($p2['DRIVING_LICENSE'] ?? '');
+    ir_ndps1_kv_table('Unique Identifications / ID Proofs', [
+        'IDPROOFS' => $idText,
+    ], 'ndps1_ids_table');
+} else {
+    cdat_sum_report_banner('UNIQUE IDENTIFICATIONS / IDPROOFS');
+    cdat_sum_empty_state('No identification documents found.');
+}
+
+$p3 = $part3[0] ?? null;
+if ($p3) {
+    ir_ndps1_kv_table('Physical Features', [
+        'SEX' => $p3['SEX'] ?? '',
+        'BUILT' => $p3['BUILT'] ?? '',
+        'HEIGHT' => $p3['HEIGHT'] ?? '',
+        'EYES' => $p3['EYES'] ?? '',
+        'HAIR' => $p3['HAIR'] ?? '',
+        'FACE' => $p3['FACE'] ?? '',
+        'COLOUR' => $p3['COLOUR'] ?? '',
+        'TEETH' => $p3['TEETH'] ?? '',
+        'NOSE' => $p3['NOSE'] ?? '',
+        'BEARD' => $p3['BEARD'] ?? '',
+        'MUSTACHES' => $p3['MUSTACHES'] ?? '',
+        'EAR' => $p3['EAR'] ?? '',
+        'IDENTIFICATION_MARKS' => $p3['IDENTIFICATION_MARKS'] ?? '',
+        'DEFORMITIES_PECULIARITIES' => $p3['DEFORMITIES_PECULIARITIES'] ?? '',
+        'LANGUAGE_DIALECT' => $p3['LANGUAGE_DIALECT'] ?? '',
+        'BURN_MARKS' => $p3['BURN_MARKS'] ?? '',
+        'LEUCODEMA' => $p3['LEUCODEMA'] ?? '',
+        'MOLE' => $p3['MOLE'] ?? '',
+        'SCAR' => $p3['SCAR'] ?? '',
+        'TATTOO' => $p3['TATTOO'] ?? '',
+    ], 'ndps1_features_table');
+} else {
+    cdat_sum_report_banner('PHYSICAL FEATURES');
+    cdat_sum_empty_state('No physical features found.');
+}
+
+$p4 = $part4[0] ?? null;
+if ($p4) {
+    ir_ndps1_kv_table('Socio/Economic Profile', [
+        'LIVING_STATUS' => $p4['LIVING_STATUS'] ?? '',
+        'MARITAL_STATUS' => $p4['MARITAL_STATUS'] ?? '',
+        'EDUCATION_DETAILS' => $p4['EDUCATION_DETAILS'] ?? '',
+        'OCCUPATION' => $p4['OCCUPATION'] ?? '',
+        'INCOME_GROUP' => $p4['INCOME_GROUP'] ?? '',
+        'REGULAR_HABITS' => $p4['REGULAR_HABITS'] ?? '',
+        'CATEGORY' => $p4['CATEGORY'] ?? '',
+    ], 'ndps1_socio_table');
+} else {
+    cdat_sum_report_banner('SOCIO/ECONOMIC PROFILE');
+    cdat_sum_empty_state('No socio/economic profile found.');
+}
+
+if (empty($familyRows)) {
+    cdat_sum_report_banner('FAMILY HISTORY');
+    cdat_sum_empty_state('No family history found.');
+} else {
+    cdat_sum_generic_table_open(
+        'Family History',
+        ['RELATION', 'NAME', 'ADDRESS', 'CRIMINAL_BACKGROUND', 'STATUS'],
+        'ndps1_family_table',
+        'ndps1_family.csv',
+        count($familyRows)
+    );
+    foreach ($familyRows as $row) {
+        cdat_sum_table_row([
+            (string) ($row['RELATION'] ?? ''),
+            (string) ($row['NAME'] ?? ''),
+            ['html' => cdat_sum_address_lines((string) ($row['ADDRESS'] ?? '')) ?: '—', 'class' => 'sum-address-cell'],
+            (string) ($row['CRIMINAL_BACKGROUND'] ?? ''),
+            (string) ($row['STATUS'] ?? ''),
+        ]);
+    }
+    cdat_sum_generic_table_close();
+}
+
+if (empty($periodRows)) {
+    cdat_sum_report_banner('PERIOD OF OFFENCE');
+    cdat_sum_empty_state('No period of offence found.');
+} else {
+    $pairs = [];
+    foreach ($periodRows as $i => $row) {
+        $label = count($periodRows) > 1 ? ('PERIOD OF OFFENCE ' . ($i + 1)) : 'PERIOD OF OFFENCE';
+        $pairs[$label] = $row['PERIOD_OF_OFFENCE'] ?? '';
+    }
+    ir_ndps1_kv_table('Period of Offence', $pairs, 'ndps1_period_table');
+}
+
+if (empty($moRows)) {
+    cdat_sum_report_banner('MODUS OPERANDI');
+    cdat_sum_empty_state('No modus operandi found.');
+} else {
+    cdat_sum_generic_table_open(
+        'Modus Operandi',
+        ['CRIME_HEAD', 'SUB_HEAD', 'MO'],
+        'ndps1_mo_table',
+        'ndps1_mo.csv',
+        count($moRows)
+    );
+    foreach ($moRows as $row) {
+        cdat_sum_table_row([
+            (string) ($row['CRIME_HEAD'] ?? ''),
+            (string) ($row['SUB_HEAD'] ?? ''),
+            (string) ($row['MO'] ?? ''),
+        ]);
+    }
+    cdat_sum_generic_table_close();
+}
+
+if (empty($dispRows)) {
+    cdat_sum_report_banner('DISPOSAL OF PROPERTY');
+    cdat_sum_empty_state('No property disposal records found.');
+} else {
+    cdat_sum_generic_table_open(
+        'Disposal of Property',
+        ['PROPERTY STOLEN', 'PROPERTY RECOVERED', 'RECEIVER NAME', 'RECEIVER ADDRESS', 'REMARKS'],
+        'ndps1_disposal_table',
+        'ndps1_disposal.csv',
+        count($dispRows)
+    );
+    foreach ($dispRows as $row) {
+        cdat_sum_table_row([
+            (string) ($row['PROPERTY_STOLEN'] ?? ''),
+            (string) ($row['PROPERTY_RECOVERED'] ?? ''),
+            (string) ($row['RECEIVER_NAME'] ?? ''),
+            ['html' => cdat_sum_address_lines((string) ($row['RECEIVER_ADDRESS'] ?? '')) ?: '—', 'class' => 'sum-address-cell'],
+            (string) ($row['REMARKS'] ?? ''),
+        ]);
+    }
+    cdat_sum_generic_table_close();
+}
+
+if (empty($prevRows)) {
+    cdat_sum_report_banner('CASES CONFESSED / PREVIOUS OFFENCE DETAILS');
+    cdat_sum_empty_state('No previous offence details found.');
+} else {
+    cdat_sum_generic_table_open(
+        'Cases Confessed / Previous Offence Details',
+        ['DISTRICT', 'CONFESSED POLICE STATION', 'CONFESSED CRIME NO', 'CONFESSED YEAR', 'CONFESSED SEC OF LAW', 'ASSOCIATES', 'PROPERTY RECOVERED'],
+        'ndps1_prev_table',
+        'ndps1_previous.csv',
+        count($prevRows)
+    );
+    foreach ($prevRows as $row) {
+        cdat_sum_table_row([
+            (string) ($row['DISTRICT'] ?? ''),
+            (string) ($row['CONFESSED_POLICE_STATION'] ?? ''),
+            (string) ($row['CONFESSED_CRIME_NO'] ?? ''),
+            (string) ($row['CONFESSED_YEAR'] ?? ''),
+            (string) ($row['CONFESSED_SEC_OF_LAW'] ?? ''),
+            (string) ($row['ASSOCIATES'] ?? ''),
+            (string) ($row['PROPERTY_RECOVERED'] ?? ''),
+        ]);
+    }
+    cdat_sum_generic_table_close();
+}
+
+if (empty($arrestRows)) {
+    cdat_sum_report_banner('ARREST PARTICULARS');
+    cdat_sum_empty_state('No arrest particulars found.');
+} else {
+    cdat_sum_generic_table_open(
+        'Arrest Particulars',
+        ['DATE OF ARREST', 'PLACE OF ARREST', 'CRIME NO AND SEC OF LAW', 'POLICE STATION', 'SUB DIVISION', 'ARRESTED BY', 'OTHERS WHO CAN IDENTIFY'],
+        'ndps1_arrest_table',
+        'ndps1_arrest.csv',
+        count($arrestRows)
+    );
+    foreach ($arrestRows as $row) {
+        cdat_sum_table_row([
+            ['text' => (string) ($row['DATE_OF_ARREST'] ?? ''), 'class' => 'sum-cell-date'],
+            (string) ($row['PLACE_OF_ARREST'] ?? ''),
+            (string) ($row['CRIME_NO_SEC_OF_LAW'] ?? ''),
+            (string) ($row['POLICE_STATION'] ?? ''),
+            (string) ($row['SUB_DIVISION'] ?? ''),
+            (string) ($row['ARRESTED_BY'] ?? ''),
+            (string) ($row['OTHERS_WHO_CAN_IDENTIFY'] ?? ''),
+        ]);
+    }
+    cdat_sum_generic_table_close();
+}
+
+cdat_sum_results_close();
+sqlsrv_close($conn);
+
+if ($isAjax) {
+    exit;
+}
+cdat_sum_page_close();
+layout_end();

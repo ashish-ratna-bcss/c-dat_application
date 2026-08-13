@@ -1,49 +1,44 @@
 <?php
 require_once __DIR__ . '/includes/layout.php';
-layout_begin("Demo.php");
-?>
+require_once __DIR__ . '/includes/sum_ui.php';
 
+layout_begin('Demo.php');
+cdat_sum_page_open();
 
-    <div class="container">
-        <table id="mytable" class="w3-table-all">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Gender</th>
-                    <th>Address</th>
-                </tr>
-            </thead>
-            <tbody>
-               <?php
-$serverName = "CPHYDERABAD1\DAU_HYD_2023";
-$connectionInfo = array( "Database"=>"TRAINING_DB");
-$conn = sqlsrv_connect( $serverName, $connectionInfo );
-if( $conn === false ) {
-    die( print_r( sqlsrv_errors(), true));
+$serverName = "CPHYDERABAD1\\DAU_HYD_2023";
+$connectionInfo = array('Database' => 'TRAINING_DB');
+$conn = sqlsrv_connect($serverName, $connectionInfo);
+if ($conn === false) {
+    die(print_r(sqlsrv_errors(), true));
 }
 
+$sql8 = "SELECT DISTINCT * FROM ADDMORE";
+$st8 = sqlsrv_query($conn, $sql8);
+$rows = cdat_sum_fetch_all($st8);
 
-$sql8="SELECT DISTINCT * FROM ADDMORE";
-$st8 = sqlsrv_query( $conn, $sql8 );
-
-while( $row = sqlsrv_fetch_array( $st8, SQLSRV_FETCH_ASSOC) ) {
-echo "<tr>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['user_id'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['user_name'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['user_gender'] ."<center></font></td>";
-echo "<td width=125px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['user_address'] ."<center></font></td>";
-echo "</tr>";
+if (empty($rows)) {
+    cdat_sum_empty_state('No demo records found.');
+} else {
+    cdat_sum_results_open();
+    cdat_sum_generic_table_open(
+        'Demo',
+        ['ID', 'Name', 'Gender', 'Address'],
+        'mytable',
+        'demo.csv',
+        count($rows)
+    );
+    foreach ($rows as $row) {
+        cdat_sum_table_row([
+            ['text' => (string) ($row['user_id'] ?? ''), 'class' => 'sum-cell-num'],
+            (string) ($row['user_name'] ?? ''),
+            (string) ($row['user_gender'] ?? ''),
+            ['html' => cdat_sum_address_lines((string) ($row['user_address'] ?? '')) ?: '—', 'class' => 'sum-address-cell'],
+        ]);
+    }
+    cdat_sum_generic_table_close();
+    cdat_sum_results_close();
 }
-          
-                              ?>
-            </tbody>
-        </table>
-    </div>
+sqlsrv_close($conn);
 
-    <script src="jquery.min.js"></script>
-    <script src="ddtf.js"></script>
-    <script>
-        $('#mytable').ddTableFilter();
-    </script>
-<?php layout_end(); ?>
+cdat_sum_page_close();
+layout_end();

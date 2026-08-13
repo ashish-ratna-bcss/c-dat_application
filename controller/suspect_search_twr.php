@@ -1,11 +1,15 @@
 <?php
 require_once __DIR__ . '/includes/layout.php';
-layout_begin("Suspect Search Twr");
-?>
+require_once __DIR__ . '/includes/sum_ui.php';
 
-<li><a href="suspect_search.php"><font color='#FDEFEF'>Back</a></li></b></b>
-<?php
-$serverName = "CPHYDERABAD1\DAU_HYD_2023";
+$isAjax = cdat_sum_is_ajax();
+if (!$isAjax) {
+    layout_begin('Suspect Search Twr');
+    cdat_sum_page_open();
+    cdat_sum_back_link('suspect_search.php');
+}
+
+$serverName = "CPHYDERABAD1\\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"TWRMDB");
 $conn = sqlsrv_connect( $serverName, $connectionInfo );
 if( $conn === false ) {
@@ -80,73 +84,81 @@ $AD3 = sqlsrv_query( $conn, $ADD3);
 $st1 = sqlsrv_query( $conn, $time1 );
 $st2 = sqlsrv_query( $conn, $time2 );
 $st3 = sqlsrv_query( $conn, $sql1 );
+$bannerAddr = 'ADDRESS OF MOBILE NO: ' . $PHONE_NO;
+if ($AD0 && ($b = sqlsrv_fetch_array($AD0, SQLSRV_FETCH_ASSOC))) {
+    $bannerAddr = (string) ($b['PHONE1'] ?? $bannerAddr);
+}
+$addrRows = cdat_sum_fetch_all($AD3);
 
-while( $row = sqlsrv_fetch_array( $AD0, SQLSRV_FETCH_ASSOC) ) {
-echo "<font size=4 face=verdana color='#F9FBFC'><td><center><b>". $row['PHONE1'] ."<center></td></font></br>";
+$bannerSearch = 'MOBILE NO SEARCH IN TOWER DUMP';
+if ($st0 && ($b0 = sqlsrv_fetch_array($st0, SQLSRV_FETCH_ASSOC))) {
+    $bannerSearch = (string) ($b0['SEARCH'] ?? $bannerSearch);
+}
+$callRows = cdat_sum_fetch_all($st3);
+
+cdat_sum_results_open();
+cdat_sum_report_banner($bannerAddr);
+if (empty($addrRows)) {
+    cdat_sum_empty_state('No address details found.');
+} else {
+    cdat_sum_generic_table_open(
+        'Mobile Address',
+        ['PHONE', 'FIRST_CALL', 'LAST_CALL', 'NICKNAME', 'MO', 'LAST_UPDATED', 'PHONE ADDRESS', 'IO NAME', 'QRCODE'],
+        'suspect_twr_addr_table',
+        'suspect_search_twr_address.csv',
+        count($addrRows)
+    );
+    foreach ($addrRows as $row) {
+        $addr = (string) ($row['ADDRESS'] ?? '');
+        $qrSrc = '../qrcode/php/qr_img.php?d=' . 'PHONE NO:' . $PHONE_NO . '  ' . 'ADDRESS: ' . preg_replace('/[^A-Za-z0-9\-:]/', ' ', $addr);
+        cdat_sum_table_row([
+            ['text' => (string) ($row['PHONE'] ?? ''), 'class' => 'sum-cell-num'],
+            ['text' => (string) ($row['FIRST_CALL'] ?? ''), 'class' => 'sum-cell-date'],
+            ['text' => (string) ($row['LAST_CALL'] ?? ''), 'class' => 'sum-cell-date'],
+            (string) ($row['NICKNAME'] ?? ''),
+            (string) ($row['MO'] ?? ''),
+            ['text' => (string) ($row['LAST_UPDATED'] ?? ''), 'class' => 'sum-cell-date'],
+            ['html' => cdat_sum_address_lines($addr) ?: '—', 'class' => 'sum-address-cell'],
+            (string) ($row['INC_OFFICER'] ?? ''),
+            ['html' => '<img height="100" width="100" src="' . cdat_sum_h($qrSrc) . '" alt="">', 'class' => 'sum-cell-img'],
+        ]);
+    }
+    cdat_sum_generic_table_close();
 }
 
-
-
-echo "<table border=1 cellspacing=0 cellpadding=5>
-<tr>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>PHONE</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>FIRST_CALL</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>LAST_CALL</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>NICKNAME</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>MO</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>LAST_UPDATED</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>PHONE ADDRESS</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>IO NAME</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>QRCODE</font></th>
-
-</tr>";
-
-while( $row = sqlsrv_fetch_array( $AD3, SQLSRV_FETCH_ASSOC) ) {
-echo "<tr>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['PHONE'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['FIRST_CALL'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['LAST_CALL'] ."<center></font></td>";
-echo "<td width=125px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['NICKNAME'] ."<center></font></td>";
-echo "<td width=0px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['MO'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['LAST_UPDATED'] ."<center></font></td>";
-echo "<td width=500px bgcolor=#AED1F1><font size=1 face=verdana>". $row['ADDRESS'] ."</font></td>";
-echo "<td width=125px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['INC_OFFICER'] ."<center></font></td>";
-echo "<td>";?> <?php echo '<img height="100" width="100" src="../qrcode/php/qr_img.php?d='.'PHONE NO:'.$PHONE_NO.'  '.'ADDRESS: '. preg_replace('/[^A-Za-z0-9\-:]/',' ',$row["ADDRESS"]) .'"></img>'; ?> <?php "</td>";
-echo "</tr>";
+cdat_sum_report_banner($bannerSearch);
+if (empty($callRows)) {
+    cdat_sum_empty_state('No tower dump call records found.');
+} else {
+    cdat_sum_generic_table_open(
+        'Tower Dump Calls',
+        ['PHONE', 'OTHER', 'STARTTIME', 'DURATION', 'IMEINUMBER', 'CALLTYPE', 'PHONE ADDRESS'],
+        'suspect_twr_calls_table',
+        'suspect_search_twr.csv',
+        count($callRows)
+    );
+    foreach ($callRows as $row) {
+        cdat_sum_table_row([
+            ['text' => (string) ($row['phone'] ?? ''), 'class' => 'sum-cell-num'],
+            ['text' => (string) ($row['other'] ?? ''), 'class' => 'sum-cell-other'],
+            ['text' => (string) ($row['starttime'] ?? ''), 'class' => 'sum-cell-date'],
+            ['text' => (string) ($row['duration'] ?? ''), 'class' => 'sum-cell-num'],
+            ['text' => (string) ($row['imeinumber'] ?? ''), 'class' => 'sum-cell-num'],
+            (string) ($row['call_type'] ?? ''),
+            ['html' => cdat_sum_address_lines((string) ($row['ADDRESS'] ?? '')) ?: '—', 'class' => 'sum-address-cell'],
+        ]);
+    }
+    cdat_sum_generic_table_close();
 }
+cdat_sum_results_close();
 
-echo "</table>";
-
-echo "</br>";
-
-while( $row = sqlsrv_fetch_array( $st0, SQLSRV_FETCH_ASSOC) ) {
-echo "<font size=4 face=verdana color='#F9FBFC'><td><center><b>". $row['SEARCH'] ."<center></td></font></br>";
-} 
-
-echo "<table border=1 cellspacing=0 cellpadding=5>
-<tr>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>PHONE</font</th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>OTHER</font</th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>STARTTIME</font</th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>DURATION</font</th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>IMEINUMBER</font</th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>CALLTYPE</font</th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>PHONE ADDRESS</font</th>
-</tr>";
-while( $row = sqlsrv_fetch_array( $st3, SQLSRV_FETCH_ASSOC) ) {
-echo "<tr>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['phone'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana>". $row['other'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['starttime'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana>". $row['duration'] ."</font></td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['imeinumber'] ."<center></font></td>";
-echo "<td width=250px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['call_type'] ."<center></font></td>";
-echo "<td width=350px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['ADDRESS'] ."<center></font></td>";
-echo "</tr>";
-
+if ($st1) {
+    sqlsrv_free_stmt($st1);
 }
-echo"</table>";
+sqlsrv_close($conn);
 
-sqlsrv_free_stmt( $st1);
-?>
-<?php layout_end(); ?>
+if ($isAjax) {
+    exit;
+}
+cdat_sum_page_close();
+layout_end();

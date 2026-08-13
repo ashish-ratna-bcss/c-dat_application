@@ -1,58 +1,39 @@
 <?php
-// One page for both halves of this screen: the form, and the results.
-// Was view/imei_request_traced_details.html (form) + controller/imei_request_traced_details.php (handler).
-// GET shows the form; a submit renders the form and the results below it.
-// !empty($_GET) covers links that pass parameters in the query string.
-$__submitted = ($_SERVER['REQUEST_METHOD'] === 'POST') || !empty($_GET);
-?>
-<?php
 require_once __DIR__ . '/includes/layout.php';
-layout_begin("IMEI Request Traced Details");
-?>
+require_once __DIR__ . '/includes/sum_ui.php';
 
-<div align="center">
-  <table width="1323" height="603" border="2">
-    <tr>
-      <td width="1349" height="595" align="left" valign="top"><table width="1313" height="140">
-        <tr>
-          <td width="1265" height="130" align="center" valign="bottom" background="../assets/images/topborder.jpg"><ul id="MenuBar1" class="MenuBarHorizontal">      </table>
-      <p>&nbsp;</p>
-      <table width="1021" height="157" align="center">
-        <tr>
-          <th height="25" align="center" valign="middle" background="../assets/images/border.jpg" scope="col">IMEI'S TRACED BETWEEN REQUEST DATES</th>
-        </tr>
-        <tr>
-          <th width="782" align="center" valign="middle" background="../assets/images/border.jpg" scope="col"><form id="form1" name="form1" method="post" action="imei_request_traced_details.php">
-        
-            Request From Date: 
-              <input type="text" name="FROM_DT" id="datepickerID" size="10" placeholder="yyyy/mm/dd" required="required"/>
-              Request To Date:
-              <input type="text" name="TO_DT" id="datepickerID1" size="10" placeholder="yyyy/mm/dd" required="required"/>
-              <input type="submit" name="BTN_SUM" id="BTN_SUM" value="Submit" />
-              
-          </form></th>
-        </tr>
-      </table>
-      <p>&nbsp;</p>
-      <p>&nbsp;</p></td>
-    </tr>
-  </table>
+$isAjax = cdat_sum_is_ajax();
+$fromDt = trim((string) ($_POST['FROM_DT'] ?? ''));
+$toDt = trim((string) ($_POST['TO_DT'] ?? ''));
+$hasSearch = $fromDt !== '' && $toDt !== '';
 
+$fieldsHtml = cdat_sum_field_date('FROM_DT', 'Request From Date', 'datepickerID', $fromDt)
+            . cdat_sum_field_date('TO_DT', 'Request To Date', 'datepickerID1', $toDt);
 
-<?php if ($__submitted): ?>
-</br>
-<li><a href="home_imei.php"><font color=#FDEFEF>HOME</a></li>
-<?php
-$serverName = "CPHYDERABAD1\DAU_HYD_2023";
-$connectionInfo = array( "Database"=>"LOSTREPORT_HAWKEYE");
-$conn = sqlsrv_connect( $serverName, $connectionInfo );
-if( $conn === false ) {
-    die( print_r( sqlsrv_errors(), true));
-}
-$f_date = $_POST['FROM_DT'];
-$t_date = $_POST['TO_DT'];
+if ($hasSearch) {
+    if (!$isAjax) {
+        layout_begin('IMEI Request Traced Details');
+        cdat_sum_page_open();
+        cdat_sum_search_card(
+            "IMEI'S Traced Between Request Dates",
+            'Find IMEIs traced between two request dates.',
+            'imei_request_traced_details.php',
+            $fieldsHtml,
+            'BTN_SUM',
+            'Submit'
+        );
+    }
 
-$sql3 ="SET DATEFORMAT DMY SELECT DISTINCT LEFT(A.IMEINUMBER,14) IMEINUMBER, A.PHONE,MIN(STARTTIME) FC,
+    $serverName = "CPHYDERABAD1\\DAU_HYD_2023";
+    $connectionInfo = array('Database' => 'LOSTREPORT_HAWKEYE');
+    $conn = sqlsrv_connect($serverName, $connectionInfo);
+    if ($conn === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+    $f_date = $fromDt;
+    $t_date = $toDt;
+
+    $sql3 = "SET DATEFORMAT DMY SELECT DISTINCT LEFT(A.IMEINUMBER,14) IMEINUMBER, A.PHONE,MIN(STARTTIME) FC,
 MAX(STARTTIME) LC,MAX(B.MOBILE_LOST_DATE) MOBILE_LOST_DATE
 INTO #TR FROM LOST_REPORT_CDR_DATA  A
 INNER JOIN COMPLAINANT_DETAILS B ON LEFT(A.IMEINUMBER,14)=LEFT(B.IMEI1,14)
@@ -61,8 +42,8 @@ SELECT DISTINCT LEFT(IMEI_NO,14) IMEINUMBER FROM IMEI_REQUESTED_DETAILS
 WHERE CONVERT(DATE,REQUESTED_DATE) BETWEEN '$f_date' AND '$t_date')
 GROUP BY LEFT(IMEINUMBER,14),PHONE";
 
-$sql4 ="SELECT DISTINCT ROW_NUMBER() OVER(ORDER BY IMEINUMBER DESC) SLNO,A.IMEINUMBER,A.PHONE,
-CASE WHEN A.PHONE=C.PHONE 
+    $sql4 = "SELECT DISTINCT ROW_NUMBER() OVER(ORDER BY IMEINUMBER DESC) SLNO,A.IMEINUMBER,A.PHONE,
+CASE WHEN A.PHONE=C.PHONE
 THEN REPLACE(ISNULL(C.FULLNAME,''),'	','')+', '+REPLACE
 (ISNULL(C.FULLADDRESS,''),'	','')+' DOA:'+CONVERT
 (VARCHAR,C.DOA,20)+' '+ISNULL(C.CATEGORY_TYPE,'')
@@ -70,75 +51,91 @@ WHEN A.PHONE LIKE '140%' THEN 'TELE-MARKETING NUMBER'
 WHEN A.PHONE LIKE '1800%' AND LEN(A.PHONE)=11 THEN 'TOLL-FREE
 NUMBER'
 WHEN A.PHONE IN
-('121','111','198','123','139','122','199','12345') THEN 
+('121','111','198','123','139','122','199','12345') THEN
 'CUSTOMER CARE / ENQUIRY NUMBER'
-WHEN A.PHONE IN(SELECT DISTINCT PHONE FROM 
-CDATDUPL.DBO.ADDRESS_OTHER_STATE) 
+WHEN A.PHONE IN(SELECT DISTINCT PHONE FROM
+CDATDUPL.DBO.ADDRESS_OTHER_STATE)
 THEN REPLACE(ISNULL(D.FULLNAME+', '+D.FULLADDRESS,''),'	','')+'
 '+ISNULL(D.CATEGORY_TYPE,'')
 ELSE AREADESCRIPTION END AS ADDRESS,
 CONVERT(VARCHAR(20),A.FC) FIRST_CALL,CONVERT(VARCHAR(20),A.LC)  LAST_CALL,LC,
 A.MOBILE_LOST_DATE,B.COMPLAINANT_NAME,
 B.APPLICATION,B.LRNO ID,B.BRAND+' '+B.Model MODEL,'TRACED' TRACED FROM #TR A
-INNER JOIN COMPLAINANT_DETAILS B ON  LEFT(A.IMEINUMBER,14)=LEFT(B.IMEI1,14) 
+INNER JOIN COMPLAINANT_DETAILS B ON  LEFT(A.IMEINUMBER,14)=LEFT(B.IMEI1,14)
 AND A.MOBILE_LOST_DATE=B.Mobile_Lost_Date
 AND CONVERT(DATE,A.FC)>CONVERT(DATE,A.MOBILE_LOST_DATE)
 LEFT JOIN CDATDUPL.DBO.CDATADDRESS C ON A.PHONE=C.PHONE AND C.EFF_TO_DATE IS NULL
 LEFT JOIN CDATDUPL.DBO.ADDRESS_OTHER_STATE D ON A.PHONE=D.PHONE AND D.EFF_TO_DATE IS NULL
 LEFT JOIN CDATDUPL.DBO.CDATPHONEAREA E ON  CASE WHEN LEN(A.PHONE)=10 THEN A.PHONE ELSE CASE WHEN LEN(A.PHONE)>10 THEN '00'+A.PHONE ELSE 'POSSIBLE OF VOIP CALL OR SKYPE OR WIFI CALL' END END
-LIKE PHONEPREFIX+'%' 
+LIKE PHONEPREFIX+'%'
 ORDER BY SLNO,LC DESC";
 
+    $sql5 = "SELECT 'LR/HAWKEYE IMEI TRACED REPORT FROM: '+'$f_date' +' TO '+'$t_date' as PHONE1";
 
-$sql5="SELECT 'LR/HAWKEYE IMEI TRACED REPORT FROM: '+'$f_date' +' TO '+'$t_date' as PHONE1";
+    sqlsrv_query($conn, $sql3);
+    $st4 = sqlsrv_query($conn, $sql4);
+    $st5 = sqlsrv_query($conn, $sql5);
 
-/* */
+    $banner = 'LR/HAWKEYE IMEI TRACED REPORT FROM: ' . $f_date . ' TO ' . $t_date;
+    if ($st5 && ($b = sqlsrv_fetch_array($st5, SQLSRV_FETCH_ASSOC))) {
+        $banner = (string) ($b['PHONE1'] ?? $banner);
+    }
+    $rows = cdat_sum_fetch_all($st4);
 
-$st3 = sqlsrv_query( $conn, $sql3 );
-$st4 = sqlsrv_query( $conn, $sql4 );
-$st5 = sqlsrv_query( $conn, $sql5 );
+    if (empty($rows)) {
+        cdat_sum_empty_state('No traced IMEI details found for that date range.');
+    } else {
+        cdat_sum_results_open();
+        cdat_sum_report_banner($banner);
+        cdat_sum_generic_table_open(
+            'IMEI Traced Details',
+            ['SLNO', 'IMEINUMBER', 'PHONE NO USED', 'SUMMARY OF PHONE NO USED', 'MOVEMENTS OF PHONE NO USED', 'PHONE ADDRESS', 'FIRST CALL', 'LAST CALL', 'MOBILE LOST DATE', 'COMPLAINANT NAME', 'APPLICATION', 'LR/HAWKEYE ID', 'MODEL / BRAND', 'TRACED STATUS'],
+            'results_table',
+            'imei_traced.csv',
+            count($rows)
+        );
+        foreach ($rows as $row) {
+            $phone = (string) ($row['PHONE'] ?? '');
+            cdat_sum_table_row([
+                ['text' => (string) ($row['SLNO'] ?? ''), 'class' => 'sum-cell-num'],
+                ['text' => (string) ($row['IMEINUMBER'] ?? ''), 'class' => 'sum-cell-num'],
+                ['text' => $phone, 'class' => 'sum-cell-num'],
+                ['html' => '<a href="imei_request_sum.php?PHONE_NO=' . cdat_sum_h(urlencode($phone)) . '">' . cdat_sum_h($phone) . '</a>', 'class' => 'sum-cell-num'],
+                ['html' => '<a href="imei_request_movements.php?PHONE_NO=' . cdat_sum_h(urlencode($phone)) . '">' . cdat_sum_h($phone) . '</a>', 'class' => 'sum-cell-num'],
+                ['html' => cdat_sum_address_lines((string) ($row['ADDRESS'] ?? '')) ?: '—', 'class' => 'sum-address-cell'],
+                ['text' => (string) ($row['FIRST_CALL'] ?? ''), 'class' => 'sum-cell-date'],
+                ['text' => (string) ($row['LAST_CALL'] ?? ''), 'class' => 'sum-cell-date'],
+                ['text' => (string) ($row['MOBILE_LOST_DATE'] ?? ''), 'class' => 'sum-cell-date'],
+                (string) ($row['COMPLAINANT_NAME'] ?? ''),
+                (string) ($row['APPLICATION'] ?? ''),
+                (string) ($row['ID'] ?? ''),
+                (string) ($row['MODEL'] ?? ''),
+                (string) ($row['TRACED'] ?? ''),
+            ]);
+        }
+        cdat_sum_generic_table_close();
+        cdat_sum_results_close();
+    }
+    sqlsrv_close($conn);
 
-while( $row = sqlsrv_fetch_array( $st5, SQLSRV_FETCH_ASSOC) ) {
-echo "<font size=4 face=verdana color='#F9FBFC'><td><center><b>". $row['PHONE1'] ."<center></td></font></br>";
+    if ($isAjax) {
+        exit;
+    }
+    cdat_sum_page_close();
+    layout_end();
+    exit;
 }
-echo "<table border=1 cellspacing=0 cellpadding=5 >
-<tr>
-<th bgcolor=#921215><font size=2 face=verdana color='#F9FBFC'>SLNO</font</th>
-<th bgcolor=#921215><font size=2 face=verdana color='#F9FBFC'>IMEINUMBER</font</th>
-<th bgcolor=#921215><font size=2 face=verdana color='#F9FBFC'>PHONE NO USED</font</th>
-<th bgcolor=#921215><font size=2 face=verdana color='#F9FBFC'>SUMMARY OF PHONE NO USED</font</th>
-<th bgcolor=#921215><font size=2 face=verdana color='#F9FBFC'>MOVEMENTS OF PHONE NO USED</font</th>
-<th width='10%' bgcolor=#921215><font size=2 face=verdana color='#F9FBFC'>PHONE ADDRESS</font</th>
-<th bgcolor=#921215><font size=2 face=verdana color='#F9FBFC'>FIRST CALL</font</th>
-<th bgcolor=#921215><font size=2 face=verdana color='#F9FBFC'>LAST CALL</font</th>
-<th bgcolor=#921215><font size=2 face=verdana color='#F9FBFC'>MOBILE LOST DATE</font</th>
-<th bgcolor=#921215><font size=2 face=verdana color='#F9FBFC'>COMPLAINANT NAME</font</th>
-<th bgcolor=#921215><font size=2 face=verdana color='#F9FBFC'>APPLICATION</font</th>
-<th bgcolor=#921215><font size=2 face=verdana color='#F9FBFC'>LR/HAWKEYE ID</font</th>
-<th bgcolor=#921215><font size=2 face=verdana color='#F9FBFC'>MODEL / BRAND</font</th>
-<th bgcolor=#921215><font size=2 face=verdana color='#F9FBFC'>TRACED STATUS</font</th>
-</tr>";
 
-while( $row = sqlsrv_fetch_array( $st4, SQLSRV_FETCH_ASSOC) ) {
-echo "<tr width=50px>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['SLNO'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['IMEINUMBER'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['PHONE'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><a href=".'imei_request_sum.php?PHONE_NO='.($row['PHONE']).">".$row['PHONE']."<center></font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><a href=".'imei_request_movements.php?PHONE_NO='.($row['PHONE']).">".$row['PHONE']."<center></font></td>";
-echo "<td width=150px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['ADDRESS'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['FIRST_CALL'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['LAST_CALL'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['MOBILE_LOST_DATE'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['COMPLAINANT_NAME'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['APPLICATION'] ."<center></font></td>";
-echo "<td width=125px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['ID'] ."<center></font></td>";
-echo "<td width=125px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['MODEL'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['TRACED'] ."<center></font></td>"; 
-echo "</tr>";
-}
-
-sqlsrv_free_stmt( $st3);
-?>
-<?php endif; ?>
-<?php layout_end(); ?>
+layout_begin('IMEI Request Traced Details');
+cdat_sum_page_open();
+cdat_sum_search_card(
+    "IMEI'S Traced Between Request Dates",
+    'Find IMEIs traced between two request dates.',
+    'imei_request_traced_details.php',
+    cdat_sum_field_date('FROM_DT', 'Request From Date', 'datepickerID')
+        . cdat_sum_field_date('TO_DT', 'Request To Date', 'datepickerID1'),
+    'BTN_SUM',
+    'Submit'
+);
+cdat_sum_page_close();
+layout_end();

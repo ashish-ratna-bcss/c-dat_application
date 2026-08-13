@@ -1,32 +1,33 @@
 <?php
 require_once __DIR__ . '/includes/layout.php';
-layout_begin("IR Home");
+require_once __DIR__ . '/includes/sum_ui.php';
+
+layout_begin('IR Home');
+cdat_sum_page_open('sum-dashboard');
 ?>
-<div align="center">
-  <table width="1323" height="603" border="2">
-<tr>
-  <td width="1349" height="595" align="left" valign="top"><table width="1313" height="148">
-        <tr>
-          <td width="1265" height="134" align="center" valign="bottom" background="../assets/images/topborder.jpg"></td>
-        </tr>
-      </table>
-        <marquee behavior="scroll" direction="left"> <font color="YELLOW" face=verdana size='2'><b> *** IF YOU HAVE ANY SUGGESTIONS OR CHANGES ON THIS SITE PLEASE SHARE WITH ANALYSIS WING *** </b></font></marquee> 
-        <table width="1307" height="347">
-          <tr>
-            <td width="214" rowspan="2" valign="top">
-              <blockquote>
-                
-        <p>&nbsp; </p>
-      </blockquote></td>
-            <td width="1015" height="24" align="left" valign="top"><p align="center" class="FONT"> INTERROGATION REPORTS </p></td>
-            <td width="62" rowspan="2">&nbsp;</td>
-          </tr>
-          <tr>
-            <!-- login lands here, so the shortcuts belong on this page too -->
-            <td height="310" align="left" valign="top"><?php cdat_ql_render_grid(); ?></td>
-          </tr>
-        </table>
-        <p>&nbsp;</p>
-    
-  
-<?php layout_end(); ?>
+<section class="sum-dash-hero" aria-label="Interrogation Reports">
+    <div class="sum-dash-hero__head">
+        <div class="sum-dash-hero__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/>
+                <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
+            </svg>
+        </div>
+        <div>
+            <h1 class="sum-dash-hero__title">Interrogation Reports</h1>
+            <p class="sum-dash-hero__desc">Open IR forms and search from the sidebar, or use your pinned pages below.</p>
+        </div>
+    </div>
+    <div class="sum-dash-notices" role="region" aria-label="Notices">
+        <div class="sum-notice-bar" role="note">
+            If you have suggestions or changes, please share them with Analysis Wing.
+        </div>
+    </div>
+</section>
+<section class="sum-dash-links">
+    <?php cdat_ql_render_grid(); ?>
+</section>
+<?php
+cdat_sum_page_close();
+layout_end();

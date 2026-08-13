@@ -1,122 +1,62 @@
 <?php
 require_once __DIR__ . '/includes/layout.php';
-layout_begin("Inter Tower Calls");
-?>
+require_once __DIR__ . '/includes/sum_ui.php';
+require_once __DIR__ . '/dbcontroller.php';
 
-<?php
-require_once("dbcontroller.php");
 $db_handle = new DBController();
-$query ="SELECT distinct POLICE_STATION FROM OFFENCE_DETAILS";
-$results = $db_handle->runQuery($query);
-?>
-<script src="../assets/js/jquerydynamic.js" type="text/javascript"></script>
-<script>
-function getps(val) {
-	$.ajax({
-	type: "POST",
-	url: "get_crno.php",
-	data:'POLICE_STATION='+val,
-	success: function(data){
-		$("#Crime-list").html(data);
-		$("#YEAR").html(html);
-	}
-	});
-}
-function getyear(val1) {
-	$.ajax({
-	type: "POST",
-	url: "get_year.php",
-	data: 'CRIME_NO='+val1,
-	success: function(data){
-		 $("#YEAR").html(data);
-	}
-	});
+$query = "SELECT distinct POLICE_STATION FROM OFFENCE_DETAILS";
+$results = $db_handle->runQuery($query) ?: [];
+$psOptions = ['' => 'Select PS'];
+foreach ($results as $row) {
+    $v = (string) ($row['POLICE_STATION'] ?? '');
+    if ($v !== '') {
+        $psOptions[$v] = $v;
+    }
 }
 
-</script>
-<link rel="stylesheet" type="text/css" href="../assets/vendor/jquery-ui-1.10.4.custom/css/dark-hive/jquery-ui-1.10.4.custom.min.css">
-<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-1.10.2.js"></script>
-<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.js"></script>
-<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.min.js"></script>
-<script type="text/javascript">
-$("document").ready(function() {
-	$("#datepickerID").datepicker({dateFormat: "yy-mm-dd",
-		changeYear: true,
-		changeMonth: true,
-	}) 
+$ps = trim((string) ($_POST['Police_station'] ?? ''));
+$crimeNo = trim((string) ($_POST['CRIME_NO'] ?? ''));
+$year = trim((string) ($_POST['YEAR'] ?? ''));
+$offDate = trim((string) ($_POST['OFF_DATE'] ?? ''));
+$hh1 = (string) ($_POST['hh1'] ?? '00');
+$mm1 = (string) ($_POST['mm1'] ?? '00');
+$ss1 = (string) ($_POST['ss1'] ?? '00');
+$hh2 = (string) ($_POST['hh2'] ?? '00');
+$mm2 = (string) ($_POST['mm2'] ?? '00');
+$ss2 = (string) ($_POST['ss2'] ?? '00');
 
-});
-</script>
-<div align="center">
-  <table width="1323" height="603" border="2">
-    <tr>
-      <td width="1349" height="595" align="left" valign="top"><table width="1313" height="148">
-        <tr>
-          <td width="1265" height="134" align="center" valign="bottom" background="../assets/images/topborder.jpg"><ul id="MenuBar1" class="MenuBarHorizontal">
-            </td>
-        </tr>
-      </table>
-      <p>&nbsp;</p>
-      <table width="862" height="158" align="center">
-        <tr>
-          <th height="25" align="center" valign="middle" background="../assets/images/border.jpg" scope="col">INTER TOWER CALLS IN TOWER DUMP</th>
-        </tr>
-        <tr>
-          <th width="782" align="center" valign="middle" background="../assets/images/border.jpg" scope="col"><form id="form1" name="form1" method="post" action="inter_tower_calls_twr.php">
-            <p>
-            <label for="SUM" font face="verdana"> Police Station:</label>
-              <select name="Police_station" id="Police_station" class"demoInputbox" onChange="getps(this.value);">
-<option value="">Select PS</option>
-<?php
-foreach($results as $POLICE_STATION) {
-?>
-<option value="<?php echo $POLICE_STATION["POLICE_STATION"]; ?>"> <?php echo $POLICE_STATION["POLICE_STATION"]; ?> </option>
-<?php
-}
-?>
-</select>
-<label for="SUM" font face="verdana"> Crime No:</label>
-<select name="CRIME_NO" id="Crime-list" onChange="getyear(this.value);">
-<option value="">Select Crime No</option>
-</select>
-<label for="SUM" font face="verdana"> Year:</label>
-<select name="YEAR" id="YEAR">
-<option value="">Select Year</option>
-</select>
-              Date: 
-              <input type="text" name="OFF_DATE" id="datepickerID" size="10" placeholder="yyyy-mm-dd" required="required"/>
-                </br>
-              Between Time HH:MM:SS
-              <input name="hh1" style="width:40px;" type="number" id="number1"  min="00" max="23" value="00" required="required"/>
-             :
-              <input name="mm1" style="width:40px;" type="number" id="number2"  min="00" max="59" value="00" required="required"/>
-             :
-	     <input name="ss1" style="width:40px;" type="number" id="number3"   min="00" max="59" value="00" required="required"/>
-              and  HH:MM:SS
-              <input name="hh2" style="width:40px;" type="number" id="number4"  min="00" max="23" value="00" required="required"/>
-             :
-              <input name="mm2" style="width:40px;" type="number" id="number4"  min="00" max="59" value="00" required="required"/>
-             :
-	     <input  name="ss2"  style="width:40px;" type="number" id="number6" min="00" max="59" value="00" required="required"/>
-              <input type="submit" name="BTN_SUM" id="BTN_SUM" value="Submit" />
-              </p>
-          </form>
-            <div align="justify">
-              <table width="734" height="25">
-                <tr>
-                  <th width="40" scope="col">&nbsp;</th>
-                  <th width="8" scope="col">&nbsp;</th>
-                  <th width="79" scope="col">&nbsp;</th>
-                  <th width="368" scope="col">&nbsp;</th>
-                  </tr>
-              </table>
-            </div></th>
-        </tr>
-      </table>
-      <p>&nbsp;</p>
-      <p>&nbsp;</p></td>
-    </tr>
-  </table>
-</div>
+$psSelect = cdat_sum_searchable_select('Police_station', 'Police Station', $psOptions, $ps, 'Select PS', false, '', 'Police_station');
+$psSelect = str_replace(
+    'class="sum-select" data-searchable-select="1"',
+    'class="sum-select" data-searchable-select="1" onChange="getps(this.value);"',
+    $psSelect
+);
 
-<?php layout_end(); ?>
+$fieldsHtml = $psSelect
+            . '<div class="sum-search-form__field"><label for="Crime-list">Crime No</label>'
+            . '<select name="CRIME_NO" id="Crime-list" class="sum-select" onChange="getyear(this.value);">'
+            . '<option value="">Select Crime No</option>'
+            . ($crimeNo !== '' ? '<option value="' . cdat_sum_h($crimeNo) . '" selected="selected">' . cdat_sum_h($crimeNo) . '</option>' : '')
+            . '</select></div>'
+            . '<div class="sum-search-form__field"><label for="YEAR">Year</label>'
+            . '<select name="YEAR" id="YEAR" class="sum-select">'
+            . '<option value="">Select Year</option>'
+            . ($year !== '' ? '<option value="' . cdat_sum_h($year) . '" selected="selected">' . cdat_sum_h($year) . '</option>' : '')
+            . '</select></div>'
+            . cdat_sum_field_date('OFF_DATE', 'Date', 'datepickerID', $offDate)
+            . cdat_sum_field_hms('hh1', 'mm1', 'ss1', 'Between Time HH:MM:SS', $hh1, $mm1, $ss1)
+            . cdat_sum_field_hms('hh2', 'mm2', 'ss2', 'and HH:MM:SS', $hh2, $mm2, $ss2);
+
+layout_begin('Inter Tower Calls');
+cdat_sum_page_open();
+cdat_sum_search_card(
+    'Inter Tower Calls In Tower Dump',
+    'Search inter-tower calls for a crime and time window.',
+    'inter_tower_calls_twr.php',
+    $fieldsHtml,
+    'BTN_SUM',
+    'Submit'
+);
+cdat_sum_tower_cascade_script();
+cdat_sum_page_close();
+layout_end();

@@ -1,66 +1,66 @@
 <?php
 require_once __DIR__ . '/includes/layout.php';
-layout_begin("Bulk Irsearch Irkey Ndps");
-?>
+require_once __DIR__ . '/includes/sum_ui.php';
 
-<script>
-//*function bigImg(x) { 
-x.style.height="400px";
-x.style.width="400px";
-}
-function normalImg(x) { 
-x.style.height="200px";
-x.style.width="220px";
-}
-</script>;*//
-<script type="text/javascript" src="ajax/libs/jquery/1/jquery.min.js"></script>
-<script type="text/javascript">
-$(function() {
-    $(this).bind("contextmenu", function(e) {
-        e.preventDefault();
-    });
-}); 
-</script>
-
-<?php
-$serverName = "CPHYDERABAD1\DAU_HYD_2023";
-$connectionInfo = array( "Database"=>"CDATDUPL");
-$conn = sqlsrv_connect( $serverName, $connectionInfo );
-if( $conn === false ) {
-    die( print_r( sqlsrv_errors(), true));
+$isAjax = cdat_sum_is_ajax();
+if (!$isAjax) {
+    layout_begin('Bulk Irsearch Irkey Ndps');
+    cdat_sum_page_open();
+    cdat_sum_back_link('bulk_irkey_ndps.php');
 }
 
-if (isset($_POST['IRKEY'])){
+$serverName = "CPHYDERABAD1\\DAU_HYD_2023";
+$connectionInfo = array("Database" => "CDATDUPL");
+$conn = sqlsrv_connect($serverName, $connectionInfo);
+if ($conn === false) {
+    die(print_r(sqlsrv_errors(), true));
+}
 
-$number= $_POST['IRKEY'];
+if (isset($_POST['IRKEY'])) {
+    $number = $_POST['IRKEY'];
+    $number2 = str_replace(",", "','", "$number");
 
-$number2 = str_replace(",","','","$number");
+    $sql9 = "SELECT DISTINCT IRKEY INTO #TEMP FROM FORMS.DBO.OFFENCE_DETAILS WHERE IRKEY IN ('$number2')";
 
-echo "<font size=4 face=verdana  color='#F9FBFC'><td><center><b>BULK IR SEARCH<center></td></font></br>";
-
-$sql9="SELECT DISTINCT IRKEY INTO #TEMP FROM FORMS.DBO.OFFENCE_DETAILS WHERE IRKEY IN ('$number2')";
-
-$sql10="SELECT A.IRKEY,C.NAME,B.IMAGE FROM #TEMP A LEFT JOIN FORMS.DBO.IMAGE_TABLE B ON A.IRKEY=B.IRKEY
+    $sql10 = "SELECT A.IRKEY,C.NAME,B.IMAGE FROM #TEMP A LEFT JOIN FORMS.DBO.IMAGE_TABLE B ON A.IRKEY=B.IRKEY
 LEFT JOIN FORMS.DBO.IR_PARTICULARS C ON A.IRKEY=C.IRKEY";
 
-$st9 = sqlsrv_query( $conn, $sql9);
-$st10 = sqlsrv_query( $conn, $sql10);
+    sqlsrv_query($conn, $sql9);
+    $st10 = sqlsrv_query($conn, $sql10);
+    $rows = cdat_sum_fetch_all($st10);
 
-echo "<table border=1 cellspacing=0 cellpadding=5>
-<tr>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>IRKEY</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>NAME</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>IMAGE</font></th>
-</tr>";
-
-while( $row = sqlsrv_fetch_array( $st10, SQLSRV_FETCH_ASSOC) ) {
-echo "<tr>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center><a href=".'ir_ndps.php?IRKEY='.($row['IRKEY']).">". $row['IRKEY'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center><a href=".'ir_ndps.php?IRKEY='.($row['IRKEY']).">". $row['NAME'] ."<center></font></td>";
-echo "<td height=100px width=100px>";?> <?php echo '<img onmouseover="bigImg(this)" onmouseout="normalImg(this)" height="100" width="100" src="'.cdat_base64_image_src($row['IMAGE']).'"></img>' ?> <?php "</td>";
-echo "</tr>";
+    cdat_sum_results_open();
+    cdat_sum_report_banner('BULK IR SEARCH');
+    if (empty($rows)) {
+        cdat_sum_empty_state('No NDPS IR records found for the given keys.');
+    } else {
+        cdat_sum_generic_table_open(
+            'Bulk IR Search NDPS',
+            ['IRKEY', 'NAME', 'IMAGE'],
+            'results_table',
+            'bulk_irsearch_ndps.csv',
+            count($rows)
+        );
+        foreach ($rows as $row) {
+            $irKey = (string) ($row['IRKEY'] ?? '');
+            $name = (string) ($row['NAME'] ?? '');
+            cdat_sum_table_row([
+                ['html' => '<a href="ir_ndps.php?IRKEY=' . cdat_sum_h(urlencode($irKey)) . '">' . cdat_sum_h($irKey) . '</a>', 'class' => 'sum-cell-num'],
+                ['html' => '<a href="ir_ndps.php?IRKEY=' . cdat_sum_h(urlencode($irKey)) . '">' . cdat_sum_h($name) . '</a>'],
+                ['html' => cdat_sum_img_html($row['IMAGE'] ?? '', 100, 100), 'class' => 'sum-cell-img'],
+            ]);
+        }
+        cdat_sum_generic_table_close();
+    }
+    cdat_sum_results_close();
+} else {
+    cdat_sum_empty_state('Enter IR keys to search.');
 }
 
+sqlsrv_close($conn);
+
+if ($isAjax) {
+    exit;
 }
-?>
-<?php layout_end(); ?>
+cdat_sum_page_close();
+layout_end();

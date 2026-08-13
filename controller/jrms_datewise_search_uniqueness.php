@@ -1,128 +1,121 @@
 <?php
-// One page for both halves of this screen: the form, and the results.
-// Was view/jrms_datewise_search_uniqueness.htm (form) + controller/jrms_datewise_search_uniqueness.php (handler).
-// GET shows the form; a submit renders the form and the results below it.
-// !empty($_GET) covers links that pass parameters in the query string.
-$__submitted = ($_SERVER['REQUEST_METHOD'] === 'POST') || !empty($_GET);
-?>
-<?php
 require_once __DIR__ . '/includes/layout.php';
-layout_begin("JRMS Datewise Search Uniqueness");
-?>
+require_once __DIR__ . '/includes/sum_ui.php';
 
-<div align="center">
-  <table width="1323" height="100" border="2">
-    <tr>
-      <td width="1349" height="595" align="left" valign="top"><table width="1313" height="148">
-        <tr>
-          <td width="1265" height="134" align="center" valign="bottom" background="../assets/images/topborder.jpg"><ul id="MenuBar1" class="MenuBarHorizontal">
-        
-       
-        <tr>
+$isAjax = cdat_sum_is_ajax();
+$fromDt = trim((string) ($_POST['FROM_DT'] ?? ''));
+$toDt = trim((string) ($_POST['TO_DT'] ?? ''));
+$hasSearch = $fromDt !== '' && $toDt !== '';
 
-<table width="800" height="163" align="center">
-  <tr>
-</br></br>
-          <th height="31" align="center" valign="middle" background="../assets/images/border.jpg" scope="col">JAIL RELEASE BETWEEN DATES</th>
-        </tr>
-        <tr>
-          <th width="782" align="center" valign="middle" background="../assets/images/border.jpg" scope="col"><form id="form1" name="form1" method="post" action="jrms_datewise_search_uniqueness.php">
-                      Date From: 
-              <input type="text" name="FROM_DT" id="datepickerID" size="10" placeholder="yyyy/mm/dd" required="required"/>
-              To:
-              <input type="text" name="TO_DT" id="datepickerID1" size="10" placeholder="yyyy/mm/dd" required="required"/>
-              <input type="submit" name="BTN_SUM" id="BTN_SUM" value="Submit" />     
-          </form></th>
-        </tr>
-     
+$fieldsHtml = cdat_sum_field_date('FROM_DT', 'Date From', 'datepickerID', $fromDt)
+            . cdat_sum_field_date('TO_DT', 'To', 'datepickerID1', $toDt);
 
- </table>
-      <p>&nbsp;</p>
-      <p>&nbsp;</p></td>
-    </tr>
+if ($hasSearch) {
+    if (!$isAjax) {
+        layout_begin('JRMS Datewise Search Uniqueness');
+        cdat_sum_page_open();
+        cdat_sum_search_card(
+            'Jail Release Between Dates',
+            'Search JRMS records released between two dates.',
+            'jrms_datewise_search_uniqueness.php',
+            $fieldsHtml,
+            'BTN_SUM',
+            'Submit'
+        );
+    }
 
+    $serverName = "10.10.46.14\\DAU_HYD_2023";
+    $connectionInfo = array('Database' => 'CDATDUPL');
+    $conn = sqlsrv_connect($serverName, $connectionInfo);
+    if ($conn === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+    $f_date = $fromDt;
+    $t_date = $toDt;
 
-<?php if ($__submitted): ?>
-<?php
-$serverName = "10.10.46.14\DAU_HYD_2023";
-$connectionInfo = array( "Database"=>"CDATDUPL");
-$conn = sqlsrv_connect( $serverName, $connectionInfo );
-if( $conn === false ) {
-    die( print_r( sqlsrv_errors(), true));
-}
-$f_date = $_POST['FROM_DT'];
-$t_date = $_POST['TO_DT'];
-
-
-$sql1 ="SET DATEFORMAT DMY SELECT DISTINCT  CIN,UNIQUE_KEY,IRKEY,PRISONERNO,PSARRESTED,NAME,FATHERSNAME,CRIMENOS,HEADOFCRIME,
+    $sql1 = "SET DATEFORMAT DMY SELECT DISTINCT  CIN,UNIQUE_KEY,IRKEY,PRISONERNO,PSARRESTED,NAME,FATHERSNAME,CRIMENOS,HEADOFCRIME,
 MOBILENO PHONE,
 CASE WHEN LEN(RIGHT(NAME,CHARINDEX('/',REVERSE(NAME))))>1 THEN RIGHT(NAME,CHARINDEX('/',REVERSE(NAME))-1) ELSE '' END IDPROOF,
 ADDR_DURINGRELEASE ADDR_DURING_RELEASE,GENDER,JAILNAME,
-CONVERT(VARCHAR(20),CONVERT(DATE,ADMISSION_TO_JAIL)) ADD_TO_JAIL,CONVERT(VARCHAR(20),CONVERT(DATE,RELEASEDT)) RELEASE_DATE,PHOTO INTO #TEMP FROM 
+CONVERT(VARCHAR(20),CONVERT(DATE,ADMISSION_TO_JAIL)) ADD_TO_JAIL,CONVERT(VARCHAR(20),CONVERT(DATE,RELEASEDT)) RELEASE_DATE,PHOTO INTO #TEMP FROM
 JRMS..JRMS_TOTAL_2012_TO_2017
 WHERE  (CONVERT(DATE,RELEASEDT) BETWEEN '$f_date' AND '$t_date')";
 
-
-$sql2 ="SELECT CIN,UNIQUE_KEY,IRKEY,PRISONERNO,PSARRESTED,NAME,FATHERSNAME,CRIMENOS,HEADOFCRIME,PHONE,IDPROOF,ADDR_DURING_RELEASE,
+    $sql2 = "SELECT CIN,UNIQUE_KEY,IRKEY,PRISONERNO,PSARRESTED,NAME,FATHERSNAME,CRIMENOS,HEADOFCRIME,PHONE,IDPROOF,ADDR_DURING_RELEASE,
 JAILNAME,ADD_TO_JAIL,RELEASE_DATE,CONVERT(IMAGE,PHOTO) PHOTO,CASE WHEN IDPROOF!='' AND ISNUMERIC(IDPROOF)='1' AND IDPROOF in (select distinct AADHAR_NO FROM FORMS..IR_PARTICULARS) THEN 'IR AVAILABLE' ELSE '' END IRFORM,
-CASE WHEN IDPROOF!='' AND ISNUMERIC(IDPROOF)='1' AND 
-IDPROOF in (select distinct AADHAR_NO FROM FORMS..IR_PARTICULARS) THEN (SELECT DISTINCT CONVERT(VARCHAR(20),MAX(IRKEY)) IRKEY FROM FORMS..IR_PARTICULARS WHERE 
+CASE WHEN IDPROOF!='' AND ISNUMERIC(IDPROOF)='1' AND
+IDPROOF in (select distinct AADHAR_NO FROM FORMS..IR_PARTICULARS) THEN (SELECT DISTINCT CONVERT(VARCHAR(20),MAX(IRKEY)) IRKEY FROM FORMS..IR_PARTICULARS WHERE
 AADHAR_NO !='' AND AADHAR_NO=CONVERT(VARCHAR(20),IDPROOF))  ELSE '' END IRFORM FROM #TEMP ORDER BY RELEASE_DATE DESC";
 
-$sql6="SELECT 'ACCUSED RELEASED FROM: '+'$f_date'+' TO: '+'$t_date' AS PHONE";
+    $sql6 = "SELECT 'ACCUSED RELEASED FROM: '+'$f_date'+' TO: '+'$t_date' AS PHONE";
 
+    sqlsrv_query($conn, $sql1);
+    $st2 = sqlsrv_query($conn, $sql2);
+    $st6 = sqlsrv_query($conn, $sql6);
 
-$st1 = sqlsrv_query( $conn, $sql1 );
-$st2 = sqlsrv_query( $conn, $sql2 );
-$st6 = sqlsrv_query( $conn, $sql6 );
+    $banner = 'ACCUSED RELEASED FROM: ' . $f_date . ' TO: ' . $t_date;
+    if ($st6 && ($b = sqlsrv_fetch_array($st6, SQLSRV_FETCH_ASSOC))) {
+        $banner = (string) ($b['PHONE'] ?? $banner);
+    }
+    $rows = cdat_sum_fetch_all($st2);
 
-while( $row = sqlsrv_fetch_array( $st6, SQLSRV_FETCH_ASSOC) ) {
-echo "<font size=4 face=verdana color='#F9FBFC'><td><center><b>". $row['PHONE'] ."<center></td></font></br>";
+    if (empty($rows)) {
+        cdat_sum_empty_state('No JRMS records found for that date range.');
+    } else {
+        cdat_sum_results_open();
+        cdat_sum_report_banner($banner);
+        cdat_sum_generic_table_open(
+            'JRMS Datewise Search',
+            ['CIN', 'UNIQUE_KEY', 'IRKEY', 'PSARRESTED', 'NAME', 'FATHERSNAME', 'CRIMENOS', 'HEADOFCRIME', 'PHONE', 'IDPROOF', 'ADDR_DURING_RELEASE', 'JAILNAME', 'ADD_TO_JAIL', 'RELEASEDT', 'IMAGE', 'IRFORM'],
+            'results_table',
+            'jrms_datewise.csv',
+            count($rows)
+        );
+        foreach ($rows as $row) {
+            $phone = (string) ($row['PHONE'] ?? '');
+            $irForm = (string) ($row['IRFORM'] ?? '');
+            cdat_sum_table_row([
+                (string) ($row['CIN'] ?? ''),
+                (string) ($row['UNIQUE_KEY'] ?? ''),
+                (string) ($row['IRKEY'] ?? ''),
+                (string) ($row['PSARRESTED'] ?? ''),
+                (string) ($row['NAME'] ?? ''),
+                (string) ($row['FATHERSNAME'] ?? ''),
+                (string) ($row['CRIMENOS'] ?? ''),
+                (string) ($row['HEADOFCRIME'] ?? ''),
+                ['html' => '<a href="cdatcnts2.php?PHONE_NO=' . cdat_sum_h(urlencode($phone)) . '">' . cdat_sum_h($phone) . '</a>', 'class' => 'sum-cell-num'],
+                (string) ($row['IDPROOF'] ?? ''),
+                ['html' => cdat_sum_address_lines((string) ($row['ADDR_DURING_RELEASE'] ?? '')) ?: '—', 'class' => 'sum-address-cell'],
+                (string) ($row['JAILNAME'] ?? ''),
+                ['text' => (string) ($row['ADD_TO_JAIL'] ?? ''), 'class' => 'sum-cell-date'],
+                ['text' => (string) ($row['RELEASE_DATE'] ?? ''), 'class' => 'sum-cell-date'],
+                ['html' => cdat_sum_img_html($row['PHOTO'] ?? '', 100, 100), 'class' => 'sum-cell-img'],
+                ['html' => $irForm !== '' ? '<a href="ir.php?IRKEY=' . cdat_sum_h(urlencode($irForm)) . '">' . cdat_sum_h($irForm) . '</a>' : ''],
+            ]);
+        }
+        cdat_sum_generic_table_close();
+        cdat_sum_results_close();
+    }
+    sqlsrv_close($conn);
+
+    if ($isAjax) {
+        exit;
+    }
+    cdat_sum_page_close();
+    layout_end();
+    exit;
 }
-echo "<table border=1 cellspacing=0 cellpadding=5>
-<tr>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>CIN</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>UNIQUE_KEY</font></th>
-<th bgcolor=#921215><font size=4 face=verdana color='#F9FBFC'>IRKEY</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>PSARRESTED</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>NAME</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>FATHERSNAME</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>CRIMENOS</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>HEADOFCRIME</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>PHONE</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>IDPROOF</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>ADDR_DURING_RELEASE</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>JAILNAME</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>ADD_TO_JAIL</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>RELEASEDT</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>IMAGE</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>IRFORM</font></th>
-</tr>";
 
-while( $row = sqlsrv_fetch_array( $st2, SQLSRV_FETCH_ASSOC) ) {
-echo "<tr>";
-echo "<td width=25px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['CIN'] ."<center></font></td>";
-echo "<td width=25px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['UNIQUE_KEY'] ."<center></font></td>";
-echo "<td width=25px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['IRKEY'] ."<center></font></td>";
-echo "<td width=25px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['PSARRESTED'] ."<center></font></td>";
-echo "<td width=10px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['NAME'] ."<center></font></td>";
-echo "<td width=10px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['FATHERSNAME'] ."<center></font></td>";
-echo "<td width=10px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['CRIMENOS'] ."<center></font></td>";
-echo "<td width=10px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['HEADOFCRIME'] ."<center></font></td>";
-echo "<td width=10px bgcolor=#AED1F1><font size=1 face=verdana><center><a href=".'cdatcnts2.php?PHONE_NO='.($row['PHONE']).">". $row['PHONE'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['IDPROOF'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['ADDR_DURING_RELEASE'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['JAILNAME'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana>". $row['ADD_TO_JAIL'] ."</font></td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana>". $row['RELEASE_DATE'] ."</font></td>";
-echo "<td>";?> <?php echo '<img  height="100" width="100" src="'.cdat_base64_image_src($row['PHOTO']).'"></img>' ?> <?php "</td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center><a href=".'ir.php?IRKEY='.($row['IRFORM']).">". $row['IRFORM'] ."</font></td>";
-echo "</tr>";
-
-
-}
-echo"</table>";
-
-?>
-<?php endif; ?>
-<?php layout_end(); ?>
+layout_begin('JRMS Datewise Search Uniqueness');
+cdat_sum_page_open();
+cdat_sum_search_card(
+    'Jail Release Between Dates',
+    'Search JRMS records released between two dates.',
+    'jrms_datewise_search_uniqueness.php',
+    cdat_sum_field_date('FROM_DT', 'Date From', 'datepickerID')
+        . cdat_sum_field_date('TO_DT', 'To', 'datepickerID1'),
+    'BTN_SUM',
+    'Submit'
+);
+cdat_sum_page_close();
+layout_end();

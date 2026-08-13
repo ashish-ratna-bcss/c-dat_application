@@ -1,15 +1,11 @@
 <?php
 require_once __DIR__ . '/includes/layout.php';
-layout_begin("JRMS Uniqueness Update");
-?>
+require_once __DIR__ . '/includes/sum_ui.php';
 
-<table>
-        <tr>
-          <th width="1126" align="center" scope="col">JRMS</th>
-        </tr>
-</table>
-<?php
-$serverName = "CPHYDERABAD1\DAU_HYD_2023";
+layout_begin('JRMS Uniqueness Update');
+cdat_sum_page_open();
+
+$serverName = "CPHYDERABAD1\\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"JRMS");
 $conn = sqlsrv_connect( $serverName, $connectionInfo );
 if( $conn === false ) {
@@ -58,9 +54,14 @@ $HEADOFCRIME=$row['HEADOFCRIME'];
 $PSARRESTED=$row['PSARRESTED'];
 $DISTRICT=$row['DISTRICT'];
 }
+
+cdat_sum_entry_card_open(
+    'JRMS Uniqueness Update',
+    'Update an existing JRMS uniqueness record.',
+    'jrms_uniqueness_update_php.php'
+);
 ?>
 
-<form action="jrms_uniqueness_update_php.php" Method="post">
 <div>RECORD_KEY:</div><SELECT name="AUTO_KEY" required="required">
 <option value="<?php echo $AUTO_KEY ?>"><?php echo $AUTO_KEY ?></option>
 </SELECT><br/><br/>
@@ -219,8 +220,8 @@ $DISTRICT=$row['DISTRICT'];
 <option value=""></option><option value="GUNTUR RURAL"> GUNTUR RURAL</option><option value="TIRUPATI URBAN"> TIRUPATI URBAN</option><option value="VIZINAGADRAM"> VIZINAGADRAM</option><option value="WARANGAL URBAN"> WARANGAL URBAN</option><option value="GRP SECUNDERABAD"> GRP SECUNDERABAD</option><option value="VISAKHAPATNAM"> VISAKHAPATNAM</option><option value="KRISHNA"> KRISHNA</option><option value="RACHAKONDA"> RACHAKONDA</option><option value="Hyderabad"> Hyderabad</option><option value="HYDERABAD CITY"> HYDERABAD CITY</option><option value="MAHABUBNAGAR"> MAHABUBNAGAR</option><option value="WEST GODAVARI"> WEST GODAVARI</option><option value="NALAGONDA"> NALAGONDA</option><option value="PRAKASAM "> PRAKASAM </option><option value="EAST GODAVARI"> EAST GODAVARI</option><option value="Cyberabad"> Cyberabad</option><option value="ADILABAD"> ADILABAD</option><option value="GRP GUNTAKAL"> GRP GUNTAKAL</option><option value="KURNOOL"> KURNOOL</option><option value="KARIMNAGAR"> KARIMNAGAR</option><option value="ANANTAPUR"> ANANTAPUR</option><option value="VISAKHAPATNAM CITY"> VISAKHAPATNAM CITY</option><option value="VIJAYAWADA CITY"> VIJAYAWADA CITY</option><option value="SIDDIPET"> SIDDIPET</option><option value="NALGONDA"> NALGONDA</option><option value="MEDAK"> MEDAK</option><option value="KHAMMAM"> KHAMMAM</option><option value="NELLORE"> NELLORE</option><option value="SRIKAKULAM"> SRIKAKULAM</option><option value="SANGAREDDY"> SANGAREDDY</option><option value="SURYAPET"> SURYAPET</option><option value="PEDDAPALLY"> PEDDAPALLY</option><option value="NIZAMABAD"> NIZAMABAD</option><option value="GUNTUR URBAN"> GUNTUR URBAN</option><option value="ASIFABAD"> ASIFABAD</option><option value="KOMARAM BHEEM"> KOMARAM BHEEM</option><option value="KADAPA"> KADAPA</option><option value="CHITTOOR"> CHITTOOR</option><option value="WARANGAL RURAL"> WARANGAL RURAL</option><option value="CYBERBAD"> CYBERBAD</option><option value="MAHABOOBNAGAR"> MAHABOOBNAGAR</option><option value="RANGAREDDY"> RANGAREDDY</option><option value="MANCHERIAL"> MANCHERIAL</option><option value="JAGITIAL"> JAGITIAL</option><option value="VIJAYAWADA">VIJAYAWADA</option><option value="RAJAHMUNDRY URBAN"> RAJAHMUNDRY URBAN</option><option value="NAGARKURNOOL"> NAGARKURNOOL</option><option value="WARANGAL"> WARANGAL</option><option value="MAHABUBABAD"> MAHABUBABAD</option><option value="WANAPARTHY"> WANAPARTHY</option><option value="NIRMAL"> NIRMAL</option><option value="GADWAL"> GADWAL</option><option value="VIKARABAD"> VIKARABAD</option><option value="KAMAREDDY"> KAMAREDDY</option><option value="OTHER"> OTHER</option><option value="RAJANNA SIRCILLA"> RAJANNA SIRCILLA</option>
 </SELECT>
 <br/><br/>
-<input type="submit" value="UPDATE">
-<br/><br/>
-</form>
 
-<?php layout_end(); ?>
+<?php
+cdat_sum_entry_card_close('UPDATE');
+cdat_sum_page_close();
+layout_end();

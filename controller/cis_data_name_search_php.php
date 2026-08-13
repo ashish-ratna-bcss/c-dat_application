@@ -1,75 +1,73 @@
 <?php
 require_once __DIR__ . '/includes/layout.php';
-layout_begin("Cis Data Name Search Php");
-?>
+require_once __DIR__ . '/includes/sum_ui.php';
 
-<li><a href="jrms.php"><font color=#FDEFEF>Back</a></li>
-<script>
-function bigImg(x) { 
-x.style.height="300px";
-x.style.width="300px";
+$isAjax = cdat_sum_is_ajax();
+if (!$isAjax) {
+    layout_begin('Cis Data Name Search Php');
+    cdat_sum_page_open();
+    cdat_sum_back_link('cis_data_name_search.php');
 }
-function normalImg(x) { 
-x.style.height="100px";
-x.style.width="100px";
-}
-</script>
-<?php
-$serverName = "CPHYDERABAD1\DAU_HYD_2023";
-$connectionInfo = array( "Database"=>"CDATDUPL");
-$conn = sqlsrv_connect( $serverName, $connectionInfo );
-if( $conn === false ) {
-    die( print_r( sqlsrv_errors(), true));
+
+$serverName = "CPHYDERABAD1\\DAU_HYD_2023";
+$connectionInfo = array("Database" => "CDATDUPL");
+$conn = sqlsrv_connect($serverName, $connectionInfo);
+if ($conn === false) {
+    die(print_r(sqlsrv_errors(), true));
 }
 $NAME = $_POST['NAME'];
-$POLICE_STATION= $_POST['POLICE_STATION'];
-$DISTRICT= $_POST['DISTRICT'];
+$POLICE_STATION = $_POST['POLICE_STATION'];
+$DISTRICT = $_POST['DISTRICT'];
 
-
-$sql1 ="SELECT DISTINCT  Fir_No, POLICE_STATION, District, Name, FatherName, Age, Caste, Present_Add, 
+$sql1 = "SELECT DISTINCT  Fir_No, POLICE_STATION, District, Name, FatherName, Age, Caste, Present_Add, 
 Premenant_Add, folder_name, picture_name, PATH, image FROM CIS_DATA_BASE..CIS_COMPLETE_DATA
 WHERE POLICE_STATION LIKE '%'+'$POLICE_STATION'+'%' AND DISTRICT LIKE '%'+'$DISTRICT'+'%' AND NAME LIKE '%'+'$NAME'+'%' ";
 
+$sql6 = "SELECT 'ACCUSED ARRESTED FROM ' + '$POLICE_STATION' +' OF '+ '$DISTRICT' +' DISTRICT '+' BY NAME '+'$NAME' AS PHONE";
 
+$st1 = sqlsrv_query($conn, $sql1);
+$st6 = sqlsrv_query($conn, $sql6);
 
-$sql6="SELECT 'ACCUSED ARRESTED FROM ' + '$POLICE_STATION' +' OF '+ '$DISTRICT' +' DISTRICT '+' BY NAME '+'$NAME' AS PHONE";
-
-
-$st1 = sqlsrv_query( $conn, $sql1 );
-$st6 = sqlsrv_query( $conn, $sql6 );
-
-while( $row = sqlsrv_fetch_array( $st6, SQLSRV_FETCH_ASSOC) ) {
-echo "<font size=4 face=verdana color='#F9FBFC'><td><center><b>". $row['PHONE'] ."<center></td></font></br>";
+$banner = 'ACCUSED ARRESTED FROM ' . $POLICE_STATION . ' OF ' . $DISTRICT . ' DISTRICT BY NAME ' . $NAME;
+if ($st6 && ($b = sqlsrv_fetch_array($st6, SQLSRV_FETCH_ASSOC))) {
+    $banner = (string) ($b['PHONE'] ?? $banner);
 }
-echo "<table border=1 cellspacing=0 cellpadding=5>
-<tr>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>FIR_NO</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>POLICE_STATION</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>DISTRICT</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>NAME</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>FATHERNAME</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>AGE</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>CASTE</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>PRESENT_ADD</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>PERMANANT_ADD</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>IMAGE</font></th>
-</tr>";
+$rows = cdat_sum_fetch_all($st1);
 
-while( $row = sqlsrv_fetch_array( $st1, SQLSRV_FETCH_ASSOC) ) {
-echo "<tr>";
-echo "<td width=25px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['Fir_No'] ."<center></font></td>";
-echo "<td width=10px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['POLICE_STATION'] ."<center></font></td>";
-echo "<td width=10px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['District'] ."<center></font></td>";
-echo "<td width=10px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['Name'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['FatherName'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['Age'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['Caste'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana>". $row['Present_Add'] ."</font></td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana>". $row['Premenant_Add'] ."</font></td>";
-echo "<td height=100 width=100px>";?> <?php echo '<img onmouseover="bigImg(this)" onmouseout="normalImg(this)" height="100" width="100" src="'.cdat_base64_image_src($row['image']).'"></img>' ?> <?php "</td>";
-
+cdat_sum_results_open();
+cdat_sum_report_banner($banner);
+if (empty($rows)) {
+    cdat_sum_empty_state('No CIS records found.');
+} else {
+    cdat_sum_generic_table_open(
+        'CIS Data Name Search',
+        ['FIR_NO', 'POLICE_STATION', 'DISTRICT', 'NAME', 'FATHERNAME', 'AGE', 'CASTE', 'PRESENT_ADD', 'PERMANANT_ADD', 'IMAGE'],
+        'results_table',
+        'cis_name_search.csv',
+        count($rows)
+    );
+    foreach ($rows as $row) {
+        cdat_sum_table_row([
+            (string) ($row['Fir_No'] ?? ''),
+            (string) ($row['POLICE_STATION'] ?? ''),
+            (string) ($row['District'] ?? ''),
+            (string) ($row['Name'] ?? ''),
+            (string) ($row['FatherName'] ?? ''),
+            ['text' => (string) ($row['Age'] ?? ''), 'class' => 'sum-cell-num'],
+            (string) ($row['Caste'] ?? ''),
+            ['html' => cdat_sum_address_lines((string) ($row['Present_Add'] ?? '')) ?: '—', 'class' => 'sum-address-cell'],
+            ['html' => cdat_sum_address_lines((string) ($row['Premenant_Add'] ?? '')) ?: '—', 'class' => 'sum-address-cell'],
+            ['html' => cdat_sum_img_html($row['image'] ?? '', 100, 100), 'class' => 'sum-cell-img'],
+        ]);
+    }
+    cdat_sum_generic_table_close();
 }
-echo"</table>";
+cdat_sum_results_close();
 
-?>
-<?php layout_end(); ?>
+sqlsrv_close($conn);
+
+if ($isAjax) {
+    exit;
+}
+cdat_sum_page_close();
+layout_end();

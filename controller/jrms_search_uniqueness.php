@@ -1,175 +1,28 @@
 <?php
-// One page for both halves of this screen: the form, and the results.
-// Was view/jrms_search_uniqueness.html (form) + controller/jrms_search_uniqueness.php (handler).
-// GET shows the form; a submit renders the form and the results below it.
-// !empty($_GET) covers links that pass parameters in the query string.
-$__submitted = ($_SERVER['REQUEST_METHOD'] === 'POST') || !empty($_GET);
-?>
-<?php
 require_once __DIR__ . '/includes/layout.php';
-layout_begin("JRMS Search Uniqueness");
-?>
+require_once __DIR__ . '/includes/sum_ui.php';
 
-<div align="center">
-  <table width="1323" height="603" border="2">
-    <tr>
-      <td width="1349" height="595" align="left" valign="top"><table width="1313" height="140">
-        <tr>
-          <td width="1265" height="130" align="center" valign="bottom" background="../assets/images/topborder.jpg"><ul id="MenuBar1" class="MenuBarHorizontal">      </table>
-      <p>&nbsp;</p>
-      <table width="800" height="250" align="center">
-        <tr>
-          <th height="31" align="center" valign="middle" background="../assets/images/border.jpg" scope="col">JAIL RELEASE SEARCH</th>
-        </tr>
-        <tr>
-          <th width="782" align="center" valign="middle" background="../assets/images/border.jpg" scope="col"><form id="form1" name="form1" method="post" action="jrms_search_uniqueness.php">
-                     
-              Accused Name:
-<input type="text" name="NAME" id="NAME" size="10" />
-              Father Name:
-<input type="text" name="FATHER_NAME" id="NAME" size="10" />
-</br>
-or
-</br>
-Phone:
-<input type="text" name="PHONE" id="NAME" size="10" />
-</br>
-or
-</br>
-Aadhaar Number:
-<input type="text" name="AADHAAR_NO" id="NAME" size="10" />
-</br>
-or
-</br>
-Voter ID:
-<input type="text" name="VOTER_ID" id="NAME" size="10" />
-</br>
-</br>
-              <input type="submit" name="BTN_SUM" id="BTN_SUM" value="Submit" />     
-          </form></th>
-        </tr>
-     </table>
+$name = trim((string) ($_POST['NAME'] ?? ''));
+$father = trim((string) ($_POST['FATHER_NAME'] ?? ''));
+$phone = trim((string) ($_POST['PHONE'] ?? ''));
+$aadhaar = trim((string) ($_POST['AADHAAR_NO'] ?? ''));
+$voter = trim((string) ($_POST['VOTER_ID'] ?? ''));
 
+$fieldsHtml = cdat_sum_field_text('NAME', 'Accused Name', $name, 'NAME', 'Accused name', false)
+            . cdat_sum_field_text('FATHER_NAME', 'Father Name', $father, 'FATHER_NAME', 'Father name', false)
+            . cdat_sum_field_text('PHONE', 'Phone', $phone, 'PHONE', 'Phone', false, 'tel')
+            . cdat_sum_field_text('AADHAAR_NO', 'Aadhaar Number', $aadhaar, 'AADHAAR_NO', 'Aadhaar number', false)
+            . cdat_sum_field_text('VOTER_ID', 'Voter ID', $voter, 'VOTER_ID', 'Voter ID', false);
 
-<?php if ($__submitted): ?>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>Untitled Document</title>
-<link rel="stylesheet" type="text/css" href="../assets/vendor/jquery-ui-1.10.4.custom/css/dark-hive/jquery-ui-1.10.4.custom.min.css">
-<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-1.10.2.js"></script>
-<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.js"></script>
-<script type="text/javascript" src="../assets/vendor/jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.min.js"></script>
-<script type="text/javascript">
-$("document").ready(function() {
-	$("#datepickerID").datepicker({dateFormat: "yy-mm-dd",
-		changeYear: true,
-		changeMonth: true,
-	}) 
-	$("#datepickerID1").datepicker({dateFormat: "yy-mm-dd",
-		changeYear: true,
-		changeMonth: true,
-	})    
-	
-});
-</script>
-
-
-
-<style type="text/css">
-	
-body,td,th {
-	font-family: Arial, Helvetica, sans-serif;
-}
-</style>
-
-
-
-
-<?php
-require_once("dbcontroller.php");
-$db_handle = new DBController();
-$query ="SELECT distinct HEADOFCRIME FROM JRMS..JRMS_TOTAL_2012_TO_2017 
-WHERE HEADOFCRIME!='' ORDER BY HEADOFCRIME";
-$results = $db_handle->runQuery($query);
-?>
-<div align="center">
-  <table width="1323" height="100" border="2">
-    <tr>
-      <td width="1349" height="595" align="left" valign="top"><table width="1313" height="148">
-        <tr>
-          <td width="1265" height="134" align="center" valign="bottom" background="../assets/images/topborder.jpg"><ul id="MenuBar1" class="MenuBarHorizontal">
-            <li><a href="home.php">Home</a>              </li>
-            <li><a href="#" class="MenuBarItemSubmenu">Summary</a>
-              <ul>
-                <li><a href="sum_home.php">Summary Total</a></li>
-                <li><a href="sum_between_dates.php">Summary Between Dates</a></li>
-                <li><a href="sum_isd_cnts.php">Summary of ISD Contacts</a></li>
-                <li><a href="sum_new_nos.php">Summary of New Contacts</a></li>
-                <li><a href="sum_in_state.php">Summary Within a State</a></li>
-                <li><a href="sum_out_state.php">Summary other than a state</a></li>
-              </ul>
-            </li>
-            <li><a href="#" class="MenuBarItemSubmenu">Call Details</a>
-              <ul>
-                <li><a href="movements.php"> MOVEMENTS </a></li>
-		<li><a href="movements_between_two_numbers.php">Movements Btwn Two Nos</a></li>
-		<li><a href="movements_between_two_numbers_comparision.php">Movements Btwn Two Nos Comparision</a></li> 
-		<!----<li><a href="calls_tot.php">Call Details Total</a></li>--->
-                <li><a href="calls_btwn_dates.php">Calls Between Dates</a></li>
-                <!----<li><a href="calls_bt_nos.php">Calls Between Two Numbers</a></li>---->
-              </ul>
-            </li>
-            <li><a href="#" class="MenuBarItemSubmenu">Cdat</a>
-              <ul>
-                <li><a href="cdatcnts.php">Cdat Cnts</a></li>
-		<li><a href="bulk_cdat_contacts.php">Bulk Cdat Contacts</a></li>
-		<li><a href="otherscdat.php">Others Cdat</a></li>
-              </ul>
-            </li>
-            <li><a href="#" class="MenuBarItemSubmenu">Imei Search</a>
-              <ul>
-                <li><a href="imeisearch.php">Phones used in Imei</a></li>
-                <li><a href="imeisinphone.php">Imeis used in phone</a></li>
-              </ul>
-            </li>
-            <li><a href="#" class="MenuBarItemSubmenu">Address</a>
-              <ul>
-                <li><a href="address.php">Single Address</a></li>
-                <li><a href="bulkaddress.php">Bulk Addresses</a></li>
-              </ul>
-            </li>
-             <li><a href="#" class="MenuBarItemSubmenu">Day Night Loc</a>
-               <ul>
-                <li><a href="../view/day%26nightloc.html">Top 10 Day Night Loc</a></li>
-                <li><a href="../view/day%26nightloc_btwn_dates.html">Top 10 Day Night Loc Between Dates</a></li>
-                  </ul>
-                </li>
-                <li><a href="#" class="MenuBarItemSubmenu">Wanted</a>
-                  <ul>
-                    <li><a href="wanted1.php">List - 1</a></li>
-                  </ul>
-                </li>
-            <li><a href="#" class="MenuBarItemSubmenu">Others</a>
-              <ul>
-                <li><a href="cellid_search.php">Cellid Search</a></li>
-                <li><a href="vehicle_search.php">Vehicle Search</a></li>
-                <li><a href="common_cnts.php">Common Cnts</a></li>
-                </ul>
-            </li>
-          </ul></td>
-        </tr>
-
-  </table>
-      <p>&nbsp;</p>
-<table width="1021" height="163" align="center">
-        <tr>
-          <th height="31" align="center" valign="middle" background="../assets/images/border.jpg" scope="col">JAIL RELEASE SEARCH</th>
-        </tr>
-        <tr>
-          <th width="782" align="center" valign="middle" background="../assets/images/border.jpg" scope="col"></th>
-        </tr>
-     
- 
-
-
-<?php endif; ?>
-<?php layout_end(); ?>
+layout_begin('JRMS Search Uniqueness');
+cdat_sum_page_open();
+cdat_sum_search_card(
+    'Jail Release Search',
+    'Search by name, father name, phone, Aadhaar, or voter ID.',
+    'jrms_search_uniqueness.php',
+    $fieldsHtml,
+    'BTN_SUM',
+    'Submit'
+);
+cdat_sum_page_close();
+layout_end();

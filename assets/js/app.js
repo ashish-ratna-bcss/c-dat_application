@@ -983,9 +983,9 @@
         }
         input.classList.add('sum-date-input');
         if (!input.getAttribute('placeholder')) input.setAttribute('placeholder', 'yyyy-mm-dd');
-        if (!input.getAttribute('pattern')) input.setAttribute('pattern', '^\\d{4}-\\d{2}-\\d{2}$');
         if (!input.getAttribute('autocomplete')) input.setAttribute('autocomplete', 'off');
-        input.setAttribute('inputmode', 'numeric');
+        input.setAttribute('readonly', 'readonly');
+        input.setAttribute('inputmode', 'none');
 
         var wrap = document.createElement('div');
         wrap.className = 'sum-dp';
@@ -1007,9 +1007,15 @@
 
         var view = parseYmd(input.value) || new Date();
         view = new Date(view.getFullYear(), view.getMonth(), 1);
+        var mode = 'days';
+        var yearPageStart = null;
+
+        var YEAR_MIN = 1950;
+        var YEAR_MAX = new Date().getFullYear() + 10;
 
         function closePanel() {
             wrap.classList.remove('is-open');
+            mode = 'days';
         }
 
         function openPanel() {
@@ -1021,8 +1027,15 @@
             });
             var current = parseYmd(input.value);
             if (current) view = new Date(current.getFullYear(), current.getMonth(), 1);
+            mode = 'days';
             wrap.classList.add('is-open');
             render();
+        }
+
+        function setValue(d) {
+            input.value = d ? formatYmd(d) : '';
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            input.dispatchEvent(new Event('change', { bubbles: true }));
         }
 
         function render() {
@@ -1030,34 +1043,67 @@
             var today = new Date();
             var y = view.getFullYear();
             var m = view.getMonth();
-            var firstDow = new Date(y, m, 1).getDay();
-            var daysInMonth = new Date(y, m + 1, 0).getDate();
-
             var html = '';
-            html += '<div class="sum-dp__head">';
-            html += '<button type="button" class="sum-dp__nav" data-nav="-1" aria-label="Previous month">&lsaquo;</button>';
-            html += '<div class="sum-dp__title">' + MONTHS[m] + ' ' + y + '</div>';
-            html += '<button type="button" class="sum-dp__nav" data-nav="1" aria-label="Next month">&rsaquo;</button>';
-            html += '</div>';
-            html += '<div class="sum-dp__dow">';
-            DOW.forEach(function(d) { html += '<span>' + d + '</span>'; });
-            html += '</div><div class="sum-dp__grid">';
 
-            var i;
-            for (i = 0; i < firstDow; i++) {
-                html += '<span class="sum-dp__day is-empty"></span>';
-            }
-            for (var day = 1; day <= daysInMonth; day++) {
-                var cls = 'sum-dp__day';
-                if (selected && selected.getFullYear() === y && selected.getMonth() === m && selected.getDate() === day) {
-                    cls += ' is-selected';
-                }
-                if (today.getFullYear() === y && today.getMonth() === m && today.getDate() === day) {
-                    cls += ' is-today';
-                }
-                html += '<button type="button" class="' + cls + '" data-day="' + day + '">' + day + '</button>';
+            html += '<div class="sum-dp__head">';
+            html += '<button type="button" class="sum-dp__nav" data-nav="-1" aria-label="Previous">&lsaquo;</button>';
+            html += '<div class="sum-dp__selects">';
+            if (mode === 'days') {
+                html += '<button type="button" class="sum-dp__switch" data-mode="months">' + MONTHS[m] + '</button>';
+                html += '<button type="button" class="sum-dp__switch" data-mode="years">' + y + '</button>';
+            } else if (mode === 'months') {
+                html += '<button type="button" class="sum-dp__switch" data-mode="years">' + y + '</button>';
+            } else {
+                var start = yearPageStart != null ? yearPageStart : (y - (y % 12));
+                html += '<span class="sum-dp__range">' + start + ' – ' + Math.min(start + 11, YEAR_MAX) + '</span>';
             }
             html += '</div>';
+            html += '<button type="button" class="sum-dp__nav" data-nav="1" aria-label="Next">&rsaquo;</button>';
+            html += '</div>';
+
+            if (mode === 'months') {
+                html += '<div class="sum-dp__month-grid">';
+                MONTHS.forEach(function(name, idx) {
+                    var cls = 'sum-dp__pick' + (idx === m ? ' is-selected' : '');
+                    html += '<button type="button" class="' + cls + '" data-pick-month="' + idx + '">' + name.slice(0, 3) + '</button>';
+                });
+                html += '</div>';
+            } else if (mode === 'years') {
+                if (yearPageStart == null) yearPageStart = y - (y % 12);
+                html += '<div class="sum-dp__year-grid">';
+                for (var i = 0; i < 12; i++) {
+                    var yr = yearPageStart + i;
+                    if (yr < YEAR_MIN || yr > YEAR_MAX) {
+                        html += '<span class="sum-dp__pick is-empty"></span>';
+                        continue;
+                    }
+                    var cls = 'sum-dp__pick' + (yr === y ? ' is-selected' : '');
+                    html += '<button type="button" class="' + cls + '" data-pick-year="' + yr + '">' + yr + '</button>';
+                }
+                html += '</div>';
+            } else {
+                var firstDow = new Date(y, m, 1).getDay();
+                var daysInMonth = new Date(y, m + 1, 0).getDate();
+                html += '<div class="sum-dp__dow">';
+                DOW.forEach(function(d) { html += '<span>' + d + '</span>'; });
+                html += '</div><div class="sum-dp__grid">';
+                var d;
+                for (d = 0; d < firstDow; d++) {
+                    html += '<span class="sum-dp__day is-empty"></span>';
+                }
+                for (var day = 1; day <= daysInMonth; day++) {
+                    var cls = 'sum-dp__day';
+                    if (selected && selected.getFullYear() === y && selected.getMonth() === m && selected.getDate() === day) {
+                        cls += ' is-selected';
+                    }
+                    if (today.getFullYear() === y && today.getMonth() === m && today.getDate() === day) {
+                        cls += ' is-today';
+                    }
+                    html += '<button type="button" class="' + cls + '" data-day="' + day + '">' + day + '</button>';
+                }
+                html += '</div>';
+            }
+
             html += '<div class="sum-dp__foot">';
             html += '<button type="button" class="sum-dp__today" data-today="1">Today</button>';
             html += '<button type="button" class="sum-dp__clear" data-clear="1">Clear</button>';
@@ -1065,55 +1111,98 @@
             panel.innerHTML = html;
         }
 
+        wrap.addEventListener('mousedown', function(e) {
+            e.stopPropagation();
+        });
+        wrap.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+
         panel.addEventListener('click', function(e) {
+            e.stopPropagation();
             var t = e.target.closest('button');
             if (!t) return;
             e.preventDefault();
+
+            if (t.dataset.mode) {
+                mode = t.dataset.mode;
+                if (mode === 'years') yearPageStart = view.getFullYear() - (view.getFullYear() % 12);
+                render();
+                return;
+            }
             if (t.dataset.nav) {
-                view = new Date(view.getFullYear(), view.getMonth() + Number(t.dataset.nav), 1);
+                var step = Number(t.dataset.nav);
+                if (mode === 'years') {
+                    yearPageStart = (yearPageStart != null ? yearPageStart : (view.getFullYear() - (view.getFullYear() % 12))) + (step * 12);
+                    if (yearPageStart < YEAR_MIN - 11) yearPageStart = YEAR_MIN - (YEAR_MIN % 12);
+                    if (yearPageStart > YEAR_MAX) yearPageStart = YEAR_MAX - (YEAR_MAX % 12);
+                    render();
+                    return;
+                }
+                if (mode === 'months') {
+                    view = new Date(view.getFullYear() + step, view.getMonth(), 1);
+                    render();
+                    return;
+                }
+                view = new Date(view.getFullYear(), view.getMonth() + step, 1);
+                render();
+                return;
+            }
+            if (t.dataset.pickMonth != null) {
+                view = new Date(view.getFullYear(), Number(t.dataset.pickMonth), 1);
+                mode = 'days';
+                render();
+                return;
+            }
+            if (t.dataset.pickYear != null) {
+                view = new Date(Number(t.dataset.pickYear), view.getMonth(), 1);
+                mode = 'months';
                 render();
                 return;
             }
             if (t.dataset.today) {
                 var now = new Date();
-                input.value = formatYmd(now);
-                input.dispatchEvent(new Event('input', { bubbles: true }));
-                input.dispatchEvent(new Event('change', { bubbles: true }));
+                setValue(now);
                 closePanel();
                 return;
             }
             if (t.dataset.clear) {
-                input.value = '';
-                input.dispatchEvent(new Event('input', { bubbles: true }));
-                input.dispatchEvent(new Event('change', { bubbles: true }));
+                setValue(null);
                 closePanel();
                 return;
             }
             if (t.dataset.day) {
-                var picked = new Date(view.getFullYear(), view.getMonth(), Number(t.dataset.day));
-                input.value = formatYmd(picked);
-                input.dispatchEvent(new Event('input', { bubbles: true }));
-                input.dispatchEvent(new Event('change', { bubbles: true }));
+                setValue(new Date(view.getFullYear(), view.getMonth(), Number(t.dataset.day)));
                 closePanel();
             }
         });
 
-        triggerBtn.addEventListener('click', function(e) {
+        function togglePanel(e) {
             e.preventDefault();
+            e.stopPropagation();
             if (wrap.classList.contains('is-open')) closePanel();
             else openPanel();
-        });
+        }
 
-        input.addEventListener('input', function() {
-            this.value = this.value.replace(/[^0-9-]/g, '');
+        triggerBtn.addEventListener('mousedown', togglePanel);
+        input.addEventListener('mousedown', function(e) {
+            e.preventDefault();
+            togglePanel(e);
         });
-
         input.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') closePanel();
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                closePanel();
+            } else if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                togglePanel(e);
+            } else if (e.key.length === 1 || e.key === 'Backspace' || e.key === 'Delete') {
+                e.preventDefault();
+            }
         });
     }
 
-    document.addEventListener('click', function(e) {
+    document.addEventListener('mousedown', function(e) {
         var openSelects = document.querySelectorAll('.sum-ss.is-open');
         Array.prototype.forEach.call(openSelects, function(wrap) {
             if (!wrap.contains(e.target)) {
@@ -1124,9 +1213,7 @@
         });
         var openDates = document.querySelectorAll('.sum-dp.is-open');
         Array.prototype.forEach.call(openDates, function(wrap) {
-            if (!wrap.contains(e.target)) {
-                wrap.classList.remove('is-open');
-            }
+            if (!wrap.contains(e.target)) wrap.classList.remove('is-open');
         });
     });
 

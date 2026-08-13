@@ -1,64 +1,46 @@
 <?php
-// One page for both halves of this screen: the form, and the results.
-// Was view/sum_alldb.htm (form) + controller/sum_alldb.php (handler).
-// GET shows the form; a submit renders the form and the results below it.
-// !empty($_GET) covers links that pass parameters in the query string.
-$__submitted = ($_SERVER['REQUEST_METHOD'] === 'POST') || !empty($_GET);
-?>
-<?php
 require_once __DIR__ . '/includes/layout.php';
-layout_begin("Summary Alldb");
-?>
-<div align="center">
-  <table width="1323" height="603" border="2">
-    <tr>
-      <td width="1349" height="595" align="left" valign="top"><table width="1313" height="148">
-        <tr>
-          <td width="1265" height="134" align="center" valign="bottom" background="../assets/images/topborder.jpg"></td>
-        </tr>
-      </table>
-      <p>&nbsp;</p>
-      <table width="442" height="121" align="center">
-        <tr>
-          <th height="29" align="center" valign="middle" background="../assets/images/border.jpg" scope="col">SUMMARY OF MOBILE NUMBER</th>
-        </tr>
-        <tr>
-          <th align="center" valign="middle" background="../assets/images/border.jpg" scope="col"><form id="form1" name="form1" method="post" action="sum_alldb.php">
-            <label for="SUM" font face="verdana">Mobile No:</label>
-              <input type="text" name="PHONE_NO" id="SUM" placeholder="Enter Mobile No" required="required"/>
-              <input type="submit" name="BTN_SUM" id="BTN_SUM" value="Submit" />
-          </form></th>
-        </tr>
-      </table>
-      <p>&nbsp;</p>
-      <p>&nbsp;</p></td>
-    </tr>
-  </table>
-</div>
+require_once __DIR__ . '/includes/sum_ui.php';
 
+$isAjax = cdat_sum_is_ajax();
+$phone = trim((string) ($_POST['PHONE_NO'] ?? ''));
+$hasSearch = $phone !== '';
+$fieldsHtml = cdat_sum_field_phone($phone);
 
-<?php if ($__submitted): ?>
-<?php
-require_once __DIR__ . '/cdr_enrichment_sql.php';
-$serverName = "CPHYDERABAD1\DAU_HYD_2023";
-$connectionInfo = array( "Database"=>"CDATDUPL");
-$conn = sqlsrv_connect( $serverName, $connectionInfo );
-if( $conn === false ) {
-    die( print_r( sqlsrv_errors(), true));
-}
-$number = $_POST['PHONE_NO'];
+if ($hasSearch) {
+    if (!$isAjax) {
+        layout_begin('Summary Alldb');
+        cdat_sum_page_open();
+        cdat_sum_search_card(
+            'Summary of Mobile Number',
+            'Search IMEI, IMSI, contacts, and day/night locations for a mobile number.',
+            'sum_alldb.php',
+            $fieldsHtml,
+            'BTN_SUM',
+            'Submit'
+        );
+    }
 
-$sql3 ="SELECT * INTO #TT FROM CDAT_DETAILS1 WHERE PHONE='$number'";
+    require_once __DIR__ . '/cdr_enrichment_sql.php';
+    $serverName = "CPHYDERABAD1\\DAU_HYD_2023";
+    $connectionInfo = array("Database" => "CDATDUPL");
+    $conn = sqlsrv_connect($serverName, $connectionInfo);
+    if ($conn === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+    $number = $_POST['PHONE_NO'];
 
-$sqlimei="SELECT DISTINCT IMEINUMBER,CONVERT(VARCHAR,MIN(STARTTIME),20) AS FIRST_CALL,CONVERT(VARCHAR,MAX(STARTTIME),20) AS LAST_CALL,COUNT(*) TOTAL_CALLS  FROM #TT
+    $sql3 = "SELECT * INTO #TT FROM CDAT_DETAILS1 WHERE PHONE='$number'";
+
+    $sqlimei = "SELECT DISTINCT IMEINUMBER,CONVERT(VARCHAR,MIN(STARTTIME),20) AS FIRST_CALL,CONVERT(VARCHAR,MAX(STARTTIME),20) AS LAST_CALL,COUNT(*) TOTAL_CALLS  FROM #TT
 GROUP BY IMEINUMBER ORDER BY TOTAL_CALLS DESC";
 
 
-$sqlimsi="SELECT DISTINCT IMSINUMBER,CONVERT(VARCHAR,MIN(STARTTIME),20) AS FIRST_CALL,CONVERT(VARCHAR,MAX(STARTTIME),20) AS LAST_CALL,COUNT(*) TOTAL_CALLS FROM #TT
+    $sqlimsi = "SELECT DISTINCT IMSINUMBER,CONVERT(VARCHAR,MIN(STARTTIME),20) AS FIRST_CALL,CONVERT(VARCHAR,MAX(STARTTIME),20) AS LAST_CALL,COUNT(*) TOTAL_CALLS FROM #TT
 GROUP BY IMSINUMBER ORDER BY TOTAL_CALLS DESC";
 
 
-$sql4 ="SELECT LTRIM(RTRIM(PHONE)) AS PHONE, LTRIM(RTRIM(OTHER)) AS OTHER, 
+    $sql4 = "SELECT LTRIM(RTRIM(PHONE)) AS PHONE, LTRIM(RTRIM(OTHER)) AS OTHER, 
 SUM(CASE WHEN INCOMING='1' THEN 1 ELSE 0 END) AS 'IN',
 SUM(CASE WHEN INCOMING ='0'THEN 1 ELSE 0 END) AS 'OUT',
 COUNT(PHONE) AS CALLS,SUM(CAST(DURATION AS NUMERIC)) AS DUR, 
@@ -66,11 +48,11 @@ CONVERT(VARCHAR,MIN(STARTTIME),20) AS FIRSTCALL,
 CONVERT(VARCHAR,MAX(STARTTIME),20) AS LASTCALL INTO #RESULT FROM #TT 
 GROUP BY PHONE, OTHER ORDER BY CALLS DESC";
 
-$sql5 ="SELECT * INTO #RESULT1 FROM #RESULT WHERE OTHER NOT LIKE '140%' AND OTHER NOT IN (
+    $sql5 = "SELECT * INTO #RESULT1 FROM #RESULT WHERE OTHER NOT LIKE '140%' AND OTHER NOT IN (
 SELECT DISTINCT OTHER  FROM #RESULT WHERE (CALLS=DUR OR CALLS>DUR)
 AND LEFT(OTHER,1) NOT IN ('9','8','7','G','I'))";
 
-$sql6="SELECT DISTINCT A.PHONE PHONE,CASE WHEN OTHER IN (SELECT PHONE FROM CDATDUPL.DBO.CDATSUSPECT) THEN OTHER+' - '+J.NICKNAME  
+    $sql6 = "SELECT DISTINCT A.PHONE PHONE,CASE WHEN OTHER IN (SELECT PHONE FROM CDATDUPL.DBO.CDATSUSPECT) THEN OTHER+' - '+J.NICKNAME  
 ELSE OTHER END   AS  OTHER,[IN],
 [OUT],CALLS, DUR,
 FIRSTCALL,LASTCALL,
@@ -112,14 +94,14 @@ LEFT JOIN CDATDUPL..CDAT_GAS_DETAILS I ON A.OTHER=I.PHONE
 LEFT JOIN CDATDUPL..CDATSUSPECT J ON A.OTHER=J.PHONE
 ORDER BY DUR DESC";
 
-$sql8="SELECT 'SUMMARY OF MOBILE NO: '+'$number' as PHONE1";
+    $sql8 = "SELECT 'SUMMARY OF MOBILE NO: '+'$number' as PHONE1";
 
-$sql9="SELECT  '$number' AS PHONE,'' AS FIRST_CALL,'' AS LAST_CALL,'' AS NICKNAME,''LAST_UPDATED INTO #T";
+    $sql9 = "SELECT  '$number' AS PHONE,'' AS FIRST_CALL,'' AS LAST_CALL,'' AS NICKNAME,''LAST_UPDATED INTO #T";
 
-$sql10="SELECT A.PHONE,CONVERT(VARCHAR,MIN(STARTTIME),20) AS FIRST_CALL,CONVERT(VARCHAR,MAX(STARTTIME),20) AS LAST_CALL,B.NICKNAME,CONVERT(VARCHAR,MAX(A.ASONDATE),20) AS LAST_UPDATED 
+    $sql10 = "SELECT A.PHONE,CONVERT(VARCHAR,MIN(STARTTIME),20) AS FIRST_CALL,CONVERT(VARCHAR,MAX(STARTTIME),20) AS LAST_CALL,B.NICKNAME,CONVERT(VARCHAR,MAX(A.ASONDATE),20) AS LAST_UPDATED 
 INTO #S FROM CDATDUPL.DBO.CDATPCSUSPECT A LEFT JOIN CDATDUPL.DBO.CDATSUSPECT B ON A.PHONE=B.PHONE WHERE A.PHONE='$number' GROUP BY A.PHONE,B.NICKNAME";
 
-$sql11="SELECT DISTINCT A.PHONE,CASE WHEN A.PHONE=B.PHONE THEN B.FIRST_CALL ELSE A.FIRST_CALL END AS FIRST_CALL,
+    $sql11 = "SELECT DISTINCT A.PHONE,CASE WHEN A.PHONE=B.PHONE THEN B.FIRST_CALL ELSE A.FIRST_CALL END AS FIRST_CALL,
 CASE WHEN A.PHONE=B.PHONE THEN B.LAST_CALL ELSE A.LAST_CALL END AS LAST_CALL,
 CASE WHEN A.PHONE=B.PHONE THEN B.NICKNAME ELSE A.NICKNAME END AS NICKNAME,
 CASE WHEN A.PHONE=B.PHONE THEN B.LAST_UPDATED ELSE A.LAST_UPDATED END AS LAST_UPDATED,
@@ -133,239 +115,243 @@ LEFT JOIN CDATDUPL.DBO.CDATPHONEAREA ON CASE WHEN LEN(A.PHONE)=10 THEN A.PHONE E
 LIKE PHONEPREFIX+'%'
 LEFT JOIN #S B ON  A.PHONE=B.PHONE";
 
-$sql12="SELECT case when count(PHONE)>=1 THEN '' ELSE '*** CDRs NOT AVAILABLE ***' end as PHONE FROM #RESULT";
+    $sql12 = "SELECT case when count(PHONE)>=1 THEN '' ELSE '*** CDRs NOT AVAILABLE ***' end as PHONE FROM #RESULT";
 
 
-$sqlD1 ="SELECT * INTO #DTEMP FROM CDATDUPL.DBO.CDATPCSUSPECT WHERE 
+    $sqlD1 = "SELECT * INTO #DTEMP FROM CDATDUPL.DBO.CDATPCSUSPECT WHERE 
 (CONVERT(CHAR(8),STARTTIME,108)<'22:00:00' AND CONVERT(CHAR(8),STARTTIME,108)>'05:00:00') 
 AND PHONE='$number'";
 
-$sqlD2 = cdr_sql_enrich_location_temp('#DTEMP', '#DTT1');
+    $sqlD2 = cdr_sql_enrich_location_temp('#DTEMP', '#DTT1');
 
-$sqlD4="SELECT DISTINCT PHONE,CELLTOWERID,COUNT(CELLTOWERID) AS CALLS,
+    $sqlD4 = "SELECT DISTINCT PHONE,CELLTOWERID,COUNT(CELLTOWERID) AS CALLS,
 SITEADDRESS AS AREADESCRIPTION,LAT,LONG,AZM INTO #DT FROM #DTT1
 GROUP BY PHONE,CELLTOWERID,SITEADDRESS,LAT,LONG,AZM ORDER BY CALLS DESC";
 
 
-$sqlD5="SELECT TOP 10 * FROM #DT";
+    $sqlD5 = "SELECT TOP 10 * FROM #DT";
 
-$sqlD6="SELECT 'DAY LOCATION OF MOBILE NO: '+'$number' as PHONE1";
+    $sqlD6 = "SELECT 'DAY LOCATION OF MOBILE NO: '+'$number' as PHONE1";
 
-$sqlN7="SELECT 'NIGHT LOCATION OF MOBILE NO: '+'$number' as PHONE1";
+    $sqlN7 = "SELECT 'NIGHT LOCATION OF MOBILE NO: '+'$number' as PHONE1";
 
-$sqlN8 ="SELECT * INTO #DT1 FROM CDATDUPL.DBO.CDATPCSUSPECT WHERE 
+    $sqlN8 = "SELECT * INTO #DT1 FROM CDATDUPL.DBO.CDATPCSUSPECT WHERE 
 (CONVERT(CHAR(8),STARTTIME,108)>'22:00:00' OR CONVERT(CHAR(8),STARTTIME,108)<'07:00:00') 
 AND PHONE='$number'";
 
-$sqlN9 = cdr_sql_enrich_location_temp('#DT1', '#DT3');
+    $sqlN9 = cdr_sql_enrich_location_temp('#DT1', '#DT3');
 
-$sqlN11="SELECT DISTINCT PHONE,CELLTOWERID,COUNT(CELLTOWERID) AS CALLS,
+    $sqlN11 = "SELECT DISTINCT PHONE,CELLTOWERID,COUNT(CELLTOWERID) AS CALLS,
 SITEADDRESS AS AREADESCRIPTION,LAT,LONG,AZM INTO #DT4 FROM #DT3
 GROUP BY PHONE,CELLTOWERID,SITEADDRESS,LAT,LONG,AZM ORDER BY CALLS DESC";
 
-$sqlN12="SELECT TOP 10 * FROM #DT4";
+    $sqlN12 = "SELECT TOP 10 * FROM #DT4";
 
-$stimei = sqlsrv_query( $conn, $sqlimei );
-$stimsi = sqlsrv_query( $conn, $sqlimsi );
-
-
-$st3 = sqlsrv_query( $conn, $sql3 );
-$st4 = sqlsrv_query( $conn, $sql4 );
+    $stimei = sqlsrv_query($conn, $sqlimei);
+    $stimsi = sqlsrv_query($conn, $sqlimsi);
 
 
-$stimei = sqlsrv_query( $conn, $sqlimei );
-$stimsi = sqlsrv_query( $conn, $sqlimsi );
+    $st3 = sqlsrv_query($conn, $sql3);
+    $st4 = sqlsrv_query($conn, $sql4);
 
 
-$st5 = sqlsrv_query( $conn, $sql5 );
-$stmt = sqlsrv_query( $conn, $sql6 );
-$st8 = sqlsrv_query( $conn, $sql8 );
-$st9 = sqlsrv_query( $conn, $sql9 );
-$st10 = sqlsrv_query( $conn, $sql10 );
-$st11 = sqlsrv_query( $conn, $sql11 );
-$st12 = sqlsrv_query( $conn, $sql12 );
+    $stimei = sqlsrv_query($conn, $sqlimei);
+    $stimsi = sqlsrv_query($conn, $sqlimsi);
 
-$stD1 = sqlsrv_query( $conn, $sqlD1 );
-$stD2 = sqlsrv_query( $conn, $sqlD2 );
-$stD4 = sqlsrv_query( $conn, $sqlD4 );
-$stD5 = sqlsrv_query( $conn, $sqlD5 );
-$stD6 = sqlsrv_query( $conn, $sqlD6 );
-$stD7 = sqlsrv_query( $conn, $sqlN7 );
-$stD8 = sqlsrv_query( $conn, $sqlN8 );
-$stD9 = sqlsrv_query( $conn, $sqlN9 );
-$stD11 = sqlsrv_query( $conn, $sqlN11 );
-$stD12 = sqlsrv_query( $conn, $sqlN12 );
 
-while( $row = sqlsrv_fetch_array( $st8, SQLSRV_FETCH_ASSOC) ) {
-echo "<font size=4 face=verdana color='#F9FBFC'><td><center><b>". $row['PHONE1'] ."<center></td></font></br>";
+    $st5 = sqlsrv_query($conn, $sql5);
+    $stmt = sqlsrv_query($conn, $sql6);
+    $st8 = sqlsrv_query($conn, $sql8);
+    $st9 = sqlsrv_query($conn, $sql9);
+    $st10 = sqlsrv_query($conn, $sql10);
+    $st11 = sqlsrv_query($conn, $sql11);
+    $st12 = sqlsrv_query($conn, $sql12);
+
+    $stD1 = sqlsrv_query($conn, $sqlD1);
+    $stD2 = sqlsrv_query($conn, $sqlD2);
+    $stD4 = sqlsrv_query($conn, $sqlD4);
+    $stD5 = sqlsrv_query($conn, $sqlD5);
+    $stD6 = sqlsrv_query($conn, $sqlD6);
+    $stD7 = sqlsrv_query($conn, $sqlN7);
+    $stD8 = sqlsrv_query($conn, $sqlN8);
+    $stD9 = sqlsrv_query($conn, $sqlN9);
+    $stD11 = sqlsrv_query($conn, $sqlN11);
+    $stD12 = sqlsrv_query($conn, $sqlN12);
+
+    $banner = 'SUMMARY OF MOBILE NO: ' . $number;
+    if ($st8 && ($b = sqlsrv_fetch_array($st8, SQLSRV_FETCH_ASSOC))) {
+        $banner = (string) ($b['PHONE1'] ?? $banner);
+    }
+    $imeiRows = cdat_sum_fetch_all($stimei);
+    $imsiRows = cdat_sum_fetch_all($stimsi);
+    $headerRows = cdat_sum_fetch_all($st11);
+    $contactRows = cdat_sum_fetch_all($stmt);
+    $cdrMsg = '';
+    if ($st12 && ($m = sqlsrv_fetch_array($st12, SQLSRV_FETCH_ASSOC))) {
+        $cdrMsg = (string) ($m['PHONE'] ?? '');
+    }
+    $dayBanner = 'DAY LOCATION OF MOBILE NO: ' . $number;
+    if ($stD6 && ($b = sqlsrv_fetch_array($stD6, SQLSRV_FETCH_ASSOC))) {
+        $dayBanner = (string) ($b['PHONE1'] ?? $dayBanner);
+    }
+    $dayRows = cdat_sum_fetch_all($stD5);
+    $nightBanner = 'NIGHT LOCATION OF MOBILE NO: ' . $number;
+    if ($stD7 && ($b = sqlsrv_fetch_array($stD7, SQLSRV_FETCH_ASSOC))) {
+        $nightBanner = (string) ($b['PHONE1'] ?? $nightBanner);
+    }
+    $nightRows = cdat_sum_fetch_all($stD12);
+
+    cdat_sum_results_open();
+    cdat_sum_report_banner($banner);
+
+    cdat_sum_generic_table_open(
+        'IMEI Summary',
+        ['IMEINUMBER', 'FIRST_CALL', 'LAST_CALL', 'TOTAL_CALLS'],
+        'imei_results_table',
+        'sum_alldb_imei.csv',
+        count($imeiRows)
+    );
+    foreach ($imeiRows as $row) {
+        cdat_sum_table_row([
+            ['text' => (string) ($row['IMEINUMBER'] ?? ''), 'class' => 'sum-cell-num'],
+            ['text' => (string) ($row['FIRST_CALL'] ?? ''), 'class' => 'sum-cell-date'],
+            ['text' => (string) ($row['LAST_CALL'] ?? ''), 'class' => 'sum-cell-date'],
+            ['text' => (string) ($row['TOTAL_CALLS'] ?? ''), 'class' => 'sum-cell-num'],
+        ]);
+    }
+    cdat_sum_generic_table_close();
+
+    cdat_sum_generic_table_open(
+        'IMSI Summary',
+        ['IMSINUMBER', 'FIRST_CALL', 'LAST_CALL', 'TOTAL_CALLS'],
+        'imsi_results_table',
+        'sum_alldb_imsi.csv',
+        count($imsiRows)
+    );
+    foreach ($imsiRows as $row) {
+        cdat_sum_table_row([
+            ['text' => (string) ($row['IMSINUMBER'] ?? ''), 'class' => 'sum-cell-num'],
+            ['text' => (string) ($row['FIRST_CALL'] ?? ''), 'class' => 'sum-cell-date'],
+            ['text' => (string) ($row['LAST_CALL'] ?? ''), 'class' => 'sum-cell-date'],
+            ['text' => (string) ($row['TOTAL_CALLS'] ?? ''), 'class' => 'sum-cell-num'],
+        ]);
+    }
+    cdat_sum_generic_table_close();
+
+    cdat_sum_generic_table_open(
+        'Subject',
+        ['PHONE', 'FIRST_CALL', 'LAST_CALL', 'NICKNAME', 'LAST_UPDATED', 'ADDRESS'],
+        'header_results_table',
+        'sum_alldb_subject.csv',
+        count($headerRows)
+    );
+    foreach ($headerRows as $row) {
+        cdat_sum_table_row([
+            ['text' => (string) ($row['PHONE'] ?? ''), 'class' => 'sum-cell-num'],
+            ['text' => (string) ($row['FIRST_CALL'] ?? ''), 'class' => 'sum-cell-date'],
+            ['text' => (string) ($row['LAST_CALL'] ?? ''), 'class' => 'sum-cell-date'],
+            (string) ($row['NICKNAME'] ?? ''),
+            ['text' => (string) ($row['LAST_UPDATED'] ?? ''), 'class' => 'sum-cell-date'],
+            ['html' => cdat_sum_address_lines((string) ($row['ADDRESS'] ?? '')) ?: '—', 'class' => 'sum-address-cell'],
+        ]);
+    }
+    cdat_sum_generic_table_close();
+
+    cdat_sum_generic_table_open(
+        'Contact Analysis',
+        ['PHONE', 'OTHER', 'IN', 'OUT', 'CALLS', 'DUR', 'FIRST_CALL', 'LAST_CALL', 'SDR_DATA', 'RTA_DATA', 'CIVIL_SUPPLY_DATA', 'LICENCE_DATA', 'GAS_DATA'],
+        'contact_results_table',
+        'sum_alldb_contacts.csv',
+        count($contactRows)
+    );
+    foreach ($contactRows as $row) {
+        cdat_sum_table_row([
+            ['text' => (string) ($row['PHONE'] ?? ''), 'class' => 'sum-cell-num'],
+            ['text' => (string) ($row['OTHER'] ?? ''), 'class' => 'sum-cell-other'],
+            ['text' => (string) ($row['IN'] ?? ''), 'class' => 'sum-cell-num'],
+            ['text' => (string) ($row['OUT'] ?? ''), 'class' => 'sum-cell-num'],
+            ['text' => (string) ($row['CALLS'] ?? ''), 'class' => 'sum-cell-num sum-cell-calls'],
+            ['text' => (string) ($row['DUR'] ?? ''), 'class' => 'sum-cell-num'],
+            ['text' => (string) ($row['FIRSTCALL'] ?? ''), 'class' => 'sum-cell-date'],
+            ['text' => (string) ($row['LASTCALL'] ?? ''), 'class' => 'sum-cell-date'],
+            ['html' => cdat_sum_address_lines((string) ($row['SDR_DATA'] ?? '')) ?: '—', 'class' => 'sum-address-cell'],
+            ['html' => cdat_sum_address_lines((string) ($row['RTA_DATA'] ?? '')) ?: '—', 'class' => 'sum-address-cell'],
+            ['html' => cdat_sum_address_lines((string) ($row['CIVIL_SUPPLY_DATA'] ?? '')) ?: '—', 'class' => 'sum-address-cell'],
+            ['html' => cdat_sum_address_lines((string) ($row['LICENCE_DATA'] ?? '')) ?: '—', 'class' => 'sum-address-cell'],
+            ['html' => cdat_sum_address_lines((string) ($row['GAS_DATA_ADDRESS'] ?? '')) ?: '—', 'class' => 'sum-address-cell'],
+        ]);
+    }
+    cdat_sum_generic_table_close();
+
+    if ($cdrMsg !== '') {
+        cdat_sum_status_message($cdrMsg, false);
+    }
+
+    cdat_sum_report_banner($dayBanner);
+    cdat_sum_generic_table_open(
+        'Day Location',
+        ['PHONE', 'CELLTOWERID', 'CALLS', 'AREADESCRIPTION', 'LAT', 'LONG', 'AZM'],
+        'day_results_table',
+        'sum_alldb_day.csv',
+        count($dayRows)
+    );
+    foreach ($dayRows as $row) {
+        cdat_sum_table_row([
+            ['text' => (string) ($row['PHONE'] ?? ''), 'class' => 'sum-cell-num'],
+            ['text' => (string) ($row['CELLTOWERID'] ?? ''), 'class' => 'sum-cell-num'],
+            ['text' => (string) ($row['CALLS'] ?? ''), 'class' => 'sum-cell-num'],
+            ['html' => cdat_sum_address_lines((string) ($row['AREADESCRIPTION'] ?? '')) ?: '—', 'class' => 'sum-address-cell'],
+            (string) ($row['LAT'] ?? ''),
+            (string) ($row['LONG'] ?? ''),
+            (string) ($row['AZM'] ?? ''),
+        ]);
+    }
+    cdat_sum_generic_table_close();
+
+    cdat_sum_report_banner($nightBanner);
+    cdat_sum_generic_table_open(
+        'Night Location',
+        ['PHONE', 'CELLTOWERID', 'CALLS', 'AREADESCRIPTION', 'LAT', 'LONG', 'AZM'],
+        'night_results_table',
+        'sum_alldb_night.csv',
+        count($nightRows)
+    );
+    foreach ($nightRows as $row) {
+        cdat_sum_table_row([
+            ['text' => (string) ($row['PHONE'] ?? ''), 'class' => 'sum-cell-num'],
+            ['text' => (string) ($row['CELLTOWERID'] ?? ''), 'class' => 'sum-cell-num'],
+            ['text' => (string) ($row['CALLS'] ?? ''), 'class' => 'sum-cell-num'],
+            ['html' => cdat_sum_address_lines((string) ($row['AREADESCRIPTION'] ?? '')) ?: '—', 'class' => 'sum-address-cell'],
+            (string) ($row['LAT'] ?? ''),
+            (string) ($row['LONG'] ?? ''),
+            (string) ($row['AZM'] ?? ''),
+        ]);
+    }
+    cdat_sum_generic_table_close();
+    cdat_sum_results_close();
+
+    if ($stmt) {
+        sqlsrv_free_stmt($stmt);
+    }
+    sqlsrv_close($conn);
+
+    if ($isAjax) {
+        exit;
+    }
+    cdat_sum_page_close();
+    layout_end();
+    exit;
 }
 
-echo "<table border=1 cellspacing=0 cellpadding=5>
-<tr>
-<th bgcolor=#921215><font size=2 face=verdana color='#F9FBFC'>IMEINUMBER</font</th>
-<th bgcolor=#921215><font size=2 face=verdana color='#F9FBFC'>FIRST_CALL</font</th>
-<th bgcolor=#921215><font size=2 face=verdana color='#F9FBFC'>LAST_CALL</font</th>
-<th bgcolor=#921215><font size=2 face=verdana color='#F9FBFC'>TOTAL_CALLS</font</th>
-</tr>";
-
-while( $row = sqlsrv_fetch_array( $stimei, SQLSRV_FETCH_ASSOC) ) {
-echo "<tr>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['IMEINUMBER'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['FIRST_CALL'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['LAST_CALL'] ."<center></font></td>";
-echo "<td width=125px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['TOTAL_CALLS'] ."<center></font></td>";
-echo "</tr>";
-}
-
-echo"</table><br />";
-
-
-echo "<table border=1 cellspacing=0 cellpadding=5>
-<tr>
-<th bgcolor=#921215><font size=2 face=verdana color='#F9FBFC'>IMSINUMBER</font</th>
-<th bgcolor=#921215><font size=2 face=verdana color='#F9FBFC'>FIRST_CALL</font</th>
-<th bgcolor=#921215><font size=2 face=verdana color='#F9FBFC'>LAST_CALL</font</th>
-<th bgcolor=#921215><font size=2 face=verdana color='#F9FBFC'>TOTAL_CALLS</font</th>
-</tr>";
-
-while( $row = sqlsrv_fetch_array( $stimsi, SQLSRV_FETCH_ASSOC) ) {
-echo "<tr>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['IMSINUMBER'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['FIRST_CALL'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['LAST_CALL'] ."<center></font></td>";
-echo "<td width=125px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['TOTAL_CALLS'] ."<center></font></td>";
-echo "</tr>";
-}
-
-echo"</table><br />";
-
-
-echo "<table border=1 cellspacing=0 cellpadding=5>
-<tr>
-<th bgcolor=#921215><font size=2 face=verdana color='#F9FBFC'>PHONE</font</th>
-<th bgcolor=#921215><font size=2 face=verdana color='#F9FBFC'>FIRST_CALL</font</th>
-<th bgcolor=#921215><font size=2 face=verdana color='#F9FBFC'>LAST_CALL</font</th>
-<th bgcolor=#921215><font size=2 face=verdana color='#F9FBFC'>NICKNAME</font</th>
-<th bgcolor=#921215><font size=2 face=verdana color='#F9FBFC'>LAST_UPDATED</font</th>
-<th bgcolor=#921215><font size=2 face=verdana color='#F9FBFC'>ADDRESS</font</th>
-</tr>";
-
-while( $row = sqlsrv_fetch_array( $st11, SQLSRV_FETCH_ASSOC) ) {
-echo "<tr>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['PHONE'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['FIRST_CALL'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['LAST_CALL'] ."<center></font></td>";
-echo "<td width=125px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['NICKNAME'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['LAST_UPDATED'] ."<center></font></td>";
-echo "<td width=450px bgcolor=#C2E0FB><font size=1 face=verdana>". $row['ADDRESS'] ."</font></td>";
-echo "</tr>";
-}
-
-echo"</table><br />";
-
-echo "<table border=1 cellspacing=0 cellpadding=2>
-<tr>
-<th bgcolor=#921215><font size=2 face=verdana color='#F9FBFC'>PHONE</font</th>
-<th bgcolor=#921215><font size=2 face=verdana color='#F9FBFC'>OTHER</font</th>
-<th bgcolor=#921215><font size=2 face=verdana color='#F9FBFC'>IN</font</th>
-<th bgcolor=#921215><font size=2 face=verdana color='#F9FBFC'>OUT</font</th>
-<th bgcolor=#921215><font size=2 face=verdana color='#F9FBFC'>CALLS</font</th>
-<th bgcolor=#921215><font size=2 face=verdana color='#F9FBFC'>DUR</font</th>
-<th bgcolor=#921215><font size=2 face=verdana color='#F9FBFC'>FIRST_CALL</font</th>
-<th bgcolor=#921215><font size=2 face=verdana color='#F9FBFC'>LAST_CALL</font</th>
-<th bgcolor=#921215><font size=2 face=verdana color='#F9FBFC'>SDR_DATA</font</th>
-<th bgcolor=#921215><font size=2 face=verdana color='#F9FBFC'>RTA_DATA</font</th>
-<th bgcolor=#921215><font size=2 face=verdana color='#F9FBFC'>CIVIL_SUPPLY_DATA</font</th>
-<th bgcolor=#921215><font size=2 face=verdana color='#F9FBFC'>LICENCE_DATA</font</th>
-<th bgcolor=#921215><font size=2 face=verdana color='#F9FBFC'>GAS_DATA</font</th>
-</tr>";
-
-while( $row = sqlsrv_fetch_array( $stmt, SQLSRV_FETCH_ASSOC) ) {
-echo "<tr>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['PHONE'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana>". $row['OTHER'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['IN'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['OUT'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['CALLS'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['DUR'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['FIRSTCALL'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['LASTCALL'] ."<center></font></td>";
-echo "<td width=450px bgcolor=#C2E0FB><font size=1 face=verdana>". $row['SDR_DATA'] ."</font></td>";
-echo "<td width=450px bgcolor=#C2E0FB><font size=1 face=verdana>". $row['RTA_DATA'] ."</font></td>";
-echo "<td width=450px bgcolor=#C2E0FB><font size=1 face=verdana>". $row['CIVIL_SUPPLY_DATA'] ."</font></td>";
-echo "<td width=450px bgcolor=#C2E0FB><font size=1 face=verdana>". $row['LICENCE_DATA'] ."</font></td>";
-echo "<td width=450px bgcolor=#C2E0FB><font size=1 face=verdana>". $row['GAS_DATA_ADDRESS'] ."</font></td>";
-echo "</tr>";
-
-}
-echo"</table><br /><br />";
-
-while( $row = sqlsrv_fetch_array( $st12, SQLSRV_FETCH_ASSOC) ) {
-echo "<blink><font size=4 face=verdana color='#F9FBFC'><td><center><b>". $row['PHONE'] ."<center></td></font></br>";
-}
-
-
-while( $row = sqlsrv_fetch_array( $stD6, SQLSRV_FETCH_ASSOC) ) {
-echo "<font size=4 face=verdana color='#F9FBFC'><td><center><b>". $row['PHONE1'] ."<center></td></font></br>";
-}
-
-echo "<table border=1 cellspacing=0 cellpadding=5>
-<tr>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>PHONE</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>CELLTOWERID</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>CALLS</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>AREADESCRIPTION</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>LAT</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>LONG</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>AZM</font></th>
-</tr>";
-
-
-while( $row = sqlsrv_fetch_array( $stD5, SQLSRV_FETCH_ASSOC) ) {
-echo "<tr>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['PHONE'] ."<center></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['CELLTOWERID'] ."</td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['CALLS'] ."<center></td>";
-echo "<td width=800px bgcolor=#C2E0FB><font size=1 face=verdana>". $row['AREADESCRIPTION'] ."</td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['LAT'] ."<center></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['LONG'] ."<center></td>";
-echo "<td width=15px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['AZM'] ."<center></font></td>";
-echo "</tr>";
-
-} 
-echo"</table></br>";
-while( $row = sqlsrv_fetch_array( $stD7, SQLSRV_FETCH_ASSOC) ) {
-echo "<font size=4 face=verdana color='#F9FBFC'><td><center><b>". $row['PHONE1'] ."<center></td></font></br>";
-}
-
-echo "<table border=1 cellspacing=0 cellpadding=5>
-<tr>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>PHONE</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>CELLTOWERID</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>CALLS</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>AREADESCRIPTION</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>LAT</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>LONG</font></th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>AZM</font></th>
-</tr>";
-
-while( $row = sqlsrv_fetch_array( $stD12, SQLSRV_FETCH_ASSOC) ) {
-echo "<tr>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['PHONE'] ."<center></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['CELLTOWERID'] ."</td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['CALLS'] ."<center></td>";
-echo "<td width=800px bgcolor=#C2E0FB><font size=1 face=verdana>". $row['AREADESCRIPTION'] ."</td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['LAT'] ."<center></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['LONG'] ."<center></td>";
-echo "<td width=15px><font size=1 face=verdana><center>". $row['AZM'] ."<center></font></td>";
-echo "</tr>";
-
-} 
-echo"</table>";
-
-
-
-sqlsrv_free_stmt( $stmt);
-?>
-<?php endif; ?>
-<?php layout_end(); ?>
+layout_begin('Summary Alldb');
+cdat_sum_page_open();
+cdat_sum_search_card(
+    'Summary of Mobile Number',
+    'Search IMEI, IMSI, contacts, and day/night locations for a mobile number.',
+    'sum_alldb.php',
+    cdat_sum_field_phone(),
+    'BTN_SUM',
+    'Submit'
+);
+cdat_sum_page_close();
+layout_end();

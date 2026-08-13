@@ -8,6 +8,8 @@ SETUP_WINDOWS.md
 
 # Local run commands (machine-specific)
 run_cmds.txt
+missing_pages_for_codev.txt
+pages_confirm_for_users.txt
 
 # Logs and runtime data
 *.log

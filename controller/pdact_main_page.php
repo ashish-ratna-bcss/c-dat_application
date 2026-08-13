@@ -1,70 +1,77 @@
 <?php
 require_once __DIR__ . '/includes/layout.php';
-layout_begin("PDACT Main Page");
+require_once __DIR__ . '/includes/sum_ui.php';
+
+layout_begin('PDACT Main Page');
+cdat_sum_page_open();
+cdat_sum_entry_card_open(
+    'Accused Particulars',
+    'Enter PDACT accused and crime history details.',
+    '#',
+    'post',
+    '',
+    'jqtest'
+);
 ?>
+<?php echo cdat_sum_field_text('Name', 'Name', '', 'Name', 'Name', false); ?>
+<?php echo cdat_sum_field_text('Father_Name', 'Father Name', '', 'Father_Name', 'Father Name', false); ?>
+<?php echo cdat_sum_field_text('Age', 'Age', '', 'Age', 'Age', false); ?>
+<?php echo cdat_sum_field_date('Dob', 'Dob', 'datepickerID', '', false); ?>
+<?php echo cdat_sum_field_text('Occupation', 'Occupation', '', 'Occupation', 'Occupation', false); ?>
+<?php echo cdat_sum_field_text('Caste', 'Caste', '', 'Caste', 'Caste', false); ?>
+<?php echo cdat_sum_searchable_select('Id_Proof', 'Id Proof', [
+    '' => '',
+    'Aadhaar' => 'Aadhaar',
+    'Driving_Licence' => 'Driving Licence',
+    'PASSPORT' => 'PASSPORT',
+    'Ration_Card' => 'Ration Card',
+    'Voter_Id' => 'Voter_Id',
+    'OTHER' => 'OTHER',
+], '', 'Select Id Proof', false, '', 'Id_Proof'); ?>
+<?php echo cdat_sum_field_text('Id_Proof_No', 'Id Proof No', '', 'Id_Proof_No', 'Id Proof No', false); ?>
+<?php echo cdat_sum_field_text('PRE_PDACT_KEY', 'PRE PDACT KEY', '', 'PRE_PDACT_KEY', 'PRE PDACT KEY', false); ?>
+<?php echo cdat_sum_field_text('Phone_No', 'Phone No', '', 'Phone_No', 'Phone No', false, 'tel'); ?>
+<?php echo cdat_sum_field_text('Irkey', 'Irkey', '', 'Irkey', 'Irkey', false); ?>
+<?php echo cdat_sum_field_text('Present_Address', 'Present Address', '', 'Present_Address', 'Present Address', false); ?>
+<?php echo cdat_sum_field_text('Permanent_Address', 'Permanent Address', '', 'Permanent_Address', 'Permanent Address', false); ?>
+<?php echo cdat_sum_field_text('District', 'District', '', 'District', 'District', false); ?>
+<?php echo cdat_sum_field_text('State', 'State', '', 'State', 'State', false); ?>
+<?php echo cdat_sum_field_text('PD_Act', 'PD ACT PS', '', 'PD_ACT_PS', 'PD ACT PS', false); ?>
+<?php echo cdat_sum_field_text('Zone', 'Zone', '', 'Zone', 'Zone', false); ?>
+<?php echo cdat_sum_field_text('File_No', 'File No', '', 'File_No', 'File No', false); ?>
+<?php echo cdat_sum_field_text('File_No_Year', 'File No Year', '', 'File_No_Year', 'File No Year', false); ?>
+<?php echo cdat_sum_field_text('Detenu_No', 'Detenu No', '', 'Detenu_No', 'Detenu No', false); ?>
+<?php echo cdat_sum_field_date('Order_Issued_On', 'Order Issued On', 'datepickerID3', '', false); ?>
+<?php echo cdat_sum_field_text('Approval_Order_No', 'Approval Order No', '', 'Approval_Order_No', 'Approval Order No', false); ?>
+<?php echo cdat_sum_field_text('Confirmation_Revocation_Orders', 'Confirmation / Revocation Orders', '', 'Confirmation_Revocation_Orders', 'Confirmation / Revocation Orders', false); ?>
+<h3 class="sum-search-card__title">Crime History</h3>
+<?php echo cdat_sum_field_text('Crime_Head', 'Crime Head', '', 'Crime_Head', 'Crime Head', false); ?>
+<?php echo cdat_sum_field_text('Minor_Head', 'Minor Head', '', 'Minor_Head', 'Minor Head', false); ?>
+<?php echo cdat_sum_field_text('ModusOperendi', 'Modus Operendi', '', 'ModusOperendi', 'Modus Operendi', false); ?>
+<?php echo cdat_sum_field_text('Police_Station', 'Police Station', '', 'Police_Station', 'Police Station', false); ?>
+<?php echo cdat_sum_field_text('Crime_No', 'Crime No', '', 'Crime_No', 'Crime No', false); ?>
+<?php echo cdat_sum_field_text('Year', 'Year', '', 'Year', 'Year', false); ?>
+<?php echo cdat_sum_field_text('Sec_Of_Law', 'Sec Of Law', '', 'Sec_Of_Law', 'Sec Of Law', false); ?>
+<?php echo cdat_sum_searchable_select('Other_unit_cases', 'Whether Involved In Other Unit Cases', [
+    '' => '',
+    'Yes' => 'Yes',
+    'No' => 'No',
+], '', 'Select', false, '', 'Other_Unit_Cases'); ?>
+<?php echo cdat_sum_field_text('Name_of_Units', 'Name of Units', '', 'Name_Of_Units', 'Name of Units', false); ?>
+<?php echo cdat_sum_field_text('No_Of_Cases', 'No Of Cases', '', 'No_Of_Cases', 'No Of Cases', false); ?>
+<?php echo cdat_sum_field_date('Date_Of_Arrest', 'Date Of Arrest (Date Of Detention)', 'datepickerID1', '', false); ?>
+<?php echo cdat_sum_field_date('TO_DT', 'Date Of Release', 'datepickerID2', '', false); ?>
+<?php echo cdat_sum_field_text('Brief_Facts', 'Brief Facts', '', 'Brief_Facts', 'Brief Facts', false); ?>
+<input type="hidden" name="rowcount" id="rowcount" value="1"/>
+<div class="sum-entry-form__actions">
+<input type="reset" name="reset" id="reset" class="sum-search-form__submit" value="RESET"/>
+<input type="button" name="add" id="add" class="sum-search-form__submit" value="ADD"/>
+</div>
+</form></section>
+<div id="global-ajax-results" class="sum-ajax-results" aria-live="polite"></div>
 
-
-        <form name="jqtest"  action="#">
-		<h2>Accused Particulars</h2>
-       Name : <input type="text" name="Name" id="Name"/>
-       Father_Name : <input type="text" name="Father_Name" id="Father_Name"/>
-       Age : <input type="text" name="Age" id="Age"/>
-       Dob : <input type="text" name="Dob" id="datepickerID" size="10" placeholder="yyyy-mm-dd" /><br/><br/>
-       Occupation : <input type="text" name="Occupation" id="Occupation"/>
-       Caste : <input type="text" name="Caste" id="Caste"/>
-       Id_Proof : <select name="Id_Proof" id="Id_Proof" style="float:center;">
-<option value=""></option>
-<option value="Aadhaar">Aadhaar</option>
-<option value="Driving_Licence">Driving Licence</option>
-<option value="PASSPORT">PASSPORT</option>
-<option value="Ration_Card">Ration Card</option>
-<option value="Voter_Id">Voter_Id</option>
-<option value="OTHER">OTHER</option>
-</select>
-       Id_Proof_No  : <input type="text" name="Id_Proof_No" id="Id_Proof_No"/><br/><br/>
-       PRE_PDACT_KEY  : <input type="text" name="PRE_PDACT_KEY" id="PRE_PDACT_KEY"/><br/><br/>
-       Phone_No : <input type="text" name="Phone_No" id="Phone_No"/>
-       Irkey : <input type="text" name="Irkey" id="Irkey"/><br/><br/>
-       Present_Address : <input type="text" name="Present_Address" id="Present_Address"/>
-       Permanent_Address : <input type="text" name="Permanent_Address" id="Permanent_Address"/><br/><br/>
-       District : <input type="text" name="District" id="District"/>
-       State : <input type="text" name="State" id="State"/><br/><br/>
-       PD_ACT_PS : <input type="text" name="PD_Act" id="PD_ACT_PS"/>
-       Zone : <input type="text" name="Zone" id="Zone"/><br/><br/>
-       File_No: <input type="text" name="File_No" id="File_No"/>
-       File_No_Year: <input type="text" name="File_No_Year" id="File_No_Year"/>
-       Detenu_No : <input type="text" name="Detenu_No" id="Detenu_No"/><br/><br/>
-       Order_Issued_On : <input type="text" name="Order_Issued_On" id="datepickerID3" size="10" placeholder="yyyy-mm-dd" />
-       Approval_Order_No : <input type="text" name="Approval_Order_No" id="Approval_Order_No"/>
-       Confirmation/Revocation orders : <input type="text" name="Confirmation_Revocation_Orders" id="Confirmation_Revocation_Orders"/>
-	        <h3>Crime History</h3>
-       Crime_Head : <input type="text" name="Crime_Head" id="Crime_Head"/>
-       Minor_Head : <input type="text" name="Minor_Head" id="Minor_Head"/>
-       ModusOperendi : <input type="text" name="ModusOperendi" id="ModusOperendi"/><br/><br/>
-       Police_Station : <input type="text" name="Police_Station" id="Police_Station"/>
-       Crime_No : <input type="text" name="Crime_No" id="Crime_No"/>
-       Year : <input type="text" name="Year" id="Year"/>
-       Sec_Of_Law : <input type="text" name="Sec_Of_Law" id="Sec_Of_Law"/><br/><br/>
-       Whether Involved In Other unit cases : <select name="Other_unit_cases" id="Other_Unit_Cases" style="float:center;">
-<option value=""></option>
-<option value="Yes">Yes</option>
-<option value="No">No</option>
-</select>
-      Name of Units: <input type="text" name="Name_of_Units" id="Name_Of_Units"/>
-      No Of Cases: <input type="text" name="No_Of_Cases" id="No_Of_Cases"/><br/><br/>
-       Date_Of_Arrest (Date_Of_Detention) : <input type="text" name="Date_Of_Arrest" id="datepickerID1" size="10" placeholder="yyyy/mm/dd" />
-       Date_Of_Release : <input type="text" name="TO_DT" id="datepickerID2" size="10" placeholder="yyyy/mm/dd" />
-       Brief_Facts : <input type="text" name="Brief_Facts" id="Brief_Facts"/>
-        
-       <p> <input type="reset" name="reset" id="reset" value="RESET"/>&nbsp;&nbsp;<input type="button" name="add" id="add" value="ADD"/> </p>
-         <input type="hidden" name="rowcount" id="rowcount" value="1"/>
-         </form>
-    
-        
-     <table id="dataTab" style="display:none;" border="1">
-
-      <tr>
-
+<table id="dataTab" style="display:none;" border="1" class="sum-data-table">
+<tr>
 <th>Name</th>
 <th>Father_Name</th>
 <th>Age</th>
@@ -80,7 +87,7 @@ layout_begin("PDACT Main Page");
 <th>Permanent_Address</th>
 <th>District</th>
 <th>State</th>
-<th>PD_ACT_PS</th>  	
+<th>PD_ACT_PS</th>
 <th>Zone</th>
 <th>File_No</th>
 <th>File_No_Year</th>
@@ -101,13 +108,9 @@ layout_begin("PDACT Main Page");
 <th>Date_Of_Arrest</th>
 <th>Date_Of_Release</th>
 <th>Brief_Facts</th>
-
-
-        </tr>
-
-     </table>
-
-    <p> <input style="display:none;" type="Submit" name="submit" id="submit" value="submit"/> </p>
-    
-    
-<?php layout_end(); ?>
+</tr>
+</table>
+<p><input style="display:none;" type="Submit" name="submit" id="submit" value="submit"/></p>
+<?php
+cdat_sum_page_close();
+layout_end();

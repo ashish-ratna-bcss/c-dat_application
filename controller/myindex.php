@@ -1,33 +1,42 @@
 <?php
-require_once("dbcontroller.php");
-$db_handle = new DBController();
-$query ="SELECT * FROM country";
-$results = $db_handle->runQuery($query);
-?>
-<?php
 require_once __DIR__ . '/includes/layout.php';
-layout_begin("Myindex");
-?>
+require_once __DIR__ . '/includes/sum_ui.php';
+require_once __DIR__ . '/dbcontroller.php';
 
-<div class="frmDronpDown">
-<div class="row">
-<label>Country:</label><br/>
-<select name="country" id="country-list" class="demoInputBox" onChange="getState(this.value);">
-<option value="">Select Country</option>
-<?php
-foreach($results as $country) {
-?>
-<option value="<?php echo $country["id"]; ?>"><?php echo $country["country_name"]; ?></option>
-<?php
+$db_handle = new DBController();
+$query = "SELECT * FROM country";
+$results = $db_handle->runQuery($query) ?: [];
+$countryOptions = ['' => 'Select Country'];
+foreach ($results as $row) {
+    $id = (string) ($row['id'] ?? '');
+    $label = (string) ($row['country_name'] ?? '');
+    if ($id !== '' && $label !== '') {
+        $countryOptions[$id] = $label;
+    }
 }
-?>
-</select>
-</div>
-<div class="row">
-<label>State:</label><br/>
-<select name="state" id="state-list" class="demoInputBox">
-<option value="">Select State</option>
-</select>
-</div>
-</div>
-<?php layout_end(); ?>
+
+$countrySelect = cdat_sum_searchable_select('country', 'Country', $countryOptions, '', 'Select Country', false, '', 'country-list');
+$countrySelect = str_replace(
+    'class="sum-select" data-searchable-select="1"',
+    'class="sum-select" data-searchable-select="1" onChange="getState(this.value);"',
+    $countrySelect
+);
+
+$fieldsHtml = $countrySelect
+            . '<div class="sum-search-form__field"><label for="state-list">State</label>'
+            . '<select name="state" id="state-list" class="sum-select">'
+            . '<option value="">Select State</option></select></div>';
+
+layout_begin('Myindex');
+cdat_sum_page_open();
+cdat_sum_search_card(
+    'Country / State demo',
+    'Test cascading country and state dropdown.',
+    'myindex.php',
+    $fieldsHtml,
+    'BTN_SUM',
+    'Submit'
+);
+echo '<script>function getState(val){if(window.jQuery){jQuery.ajax({type:"POST",url:"get_state.php",data:"country_id="+val,success:function(data){jQuery("#state-list").html(data);}});}}</script>';
+cdat_sum_page_close();
+layout_end();

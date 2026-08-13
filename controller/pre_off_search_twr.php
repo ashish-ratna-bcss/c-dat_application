@@ -1,11 +1,15 @@
 <?php
 require_once __DIR__ . '/includes/layout.php';
-layout_begin("Pre Off Search Twr");
-?>
+require_once __DIR__ . '/includes/sum_ui.php';
 
-<li><a href="suspect_search.php"><font color='#FDEFEF'>Back</a></li></b></b>
-<?php
-$serverName = "CPHYDERABAD1\DAU_HYD_2023";
+$isAjax = cdat_sum_is_ajax();
+if (!$isAjax) {
+    layout_begin('Pre Off Search Twr');
+    cdat_sum_page_open();
+    cdat_sum_back_link('suspect_search.php');
+}
+
+$serverName = "CPHYDERABAD1\\DAU_HYD_2023";
 $connectionInfo = array( "Database"=>"TWRMDB");
 $conn = sqlsrv_connect( $serverName, $connectionInfo );
 if( $conn === false ) {
@@ -52,45 +56,51 @@ $st1 = sqlsrv_query( $conn, $time1 );
 $st2 = sqlsrv_query( $conn, $time2 );
 $st3 = sqlsrv_query( $conn, $sql1 );
 $st4 = sqlsrv_query( $conn, $sql2 );
-
-while( $row = sqlsrv_fetch_array( $st0, SQLSRV_FETCH_ASSOC) ) {
-echo "<font size=4 face=verdana color='#F9FBFC'><td><center><b>". $row['SEARCH'] ."<center></td></font></br>";
-} 
-
-echo "<table border=1 cellspacing=0 cellpadding=5>
-<tr>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>PHONE</font</th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>OTHER</font</th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>STARTTIME</font</th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>DURATION</font</th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>IMEINUMBER</font</th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>CALLTYPE</font</th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>PHONE ADDRESS</font</th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>NICKNAME</font</th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>CRIME_NO</font</th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>CRIME_HEAD</font</th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>MO</font</th>
-<th bgcolor=#921215><font size=3 face=verdana color='#F9FBFC'>UNIT</font</th>
-</tr>";
-while( $row = sqlsrv_fetch_array( $st4, SQLSRV_FETCH_ASSOC) ) {
-echo "<tr>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['phone'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana>". $row['other'] ."<center></font></td>";
-echo "<td width=150px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['starttime'] ."<center></font></td>";
-echo "<td width=50px bgcolor=#C2E0FB><font size=1 face=verdana>". $row['duration'] ."</font></td>";
-echo "<td width=50px bgcolor=#AED1F1><font size=1 face=verdana><center>". $row['imeinumber'] ."<center></font></td>";
-echo "<td width=250px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['call_type'] ."<center></font></td>";
-echo "<td width=350px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['ADDRESS'] ."<center></font></td>";
-echo "<td width=350px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['nickname'] ."<center></font></td>";
-echo "<td width=350px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['crime_no'] ."<center></font></td>";
-echo "<td width=350px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['crime_head'] ."<center></font></td>";
-echo "<td width=350px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['mo'] ."<center></font></td>";
-echo "<td width=350px bgcolor=#C2E0FB><font size=1 face=verdana><center>". $row['unit'] ."<center></font></td>";
-echo "</tr>";
-
+$banner = 'PREVIOUS OFFENDER SEARCH IN TOWER DUMP';
+if ($st0 && ($b = sqlsrv_fetch_array($st0, SQLSRV_FETCH_ASSOC))) {
+    $banner = (string) ($b['SEARCH'] ?? $banner);
 }
-echo"</table>";
+$rows = cdat_sum_fetch_all($st4);
 
-sqlsrv_free_stmt( $st1);
-?>
-<?php layout_end(); ?>
+cdat_sum_results_open();
+cdat_sum_report_banner($banner);
+if (empty($rows)) {
+    cdat_sum_empty_state('No previous offender records found.');
+} else {
+    cdat_sum_generic_table_open(
+        'Previous Offenders',
+        ['PHONE', 'OTHER', 'STARTTIME', 'DURATION', 'IMEINUMBER', 'CALLTYPE', 'PHONE ADDRESS', 'NICKNAME', 'CRIME_NO', 'CRIME_HEAD', 'MO', 'UNIT'],
+        'pre_off_twr_table',
+        'pre_off_search_twr.csv',
+        count($rows)
+    );
+    foreach ($rows as $row) {
+        cdat_sum_table_row([
+            ['text' => (string) ($row['phone'] ?? ''), 'class' => 'sum-cell-num'],
+            ['text' => (string) ($row['other'] ?? ''), 'class' => 'sum-cell-other'],
+            ['text' => (string) ($row['starttime'] ?? ''), 'class' => 'sum-cell-date'],
+            ['text' => (string) ($row['duration'] ?? ''), 'class' => 'sum-cell-num'],
+            ['text' => (string) ($row['imeinumber'] ?? ''), 'class' => 'sum-cell-num'],
+            (string) ($row['call_type'] ?? ''),
+            ['html' => cdat_sum_address_lines((string) ($row['ADDRESS'] ?? '')) ?: '—', 'class' => 'sum-address-cell'],
+            (string) ($row['nickname'] ?? ''),
+            (string) ($row['crime_no'] ?? ''),
+            (string) ($row['crime_head'] ?? ''),
+            (string) ($row['mo'] ?? ''),
+            (string) ($row['unit'] ?? ''),
+        ]);
+    }
+    cdat_sum_generic_table_close();
+}
+cdat_sum_results_close();
+
+if ($st1) {
+    sqlsrv_free_stmt($st1);
+}
+sqlsrv_close($conn);
+
+if ($isAjax) {
+    exit;
+}
+cdat_sum_page_close();
+layout_end();
