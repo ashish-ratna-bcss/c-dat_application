@@ -6,5 +6,5 @@ audit_logout();
 session_unset();
 session_destroy();
 
-header('Location: ../view/auth.html');
+header('Location: ../auth.php');
 exit;

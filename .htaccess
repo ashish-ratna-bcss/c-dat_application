@@ -12,14 +12,14 @@ RewriteEngine On
 # its Location from the filesystem path, e.g. http://localhost/C:/xampp/htdocs/...
 RewriteBase /cdat-web/
 
-RewriteRule ^$ view/auth.html [R=302,L]
+RewriteRule ^$ auth.php [R=302,L]
 
-# The login form is view/auth.html (was LOGIN1.html). Send the old FORM spellings
+# The login form is auth.php (was LOGIN1.html). Send the old FORM spellings
 # there so existing links keep working -- including LOGIN.HTML, which
 # activity_logger.php and logout.php used to redirect to.
 # Deliberately limited to .html/.htm: login1.php is the POST handler the form
 # submits to, so redirecting the .php spellings would break login outright.
-RewriteRule ^(?i:login1?|login_page)\.(?i:html?)$ view/auth.html [R=301,L]
+RewriteRule ^(?i:login1?|login_page)\.(?i:html?)$ auth.php [R=301,L]
 
 # Pages moved out of the root into view/ (.html/.htm) and controller/ (.php).
 # Keep old flat URLs working for bookmarks and any link still spelled the old way.
