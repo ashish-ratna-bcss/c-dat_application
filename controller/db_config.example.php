@@ -1,7 +1,7 @@
 <?php
 /**
  * Database configuration template.
- * Copy to db_config.php and set values for your environment.
+ * Copy to db_config.php. The real db_config.php loads ../.env first.
  */
 return [
     'host' => getenv('CDR_DB_HOST') ?: '127.0.0.1',

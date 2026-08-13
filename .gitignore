@@ -6,12 +6,16 @@ SETUP_WINDOWS.md
 .env.*
 !.env.example
 
+# Local run commands (machine-specific)
+run_cmds.txt
+
 # Logs and runtime data
 *.log
 logs/
 cache/
 tmp/
 uploads/
+var/
 
 # Operator CDR/SDR exports. These hold real subscriber call records; once
 # committed they live in git history permanently. None are tracked today --

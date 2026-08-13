@@ -2,10 +2,14 @@ from __future__ import annotations
 import os
 from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
-UPLOAD_INBOX_DIR = Path(os.environ.get('CDR_UPLOAD_INBOX', '/mnt/storage1/cdr_documents/inbox'))
-UPLOAD_PROCESSING_DIR = Path(os.environ.get('CDR_UPLOAD_PROCESSING', '/mnt/storage1/cdr_documents/processing'))
-UPLOAD_DONE_DIR = Path(os.environ.get('CDR_UPLOAD_DONE', '/mnt/storage1/cdr_documents/done'))
-UPLOAD_FAILED_DIR = Path(os.environ.get('CDR_UPLOAD_FAILED', '/mnt/storage1/cdr_documents/failed'))
+# Production Linux uses /mnt/storage1. Local Mac/dev uses var/cdr_documents.
+_PROD_DOCS = Path('/mnt/storage1/cdr_documents')
+_LOCAL_DOCS = BASE_DIR / 'var' / 'cdr_documents'
+_DOCS_ROOT = _PROD_DOCS if _PROD_DOCS.exists() else _LOCAL_DOCS
+UPLOAD_INBOX_DIR = Path(os.environ.get('CDR_UPLOAD_INBOX', str(_DOCS_ROOT / 'inbox')))
+UPLOAD_PROCESSING_DIR = Path(os.environ.get('CDR_UPLOAD_PROCESSING', str(_DOCS_ROOT / 'processing')))
+UPLOAD_DONE_DIR = Path(os.environ.get('CDR_UPLOAD_DONE', str(_DOCS_ROOT / 'done')))
+UPLOAD_FAILED_DIR = Path(os.environ.get('CDR_UPLOAD_FAILED', str(_DOCS_ROOT / 'failed')))
 STAGING_TABLE = os.environ.get('CDR_STAGING_TABLE', 'cdatpcsuspect_staging')
 JOBS_TABLE = os.environ.get('CDR_JOBS_TABLE', 'document_jobs')
 TARGET_TABLE = os.environ.get('CDR_TARGET_TABLE', 'cdatpcsuspect')
