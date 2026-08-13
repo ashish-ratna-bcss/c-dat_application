@@ -742,7 +742,7 @@ mark.hit { background: #ffd44d; color: #10243a; border-radius: 3px; padding: 0 1
 }
 
 .sum-search-form {
-    display: flex; flex-wrap: wrap; align-items: flex-end; gap: .65rem .85rem;
+    display: flex; flex-wrap: wrap; align-items: flex-end; gap: .65rem .85rem;width:40%;
 }
 .sum-search-form__field { flex: 1 1 200px; min-width: 0; }
 .sum-search-form__field label {
