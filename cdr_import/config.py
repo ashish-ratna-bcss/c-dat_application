@@ -37,7 +37,7 @@ def load_db_config() -> dict[str, str]:
     """Database settings, in order of precedence:
 
         1. environment variables      (deployment overrides)
-        2. controller/db_config.php   (what the web app itself uses)
+        2. config/db_config.php           (what the web app itself uses)
         3. built-in defaults          (host/port/db/user only, never a password)
     """
     # Auto-load .env file if it exists so we don't rely on the terminal
@@ -52,16 +52,15 @@ def load_db_config() -> dict[str, str]:
 
     cfg: dict[str, str] = {}
     for key, env in _DB_ENV.items():
-        value = os.environ.get(env, '')
-        if value:
-            cfg[key] = value
+        if env in os.environ:
+            cfg[key] = os.environ.get(env, '')
 
-    php_cfg = BASE_DIR / 'controller' / 'db_config.php'
+    php_cfg = BASE_DIR / 'config' / 'db_config.php'
     if php_cfg.exists():
         text = php_cfg.read_text(encoding='utf-8', errors='replace')
         for key in _DB_ENV:
-            if cfg.get(key):
-                continue                      # the environment already said
+            if key in cfg:
+                continue
             marker = f"'{key}' => '"
             start = text.find(marker)
             if start == -1:
@@ -73,7 +72,5 @@ def load_db_config() -> dict[str, str]:
 
     for key, fallback in _DB_DEFAULTS.items():
         cfg.setdefault(key, fallback)
-
-    if not cfg.get('password'):
-        raise RuntimeError('Database password not configured (db_config.php or CDR_DB_PASSWORD).')
+    cfg.setdefault('password', '')
     return cfg

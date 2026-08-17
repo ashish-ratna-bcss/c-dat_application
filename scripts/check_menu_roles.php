@@ -15,18 +15,43 @@
  */
 
 $root = dirname(__DIR__);
-$menu = require $root . '/controller/includes/menu.php';
+$menu = require $root . '/modules/common/includes/menu.php';
 
 /**
- * Where a menu url actually lands, following the same fallbacks .htaccess
- * applies: a .html request resolves to the .php of the same name, and pages
- * live in either controller/ or view/.
+ * Where a menu url actually lands: pretty routes from routes/web.php,
+ * then a matching file under modules/ or view/.
  */
 function resolve_page(string $root, string $url): ?string
 {
     $rel = rawurldecode(parse_url($url, PHP_URL_PATH) ?? $url);
+    $relPath = '/' . ltrim($rel, '/');
+    $relPath = rtrim($relPath, '/') ?: '/';
+
+    $routesFile = $root . '/routes/web.php';
+    if (is_file($routesFile)) {
+        $routes = require $routesFile;
+        foreach ($routes as $route) {
+            $routePath = rtrim((string) ($route['path'] ?? ''), '/') ?: '/';
+            if ($routePath === $relPath && !empty($route['handler'])) {
+                $handler = $root . '/' . ltrim((string) $route['handler'], '/');
+                if (is_file($handler)) {
+                    return $handler;
+                }
+            }
+        }
+    }
+
+    $rel = ltrim($rel, '/');
+    $direct = $root . '/' . $rel;
+    if (is_file($direct)) {
+        return $direct;
+    }
     $base = preg_replace('/\.(html?|php)$/i', '', basename($rel));
-    foreach ([dirname($root . '/controller/' . $rel), $root . '/controller', $root . '/view'] as $dir) {
+    foreach ([$root . '/modules', $root . '/view'] as $dir) {
+        $hits = glob($dir . '/*/' . $base . '.{php,html,htm}', GLOB_BRACE) ?: [];
+        if ($hits) {
+            return $hits[0];
+        }
         foreach (['.php', '.html', '.htm'] as $ext) {
             $p = $dir . '/' . $base . $ext;
             if (is_file($p)) {

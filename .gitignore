@@ -1,4 +1,5 @@
 # Local configuration (never commit secrets)
+config/db_config.php
 db_config.php
 DB_CONFIG.php
 SETUP_WINDOWS.md

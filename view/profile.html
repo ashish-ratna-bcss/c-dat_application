@@ -1,6 +1,8 @@
 <?php
-define('CDAT_BASE', '..');
-require_once __DIR__ . '/../controller/includes/layout.php';
+if (!defined('CDAT_BASE')) {
+    define('CDAT_BASE', '..');
+}
+require_once __DIR__ . '/../modules/common/includes/layout.php';
 layout_begin("Profile");
 ?>
 <div align="center">
@@ -8,7 +10,7 @@ layout_begin("Profile");
 <tr>
   <td width="1349" height="595" align="left" valign="top"><table width="1313" height="148">
         <tr>
-          <td width="1265" height="134" align="center" valign="bottom" background="../assets/images/topborder.jpg"></td>
+          <td width="1265" height="134" align="center" valign="bottom" background="<?= htmlspecialchars(CDAT_ASSETS) ?>/images/topborder.jpg"></td>
         </tr>
       </table>
 <marquee behavior="scroll" direction="right"> <font color="YELLOW" face=verdana size='2'><b> *** PLEASE MAIL RAW DATA TO cdranalysiswing@gmail.com TO VIEW REPORTS *** </b></font></marquee> 
@@ -23,7 +25,7 @@ layout_begin("Profile");
             <td width="62" rowspan="2">&nbsp;</td>
           </tr>
           <tr>
-            <td height="310" align="left" valign="top"><div align="center"><img src="../assets/images/analysis1.jpg" width="950" height="250" /></div></td>
+            <td height="310" align="left" valign="top"><div align="center"><img src="<?= htmlspecialchars(CDAT_ASSETS) ?>/images/analysis1.jpg" width="950" height="250" /></div></td>
           </tr>
 
        </table>

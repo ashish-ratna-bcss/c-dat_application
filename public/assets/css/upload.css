@@ -1,0 +1,819 @@
+/* Light-theme corrections for the upload screen.
+   ------------------------------------------------------------------
+   admin_upload.php's stylesheet was written when the page sat on a dark
+   blue body, so it uses #CFF headings, #FFD700 body text and
+   rgba(255,255,255,.2) surfaces. On the new light shell several of those
+   are invisible -- the "cdatpcsuspect" reference in the staging banner
+   was white text on pale yellow.
+
+   Loaded AFTER the page's own <style>, so equal-specificity rules win.
+   Inline style="" attributes still need !important. Nothing here changes
+   behaviour: colours, spacing and borders only. */
+
+/* The layout already prints the page name and subtitle in the top bar. */
+.content .FONT { display: none; }
+
+/* ---- notices ---- */
+.content .staging-banner {
+    background: #fff8e6;
+    border: 1px solid #f0dca8;
+    color: #6b5312;
+    border-radius: 10px;
+    padding: .7rem .85rem;
+    font-size: .86rem;
+    line-height: 1.55;
+}
+.content .staging-banner strong { color: #4d3c0d; }
+.content .staging-banner em { font-style: normal; font-weight: 600; color: #7a5c10; }
+/* was style="color:#fff" -- unreadable once the banner became light */
+.content .staging-banner code {
+    color: #7a4b00 !important;
+    background: #fdf0cf;
+    border: 1px solid #f0dca8;
+    border-radius: 5px;
+    padding: 1px 6px;
+    font-size: .85em;
+}
+/* ---- inline colours left over from the dark theme ----
+   These pages set text colour inline in dozens of places, all chosen against a
+   dark blue body. Remap them by value. Only `color:` declarations are matched,
+   so a button written as background:#FFA500;color:#10222b is untouched and
+   keeps its own contrast. */
+.content [style*="color:#FFD700"], .content [style*="color: #FFD700"],
+.content [style*="color:#ffd9a0"], .content [style*="color: #ffd9a0"] {
+    color: #7a5c10 !important;
+}
+.content [style*="color:#ccc"],    .content [style*="color: #ccc"],
+.content [style*="color:#bbb"],    .content [style*="color: #bbb"],
+.content [style*="color:#aaa"],    .content [style*="color: #aaa"],
+.content [style*="color:#ddd"],    .content [style*="color: #ddd"],
+.content [style*="color:#9fd0e6"], .content [style*="color: #9fd0e6"],
+.content [style*="color:#87CEEB"], .content [style*="color: #87CEEB"],
+.content [style*="color:#eaf3f8"], .content [style*="color: #eaf3f8"] {
+    color: var(--ink-soft) !important;
+}
+.content [style*="color:#FFB6C1"], .content [style*="color: #FFB6C1"],
+.content [style*="color:#ffb3b3"], .content [style*="color: #ffb3b3"],
+.content [style*="color:#ff6b6b"], .content [style*="color: #ff6b6b"] {
+    color: var(--danger) !important;
+}
+.content [style*="color:#90EE90"], .content [style*="color: #90EE90"],
+.content [style*="color:#7CFC00"], .content [style*="color: #7CFC00"] {
+    color: #15803d !important;
+}
+.content [style*="color:#FFA500"], .content [style*="color: #FFA500"] {
+    color: #a15c00 !important;
+}
+
+/* Panels given a translucent dark fill inline -- invisible borders and washed
+   out text now that the page is light. */
+.content [style*="rgba(0, 0, 0"], .content [style*="rgba(0,0,0"] {
+    background: #f7fafd !important;
+    border: 1px solid var(--line) !important;
+    color: var(--ink);
+}
+.content [style*="rgba(255, 255, 255, 0.15)"],
+.content [style*="rgba(255,255,255,0.15)"] { border-color: var(--line) !important; }
+/* a badge tinted with translucent white -- white text on a white page */
+.content .badge-status[style*="rgba(255,255,255,0.1)"],
+.content .badge-status[style*="rgba(255, 255, 255, 0.1)"] {
+    background: #eef2f7 !important; color: var(--ink) !important;
+}
+
+/* ---- step / tab controls ---- */
+.content .nav-tabs {
+    display: flex; gap: .5rem; flex-wrap: wrap;
+    margin: 0 0 1.1rem; padding: 0 0 .9rem;
+    border-bottom: 1px solid var(--line);
+}
+.content .nav-tab-btn {
+    background: #fff; color: var(--ink-soft);
+    border: 1px solid var(--line); border-radius: 8px;
+    padding: .55rem 1rem; font-weight: 600; font-size: .9rem;
+    display: inline-flex; align-items: center; gap: .5rem;
+}
+.content .nav-tab-btn:hover { background: #f3f7fc; color: var(--ink); }
+.content .nav-tab-btn.active {
+    background: var(--brand); border-color: var(--brand); color: #fff;
+}
+
+.content .step-header { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: 1.1rem; }
+.content .step-pill {
+    flex: 1 1 220px; text-align: center;
+    background: #f4f7fb; color: var(--ink-soft);
+    border: 1px solid var(--line); border-radius: 8px;
+    padding: .6rem .8rem; font-weight: 600; font-size: .88rem;
+}
+.content .step-pill.active {
+    background: var(--brand); border-color: var(--brand); color: #fff;
+}
+
+/* ---- cards ---- */
+.content .wizard-card, .content .progress-card, .content .result-card,
+.content .upload-wrapper, .content .tab-content {
+    background: transparent; border: 0; box-shadow: none;
+}
+.content .wizard-card {
+    background: #fff; border: 1px solid var(--line);
+    border-radius: 12px; padding: 1.15rem 1.25rem; box-shadow: var(--shadow);
+}
+.content .wizard-title {
+    color: var(--ink); font-size: 1rem; font-weight: 650; margin: 0 0 .9rem;
+}
+
+/* ---- form controls ---- */
+.content .form-label, .content .form-group label {
+    display: block; color: var(--ink); font-weight: 600;
+    font-size: .88rem; margin: 0 0 .35rem;
+}
+.content .form-select, .content select.form-select {
+    width: 100%; font: inherit; color: var(--ink);
+    background: #fff; border: 1px solid #c6d2e0; border-radius: 8px;
+    padding: .55rem .65rem;
+}
+.content .form-select:disabled { background: #f1f4f8; color: #94a3b3; }
+.content .module-hint { color: var(--ink-soft); font-size: .82rem; margin-top: .3rem; }
+.content .form-row { display: flex; gap: 1rem; flex-wrap: wrap; }
+.content .form-col { flex: 1 1 260px; min-width: 0; }
+.content .form-group { margin-bottom: 1rem; }
+
+.content .upload-dropzone {
+    border: 1.5px dashed #b9c8da; border-radius: 10px;
+    background: #f8fbff; color: var(--ink-soft);
+    padding: 1rem; transition: border-color .15s, background .15s;
+}
+.content .upload-dropzone:hover { border-color: var(--brand); background: #eef5fd; }
+.content .upload-filename { color: var(--ink); font-weight: 600; }
+
+/* ---- buttons ---- */
+.content .btn-action {
+    background: var(--brand); color: #fff; border: 1px solid transparent;
+    border-radius: 8px; padding: .58rem 1.15rem; font-weight: 600; font-size: .92rem;
+}
+.content .btn-action:hover { background: #12559f; }
+/* was white text on a translucent white panel */
+.content .btn-secondary {
+    background: #fff; color: var(--ink); border: 1px solid #c6d2e0;
+    border-radius: 8px; padding: .58rem 1.15rem; font-weight: 600; font-size: .92rem;
+}
+.content .btn-secondary:hover { background: #f1f5fa; }
+
+/* ---- progress ---- */
+.content .progress-bar-wrap {
+    background: #e6edf5; border: 1px solid var(--line);
+    border-radius: 999px; overflow: hidden; height: 10px;
+}
+.content .progress-bar-fill { background: var(--brand); height: 100%; }
+.content .progress-log {
+    background: #0f2740; color: #d6e6f5;
+    border: 1px solid #0b1d30; border-radius: 10px;
+    padding: .8rem .9rem; font-size: .8rem; line-height: 1.5;
+    font-family: ui-monospace, Consolas, "Courier New", monospace;
+}
+
+/* ---- results ---- */
+.content .results-summary { display: flex; gap: .7rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.content .result-card {
+    flex: 1 1 150px; background: #f7fafd;
+    border: 1px solid var(--line); border-radius: 10px;
+    padding: .8rem .9rem; text-align: center; color: var(--ink-soft);
+    font-size: .82rem;
+}
+.content .result-card .num {
+    display: block; font-size: 1.5rem; font-weight: 700; color: var(--ink);
+    line-height: 1.2; margin-bottom: .15rem;
+}
+.content .color-total   { color: var(--brand) !important; }
+.content .color-success { color: #15803d !important; }
+.content .color-failed  { color: var(--danger) !important; }
+.content .color-skipped { color: #8a6d0b !important; }
+
+.content .msg-container { border-radius: 10px; padding: .7rem .85rem; margin: .8rem 0; font-size: .88rem; }
+.content .msg-success { background: #eaf7ef; border: 1px solid #b9e2c8; color: #14532d; }
+.content .msg-link {
+    display: inline-block; margin-left: .4rem; font-weight: 600;
+    color: #0f6b35; text-decoration: underline;
+}
+.content .msg-error   { background: #fdecea; border: 1px solid #f3c2bd; color: #7f1d1d; }
+
+.content .badge { border-radius: 999px; padding: 2px 9px; font-size: .76rem; font-weight: 700; }
+
+/* ---- preview table ---- */
+.content .preview-table-wrapper {
+    border: 1px solid var(--line); border-radius: 10px;
+    overflow: auto; max-height: 460px;
+}
+.content .preview-table { width: 100%; border-collapse: collapse; font-size: .84rem; }
+.content .preview-table th {
+    position: sticky; top: 0; z-index: 1;
+    background: var(--thead); color: #fff; font-weight: 600;
+    text-align: left; padding: .5rem .6rem; white-space: nowrap;
+}
+.content .preview-table td {
+    padding: .42rem .6rem; border-top: 1px solid var(--line); background: #fff;
+}
+.content .preview-table tr:nth-child(even) td { background: #f7fafd; }
+.content .preview-table td.preview-readonly { background: #f1f4f8; color: var(--ink-soft); }
+
+/* ==================================================================
+   admin_upload_history.php and admin_upload_verify.php
+   ------------------------------------------------------------------
+   The remaps above only reach style="" attributes. These two pages set
+   their colours in CLASSES in their own <style> block, all written for
+   the dark blue body, so they survived untouched:
+
+     .history-wrapper { color: #fff }  -> every table cell white on white,
+                                          which read as empty columns
+     .btn-back        { color: #fff }  -> the two "Back" buttons on the
+                                          verify screen were invisible
+     .filter-group label { #FFD700 }   -> gold on a grey bar
+     th { background: rgba(0,0,0,.35) } -> grey headers, pale blue text
+
+   Overridden here rather than in the pages so their stylesheets stay as
+   written and a future edit there does not have to know about the shell.
+   ================================================================== */
+
+/* ---- the wrapper panels ---- */
+.content .history-wrapper,
+.content .verify-wrapper {
+    /* were fixed at 1050px / 1200px, which forced the page to scroll
+       sideways once the sidebar took 264px off the viewport */
+    width: auto; max-width: 100%; margin: 0;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: none;
+    color: var(--ink);
+    font-family: inherit;
+}
+.content .verify-wrapper h2 { color: var(--ink); }
+
+/* ---- filter bar (history) ---- */
+.content .filter-bar {
+    background: #f7fafd;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+}
+.content .filter-grid {
+    /* six rigid columns squeezed the date inputs; let them wrap instead */
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+.content .filter-group label {
+    color: var(--ink); font-size: .8rem; font-weight: 600;
+}
+.content .filter-group select,
+.content .filter-group input[type="date"] {
+    border: 1px solid #c6d2e0; border-radius: 8px; color: var(--ink);
+}
+
+/* ---- meta strip (verify) ---- */
+.content .meta {
+    background: #f7fafd;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    color: var(--ink);
+}
+.content .meta strong { color: var(--ink); font-weight: 650; }
+
+/* ---- data tables ---- */
+.content .history-table,
+.content #verify-table { color: var(--ink); }
+.content .history-table th,
+.content #verify-table th {
+    background: var(--thead) !important;
+    color: #fff;
+    font-weight: 600;
+    border-bottom: 0;
+}
+.content .history-table td,
+.content #verify-table td {
+    color: var(--ink);
+    border-bottom: 1px solid var(--line);
+}
+.content .history-table tbody tr:nth-child(even) td { background: #f7fafd; }
+.content .history-table tbody tr:hover td { background: #eef5fc; }
+
+.content .table-scroll {
+    border: 1px solid var(--line); border-radius: 10px; background: #fff;
+}
+/* duplicate rows: the point is that they stand out, so keep them red -- just
+   a red that works on white */
+.content #verify-table tr.duplicate td {
+    background: #fdecea; color: #7f1d1d;
+}
+.content #verify-table td[contenteditable="true"] { background: #fffdf3; }
+.content #verify-table td[contenteditable="true"]:focus {
+    background: #fff4d6; outline: 2px solid rgba(22,104,195,.35);
+}
+
+/* ---- buttons ---- */
+.content .verify-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: .75rem;
+    margin: 0 0 1rem;
+}
+.content button.staging-close-btn {
+    margin: 0 0 0 auto !important;
+    background: #fff !important;
+    color: var(--ink) !important;
+    border: 1px solid #c6d2e0 !important;
+}
+.content button.staging-close-btn:hover {
+    background: #f1f5fa !important;
+    color: var(--ink) !important;
+}
+.content .btn-back, .content .btn-reset {
+    background: #fff; color: var(--ink);
+    border: 1px solid #c6d2e0;
+}
+.content .btn-back:hover, .content .btn-reset:hover { background: #f1f5fa; }
+.content .btn-filter { background-color: var(--brand); color: #fff; }
+.content .btn-filter:hover { background-color: #12559f; }
+.content .tabs button.inactive {
+    background: #fff; color: var(--ink); border: 1px solid #c6d2e0;
+}
+
+/* ---- small text that was tinted for the dark background ---- */
+.content .stats, .content #page-label { color: var(--ink-soft); }
+.content .approval-rejected, .content .approval-na { color: var(--ink-soft); }
+.content .approval-approved { color: #15803d; }
+.content .approval-awaiting { color: var(--danger); }
+.content .history-row-link { color: var(--brand); }
+.content .history-row-link:hover { color: #12559f; }
+
+/* ---- alerts ---- */
+.content .alert-warn {
+    background: #fff8e6; border: 1px solid #f0dca8; color: #6b5312;
+}
+.content .alert-ok {
+    background: #eaf7ef; border: 1px solid #b9e2c8; color: #14532d;
+}
+
+/* ---- pagination ---- */
+.content .pagination-link {
+    background: #fff; color: var(--ink);
+    border: 1px solid #c6d2e0; border-radius: 8px;
+}
+.content .pagination-link:hover { background: #f1f5fa; }
+.content .pagination-link.active {
+    background: var(--brand); border-color: var(--brand); color: #fff;
+}
+
+/* ---- CDR/SDR upload layout ---- */
+.content .upload-wrapper {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+}
+.content .upload-panel {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 0;
+}
+.content .upload-layout {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: .85rem 1.15rem;
+    align-items: start;
+}
+.content .upload-layout--file-only { grid-template-columns: 1fr; }
+.content .upload-form .form-group { margin-bottom: 0; }
+.content .upload-form .form-group label {
+    min-height: 1.25rem;
+    margin: 0 0 .4rem;
+}
+.content .upload-field-file { min-width: 0; }
+.content .upload-form .req { color: #b45309; }
+.content .upload-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    justify-content: flex-end;
+    align-items: center;
+    margin-top: 1rem;
+    padding-top: .9rem;
+    border-top: 1px solid var(--line);
+}
+.content .upload-actions--start {
+    justify-content: flex-start;
+    margin-top: .85rem;
+    padding-top: 0;
+    border-top: 0;
+}
+.content .upload-actions .btn-action,
+.content .upload-actions .btn-secondary,
+.content .upload-actions .btn-staging,
+.content .upload-actions .btn-insert {
+    white-space: nowrap;
+    margin: 0 !important;
+}
+.content .upload-form .sum-fu__drop {
+    min-height: 0;
+    padding: .65rem .85rem;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    text-align: left;
+    gap: .45rem .7rem;
+}
+.content .upload-form .sum-fu__icon {
+    width: 34px; height: 34px; margin: 0;
+    border-radius: 8px;
+}
+.content .upload-form .sum-fu__icon svg { width: 18px; height: 18px; }
+.content .upload-form .sum-fu__title { font-size: .88rem; }
+.content .upload-form .sum-fu__hint { max-width: none; }
+.content .upload-form .sum-fu__browse { margin-top: 0 !important; }
+.content .upload-form .sum-fu__preview,
+.content .upload-form .sum-fu__meta {
+    margin-top: .45rem;
+}
+.content .upload-form .sum-fu.has-files {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: .35rem .75rem;
+}
+.content .upload-form .sum-fu.has-files .sum-fu__drop { display: none; }
+.content .upload-form .sum-fu.has-files .sum-fu__preview { margin: 0; }
+.content .upload-form .sum-fu.has-files .sum-fu__meta { margin: 0; grid-column: 1; }
+.content .upload-form .sum-fu.has-files .sum-fu__clear {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    margin: 0 !important;
+    align-self: center;
+}
+.content .btn-staging {
+    background: #0f766e !important;
+    color: #fff !important;
+    border: 1px solid #0f766e !important;
+    border-radius: 8px;
+    padding: .58rem 1.15rem !important;
+    font-weight: 600;
+    font-size: .92rem;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    margin: 0 !important;
+}
+.content .btn-staging:hover { background: #0d9488 !important; border-color: #0d9488 !important; color: #fff !important; }
+.content .btn-staging--sm { padding: .35rem .7rem !important; font-size: .8rem; }
+.content .btn-insert {
+    background: #c2410c !important;
+    color: #fff !important;
+    border: 0 !important;
+    border-radius: 8px;
+    padding: .58rem 1.15rem !important;
+    font-weight: 600;
+    font-size: .92rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    margin: 0 !important;
+}
+.content .btn-insert:hover { background: #9a3412 !important; }
+.content .staging-card {
+    margin-top: 1.25rem;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    padding: 1rem 0 0;
+    border-top: 1px solid var(--line);
+}
+.content .staging-card__head {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    margin: 0 0 .35rem;
+}
+.content .staging-card__head h3 { margin: 0; font-size: 1.05rem; }
+.content .staging-card__file { margin: 0 0 .85rem; color: var(--ink-soft); font-size: .88rem; }
+.content .staging-card__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    align-items: center;
+    margin-top: .35rem;
+}
+.content .preview-card {
+    margin-top: 1.15rem;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    padding: 1rem 0 0;
+    box-shadow: none;
+    border-top: 1px solid var(--line);
+}
+.content .preview-card__head h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    color: var(--ink);
+}
+.content .preview-card__head p {
+    margin: .2rem 0 .85rem;
+    font-size: .82rem;
+    color: var(--ink-soft);
+}
+.content .preview-card__summary {
+    font-size: .84rem;
+    color: var(--ink-soft);
+    margin: 0 0 .7rem;
+}
+.content .preview-card__pager {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    margin-bottom: 12px;
+}
+.content .preview-card .preview-table-wrapper { max-height: 340px; }
+
+.content .staging-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    display: grid;
+    place-items: center;
+    padding: 1.1rem;
+}
+.content .staging-modal[hidden] { display: none; }
+.staging-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(8, 18, 28, .55);
+}
+.staging-modal__dialog {
+    position: relative;
+    z-index: 1;
+    width: min(1180px, calc(100vw - 2rem));
+    height: min(860px, calc(100vh - 2.4rem));
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 18px 50px rgba(8, 18, 28, .32);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.staging-modal__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    width: 100%;
+    padding: .8rem 1.1rem;
+    border-bottom: 1px solid var(--line);
+    flex: 0 0 auto;
+}
+.staging-modal__head h2 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 650;
+}
+.content button.staging-modal__close,
+.staging-modal__close {
+    margin: 0 !important;
+    background: #fff !important;
+    color: var(--ink) !important;
+    border: 1px solid #c6d2e0 !important;
+    border-radius: 8px;
+    padding: .42rem .9rem !important;
+    font-weight: 700;
+    font-size: .88rem;
+    cursor: pointer;
+}
+.content button.staging-modal__close:hover,
+.staging-modal__close:hover { background: #f1f5fa !important; color: var(--ink) !important; }
+.staging-modal__actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 auto;
+}
+.content button.staging-modal__load,
+.staging-modal__load {
+    margin: 0 !important;
+    background: #ea580c !important;
+    color: #fff !important;
+    border: 0 !important;
+    border-radius: 8px;
+    padding: .42rem .9rem !important;
+    font-weight: 700;
+    font-size: .88rem;
+    cursor: pointer;
+}
+.content button.staging-modal__load:hover,
+.staging-modal__load:hover { background: #c2410c !important; }
+.content button.staging-modal__load:disabled,
+.staging-modal__load:disabled { opacity: .7; cursor: wait; }
+.content .history-wrapper .action-text-btn--insert { background: #ea580c; color: #fff; }
+.content .history-wrapper .action-text-btn--view { background: #0284c7; color: #fff; }
+.staging-modal__frame {
+    flex: 1 1 auto;
+    width: 100%;
+    border: 0;
+    background: #fff;
+}
+@media (max-width: 720px) {
+    .content .upload-layout { grid-template-columns: 1fr; }
+    .content .upload-actions { justify-content: stretch; }
+    .content .upload-actions > * { flex: 1 1 auto; justify-content: center; text-align: center; }
+}
+
+/* ---- staging preview ---- */
+.content .verify-wrapper,
+body.staging-embed .verify-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: .75rem;
+    padding: 1rem 1.1rem 0;
+}
+body.staging-embed .verify-wrapper {
+    flex: 1 1 auto;
+    min-height: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: #fff;
+}
+.content .verify-meta,
+body.staging-embed .verify-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    margin: 0;
+}
+.content .verify-kv,
+body.staging-embed .verify-kv {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 7.5rem;
+    padding: .45rem .7rem;
+    background: #f7fafd;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+}
+.content .verify-kv span,
+body.staging-embed .verify-kv span {
+    font-size: .7rem;
+    font-weight: 650;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+}
+.content .verify-kv strong,
+body.staging-embed .verify-kv strong {
+    font-size: .88rem;
+    font-weight: 650;
+    color: var(--ink);
+    word-break: break-all;
+}
+.content .verify-status--pending,
+body.staging-embed .verify-status--pending { color: #b45309; }
+.content .verify-status--approved,
+body.staging-embed .verify-status--approved { color: #15803d; }
+.content .verify-summary,
+body.staging-embed .verify-summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .55rem 1rem;
+}
+.content .verify-stats,
+body.staging-embed .verify-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .45rem;
+    margin: 0;
+    color: var(--ink);
+}
+.content .verify-pill,
+body.staging-embed .verify-pill {
+    display: inline-flex;
+    align-items: baseline;
+    gap: .35rem;
+    padding: .28rem .65rem;
+    border-radius: 999px;
+    font-size: .82rem;
+    border: 1px solid transparent;
+}
+.content .verify-pill em,
+body.staging-embed .verify-pill em {
+    font-style: normal;
+    font-weight: 600;
+    opacity: .8;
+}
+.content .verify-pill strong,
+body.staging-embed .verify-pill strong { font-weight: 750; }
+.content .verify-pill--ok,
+body.staging-embed .verify-pill--ok {
+    background: #ecfdf3;
+    border-color: #bbf7d0;
+    color: #166534;
+}
+.content .verify-pill--dup,
+body.staging-embed .verify-pill--dup {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #991b1b;
+}
+.content .verify-hint,
+body.staging-embed .verify-hint {
+    margin: 0;
+    font-size: .8rem;
+    line-height: 1.45;
+    color: var(--ink-soft);
+    flex: 1 1 16rem;
+}
+.content .verify-wrapper .table-scroll,
+body.staging-embed .table-scroll {
+    flex: 1 1 auto;
+    min-height: 12rem;
+    max-height: none;
+    overflow: auto;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #fff;
+}
+.content #verify-table,
+body.staging-embed #verify-table {
+    font-size: 12px;
+}
+.content #verify-table th,
+body.staging-embed #verify-table th {
+    text-transform: capitalize;
+    padding: .55rem .7rem;
+    font-size: .75rem;
+    letter-spacing: .02em;
+}
+.content #verify-table td,
+body.staging-embed #verify-table td {
+    padding: .45rem .7rem;
+}
+.content .verify-footer,
+body.staging-embed .verify-footer {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: .65rem;
+    padding: .8rem 0 .95rem;
+    border-top: 1px solid var(--line);
+    background: #fff;
+}
+.content .verify-footer .pager,
+body.staging-embed .verify-footer .pager {
+    margin: 0;
+}
+.content .verify-footer .pager-left label,
+body.staging-embed .verify-footer .pager-left label {
+    font-size: .8rem;
+    color: var(--ink-soft);
+    font-weight: 600;
+}
+.content .verify-footer .toolbar,
+body.staging-embed .verify-footer .toolbar {
+    margin: 0;
+    gap: .5rem;
+}
+.content .verify-footer .btn,
+body.staging-embed .verify-footer .btn {
+    border-radius: 8px;
+    padding: .48rem .9rem;
+    font-size: .84rem;
+}
+.content .btn-approve,
+body.staging-embed .btn-approve {
+    background: #ea580c;
+    color: #fff;
+}
+.content .btn-approve:hover,
+body.staging-embed .btn-approve:hover { background: #c2410c; }
+.content .btn-reject,
+body.staging-embed .btn-reject {
+    background: #fff;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+}
+.content .btn-refresh,
+body.staging-embed .btn-refresh {
+    background: #fff;
+    color: var(--ink);
+    border: 1px solid #c6d2e0;
+}
+.content #message,
+body.staging-embed #message { min-height: 0; margin: 0; }

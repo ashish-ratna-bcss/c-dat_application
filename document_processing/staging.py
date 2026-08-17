@@ -120,7 +120,7 @@ def finalize_staging_job(conn, *, job_id: int, batch_id: int, module: str, stagi
     phase_state = {'staging_tables': staging_tables, 'verification_status': 'pending', 'staging_batch_id': batch_id}
     update_document_job(conn, job_id, status='pending_verification', phase='pending_verification', phase_state=phase_state, rows_committed=rows_committed, total_rows_estimated=total_rows)
     with conn.cursor() as cur:
-        cur.execute("\n            UPDATE upload_activity_logs\n            SET upload_status = 'Pending Verification',\n                verification_status = 'pending',\n                staging_batch_id = %s,\n                total_records = %s,\n                inserted_records = %s,\n                failed_records = GREATEST(%s - %s, 0)\n            WHERE document_job_id = %s\n            ", (batch_id, total_rows, rows_committed, total_rows, rows_committed, job_id))
+        cur.execute("\n            UPDATE upload_activity_logs\n            SET upload_status = 'Pending Verification',\n                verification_status = 'pending',\n                staging_batch_id = %s,\n                total_records = %s,\n                inserted_records = 0,\n                failed_records = 0\n            WHERE document_job_id = %s\n            ", (batch_id, total_rows, job_id))
 
 def register_staging_batch(conn, *, job_id: int, module: str, staging_tables: dict[str, str]) -> int:
     batch_id = ensure_staging_batch(conn, job_id=job_id, module=module, staging_tables=staging_tables)

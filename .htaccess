@@ -3,36 +3,19 @@
 # Landing page for /cdat-web/ is the login form, not HOME.
 # httpd.conf lists "home.php home.html home.htm" in its global DirectoryIndex, which
 # is why visiting the directory served the dashboard without any login at all.
-# Pages now live in view/ and controller/, so there is no index file at the root:
-# the empty-path rule below sends visitors to the login form instead.
-DirectoryIndex disabled
+# Pages live in modules/. The only root PHP file is main.php.
+DirectoryIndex main.php
 
 RewriteEngine On
-# Without this, an external redirect (R=301) from a per-directory .htaccess builds
-# its Location from the filesystem path, e.g. http://localhost/C:/xampp/htdocs/...
 RewriteBase /cdat-web/
 
-RewriteRule ^$ auth.php [R=302,L]
+# The login form is /login (modules/common/auth.php). Keep old FORM spellings.
+RewriteRule ^(?i:login1?|login_page|auth)\.(?i:html?|php)$ login [R=301,L]
 
-# The login form is auth.php (was LOGIN1.html). Send the old FORM spellings
-# there so existing links keep working -- including LOGIN.HTML, which
-# activity_logger.php and logout.php used to redirect to.
-# Deliberately limited to .html/.htm: login1.php is the POST handler the form
-# submits to, so redirecting the .php spellings would break login outright.
-RewriteRule ^(?i:login1?|login_page)\.(?i:html?)$ auth.php [R=301,L]
-
-# Pages moved out of the root into view/ (.html/.htm) and controller/ (.php).
-# Keep old flat URLs working for bookmarks and any link still spelled the old way.
-# Internal (no R=) so the new layout is what the address bar shows going forward.
+# Pretty URLs from routes/web.php, dispatched by main.php.
 RewriteCond %{REQUEST_FILENAME} !-f
-RewriteRule ^([A-Za-z0-9_%&.\-]+\.(?i:php))$ controller/$1 [L]
-
-# 52 form pages were merged into their handler, so e.g. address.htm no longer
-# exists -- controller/address.php now serves both the form and the results.
-# Route the old .html/.htm spellings there, at the flat url and the view/ one.
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{DOCUMENT_ROOT}/cdat-web/controller/$1.php -f
-RewriteRule ^(?:view/)?([A-Za-z0-9_%&.\-]+)\.(?i:html?)$ controller/$1.php [L]
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ main.php [L,QSA]
 
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^([A-Za-z0-9_%&.\-]+\.(?i:html?))$ view/$1 [L]
@@ -83,7 +66,7 @@ RewriteRule ^(.*)\.(?:html?|php)$ $1.html [L,NC]
 # Preload the sqlsrv_* -> PostgreSQL shim. Legacy pages call sqlsrv_connect()
 # without requiring it; nginx injected this via fastcgi_param PHP_VALUE.
 # Scoped here rather than php.ini so other XAMPP projects are unaffected.
-php_value auto_prepend_file "C:/xampp/htdocs/cdat-web/controller/sqlsrv_compat.php"
+php_value auto_prepend_file "C:/xampp/htdocs/cdat-web/modules/common/sqlsrv_compat.php"
 
 # Python 3.14 is installed but not on PATH as `python`, so excel_converter.php
 # and the CDR preview cannot find it. cdr_python_bin() honours CDR_PYTHON.

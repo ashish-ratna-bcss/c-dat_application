@@ -1,0 +1,456 @@
+<?php
+if (!defined('CDAT_BASE')) {
+    define('CDAT_BASE', '');
+}
+if (!defined('CDAT_ASSETS')) {
+    define('CDAT_ASSETS', rtrim(CDAT_BASE, '/') . '/public/assets');
+}
+$assets = htmlspecialchars(CDAT_ASSETS, ENT_QUOTES);
+$login  = htmlspecialchars(rtrim(CDAT_BASE, '/') . '/login', ENT_QUOTES);
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Login — Call Data Analysis Tool</title>
+<link rel="icon" type="image/png" sizes="32x32" href="<?= $assets ?>/images/favicon.png">
+<link rel="apple-touch-icon" href="<?= $assets ?>/images/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+    --bg: #e8eef5;
+    --surface: #ffffff;
+    --ink: #1b2733;
+    --ink-soft: #5b6b7c;
+    --brand: #1668c3;
+    --brand-dark: #0f2740;
+    --line: #d5e2ef;
+    --danger: #b3261e;
+    --shadow: 0 12px 40px rgba(15, 39, 64, .12);
+}
+
+* { box-sizing: border-box; }
+html, body {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    min-height: 100%;
+    min-height: 100dvh;
+}
+
+body {
+    font-family: "Source Sans 3", "Segoe UI", sans-serif;
+    color: var(--ink);
+    min-height: 100%;
+    min-height: 100dvh;
+    width: 100%;
+    display: grid;
+    place-items: center;
+    padding: 1.5rem;
+    position: relative;
+    isolation: isolate;
+    overflow-x: hidden;
+    background: #0f2740;
+}
+/* Full-screen article background (blurred) */
+body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -2;
+    background-image: url(<?= $assets ?>/images/login-bg.png);
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: cover;
+    filter: blur(8px);
+    transform: scale(1.08);
+    pointer-events: none;
+}
+/* Soft veil so the login card stays readable */
+body::after {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+    background: linear-gradient(160deg, rgba(15, 39, 64, .42) 0%, rgba(15, 39, 64, .52) 100%);
+    pointer-events: none;
+}
+
+.login-shell {
+    width: min(420px, 100%);
+    position: relative;
+    z-index: 1;
+}
+
+.login-brand {
+    text-align: center;
+    margin-bottom: 1.25rem;
+}
+.login-brand__logo {
+    width: 72px; height: 72px; object-fit: contain;
+    margin: 0 auto .75rem; display: block;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, .35));
+}
+.login-brand__org {
+    margin: 0;
+    font-size: .78rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: #c8dff5;
+}
+.login-brand__title {
+    margin: .2rem 0 0;
+    font-size: 1.55rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -.02em;
+    line-height: 1.2;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, .35);
+}
+.login-brand__sub {
+    margin: .35rem 0 0;
+    font-size: .9rem;
+    color: #d7e6f5;
+}
+
+.login-card {
+    background: #fff;
+    border: 1px solid rgba(255, 255, 255, .7);
+    border-radius: 14px;
+    padding: 1.5rem 1.45rem 1.4rem;
+    box-shadow: 0 18px 50px rgba(8, 18, 28, .35);
+}
+
+.login-card__head {
+    margin: 0 0 1.15rem;
+}
+.login-card__head h1 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--brand-dark);
+}
+.login-card__head p {
+    margin: .25rem 0 0;
+    font-size: .88rem;
+    color: var(--ink-soft);
+}
+
+.login-field { margin: 0 0 .95rem; }
+.login-field label {
+    display: block;
+    margin: 0 0 .35rem;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: #64748b;
+}
+.login-field input {
+    width: 100%;
+    margin: 0;
+    padding: .7rem .85rem;
+    font: inherit;
+    font-size: .98rem;
+    color: var(--ink);
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+}
+.login-field input:focus {
+    outline: 2px solid rgba(22, 104, 195, .35);
+    outline-offset: 0;
+    border-color: var(--brand);
+}
+.login-field input.is-invalid {
+    border-color: #f5a8a4;
+    outline-color: rgba(179, 38, 30, .35);
+}
+
+.pw-wrap { position: relative; }
+.pw-wrap input { padding-right: 4.25rem; }
+.pw-toggle {
+    position: absolute;
+    right: .4rem; top: 50%;
+    transform: translateY(-50%);
+    border: 0;
+    background: #f0f5fb;
+    color: var(--brand);
+    font: inherit;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    padding: .35rem .55rem;
+    border-radius: 6px;
+    cursor: pointer;
+}
+.pw-toggle:hover { background: #e2edf8; }
+
+.field-error {
+    display: none;
+    margin: .35rem 0 0;
+    font-size: .82rem;
+    color: var(--danger);
+    font-weight: 600;
+}
+.field-error.show { display: block; }
+
+.hint {
+    display: none;
+    margin: .35rem 0 0;
+    font-size: .8rem;
+    color: #92400e;
+    font-weight: 600;
+}
+.hint.show { display: block; }
+
+.form-msg {
+    display: none;
+    margin: 0 0 .95rem;
+    padding: .65rem .75rem;
+    border-radius: 8px;
+    font-size: .86rem;
+    font-weight: 600;
+    line-height: 1.4;
+}
+.form-msg.show { display: block; }
+.form-msg.error {
+    background: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+.form-msg.ok {
+    background: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+
+.login-submit {
+    width: 100%;
+    margin: .35rem 0 0;
+    padding: .75rem 1rem;
+    border: 0;
+    border-radius: 9px;
+    background: var(--brand);
+    color: #fff;
+    font: inherit;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+.login-submit:hover { background: #12559f; }
+.login-submit:disabled {
+    opacity: .7;
+    cursor: progress;
+}
+
+.login-foot {
+    margin: 1rem 0 0;
+    text-align: center;
+    font-size: .78rem;
+    color: rgba(232, 241, 250, .9);
+    text-shadow: 0 1px 4px rgba(0, 0, 0, .35);
+}
+
+@media (max-width: 480px) {
+    .login-card { padding: 1.25rem 1.1rem 1.15rem; }
+    .login-brand__title { font-size: 1.35rem; }
+}
+</style>
+</head>
+<body>
+<main class="login-shell">
+  <header class="login-brand">
+    <img class="login-brand__logo" src="<?= $assets ?>/images/logo.png" alt=""
+         onerror="this.style.display='none'">
+    <p class="login-brand__org">Hyderabad City Police</p>
+    <h1 class="login-brand__title">Call Data Analysis Tool</h1>
+    <p class="login-brand__sub">Sign in to continue</p>
+  </header>
+
+  <section class="login-card" aria-label="Sign in">
+    <div class="login-card__head">
+      <h1>Login</h1>
+      <p>Enter your username and password.</p>
+    </div>
+
+    <!-- novalidate: browser bubbles replaced by messages below.
+         action/method kept so the form still works without JS. -->
+    <form action="<?= $login ?>" method="post" id="loginForm" novalidate>
+      <p class="form-msg" id="formMsg" role="alert"></p>
+
+      <div class="login-field">
+        <label for="USERNAME">Username</label>
+        <input type="text" name="USERNAME" id="USERNAME"
+               placeholder="Enter username"
+               autocomplete="username" required autofocus
+               aria-describedby="errUser">
+        <span class="field-error" id="errUser"></span>
+      </div>
+
+      <div class="login-field">
+        <label for="PASSWORD">Password</label>
+        <div class="pw-wrap">
+          <input type="password" name="PASSWORD" id="PASSWORD"
+                 placeholder="Enter password"
+                 autocomplete="current-password" required
+                 aria-describedby="errPass capsHint">
+          <button type="button" class="pw-toggle" id="pwToggle"
+                  aria-label="Show password">SHOW</button>
+        </div>
+        <span class="field-error" id="errPass"></span>
+        <span class="hint" id="capsHint">Caps Lock is on</span>
+      </div>
+
+      <button type="submit" class="login-submit" id="loginBtn">Login</button>
+    </form>
+  </section>
+
+  <p class="login-foot">Hyderabad City Police · Call Data Analysis Tool</p>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  var form   = document.getElementById('loginForm');
+  var user   = document.getElementById('USERNAME');
+  var pass   = document.getElementById('PASSWORD');
+  var btn    = document.getElementById('loginBtn');
+  var msg    = document.getElementById('formMsg');
+  var caps   = document.getElementById('capsHint');
+  var errors = { USERNAME: document.getElementById('errUser'),
+                 PASSWORD: document.getElementById('errPass') };
+  var busy = false;
+
+  function setFieldError(input, text) {
+    var box = errors[input.id];
+    box.textContent = text || '';
+    box.classList.toggle('show', !!text);
+    input.classList.toggle('is-invalid', !!text);
+    input.setAttribute('aria-invalid', text ? 'true' : 'false');
+  }
+
+  function setFormMsg(text, kind) {
+    msg.textContent = text || '';
+    msg.className = 'form-msg' + (text ? ' show ' + kind : '');
+  }
+
+  function clearAll() {
+    setFieldError(user, '');
+    setFieldError(pass, '');
+    setFormMsg('');
+  }
+
+  function validate() {
+    var bad = null;
+    setFieldError(user, '');
+    setFieldError(pass, '');
+
+    if (user.value.trim() === '') {
+      setFieldError(user, 'Enter your username.');
+      bad = bad || user;
+    } else if (/\s/.test(user.value.trim())) {
+      setFieldError(user, 'A username cannot contain spaces.');
+      bad = bad || user;
+    }
+
+    if (pass.value === '') {
+      setFieldError(pass, 'Enter your password.');
+      bad = bad || pass;
+    }
+    return bad;
+  }
+
+  [user, pass].forEach(function (el) {
+    el.addEventListener('input', function () {
+      if (el.classList.contains('is-invalid')) { setFieldError(el, ''); }
+      if (msg.classList.contains('show')) { setFormMsg(''); }
+    });
+  });
+
+  pass.addEventListener('keyup', function (e) {
+    var on = e.getModifierState && e.getModifierState('CapsLock');
+    caps.classList.toggle('show', !!on);
+  });
+  pass.addEventListener('blur', function () { caps.classList.remove('show'); });
+
+  document.getElementById('pwToggle').addEventListener('click', function () {
+    var shown = pass.type === 'text';
+    pass.type = shown ? 'password' : 'text';
+    this.textContent = shown ? 'SHOW' : 'HIDE';
+    this.setAttribute('aria-label', shown ? 'Show password' : 'Hide password');
+    pass.focus();
+  });
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (busy) { return; }
+
+    var bad = validate();
+    if (bad) { bad.focus(); return; }
+
+    busy = true;
+    btn.disabled = true;
+    btn.textContent = 'Signing in…';
+    setFormMsg('');
+
+    var body = new FormData(form);
+    body.append('ajax', '1');
+
+    fetch(form.action, {
+      method: 'POST',
+      body: body,
+      credentials: 'same-origin',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    }).then(function (r) {
+      return r.text().then(function (text) {
+        try {
+          return JSON.parse(text);
+        } catch (e) {
+          throw new Error(r.ok
+            ? 'The server did not answer as expected.'
+            : 'Sign in failed. Try again.');
+        }
+      });
+    }).then(function (data) {
+      if (data.ok) {
+        setFormMsg('Signed in. Opening your dashboard…', 'ok');
+        window.location.href = data.redirect;
+        return;
+      }
+      busy = false;
+      btn.disabled = false;
+      btn.textContent = 'Login';
+      if (data.field && errors[data.field]) {
+        setFieldError(document.getElementById(data.field), data.error);
+        document.getElementById(data.field).focus();
+      } else {
+        setFormMsg(data.error || 'Sign in failed.', 'error');
+        pass.value = '';
+        pass.focus();
+      }
+    }).catch(function (err) {
+      busy = false;
+      btn.disabled = false;
+      btn.textContent = 'Login';
+      setFormMsg((err && err.message) ? err.message : 'Could not reach the server. Check your connection and try again.', 'error');
+      if (window.console) { console.error(err); }
+    });
+  });
+
+  clearAll();
+}());
+</script>
+</body>
+</html>

@@ -178,5 +178,25 @@ def _approve_cdr_only(batch: dict, username: str) -> dict:
                 """,
                 (batch['document_job_id'],),
             )
+            cur.execute(
+                """
+                UPDATE upload_activity_logs
+                SET upload_status = 'Success',
+                    verification_status = 'approved',
+                    inserted_records = %s,
+                    failed_records = GREATEST(COALESCE(total_records, 0) - %s, 0)
+                WHERE staging_batch_id = %s OR document_job_id = %s
+                """,
+                (inserted, inserted, batch['batch_id'], batch['document_job_id']),
+            )
+            for sjid in sibling_jobs:
+                cur.execute(
+                    """
+                    UPDATE upload_activity_logs
+                    SET upload_status = 'Success', verification_status = 'approved'
+                    WHERE document_job_id = %s
+                    """,
+                    (sjid,),
+                )
         conn.commit()
     return {'ok': True, 'inserted': inserted, 'job_id': batch['document_job_id']}
