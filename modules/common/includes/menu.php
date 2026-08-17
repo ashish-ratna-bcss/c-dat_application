@@ -26,9 +26,7 @@
  *
  * These mirror the guard the page itself enforces -- audit_require_admin() and
  * audit_require_uploader(). Hiding a link is tidiness, not a control: the page
- * is what refuses the request. scripts/check_menu_roles.php compares the two
- * and fails if they ever drift apart, so add the guard to the page first and
- * the 'role' here second.
+ * is what refuses the request.
  */
 return [
     ['label' => 'Dashboard', 'url' => '/dashboard', 'icon' => 'home'],
@@ -114,124 +112,5 @@ return [
         ['label' => 'User Activity',            'url' => '/administration/user-activity',      'role' => 'admin'],
         ['label' => 'SQL Query Console',        'url' => '/administration/sql-console',       'role' => 'admin'],
         ['label' => 'Create User',              'url' => '/administration/create-user',       'role' => 'admin'],
-    ]],
-
-    // Everything not in the main CDAT menu above.
-    ['label' => 'Additional pages', 'icon' => 'folder', 'children' => [
-        // Call Details (extra)
-        ['label' => 'Call Details Total',       'url' => '/additional/calls-tot'],
-        ['label' => 'Calls Between Two Nos',    'url' => '/additional/calls-bt-nos'],
-        ['label' => 'Call Details (old)',       'url' => '/additional/calldetails'],
-        ['label' => 'Movements In Particular Place', 'url' => '/additional/movements-in-particular-place'],
-
-        // IMEI (extra)
-        ['label' => 'Lost Report IMEI Home',    'url' => '/additional/home-imei'],
-        ['label' => 'IMEI Request Status',      'url' => '/additional/imei-request-status'],
-        ['label' => 'IMEI Request Traced Details', 'url' => '/additional/imei-request-traced-details'],
-        ['label' => 'Traced Phone Summary',     'url' => '/additional/imei-request-sum'],
-        ['label' => 'Traced Phone Movements',   'url' => '/additional/imei-request-movements'],
-        ['label' => 'Traced Phone Max Spent Loc', 'url' => '/additional/maxspentlocation-imei'],
-        ['label' => 'Traced Phone Day & Night Loc', 'url' => '/additional/dayandnightloc-imei'],
-
-        // Day/Night & location (extra)
-        ['label' => 'Nearest Cell IDs',         'url' => '/additional/nearest-cellids'],
-        ['label' => 'Near By Cell Tower IDs',   'url' => '/additional/near-by-celltowerids'],
-        ['label' => 'Day Night Loc (handler)',  'url' => '/additional/dandn-loc'],
-        ['label' => 'Day Night Between Dates (handler)', 'url' => '/additional/dandn-bt-dts'],
-        ['label' => 'Day Night IMEI (handler)', 'url' => '/additional/dandn-loc-imei'],
-
-        // Others (extra)
-        ['label' => 'Vehicle Search Criteria',  'url' => '/additional/vehicle-search-criteria'],
-        ['label' => 'Vehicle Chassis Search',   'url' => '/additional/vehicle-chas-search'],
-        ['label' => 'Vehicle Engine Search',    'url' => '/additional/vehicle-eng-search'],
-        ['label' => 'Trainings 2',              'url' => '/additional/training-module2'],
-        ['label' => 'Offender FD',              'url' => '/additional/offender-fd'],
-        ['label' => 'VBR Search',               'url' => '/additional/vbr-search'],
-        ['label' => 'Name Search',              'url' => '/additional/name-search'],
-        ['label' => 'CAF Search',               'url' => '/additional/caf-search'],
-        ['label' => 'CIS Data Name Search',     'url' => '/additional/cis-data-name-search'],
-        ['label' => 'Migrant Labours Report',   'url' => '/additional/migrant-labours-report'],
-        ['label' => 'Migrant Labours Date Report', 'url' => '/additional/migrant-labours-date-report'],
-        ['label' => 'NBWS',                     'url' => '/additional/nbws'],
-        ['label' => 'RTA Nike',                 'url' => '/additional/rta-nike'],
-        ['label' => 'All Data',                 'url' => '/additional/alldata'],
-        ['label' => 'All Data Search',          'url' => '/additional/alldata-search'],
-        ['label' => 'Summary All DB',           'url' => '/additional/sum-alldb'],
-        ['label' => 'Bulk Gang ID',             'url' => '/additional/bulk-gang-id'],
-        ['label' => 'Bulk Gang ID Search',      'url' => '/additional/bulk-gang-id-search'],
-        ['label' => 'MO Image List',            'url' => '/additional/mo-image-list'],
-
-        // Interrogation Reports (extra)
-        ['label' => 'IR Home',                  'url' => '/additional/home-ir'],
-        ['label' => 'IR Module',                'url' => '/additional/ir-module'],
-        ['label' => 'IR Forms',                 'url' => '/additional/bulk-irsearch-irkey'],
-        ['label' => 'IR Report',                'url' => '/additional/irreport'],
-        ['label' => 'Family History',           'url' => '/additional/family-history'],
-        ['label' => 'Offence Details',          'url' => '/additional/offence-details'],
-        ['label' => 'Previous Offence Details', 'url' => '/additional/previous-offence-details'],
-        ['label' => 'Local Contacts',           'url' => '/additional/local-contacts'],
-        ['label' => 'Gangs / Associates',       'url' => '/additional/relation-with-other-associates-and-gangs'],
-        ['label' => 'Property Details',         'url' => '/additional/disposal-of-property'],
-        ['label' => 'Brief Facts',              'url' => '/additional/brief-facts'],
-        ['label' => 'Image',                    'url' => '/additional/image-list'],
-        ['label' => 'Mulakath Details',         'url' => '/additional/mulakath-entry'],
-        ['label' => 'Retrieve',                 'url' => '/additional/retrieve'],
-        ['label' => 'Bulk IR Key',              'url' => '/additional/bulk-irkey'],
-        ['label' => 'Bulk IR Key NDPS',         'url' => '/additional/bulk-irkey-ndps'],
-        ['label' => 'Bulk IR Search NDPS',      'url' => '/additional/bulk-irsearch-irkey-ndps'],
-        ['label' => 'IR NDPS',                  'url' => '/additional/ir-ndps'],
-        ['label' => 'CDAT IR Form',             'url' => '/additional/cdat-irform'],
-        ['label' => 'IR (old hub)',             'url' => '/additional/ir'],
-        ['label' => 'IR NDPS 1',                'url' => '/additional/ir-ndps1'],
-        ['label' => 'IR Search Test',           'url' => '/additional/ir-search-test'],
-
-        // JRMS (extra)
-        ['label' => 'JRMS Main',                'url' => '/additional/jrms-main-page1'],
-        ['label' => 'JRMS Home',                'url' => '/additional/home-jrms'],
-        ['label' => 'New Records Entry',        'url' => '/additional/jrms-new-records-entry-uniqueness'],
-        ['label' => 'Search By Release Date',   'url' => '/additional/jrms-datewise-search-uniqueness'],
-        ['label' => 'Search By CIN Number',     'url' => '/additional/jrms-cin-search-uniqueness'],
-        ['label' => 'Search By Prisoner No',    'url' => '/additional/jrms-search-by-prisonerno-uniqueness'],
-        ['label' => 'Search By Name and Unique IDs', 'url' => '/additional/jrms-search-uniqueness'],
-        ['label' => 'Unique Key Update',        'url' => '/additional/jrms-unique-key-update'],
-        ['label' => 'JRMS Search',              'url' => '/additional/jrms-search'],
-        ['label' => 'JRMS Search New',          'url' => '/additional/jrms-search-new'],
-        ['label' => 'JRMS Search For Unique Key', 'url' => '/additional/jrms-search-for-uniquekey'],
-        ['label' => 'JRMS Uniqueness Update',   'url' => '/additional/jrms-uniqueness-update'],
-
-        // PD Act (extra)
-        ['label' => 'PDACT Main',               'url' => '/additional/pdact-main-page-search'],
-        ['label' => 'PDACT Entry Form',         'url' => '/additional/pdact-main-page'],
-        ['label' => 'PDACT Main (copy)',        'url' => '/additional/pdact-main'],
-        ['label' => 'PDACT PS Wise Search PHP', 'url' => '/additional/pdact-ps-wise-search-php'],
-
-        // Tower Dump
-        ['label' => 'Tower Dump Home',          'url' => '/additional/tower-home'],
-        ['label' => 'Tower Dump Home (old)',    'url' => '/additional/towerdump-home'],
-        ['label' => 'Suspect Search In Dump',   'url' => '/additional/suspect-search'],
-        ['label' => 'Other State Numbers In Dump', 'url' => '/additional/other-state-number'],
-        ['label' => 'Inter Tower Calls',        'url' => '/additional/inter-tower-calls'],
-        ['label' => 'Previous Offenders In Dump', 'url' => '/additional/pre-off-search'],
-        ['label' => 'Suspect Search TWR',       'url' => '/additional/suspect-search-twr'],
-        ['label' => 'Other State Number TWR',   'url' => '/additional/other-state-number-twr'],
-        ['label' => 'Inter Tower Calls TWR',    'url' => '/additional/inter-tower-calls-twr'],
-        ['label' => 'Previous Offenders TWR',   'url' => '/additional/pre-off-search-twr'],
-
-        // Dump analysis
-        ['label' => 'Dump',                     'url' => '/additional/dump'],
-        ['label' => 'Dump Search',              'url' => '/additional/dump-search'],
-        ['label' => 'Dump Analysis',            'url' => '/additional/dump-analysis'],
-
-        // Test / copies
-        ['label' => 'Profile',                  'url' => '/profile'],
-        ['label' => 'My Index',                 'url' => '/additional/myindex'],
-        ['label' => 'Demo',                     'url' => '/additional/demo-php'],
-        ['label' => 'Chandu',                   'url' => '/additional/chandu'],
-        ['label' => 'Name Search (copy)',       'url' => '/additional/namesearch'],
-        ['label' => 'CIS Data Name Search PHP', 'url' => '/additional/cis-data-name-search-php'],
-        ['label' => 'Bulk Address (copy)',      'url' => '/additional/bulk-address'],
-        ['label' => 'Summary Between Dates (copy)', 'url' => '/additional/sum-btwn-dates'],
-        ['label' => 'Summary New No (copy)',    'url' => '/additional/sum-new-no'],
-        ['label' => 'Rowdy Sheeter PHP copy',   'url' => '/additional/rowdysheeter-ps-wise-search-php'],
     ]],
 ];

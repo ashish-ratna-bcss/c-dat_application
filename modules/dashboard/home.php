@@ -4,6 +4,7 @@ require_once CDAT_COMMON . '/activity_logger.php';
 audit_require_session();
 
 require_once CDAT_COMMON . '/includes/layout.php';
+require_once CDAT_COMMON . '/includes/quick_links.php';
 require_once CDAT_COMMON . '/includes/sum_ui.php';
 
 layout_begin('Dashboard');

@@ -84,15 +84,13 @@ function cdat_page(string $file, array $query = []): string
         $map['sum_new_no.php'] = $map['sum_new_no.php'] ?? '/summary/new-contacts';
         $map['bulk_address.php'] = $map['bulk_address.php'] ?? '/address/bulk';
         $map['bulk_cdat_contacts1.php'] = $map['bulk_cdat_contacts.php'] ?? '/cdat/bulk-contacts';
-        $map['bulk_irsearch_irkey1.php'] = $map['bulk_irsearch_irkey.php'] ?? '/additional/bulk-irsearch-irkey';
+        $map['cdatcnts2.php'] = $map['cdatcnts.php'] ?? '/cdat/contacts';
         $map['d&n_loc.php'] = $map['d&n_loc.php'] ?? '/day-night-location/top-10';
         $map['d&n_bt_dts.php'] = $map['d&n_bt_dts.php'] ?? '/day-night-location/by-date';
         $map['d%26n_loc.php'] = $map['d&n_loc.php'];
         $map['d%26n_bt_dts.php'] = $map['d&n_bt_dts.php'];
-        $map['d%26n_loc_imei.php'] = $map['d&n_loc_imei.php'] ?? '/additional/dandn-loc-imei';
         $map['day%26nightloc.php'] = $map['day&nightloc.php'] ?? '/day-night-location/top-10';
         $map['day%26nightloc_btwn_dates.php'] = $map['day&nightloc_btwn_dates.php'] ?? '/day-night-location/by-date';
-        $map['day%26nightloc_imei.php'] = $map['day&nightloc_imei.php'] ?? '/additional/dayandnightloc-imei';
     }
 
     $raw = explode('?', $file, 2)[0];
@@ -302,6 +300,10 @@ function cdat_render_nav(array $items): void
 function layout_begin(string $title = 'Call Data Analysis Tool', string $subtitle = '',
                       string $head = ''): void
 {
+    // Load before the AJAX early-return: dashboard content still calls
+    // cdat_ql_render_grid() when the shell is skipped.
+    require_once __DIR__ . '/quick_links.php';
+
     $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
     if ($isAjax) {
         header('X-CDAT-Title: ' . str_replace(["\r", "\n"], '', $title));
@@ -309,11 +311,6 @@ function layout_begin(string $title = 'Call Data Analysis Tool', string $subtitl
     }
 
     $base  = CDAT_BASE;
-    // Before $user is read: this pulls in activity_logger.php, which starts the
-    // session. Reading $_SESSION first meant the signed-in name -- and the
-    // quick links button with it -- was missing on every page that does not
-    // include activity_logger.php itself, which is most of them.
-    require_once __DIR__ . '/quick_links.php';
     // ?: not ??  -- audit_fullname is set to '' when the LOGINS row has no
     // FULLNAME, and an empty name should fall through to the username.
     $user  = ($_SESSION['audit_fullname'] ?? '') ?: ($_SESSION['audit_username'] ?? '');

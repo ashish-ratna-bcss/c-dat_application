@@ -89,7 +89,7 @@ if (isset($_POST['ajax_action']) && $_POST['ajax_action'] === 'preview_cdr') {
         }
         $operatorArg = $operator;
 
-        $script = CDAT_ROOT . '/scripts/cdr_preview.py';
+    $script = CDAT_ROOT . '/cdr_import/cdr_preview.py';
         $cmd = sprintf(
             '%s %s %s %s 150 2>&1',
             cdr_python_bin(),

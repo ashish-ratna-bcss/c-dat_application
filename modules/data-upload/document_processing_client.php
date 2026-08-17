@@ -108,14 +108,10 @@ class DocumentProcessingClient
                                              CURLE_OPERATION_TIMEDOUT,
                                              CURLE_COULDNT_RESOLVE_HOST], true);
             if ($offline) {
-                $isWindows = DIRECTORY_SEPARATOR === '\\';
-                $start = $isWindows
-                    ? 'run scripts/run_cdr_import_service.ps1 and leave that window open'
-                    : 'from the project folder run `python3 main.py` (see run_cmds.txt) and leave that terminal open';
                 throw new RuntimeException(
                     'The document processing service is not reachable at ' . $this->baseUrl . '. '
                     . 'It runs separately from the web app and must be started before uploading: '
-                    . $start
+                    . 'from the project folder run `python3 main.py` (see run_cmds.txt) and leave that terminal open'
                     . ', then retry the upload. (' . ($curlError ?: 'connection failed') . ')'
                 );
             }

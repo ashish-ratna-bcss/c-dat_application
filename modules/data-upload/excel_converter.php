@@ -33,7 +33,7 @@ function convert_excel_upload_to_csv(string $sourcePath, string $ext): string
     if ($csvPath === $sourcePath) {
         $csvPath .= '.csv';
     }
-    $script = CDAT_ROOT . '/scripts/excel_to_csv.py';
+    $script = CDAT_ROOT . '/modules/data-upload/excel_to_csv.py';
     $cmd = sprintf(
         '%s %s %s %s 2>&1',
         cdr_python_bin(),

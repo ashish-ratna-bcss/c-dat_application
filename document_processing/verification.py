@@ -69,7 +69,7 @@ def approve_staging_batch(job_id: int, username: str='api') -> dict:
         raise VerificationError('Staging batch not found.')
     if batch.get('verification_status') == 'approved':
         raise VerificationError('Batch already approved.')
-    script = os.path.join(os.path.dirname(__file__), '..', 'scripts', 'approve_staging_cli.php')
+    script = os.path.join(os.path.dirname(__file__), 'approve_staging_cli.php')
     if os.path.isfile(script):
         import subprocess
         proc = subprocess.run(['php', script, str(batch['batch_id']), username], capture_output=True, text=True, timeout=86400)
