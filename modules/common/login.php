@@ -60,13 +60,26 @@ if ($conn === false) {
 // returned the first row in LOGINS and signed the visitor in as that user.
 $st1 = sqlsrv_query(
     $conn,
-    "SELECT * FROM LOGINS WHERE USERNAME = ? AND PASSWORD = ?",
-    [$USERNAME, $PASSWORD]
+    "SELECT * FROM LOGINS WHERE USERNAME = ?",
+    [$USERNAME]
 );
 $row = $st1 ? sqlsrv_fetch_array($st1, SQLSRV_FETCH_ASSOC) : false;
 
-if (!$row) {
-    // Deliberately does not say which of the two was wrong.
+$stored = (string)($row['PASSWORD'] ?? $row['password'] ?? '');
+$valid = false;
+if ($row && $stored !== '') {
+    if (str_starts_with($stored, '$2y$') || str_starts_with($stored, '$2a$') || str_starts_with($stored, '$argon2')) {
+        $valid = password_verify($PASSWORD, $stored);
+    } else {
+        $valid = hash_equals($stored, $PASSWORD);
+        if ($valid) {
+            $hashed = password_hash($PASSWORD, PASSWORD_DEFAULT);
+            sqlsrv_query($conn, "UPDATE LOGINS SET PASSWORD = ? WHERE USERNAME = ?", [$hashed, $USERNAME]);
+        }
+    }
+}
+
+if (!$valid) {
     login_fail($wantsJson, 'Username or password is incorrect.');
 }
 

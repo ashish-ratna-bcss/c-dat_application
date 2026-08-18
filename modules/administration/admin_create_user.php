@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $st = $db->prepare('INSERT INTO logins (username, password, role, fullname) VALUES (:u, :p, :r, :f)');
                 $ok = $st->execute([
                     ':u' => $new_uname,
-                    ':p' => $new_pass,
+                    ':p' => password_hash($new_pass, PASSWORD_DEFAULT),
                     ':r' => $new_role,
                     ':f' => $new_fname,
                 ]);
