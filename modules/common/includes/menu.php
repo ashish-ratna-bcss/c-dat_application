@@ -52,6 +52,7 @@ return [
         ['label' => 'Movements Between Two Numbers',    'url' => '/call-details/movements-between-numbers'],
         ['label' => 'Comparison Between Two Numbers',     'url' => '/call-details/comparison'],
         ['label' => 'Calls Between Dates',              'url' => '/call-details/calls-between-dates'],
+        ['label' => 'Movements in Particular Place',    'url' => '/call-details/movements-in-particular-place'],
     ]],
 
     ['label' => 'CDAT', 'icon' => 'grid', 'children' => [
