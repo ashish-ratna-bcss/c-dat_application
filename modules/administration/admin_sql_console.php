@@ -178,16 +178,16 @@ require_once CDAT_COMMON . '/includes/sum_ui.php';
 layout_begin('SQL Query Console');
 cdat_sum_page_open('sum-admin-layout');
 ?>
-<div class="sum-admin-grid">
-  <div class="sum-admin-grid__main">
+<div class="row g-4">
+  <div class="col-12 col-lg-9">
     <section class="sum-console-panel" aria-label="SQL Query Console">
       <h2 class="sum-console-panel__title">SQL Query Console (PostgreSQL)</h2>
       <form id="sqlForm" name="sqlForm" method="post" action="" class="no-ajax" data-no-ajax>
-        <textarea id="sql_query" name="sql_query" class="sum-console-editor" placeholder="Type your SELECT query here... e.g. SELECT * FROM user_sessions LIMIT 100;"><?= htmlspecialchars($query) ?></textarea>
+        <textarea id="sql_query" name="sql_query" class="sum-console-editor form-control font-monospace" placeholder="Type your SELECT query here... e.g. SELECT * FROM user_sessions LIMIT 100;"><?= htmlspecialchars($query) ?></textarea>
         <div class="sum-console-actions">
-          <input type="submit" name="BTN_EXECUTE" id="BTN_EXECUTE" value="Execute Query" class="sum-console-btn" />
-          <input type="button" value="Clear" class="sum-console-btn sum-console-btn--secondary" onclick="document.getElementById('sql_query').value='';" />
-          <input type="button" value="Copy Query" class="sum-console-btn sum-console-btn--secondary" onclick="navigator.clipboard.writeText(document.getElementById('sql_query').value); alert('Query copied to clipboard!');" />
+          <input type="submit" name="BTN_EXECUTE" id="BTN_EXECUTE" value="Execute Query" class="sum-console-btn btn btn-primary btn-sm" />
+          <input type="button" value="Clear" class="sum-console-btn sum-console-btn--secondary btn btn-secondary btn-sm" onclick="document.getElementById('sql_query').value='';" />
+          <input type="button" value="Copy Query" class="sum-console-btn sum-console-btn--secondary btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText(document.getElementById('sql_query').value); alert('Query copied to clipboard!');" />
         </div>
       </form>
     </section>
@@ -201,18 +201,18 @@ cdat_sum_page_open('sum-admin-layout');
     <?php endif; ?>
 
     <?php if ($_SERVER['REQUEST_METHOD'] === 'POST' && $error === '' && isset($_POST['BTN_EXECUTE'])): ?>
-      <div class="sum-console-actions" style="justify-content: flex-end; margin-bottom: .65rem;">
-        <form method="post" action="" class="no-ajax" data-no-ajax style="display:inline; margin:0;">
+      <div class="sum-console-actions d-flex flex-wrap gap-2 justify-content-end mb-3">
+        <form method="post" action="" class="no-ajax" data-no-ajax>
           <input type="hidden" name="sql_query" value="<?= htmlspecialchars($query) ?>" />
           <input type="hidden" name="export" value="1" />
           <input type="hidden" name="export_type" value="csv" />
-          <input type="submit" value="Export CSV" class="sum-console-btn" />
+          <input type="submit" value="Export CSV" class="btn btn-primary btn-sm" />
         </form>
-        <form method="post" action="" class="no-ajax" data-no-ajax style="display:inline; margin:0;">
+        <form method="post" action="" class="no-ajax" data-no-ajax>
           <input type="hidden" name="sql_query" value="<?= htmlspecialchars($query) ?>" />
           <input type="hidden" name="export" value="1" />
           <input type="hidden" name="export_type" value="excel" />
-          <input type="submit" value="Export Excel" class="sum-console-btn" />
+          <input type="submit" value="Export Excel" class="btn btn-outline-secondary btn-sm" />
         </form>
       </div>
 
@@ -235,7 +235,7 @@ cdat_sum_page_open('sum-admin-layout');
     <?php endif; ?>
   </div>
 
-  <aside class="sum-admin-grid__side">
+  <aside class="col-12 col-lg-3">
     <section class="sum-console-panel" aria-label="Recent Queries">
       <h2 class="sum-console-panel__title">Recent Queries</h2>
       <?php if (!empty($history)): ?>

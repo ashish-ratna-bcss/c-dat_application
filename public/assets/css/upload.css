@@ -114,8 +114,11 @@
     background: transparent; border: 0; box-shadow: none;
 }
 .content .wizard-card {
-    background: #fff; border: 1px solid var(--line);
-    border-radius: 12px; padding: 1.15rem 1.25rem; box-shadow: var(--shadow);
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 1.15rem 1.25rem;
+    box-shadow: none;
 }
 .content .wizard-title {
     color: var(--ink); font-size: 1rem; font-weight: 650; margin: 0 0 .9rem;
@@ -133,8 +136,9 @@
 }
 .content .form-select:disabled { background: #f1f4f8; color: #94a3b3; }
 .content .module-hint { color: var(--ink-soft); font-size: .82rem; margin-top: .3rem; }
-.content .form-row { display: flex; gap: 1rem; flex-wrap: wrap; }
-.content .form-col { flex: 1 1 260px; min-width: 0; }
+.content .form-row:not(.row) { display: flex; gap: 1rem; flex-wrap: wrap; }
+.content .form-row.row { --bs-gutter-x: 1rem; --bs-gutter-y: .85rem; }
+.content .form-col:not([class*="col-"]) { flex: 1 1 260px; min-width: 0; }
 .content .form-group { margin-bottom: 1rem; }
 
 .content .upload-dropzone {
@@ -145,18 +149,7 @@
 .content .upload-dropzone:hover { border-color: var(--brand); background: #eef5fd; }
 .content .upload-filename { color: var(--ink); font-weight: 600; }
 
-/* ---- buttons ---- */
-.content .btn-action {
-    background: var(--brand); color: #fff; border: 1px solid transparent;
-    border-radius: 8px; padding: .58rem 1.15rem; font-weight: 600; font-size: .92rem;
-}
-.content .btn-action:hover { background: #12559f; }
-/* was white text on a translucent white panel */
-.content .btn-secondary {
-    background: #fff; color: var(--ink); border: 1px solid #c6d2e0;
-    border-radius: 8px; padding: .58rem 1.15rem; font-weight: 600; font-size: .92rem;
-}
-.content .btn-secondary:hover { background: #f1f5fa; }
+/* ---- buttons: all replaced by direct Bootstrap classes in markup ---- */
 
 /* ---- progress ---- */
 .content .progress-bar-wrap {
@@ -174,9 +167,13 @@
 /* ---- results ---- */
 .content .results-summary { display: flex; gap: .7rem; flex-wrap: wrap; margin-bottom: 1rem; }
 .content .result-card {
-    flex: 1 1 150px; background: #f7fafd;
-    border: 1px solid var(--line); border-radius: 10px;
-    padding: .8rem .9rem; text-align: center; color: var(--ink-soft);
+    flex: 1 1 150px;
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: .8rem .9rem;
+    text-align: center;
+    color: var(--ink-soft);
     font-size: .82rem;
 }
 .content .result-card .num {
@@ -210,9 +207,11 @@
     text-align: left; padding: .5rem .6rem; white-space: nowrap;
 }
 .content .preview-table td {
-    padding: .42rem .6rem; border-top: 1px solid var(--line); background: #fff;
+    padding: .42rem .6rem;
+    border-top: 1px solid var(--line);
+    background: transparent;
 }
-.content .preview-table tr:nth-child(even) td { background: #f7fafd; }
+.content .preview-table tr:nth-child(even) td { background: rgba(255, 255, 255, 0.35); }
 .content .preview-table td.preview-readonly { background: #f1f4f8; color: var(--ink-soft); }
 
 /* ==================================================================
@@ -235,24 +234,89 @@
 
 /* ---- the wrapper panels ---- */
 .content .history-wrapper,
-.content .verify-wrapper {
-    /* were fixed at 1050px / 1200px, which forced the page to scroll
-       sideways once the sidebar took 264px off the viewport */
-    width: auto; max-width: 100%; margin: 0;
-    background: #fff;
-    border: 1px solid var(--line);
-    border-radius: 12px;
+.content .verify-wrapper,
+.content .upload-wrapper {
+    width: 100%; max-width: 100%; margin: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
     box-shadow: none;
     color: var(--ink);
     font-family: inherit;
 }
 .content .verify-wrapper h2 { color: var(--ink); }
 
-/* ---- filter bar (history) ---- */
-.content .filter-bar {
-    background: #f7fafd;
+/* ---- history filter card ---- */
+.content .history-filter-card {
+    background: #fff;
     border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 1rem 1.15rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 4px rgba(15,39,64,.06);
+}
+.content .history-filter-card .form-label {
+    font-size: .8rem;
+    font-weight: 600;
+    color: var(--ink-soft);
+    white-space: nowrap;
+}
+.content .history-filter-card .form-select,
+.content .history-filter-card .form-control {
+    font-size: .88rem;
+}
+.content .history-filter-card .row > [class*="col-"] {
+    min-width: 0;
+}
+.content .history-filter-card .row > .col-xl {
+    min-width: 8.75rem;
+}
+.content .history-filter-card .sum-ss {
+    width: 100%;
+}
+.content .history-filter-card .sum-ss__trigger {
+    min-height: 2.35rem;
+    font-size: .88rem;
     border-radius: 10px;
+    align-items: center;
+    white-space: nowrap;
+}
+.content .history-filter-card .sum-ss__value {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.content .history-filter-card .sum-ss__chevron {
+    margin-left: .5rem;
+}
+.content .history-filter-card .sum-ss__panel {
+    z-index: 60;
+}
+
+/* ---- history table card ---- */
+.content .history-table-card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(15,39,64,.06);
+}
+.content .history-table-card .history-table-wrap {
+    border-radius: 0;
+    margin-bottom: 0;
+}
+.content .history-pagination {
+    padding: .65rem 1rem;
+    border-top: 1px solid var(--line);
+}
+.content .history-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    align-items: center;
+    justify-content: flex-end;
+    margin-bottom: 1rem;
 }
 .content .filter-grid {
     /* six rigid columns squeezed the date inputs; let them wrap instead */
@@ -283,18 +347,27 @@
     background: var(--thead) !important;
     color: #fff;
     font-weight: 600;
+    font-size: .82rem;
+    letter-spacing: .02em;
+    padding: .65rem .85rem;
     border-bottom: 0;
+    white-space: nowrap;
 }
 .content .history-table td,
 .content #verify-table td {
     color: var(--ink);
+    font-size: .88rem;
+    padding: .55rem .85rem;
     border-bottom: 1px solid var(--line);
+    vertical-align: middle;
 }
 .content .history-table tbody tr:nth-child(even) td { background: #f7fafd; }
 .content .history-table tbody tr:hover td { background: #eef5fc; }
 
 .content .table-scroll {
-    border: 1px solid var(--line); border-radius: 10px; background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: transparent;
 }
 /* duplicate rows: the point is that they stand out, so keep them red -- just
    a red that works on white */
@@ -306,7 +379,7 @@
     background: #fff4d6; outline: 2px solid rgba(22,104,195,.35);
 }
 
-/* ---- buttons ---- */
+/* ---- verify head ---- */
 .content .verify-head {
     display: flex;
     align-items: center;
@@ -315,23 +388,9 @@
     gap: .75rem;
     margin: 0 0 1rem;
 }
-.content button.staging-close-btn {
-    margin: 0 0 0 auto !important;
-    background: #fff !important;
-    color: var(--ink) !important;
-    border: 1px solid #c6d2e0 !important;
-}
-.content button.staging-close-btn:hover {
-    background: #f1f5fa !important;
-    color: var(--ink) !important;
-}
-.content .btn-back, .content .btn-reset {
-    background: #fff; color: var(--ink);
-    border: 1px solid #c6d2e0;
-}
-.content .btn-back:hover, .content .btn-reset:hover { background: #f1f5fa; }
-.content .btn-filter { background-color: var(--brand); color: #fff; }
-.content .btn-filter:hover { background-color: #12559f; }
+/* staging-close-btn uses btn btn-outline-secondary in markup */
+.content button.staging-close-btn { margin: 0 0 0 auto; }
+/* .btn-back, .btn-reset, .btn-filter are all replaced by Bootstrap btn classes in markup */
 .content .tabs button.inactive {
     background: #fff; color: var(--ink); border: 1px solid #c6d2e0;
 }
@@ -352,15 +411,7 @@
     background: #eaf7ef; border: 1px solid #b9e2c8; color: #14532d;
 }
 
-/* ---- pagination ---- */
-.content .pagination-link {
-    background: #fff; color: var(--ink);
-    border: 1px solid #c6d2e0; border-radius: 8px;
-}
-.content .pagination-link:hover { background: #f1f5fa; }
-.content .pagination-link.active {
-    background: var(--brand); border-color: var(--brand); color: #fff;
-}
+/* pagination-link replaced by Bootstrap btn classes in markup */
 
 /* ---- CDR/SDR upload layout ---- */
 .content .upload-wrapper {
@@ -380,13 +431,14 @@
     padding: 0;
 }
 .content .upload-layout {
-    display: grid;
-    grid-template-columns: 220px minmax(0, 1fr);
-    gap: .85rem 1.15rem;
+    width: 100%;
+    --bs-gutter-y: 1rem;
+    --bs-gutter-x: 1.15rem;
     align-items: start;
+    margin-bottom: .25rem;
 }
-.content .upload-layout--file-only { grid-template-columns: 1fr; }
-.content .upload-form .form-group { margin-bottom: 0; }
+.content .upload-layout--file-only { width: 100%; }
+.content .upload-form .form-group { margin-bottom: 0; width: 100%; }
 .content .upload-form .form-group label {
     min-height: 1.25rem;
     margin: 0 0 .4rem;
@@ -399,6 +451,8 @@
     gap: .5rem;
     justify-content: flex-end;
     align-items: center;
+}
+.content .upload-actions:not(.border-top) {
     margin-top: 1rem;
     padding-top: .9rem;
     border-top: 1px solid var(--line);
@@ -409,12 +463,8 @@
     padding-top: 0;
     border-top: 0;
 }
-.content .upload-actions .btn-action,
-.content .upload-actions .btn-secondary,
-.content .upload-actions .btn-staging,
-.content .upload-actions .btn-insert {
+.content .upload-actions .btn {
     white-space: nowrap;
-    margin: 0 !important;
 }
 .content .upload-form .sum-fu__drop {
     min-height: 0;
@@ -452,37 +502,7 @@
     margin: 0 !important;
     align-self: center;
 }
-.content .btn-staging {
-    background: #0f766e !important;
-    color: #fff !important;
-    border: 1px solid #0f766e !important;
-    border-radius: 8px;
-    padding: .58rem 1.15rem !important;
-    font-weight: 600;
-    font-size: .92rem;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: .4rem;
-    margin: 0 !important;
-}
-.content .btn-staging:hover { background: #0d9488 !important; border-color: #0d9488 !important; color: #fff !important; }
-.content .btn-staging--sm { padding: .35rem .7rem !important; font-size: .8rem; }
-.content .btn-insert {
-    background: #c2410c !important;
-    color: #fff !important;
-    border: 0 !important;
-    border-radius: 8px;
-    padding: .58rem 1.15rem !important;
-    font-weight: 600;
-    font-size: .92rem;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: .4rem;
-    margin: 0 !important;
-}
-.content .btn-insert:hover { background: #9a3412 !important; }
+/* btn-staging → btn btn-info (teal), btn-insert → btn btn-warning text-dark — handled by Bootstrap in markup */
 .content .staging-card {
     margin-top: 1.25rem;
     background: transparent;
@@ -556,8 +576,8 @@
 .staging-modal__dialog {
     position: relative;
     z-index: 1;
-    width: min(1180px, calc(100vw - 2rem));
-    height: min(860px, calc(100vh - 2.4rem));
+    width: min(1240px, calc(100vw - 1.25rem));
+    height: min(880px, calc(100vh - 1.5rem));
     background: #fff;
     border-radius: 14px;
     box-shadow: 0 18px 50px rgba(8, 18, 28, .32);
@@ -580,20 +600,7 @@
     font-size: 1.05rem;
     font-weight: 650;
 }
-.content button.staging-modal__close,
-.staging-modal__close {
-    margin: 0 !important;
-    background: #fff !important;
-    color: var(--ink) !important;
-    border: 1px solid #c6d2e0 !important;
-    border-radius: 8px;
-    padding: .42rem .9rem !important;
-    font-weight: 700;
-    font-size: .88rem;
-    cursor: pointer;
-}
-.content button.staging-modal__close:hover,
-.staging-modal__close:hover { background: #f1f5fa !important; color: var(--ink) !important; }
+/* staging modal buttons now use Bootstrap classes in markup — keep only layout helpers */
 .staging-modal__actions {
     margin-left: auto;
     display: flex;
@@ -601,24 +608,10 @@
     gap: 8px;
     flex: 0 0 auto;
 }
-.content button.staging-modal__load,
-.staging-modal__load {
-    margin: 0 !important;
-    background: #ea580c !important;
-    color: #fff !important;
-    border: 0 !important;
-    border-radius: 8px;
-    padding: .42rem .9rem !important;
-    font-weight: 700;
-    font-size: .88rem;
-    cursor: pointer;
-}
-.content button.staging-modal__load:hover,
-.staging-modal__load:hover { background: #c2410c !important; }
-.content button.staging-modal__load:disabled,
-.staging-modal__load:disabled { opacity: .7; cursor: wait; }
-.content .history-wrapper .action-text-btn--insert { background: #ea580c; color: #fff; }
-.content .history-wrapper .action-text-btn--view { background: #0284c7; color: #fff; }
+/* disabled state: Bootstrap does not auto-cursor progress on disabled buttons */
+.staging-modal__load:disabled,
+.content button.staging-modal__load:disabled { cursor: wait; }
+/* action-text-btn → Bootstrap btn classes in markup */
 .staging-modal__frame {
     flex: 1 1 auto;
     width: 100%;
@@ -626,44 +619,91 @@
     background: #fff;
 }
 @media (max-width: 720px) {
-    .content .upload-layout { grid-template-columns: 1fr; }
+    .content .upload-layout { --bs-gutter-x: .85rem; }
     .content .upload-actions { justify-content: stretch; }
     .content .upload-actions > * { flex: 1 1 auto; justify-content: center; text-align: center; }
+    .content .history-wrapper .action-btns { width: 100%; }
+    .content .history-wrapper .action-btns .btn { flex: 1 1 auto; justify-content: center; }
+    .content .verify-footer .pager-left,
+    .content .verify-footer #page-label,
+    body.staging-embed .verify-footer .pager-left,
+    body.staging-embed .verify-footer #page-label {
+        flex-basis: 100%;
+        min-width: 0;
+    }
+    .content .verify-footer .pager-right,
+    body.staging-embed .verify-footer .pager-right,
+    .content .verify-footer .toolbar,
+    body.staging-embed .verify-footer .toolbar {
+        width: 100%;
+    }
+    .content .verify-footer .pager-right .btn,
+    body.staging-embed .verify-footer .pager-right .btn,
+    .content .verify-footer .toolbar .btn,
+    body.staging-embed .verify-footer .toolbar .btn {
+        flex: 1 1 0;
+        justify-content: center;
+    }
+    .content .filter-bar .d-flex > .btn,
+    .content .filter-bar .d-flex > input[type="submit"] {
+        flex: 1 1 auto;
+        justify-content: center;
+    }
 }
 
 /* ---- staging preview ---- */
-.content .verify-wrapper,
+.content .verify-wrapper {
+    display: block;
+    padding: 1rem 1.1rem 1rem;
+}
 body.staging-embed .verify-wrapper {
     display: flex;
     flex-direction: column;
-    gap: .75rem;
-    padding: 1rem 1.1rem 0;
-}
-body.staging-embed .verify-wrapper {
-    flex: 1 1 auto;
+    height: 100%;
     min-height: 0;
+    gap: .5rem;
     border: 0;
     border-radius: 0;
     box-shadow: none;
     background: #fff;
+    padding: .85rem 1rem 1rem;
+}
+.content .history-wrapper .action-btns {
+    display: inline-flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: .35rem;
+    align-items: center;
+}
+.content .history-wrapper .action-btns .btn {
+    padding: .32rem .6rem;
+    font-size: .78rem;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+.content .history-table td:last-child,
+.content .history-table th:last-child {
+    white-space: nowrap;
 }
 .content .verify-meta,
 body.staging-embed .verify-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: .5rem;
     background: transparent;
     border: 0;
     padding: 0;
-    margin: 0;
+    margin: 0 0 .75rem;
+}
+.content .verify-meta > .col,
+body.staging-embed .verify-meta > .col {
+    display: flex;
 }
 .content .verify-kv,
 body.staging-embed .verify-kv {
     display: flex;
     flex-direction: column;
     gap: 2px;
-    min-width: 7.5rem;
-    padding: .45rem .7rem;
+    width: 100%;
+    height: 100%;
+    padding: .55rem .75rem;
     background: #f7fafd;
     border: 1px solid var(--line);
     border-radius: 10px;
@@ -681,7 +721,8 @@ body.staging-embed .verify-kv strong {
     font-size: .88rem;
     font-weight: 650;
     color: var(--ink);
-    word-break: break-all;
+    word-break: break-word;
+    overflow-wrap: anywhere;
 }
 .content .verify-status--pending,
 body.staging-embed .verify-status--pending { color: #b45309; }
@@ -693,6 +734,10 @@ body.staging-embed .verify-summary {
     flex-wrap: wrap;
     align-items: center;
     gap: .55rem 1rem;
+    margin-bottom: .85rem;
+}
+body.staging-embed .verify-summary {
+    margin-bottom: 0;
 }
 .content .verify-stats,
 body.staging-embed .verify-stats {
@@ -740,44 +785,83 @@ body.staging-embed .verify-hint {
     color: var(--ink-soft);
     flex: 1 1 16rem;
 }
-.content .verify-wrapper .table-scroll,
-body.staging-embed .table-scroll {
-    flex: 1 1 auto;
+.content .verify-wrapper .table-scroll {
     min-height: 12rem;
+    max-height: clamp(18rem, 42vh, 34rem);
+    overflow: auto;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: transparent;
+    margin-bottom: 1rem;
+}
+body.staging-embed .table-scroll {
+    flex: 1 1 0;
+    min-height: 0;
     max-height: none;
     overflow: auto;
     border: 1px solid var(--line);
     border-radius: 10px;
-    background: #fff;
+    background: transparent;
+    margin-bottom: 0;
 }
 .content #verify-table,
 body.staging-embed #verify-table {
-    font-size: 12px;
+    min-width: 900px;
+    font-size: 13px;
+    line-height: 1.45;
 }
 .content #verify-table th,
 body.staging-embed #verify-table th {
     text-transform: capitalize;
-    padding: .55rem .7rem;
-    font-size: .75rem;
+    padding: .55rem .75rem;
+    font-size: .8rem;
     letter-spacing: .02em;
+    white-space: nowrap;
 }
 .content #verify-table td,
 body.staging-embed #verify-table td {
-    padding: .45rem .7rem;
+    padding: .48rem .75rem;
+    vertical-align: middle;
+    white-space: nowrap;
 }
 .content .verify-footer,
 body.staging-embed .verify-footer {
-    flex: 0 0 auto;
     display: flex;
     flex-direction: column;
     gap: .65rem;
-    padding: .8rem 0 .95rem;
+    padding: .8rem 0 0;
     border-top: 1px solid var(--line);
-    background: #fff;
+    background: transparent;
+}
+body.staging-embed .verify-footer {
+    flex: 0 0 auto;
 }
 .content .verify-footer .pager,
 body.staging-embed .verify-footer .pager {
     margin: 0;
+    justify-content: flex-start;
+}
+.content .verify-footer .pager-left,
+body.staging-embed .verify-footer .pager-left {
+    flex: 1 1 24rem;
+    min-width: 0;
+}
+.content .verify-footer .pager-right,
+body.staging-embed .verify-footer .pager-right {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    align-items: center;
+}
+.content .verify-footer .page-size-select,
+body.staging-embed .verify-footer .page-size-select {
+    width: auto;
+    min-width: 6rem;
+}
+.content .verify-footer #page-label,
+body.staging-embed .verify-footer #page-label {
+    min-width: 14rem;
+    flex: 1 1 12rem;
 }
 .content .verify-footer .pager-left label,
 body.staging-embed .verify-footer .pager-left label {
@@ -796,24 +880,6 @@ body.staging-embed .verify-footer .btn {
     padding: .48rem .9rem;
     font-size: .84rem;
 }
-.content .btn-approve,
-body.staging-embed .btn-approve {
-    background: #ea580c;
-    color: #fff;
-}
-.content .btn-approve:hover,
-body.staging-embed .btn-approve:hover { background: #c2410c; }
-.content .btn-reject,
-body.staging-embed .btn-reject {
-    background: #fff;
-    color: #b91c1c;
-    border: 1px solid #fecaca;
-}
-.content .btn-refresh,
-body.staging-embed .btn-refresh {
-    background: #fff;
-    color: var(--ink);
-    border: 1px solid #c6d2e0;
-}
+/* btn-approve / btn-reject / btn-refresh: replaced by Bootstrap btn-success/btn-danger/btn-outline-secondary in markup */
 .content #message,
 body.staging-embed #message { min-height: 0; margin: 0; }

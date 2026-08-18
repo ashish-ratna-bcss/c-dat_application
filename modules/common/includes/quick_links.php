@@ -243,7 +243,7 @@ function cdat_ql_render_grid(): void
     <section class="ql-panel" id="qlPanel">
       <div class="ql-head">
         <h2>Quick Links</h2>
-        <button type="button" class="ql-edit" data-ql-open>
+        <button type="button" class="ql-edit btn btn-outline-secondary btn-sm" data-ql-open>
           <?= $links ? 'Edit' : 'Choose pages' ?>
         </button>
       </div>
@@ -252,18 +252,20 @@ function cdat_ql_render_grid(): void
           <p><strong>No quick links yet.</strong></p>
           <p>Pick the pages you open most and they will appear here, on every
              sign-in, just for you.</p>
-          <button type="button" class="ql-cta" data-ql-open>Choose pages</button>
+          <button type="button" class="ql-cta btn btn-primary" data-ql-open>Choose pages</button>
         </div>
       <?php else: ?>
-        <div class="ql-grid" id="qlGrid">
+        <div class="ql-grid row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3" id="qlGrid">
           <?php foreach ($links as $l): ?>
-            <a class="ql-tile" href="<?= htmlspecialchars($l['url'], ENT_QUOTES) ?>">
+            <div class="col">
+            <a class="ql-tile text-decoration-none h-100 d-flex flex-column" href="<?= htmlspecialchars($l['url'], ENT_QUOTES) ?>">
               <span class="ql-ic"><?= cdat_icon($l['icon']) ?></span>
               <span class="ql-label"><?= htmlspecialchars($l['label'], ENT_QUOTES) ?></span>
               <?php if ($l['group'] !== ''): ?>
                 <span class="ql-group"><?= htmlspecialchars($l['group'], ENT_QUOTES) ?></span>
               <?php endif; ?>
             </a>
+            </div>
           <?php endforeach; ?>
         </div>
       <?php endif; ?>
@@ -294,7 +296,7 @@ function cdat_ql_render_modal(): void
             <h2 id="qlTitle">Quick links</h2>
             <p>Tick the pages you want on your dashboard. Up to <?= CDAT_QL_MAX ?>.</p>
           </div>
-          <button type="button" class="ql-x" data-ql-close aria-label="Close">&times;</button>
+          <button type="button" class="ql-x btn btn-outline-secondary btn-sm" data-ql-close aria-label="Close">&times;</button>
         </header>
 
         <div class="ql-picked" id="qlPicked" aria-live="polite">
@@ -302,9 +304,9 @@ function cdat_ql_render_modal(): void
         </div>
 
         <div class="ql-searchwrap">
-          <input type="search" id="qlSearch" placeholder="Search pages&hellip;"
+          <input type="search" id="qlSearch" class="form-control form-control-sm" placeholder="Search pages&hellip;"
                  autocomplete="off" spellcheck="false" aria-label="Search pages">
-          <span class="ql-count" id="qlCount"></span>
+          <span class="ql-count badge text-bg-secondary" id="qlCount"></span>
         </div>
 
         <div class="ql-list" id="qlList" tabindex="0">
@@ -331,8 +333,8 @@ function cdat_ql_render_modal(): void
 
         <footer class="ql-dialog-foot">
           <span class="ql-msg" id="qlMsg" role="status"></span>
-          <button type="button" class="ql-btn-ghost" data-ql-close>Cancel</button>
-          <button type="button" class="ql-btn-primary" id="qlSave">Save</button>
+          <button type="button" class="ql-btn-ghost btn btn-outline-secondary btn-sm" data-ql-close>Cancel</button>
+          <button type="button" class="ql-btn-primary btn btn-primary btn-sm" id="qlSave">Save</button>
         </footer>
       </div>
     </div>

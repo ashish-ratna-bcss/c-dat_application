@@ -72,19 +72,27 @@ if ($success !== '') {
     cdat_sum_status_message($success, true);
 }
 ?>
-<div>USERNAME (Lowercase, Alphanumeric)</div>
-<input type="text" name="username" id="username" required="required" autocomplete="off" placeholder="e.g. admin2" />
-<div>FULL NAME</div>
-<input type="text" name="fullname" id="fullname" required="required" placeholder="e.g. Hyderabad Police Officer" />
-<div>PASSWORD</div>
-<input type="password" name="password" id="password" required="required" placeholder="Enter secure password" />
-<div>ROLE</div>
-<select name="role" id="role" data-placeholder="Select role">
-                      <option value="" data-placeholder="1">Select role</option>
-                      <option value="user">User (Standard Access)</option>
-                      <option value="poweruser">Power User (User + Bulk Upload Access)</option>
-                      <option value="admin">Admin (All Access)</option>
-                    </select>
+<div class="col-12 col-md-6">
+  <label class="form-label" for="username">Username (lowercase, alphanumeric)</label>
+  <input type="text" class="form-control" name="username" id="username" required="required" autocomplete="off" placeholder="e.g. admin2" />
+</div>
+<div class="col-12 col-md-6">
+  <label class="form-label" for="fullname">Full name</label>
+  <input type="text" class="form-control" name="fullname" id="fullname" required="required" placeholder="e.g. Hyderabad Police Officer" />
+</div>
+<div class="col-12 col-md-6">
+  <label class="form-label" for="password">Password</label>
+  <input type="password" class="form-control" name="password" id="password" required="required" placeholder="Enter secure password" />
+</div>
+<div class="col-12 col-md-6">
+  <label class="form-label" for="role">Role</label>
+  <select class="form-select" name="role" id="role" data-placeholder="Select role">
+    <option value="" data-placeholder="1">Select role</option>
+    <option value="user">User (Standard Access)</option>
+    <option value="poweruser">Power User (User + Bulk Upload Access)</option>
+    <option value="admin">Admin (All Access)</option>
+  </select>
+</div>
 <?php
 cdat_sum_entry_card_close('CREATE USER');
 cdat_sum_page_close();

@@ -147,140 +147,6 @@ $historyBackUrl = (function_exists('cdat_href') ? cdat_href('/data-upload/histor
 ob_start();
 ?>
 <style type="text/css">
-.FONT {
-	color: #CFF;
-	font-size: 24px;
-	font-weight: bold;
-	font-family: Verdana, Geneva, sans-serif;
-}
-.verify-wrapper {
-    width: 1200px;
-    margin: 10px auto;
-    padding: 20px;
-    background: rgba(255, 255, 255, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 8px;
-    font-family: Verdana, Geneva, sans-serif;
-    color: #fff;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    text-align: left;
-}
-.verify-wrapper h2 {
-    margin-top: 0;
-    color: #FFA500;
-    font-size: 20px;
-}
-.meta {
-    background: rgba(0,0,0,.25);
-    padding: 12px;
-    border-radius: 6px;
-    margin-bottom: 15px;
-    font-size: 13px;
-}
-.toolbar {
-    display: flex;
-    gap: 10px;
-    margin: 15px 0;
-    flex-wrap: wrap;
-    align-items: center;
-}
-.btn {
-    border: none;
-    border-radius: 4px;
-    padding: 8px 14px;
-    font-weight: bold;
-    cursor: pointer;
-    text-decoration: none;
-    display: inline-block;
-    font-size: 12px;
-    font-family: Verdana, Geneva, sans-serif;
-}
-.btn-approve { background: #28a745; color: #fff; }
-.btn-reject { background: #dc3545; color: #fff; }
-.btn-back { background: rgba(255,255,255,.2); color: #fff; border: 1px solid rgba(255,255,255,.3); }
-.btn-refresh { background: #17a2b8; color: #fff; }
-.btn:disabled { opacity: 0.6; cursor: not-allowed; }
-.stats { font-size: 12px; color: #9fd0e6; margin-bottom: 10px; }
-.table-scroll {
-    max-height: 520px;
-    overflow: auto;
-    border: 1px solid rgba(255,255,255,.15);
-    border-radius: 4px;
-    background: rgba(0,0,0,.25);
-}
-#verify-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 11px;
-    color: #fff;
-}
-#verify-table th, #verify-table td {
-    border-bottom: 1px solid rgba(255,255,255,.15);
-    padding: 6px;
-    text-align: left;
-    white-space: nowrap;
-}
-#verify-table th {
-    background: rgba(0,0,0,.45);
-    color: #87CEEB;
-    position: sticky;
-    top: 0;
-    z-index: 1;
-}
-#verify-table tr.duplicate td {
-    background: rgba(220,53,69,.35);
-    color: #ffd6d6;
-}
-#verify-table td[contenteditable="true"] {
-    background: rgba(255,255,255,.08);
-    outline: none;
-}
-#verify-table td[contenteditable="true"]:focus {
-    background: rgba(255,165,0,.25);
-}
-.pager { margin-top: 12px; display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between; }
-.pager-left, .pager-right { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-.pager select {
-    padding: 6px 8px;
-    border-radius: 4px;
-    border: 1px solid #ccc;
-    font-size: 12px;
-}
-#page-label { color: #9fd0e6; font-size: 12px; font-weight: bold; }
-.alert { padding: 10px; border-radius: 4px; margin-bottom: 10px; font-size: 12px; }
-.alert-warn { background: rgba(255,193,7,.2); border: 1px solid #ffc107; color: #ffe8a3; }
-.alert-ok { background: rgba(40,167,69,.2); border: 1px solid #28a745; color: #b7f0c4; }
-.tabs button {
-    margin-right: 8px;
-    margin-bottom: 8px;
-    border: none;
-    border-radius: 4px;
-    padding: 6px 12px;
-    cursor: pointer;
-    font-weight: bold;
-}
-.tabs button.active { background: #FFA500; color: #10222b; }
-.tabs button.inactive { background: rgba(255,255,255,.15); color: #fff; }
-#message { margin-top: 10px; min-height: 20px; }
-.verify-head {
-    display: flex;
-    align-items: center;
-    gap: .75rem;
-    margin: 0 0 1rem;
-}
-.verify-head h2 { margin: 0; flex: 1 1 auto; font-size: 1.15rem; }
-.staging-close-btn {
-    margin-left: auto;
-    background: #fff;
-    color: #1b2733;
-    border: 1px solid #c6d2e0;
-    border-radius: 8px;
-    padding: .45rem .9rem;
-    font-weight: 700;
-    font-size: .88rem;
-    cursor: pointer;
-}
-.staging-close-btn:hover { background: #f1f5fa; }
 body.staging-embed { margin: 0; background: #fff; height: 100%; }
 html:has(body.staging-embed), body.staging-embed { height: 100%; }
 body.staging-embed .verify-head { display: none; }
@@ -299,7 +165,10 @@ if ($embed) {
     echo '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">';
     echo '<meta name="viewport" content="width=device-width, initial-scale=1">';
     echo '<title>Staging Preview &amp; Edit</title>';
+    echo '<link rel="stylesheet" href="' . htmlspecialchars(CDAT_ASSETS, ENT_QUOTES) . '/vendor/bootstrap/css/bootstrap.min.css">';
+    echo '<link rel="stylesheet" href="' . htmlspecialchars(CDAT_ASSETS, ENT_QUOTES) . '/css/cdat-bootstrap.css">';
     echo '<link rel="stylesheet" href="' . htmlspecialchars(CDAT_ASSETS, ENT_QUOTES) . '/css/app.css">';
+    echo '<link rel="stylesheet" href="' . htmlspecialchars(CDAT_ASSETS, ENT_QUOTES) . '/css/upload.css">';
     echo $headExtra;
     echo '</head><body class="staging-embed"><div class="content">';
 } else {
@@ -308,36 +177,46 @@ if ($embed) {
 }
 ?>
               <div class="verify-wrapper">
-    <div class="verify-head">
-      <h2>Staging Preview &amp; Edit</h2>
-      <button type="button" class="staging-close-btn" id="staging-close-btn">Close</button>
+    <?php if (!$embed): ?>
+    <div class="verify-head d-flex flex-wrap align-items-center gap-2 mb-3 pb-2 border-bottom">
+      <h2 class="h5 mb-0">Staging Preview &amp; Edit</h2>
+      <button type="button" class="staging-close-btn btn btn-outline-secondary btn-sm ms-auto" id="staging-close-btn">Close</button>
     </div>
+    <?php endif; ?>
   <?php if (!$batch): ?>
     <div class="alert alert-warn">Upload record not found or has no staging data.</div>
     <?php if (!$embed): ?>
-    <a class="btn btn-back" href="<?= htmlspecialchars($historyBackUrl, ENT_QUOTES) ?>">Back to History</a>
+    <a class="btn btn-outline-secondary btn-sm" href="<?= htmlspecialchars($historyBackUrl, ENT_QUOTES) ?>">Back to History</a>
     <?php endif; ?>
   <?php else: ?>
     <?php
       $vStatus = (string) ($batch['verification_status'] ?? 'pending');
       $vStatusLabel = ucfirst(str_replace('_', ' ', $vStatus));
     ?>
-    <div class="verify-meta">
-      <div class="verify-kv">
-        <span>File</span>
+    <div class="verify-meta row row-cols-1 row-cols-sm-2 row-cols-xl-4 g-2 mb-3">
+      <div class="col d-flex">
+        <div class="verify-kv">
+        <span class="form-label d-block mb-0">File</span>
         <strong><?= htmlspecialchars($batch['file_name'] ?? '') ?></strong>
+        </div>
       </div>
-      <div class="verify-kv">
-        <span>Module</span>
+      <div class="col d-flex">
+        <div class="verify-kv">
+        <span class="form-label d-block mb-0">Module</span>
         <strong><?= htmlspecialchars($batch['module_name'] ?? $batch['module'] ?? '') ?></strong>
+        </div>
       </div>
-      <div class="verify-kv">
-        <span>Uploaded by</span>
+      <div class="col d-flex">
+        <div class="verify-kv">
+        <span class="form-label d-block mb-0">Uploaded by</span>
         <strong><?= htmlspecialchars($batch['username'] ?? '') ?></strong>
+        </div>
       </div>
-      <div class="verify-kv">
-        <span>Status</span>
+      <div class="col d-flex">
+        <div class="verify-kv">
+        <span class="form-label d-block mb-0">Status</span>
         <strong class="verify-status verify-status--<?= htmlspecialchars($vStatus, ENT_QUOTES) ?>"><?= htmlspecialchars($vStatusLabel) ?></strong>
+        </div>
       </div>
     </div>
     <div class="verify-summary">
@@ -345,17 +224,17 @@ if ($embed) {
       <p class="verify-hint">Red rows are already in production and will not be loaded. Click a cell to edit — it saves when you leave it.</p>
     </div>
     <div id="sdr-tabs" class="tabs" style="display:none;"></div>
-    <div class="table-scroll">
-      <table id="verify-table">
+    <div class="table-scroll table-responsive">
+      <table id="verify-table" class="table table-sm table-hover mb-0">
         <thead id="verify-head"></thead>
         <tbody id="verify-body"></tbody>
       </table>
     </div>
-    <div class="verify-footer">
-      <div class="pager">
-        <div class="pager-left">
-          <label for="page-size">Rows per page</label>
-          <select id="page-size">
+    <div class="verify-footer mt-3">
+      <div class="pager d-flex flex-column flex-lg-row gap-2 align-items-stretch align-items-lg-center justify-content-between mb-2">
+        <div class="pager-left d-flex flex-wrap gap-2 align-items-center">
+          <label class="form-label mb-0" for="page-size">Rows per page</label>
+          <select class="form-select form-select-sm page-size-select" id="page-size">
             <option value="100">100</option>
             <option value="250">250</option>
             <option value="500" selected="selected">500</option>
@@ -364,20 +243,20 @@ if ($embed) {
           </select>
           <span id="page-label"></span>
         </div>
-        <div class="pager-right">
-          <button class="btn btn-refresh" id="prev-page" type="button">Prev</button>
-          <button class="btn btn-refresh" id="next-page" type="button">Next</button>
+        <div class="pager-right d-flex flex-wrap gap-2 justify-content-lg-end">
+          <button class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" id="prev-page" type="button">Prev</button>
+          <button class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" id="next-page" type="button">Next</button>
         </div>
       </div>
-      <div class="toolbar">
-        <button class="btn btn-refresh" id="refresh-btn" type="button">Refresh duplicates</button>
+      <div class="toolbar d-flex flex-wrap gap-2">
+        <button class="btn btn-info btn-sm d-inline-flex align-items-center justify-content-center" id="refresh-btn" type="button">Refresh duplicates</button>
         <?php if ($canVerify): ?>
-          <button class="btn btn-approve" id="approve-btn" type="button">Load to DB</button>
-          <button class="btn btn-reject" id="reject-btn" type="button">Reject</button>
+          <button class="btn btn-success btn-sm d-inline-flex align-items-center justify-content-center" id="approve-btn" type="button">Load to DB</button>
+          <button class="btn btn-danger btn-sm d-inline-flex align-items-center justify-content-center" id="reject-btn" type="button">Reject</button>
         <?php endif; ?>
         <?php if (!$embed): ?>
-        <a class="btn btn-back" href="<?= htmlspecialchars($historyBackUrl, ENT_QUOTES) ?>">Back to History</a>
-        <a class="btn btn-back" href="<?= htmlspecialchars($uploadBackUrl, ENT_QUOTES) ?>">Back to Upload</a>
+        <a class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" href="<?= htmlspecialchars($historyBackUrl, ENT_QUOTES) ?>">Back to History</a>
+        <a class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" href="<?= htmlspecialchars($uploadBackUrl, ENT_QUOTES) ?>">Back to Upload</a>
         <?php endif; ?>
       </div>
       <div id="message"></div>

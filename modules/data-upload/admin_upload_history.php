@@ -181,167 +181,10 @@ ob_start();
 ?>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
 <style type="text/css">
-.FONT {
-	color: #CFF;
-	font-size: 24px;
-	font-weight: bold;
-	font-family: Verdana, Geneva, sans-serif;
-}
-.history-wrapper {
-    width: 1050px;
-    margin: 10px auto;
-    padding: 20px;
-    background: rgba(255, 255, 255, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 8px;
-    font-family: Verdana, Geneva, sans-serif;
-    color: #fff;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-}
-.filter-bar {
-    background: rgba(0, 0, 0, 0.2);
-    padding: 15px;
-    border-radius: 6px;
-    margin-bottom: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    text-align: left;
-}
-.filter-grid {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 12px;
-    align-items: flex-end;
-}
-.filter-group {
-    display: flex;
-    flex-direction: column;
-}
-.filter-group label {
-    font-size: 11px;
-    font-weight: bold;
-    margin-bottom: 5px;
-    color: #FFD700;
-}
-.filter-group select, .filter-group input[type="date"] {
-    padding: 6px 8px;
-    font-size: 12px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    color: #333;
-    background: #fff;
-}
-.btn-filter {
-    background-color: #FFA500;
-    color: white;
-    padding: 7px 15px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: bold;
-    transition: background-color 0.2s;
-}
-.btn-filter:hover {
-    background-color: #e59400;
-}
-.btn-reset {
-    background-color: rgba(255, 255, 255, 0.2);
-    color: white;
-    padding: 7px 15px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 13px;
-    text-decoration: none;
-    text-align: center;
-    transition: background-color 0.2s;
-}
-.btn-reset:hover {
-    background-color: rgba(255, 255, 255, 0.3);
-}
-.history-table {
+.history-table-wrap {
     width: 100%;
-    border-collapse: collapse;
-    margin-top: 15px;
-    color: #fff;
-}
-.history-table th, .history-table td {
-    padding: 10px;
-    text-align: left;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-}
-.history-table th {
-    background: rgba(0, 0, 0, 0.35);
-    font-size: 12px;
-    color: #87CEEB;
-}
-.history-table td {
-    font-size: 11px;
-}
-.badge-status {
-    padding: 3px 6px;
-    border-radius: 3px;
-    font-size: 10px;
-    font-weight: bold;
-    color: #fff;
-    display: inline-block;
-}
-.status-pending-verification { background-color: #dc3545; }
-.status-success { background-color: #28a745; }
-.status-partial { background-color: #ffc107; color: #333; }
-.status-failed { background-color: #dc3545; }
-.status-pending { background-color: #17a2b8; }
-.status-processing { background-color: #007bff; }
-.status-rejected { background-color: #6c757d; }
-.approval-awaiting { color: #ff6b6b; font-weight: bold; }
-.approval-approved { color: #90EE90; font-weight: bold; }
-.approval-rejected { color: #ccc; font-weight: bold; }
-.approval-na { color: #aaa; }
-.history-row-link { color: #fff; text-decoration: underline; cursor: pointer; }
-.history-row-link:hover { color: #FFD700; }
-.action-btns { display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-.action-text-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    height: 30px;
-    padding: 0 10px;
-    border-radius: 6px;
-    border: 0;
-    font-size: 11px;
-    font-weight: 700;
-    font-family: inherit;
-    cursor: pointer;
-    white-space: nowrap;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
-}
-.action-text-btn:hover { filter: brightness(1.06); }
-.action-text-btn:disabled { opacity: 0.65; cursor: wait; }
-.action-text-btn--insert { background: #FFA500; color: #10222b; }
-.action-text-btn--view { background: #5dade2; color: #10222b; }
-
-.pagination {
-    margin-top: 20px;
-    text-align: right;
-}
-.pagination-link {
-    padding: 5px 10px;
-    background: rgba(0, 0, 0, 0.3);
-    color: #fff;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 3px;
-    text-decoration: none;
-    font-size: 12px;
-    margin-left: 4px;
-    display: inline-block;
-}
-.pagination-link:hover {
-    background: rgba(255, 255, 255, 0.1);
-}
-.pagination-link.active {
-    background: #FFA500;
-    border-color: #FFA500;
-    font-weight: bold;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }
 </style>
 <link rel="stylesheet" href="<?= htmlspecialchars(CDAT_ASSETS) ?>/css/upload.css">
@@ -350,71 +193,72 @@ layout_begin('Upload History', 'Previous uploads and their status', ob_get_clean
 cdat_sum_page_open();
 ?>
               <div class="history-wrapper">
-                
-                <!-- Filter Bar -->
-                <div class="filter-bar">
+
+                <!-- Filter Card -->
+                <div class="history-filter-card">
                   <form action="<?= htmlspecialchars(function_exists('cdat_href') ? cdat_href('/data-upload/history') : '/data-upload/history') ?>" method="get" id="filterForm">
                     <input type="hidden" name="type" value="<?= htmlspecialchars($type) ?>" />
-                    <div class="filter-grid">
-                      <div class="filter-group">
-                        <label for="filter_user">Uploaded By</label>
-                        <select name="filter_user" id="filter_user">
+                    <div class="row g-2 align-items-end">
+                      <div class="col-12 col-sm-6 col-lg-4 col-xl">
+                        <label class="form-label mb-1" for="filter_user">Uploaded By</label>
+                        <select class="form-select form-select-sm" name="filter_user" id="filter_user" data-placeholder="-- All Users --">
                           <option value="">-- All Users --</option>
                           <?php foreach ($uploadUsers as $u): ?>
-                            <option value="<?= htmlspecialchars($u) ?>" <?= ($filterUser === $u) ? 'selected="selected"' : '' ?>><?= htmlspecialchars($u) ?></option>
+                            <option value="<?= htmlspecialchars($u) ?>" <?= ($filterUser === $u) ? 'selected' : '' ?>><?= htmlspecialchars($u) ?></option>
                           <?php endforeach; ?>
                         </select>
                       </div>
 
                       <?php if ($type !== 'custom'): ?>
-                      <div class="filter-group">
-                        <label for="filter_module">Module</label>
-                        <select name="filter_module" id="filter_module">
+                      <div class="col-12 col-sm-6 col-lg-4 col-xl">
+                        <label class="form-label mb-1" for="filter_module">Module</label>
+                        <select class="form-select form-select-sm" name="filter_module" id="filter_module" data-placeholder="-- All Modules --">
                           <option value="">-- All Modules --</option>
                           <?php foreach ($configs as $key => $conf): ?>
-                            <option value="<?= htmlspecialchars($conf['name']) ?>" <?= ($filterModule === $conf['name']) ? 'selected="selected"' : '' ?>><?= htmlspecialchars($conf['name']) ?></option>
+                            <option value="<?= htmlspecialchars($conf['name']) ?>" <?= ($filterModule === $conf['name']) ? 'selected' : '' ?>><?= htmlspecialchars($conf['name']) ?></option>
                           <?php endforeach; ?>
                         </select>
                       </div>
                       <?php endif; ?>
 
-                      <div class="filter-group">
-                        <label for="filter_status">Status</label>
-                        <select name="filter_status" id="filter_status">
+                      <div class="col-12 col-sm-6 col-lg-4 col-xl">
+                        <label class="form-label mb-1" for="filter_status">Status</label>
+                        <select class="form-select form-select-sm" name="filter_status" id="filter_status" data-placeholder="-- All Status --">
                           <option value="">-- All Status --</option>
-                          <option value="Processing" <?= ($filterStatus === 'Processing') ? 'selected="selected"' : '' ?>>Processing</option>
-                          <option value="Success" <?= ($filterStatus === 'Success') ? 'selected="selected"' : '' ?>>Success</option>
-                          <option value="Pending Verification" <?= ($filterStatus === 'Pending Verification') ? 'selected="selected"' : '' ?>>Pending Verification</option>
-                          <option value="Rejected" <?= ($filterStatus === 'Rejected') ? 'selected="selected"' : '' ?>>Rejected</option>
-                          <option value="Partial" <?= ($filterStatus === 'Partial') ? 'selected="selected"' : '' ?>>Partial</option>
-                          <option value="Failed" <?= ($filterStatus === 'Failed') ? 'selected="selected"' : '' ?>>Failed</option>
+                          <option value="Processing" <?= ($filterStatus === 'Processing') ? 'selected' : '' ?>>Processing</option>
+                          <option value="Success" <?= ($filterStatus === 'Success') ? 'selected' : '' ?>>Success</option>
+                          <option value="Pending Verification" <?= ($filterStatus === 'Pending Verification') ? 'selected' : '' ?>>Pending Verification</option>
+                          <option value="Rejected" <?= ($filterStatus === 'Rejected') ? 'selected' : '' ?>>Rejected</option>
+                          <option value="Partial" <?= ($filterStatus === 'Partial') ? 'selected' : '' ?>>Partial</option>
+                          <option value="Failed" <?= ($filterStatus === 'Failed') ? 'selected' : '' ?>>Failed</option>
                         </select>
                       </div>
 
-                      <div class="filter-group">
-                        <label for="from_date">From Date</label>
-                        <input type="date" name="from_date" id="from_date" value="<?= htmlspecialchars($fromDate) ?>" max="<?= $todayStr ?>" />
+                      <div class="col-12 col-sm-6 col-lg-4 col-xl">
+                        <label class="form-label mb-1" for="from_date">From Date</label>
+                        <input class="form-control form-control-sm" type="date" name="from_date" id="from_date" value="<?= htmlspecialchars($fromDate) ?>" max="<?= $todayStr ?>" />
                       </div>
 
-                      <div class="filter-group">
-                        <label for="to_date">To Date</label>
-                        <input type="date" name="to_date" id="to_date" value="<?= htmlspecialchars($toDate) ?>" max="<?= $todayStr ?>" />
+                      <div class="col-12 col-sm-6 col-lg-4 col-xl">
+                        <label class="form-label mb-1" for="to_date">To Date</label>
+                        <input class="form-control form-control-sm" type="date" name="to_date" id="to_date" value="<?= htmlspecialchars($toDate) ?>" max="<?= $todayStr ?>" />
                       </div>
 
-                      <div class="filter-group" style="flex-direction: row; gap: 8px;">
-                        <input type="submit" class="btn-filter" value="Filter" style="flex: 1;" />
-                        <a href="<?= htmlspecialchars(function_exists('cdat_href') ? cdat_href('/data-upload/history') : '/data-upload/history') ?>?type=<?= urlencode($type) ?>" class="btn-reset" style="flex: 1;">Reset</a>
+                      <div class="col-12 col-lg-auto">
+                        <div class="d-flex flex-wrap gap-2">
+                          <input type="submit" class="btn btn-primary btn-sm flex-fill flex-lg-grow-0" value="Filter" />
+                          <a href="<?= htmlspecialchars(function_exists('cdat_href') ? cdat_href('/data-upload/history') : '/data-upload/history') ?>?type=<?= urlencode($type) ?>" class="btn btn-outline-secondary btn-sm flex-fill flex-lg-grow-0">Reset</a>
+                          <a href="<?= htmlspecialchars($type === 'custom' ? cdat_upload_self_url('custom') : cdat_upload_self_url('cdr')) ?>" class="btn btn-outline-primary btn-sm flex-fill flex-lg-grow-0">Back to Upload Panel</a>
+                        </div>
                       </div>
                     </div>
                   </form>
                 </div>
 
-                <div style="text-align: right; margin-bottom: 10px;">
-                  <a href="<?= htmlspecialchars($type === 'custom' ? cdat_upload_self_url('custom') : cdat_upload_self_url('cdr')) ?>" class="btn-action" style="text-decoration: none; display: inline-block; font-size: 13px; padding: 6px 12px;">Back to Upload Panel</a>
-                </div>
-
                 <!-- Logs Table -->
-                <table class="history-table">
+                <div class="history-table-card">
+                <div class="history-table-wrap table-responsive mb-0">
+                <table class="history-table table table-striped table-hover table-sm mb-0">
                   <thead>
                     <tr>
                       <th>Uploaded At</th>
@@ -513,9 +357,9 @@ cdat_sum_page_open();
                             <?php if ($hasJob && !$isSuccess): ?>
                               <span class="action-btns">
                                 <?php if ($pendingVerify): ?>
-                                <button type="button" class="action-text-btn action-text-btn--insert js-load-to-db" data-job-id="<?= $rowJobId ?>">Load to DB</button>
+                                <button type="button" class="btn btn-success btn-sm d-inline-flex align-items-center justify-content-center js-load-to-db" data-job-id="<?= $rowJobId ?>">Load to DB</button>
                                 <?php endif; ?>
-                                <button type="button" class="action-text-btn action-text-btn--view js-view-staging" data-staging-url="<?= htmlspecialchars($stagingUrl, ENT_QUOTES) ?>" data-job-id="<?= $rowJobId ?>" data-can-insert="<?= $pendingVerify ? '1' : '0' ?>">View</button>
+                                <button type="button" class="btn btn-info btn-sm d-inline-flex align-items-center justify-content-center js-view-staging" data-staging-url="<?= htmlspecialchars($stagingUrl, ENT_QUOTES) ?>" data-job-id="<?= $rowJobId ?>" data-can-insert="<?= $pendingVerify ? '1' : '0' ?>">View</button>
                               </span>
                             <?php else: ?>
                               —
@@ -527,27 +371,29 @@ cdat_sum_page_open();
                     <?php endif; ?>
                   </tbody>
                 </table>
+                </div>
 
                 <!-- Pagination -->
                 <?php if ($totalPages > 1): ?>
-                  <div class="pagination">
+                  <div class="history-pagination d-flex flex-wrap gap-1">
                     <?php if ($page > 1): ?>
-                      <a href="?page=<?= $page - 1 ?>&type=<?= urlencode($type) ?>&filter_user=<?= urlencode($filterUser) ?>&filter_module=<?= urlencode($filterModule) ?>&filter_status=<?= urlencode($filterStatus) ?>&from_date=<?= urlencode($fromDate) ?>&to_date=<?= urlencode($toDate) ?>" class="pagination-link">&laquo; Prev</a>
+                      <a href="?page=<?= $page - 1 ?>&type=<?= urlencode($type) ?>&filter_user=<?= urlencode($filterUser) ?>&filter_module=<?= urlencode($filterModule) ?>&filter_status=<?= urlencode($filterStatus) ?>&from_date=<?= urlencode($fromDate) ?>&to_date=<?= urlencode($toDate) ?>" class="btn btn-outline-secondary btn-sm">&laquo; Prev</a>
                     <?php endif; ?>
 
                     <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-                      <a href="?page=<?= $i ?>&type=<?= urlencode($type) ?>&filter_user=<?= urlencode($filterUser) ?>&filter_module=<?= urlencode($filterModule) ?>&filter_status=<?= urlencode($filterStatus) ?>&from_date=<?= urlencode($fromDate) ?>&to_date=<?= urlencode($toDate) ?>" class="pagination-link <?= ($page === $i) ? 'active' : '' ?>">
+                      <a href="?page=<?= $i ?>&type=<?= urlencode($type) ?>&filter_user=<?= urlencode($filterUser) ?>&filter_module=<?= urlencode($filterModule) ?>&filter_status=<?= urlencode($filterStatus) ?>&from_date=<?= urlencode($fromDate) ?>&to_date=<?= urlencode($toDate) ?>" class="btn btn-sm <?= ($page === $i) ? 'btn-primary' : 'btn-outline-secondary' ?>">
                         <?= $i ?>
                       </a>
                     <?php endfor; ?>
 
                     <?php if ($page < $totalPages): ?>
-                      <a href="?page=<?= $page + 1 ?>&type=<?= urlencode($type) ?>&filter_user=<?= urlencode($filterUser) ?>&filter_module=<?= urlencode($filterModule) ?>&filter_status=<?= urlencode($filterStatus) ?>&from_date=<?= urlencode($fromDate) ?>&to_date=<?= urlencode($toDate) ?>" class="pagination-link">Next &raquo;</a>
+                      <a href="?page=<?= $page + 1 ?>&type=<?= urlencode($type) ?>&filter_user=<?= urlencode($filterUser) ?>&filter_module=<?= urlencode($filterModule) ?>&filter_status=<?= urlencode($filterStatus) ?>&from_date=<?= urlencode($fromDate) ?>&to_date=<?= urlencode($toDate) ?>" class="btn btn-outline-secondary btn-sm">Next &raquo;</a>
                     <?php endif; ?>
                   </div>
                 <?php endif; ?>
+                </div><!-- /.history-table-card -->
 
-              </div>
+              </div><!-- /.history-wrapper -->
 
 <script type="text/javascript">
 
@@ -774,8 +620,8 @@ document.getElementById('filterForm').addEventListener('submit', function(e) {
     <div class="staging-modal__head">
       <h2 id="staging-modal-title">Staging data</h2>
       <div class="staging-modal__actions">
-        <button type="button" class="staging-modal__load" id="staging-modal-load" hidden>Load to DB</button>
-        <button type="button" class="staging-modal__close" id="staging-modal-close">Close</button>
+        <button type="button" class="staging-modal__load btn btn-success btn-sm" id="staging-modal-load" hidden>Load to DB</button>
+        <button type="button" class="staging-modal__close btn btn-outline-secondary btn-sm" id="staging-modal-close">Close</button>
       </div>
     </div>
     <iframe id="staging-modal-frame" class="staging-modal__frame" title="Staging data"></iframe>

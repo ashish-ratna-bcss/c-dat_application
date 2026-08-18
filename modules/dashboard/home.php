@@ -10,8 +10,8 @@ require_once CDAT_COMMON . '/includes/sum_ui.php';
 layout_begin('Dashboard');
 cdat_sum_page_open('sum-dashboard');
 ?>
-<section class="sum-dash-hero" aria-label="Dashboard">
-    <div class="sum-dash-hero__head">
+<section class="sum-dash-hero mb-4 pb-3 border-bottom" aria-label="Dashboard">
+    <div class="sum-dash-hero__head d-flex align-items-start gap-3 mb-3">
         <div class="sum-dash-hero__icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                  stroke-linecap="round" stroke-linejoin="round">

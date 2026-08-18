@@ -640,354 +640,13 @@ ob_start();
 <script src="<?= htmlspecialchars(CDAT_ASSETS) ?>/js/sdr_resumable_upload.js" type="text/javascript"></script>
 
 <style type="text/css">
-.FONT {
-	color: #CFF;
-	font-size: 24px;
-	font-weight: bold;
-	font-family: Verdana, Geneva, sans-serif;
+.upload-wrapper h3 {
+    color: #5b6b7c;
+    margin-bottom: 12px;
 }
-/* Unified Theme Styles */
-.upload-wrapper {
-    width: 98%;
-    max-width: 100%;
-    margin: 10px auto;
-    padding: 25px;
-    background: rgba(255, 255, 255, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 8px;
-    font-family: Verdana, Geneva, sans-serif;
-    color: #fff;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-}
-.step-header {
-    display: flex;
-    justify-content: space-around;
-    margin-bottom: 25px;
-    border-bottom: 1px dashed rgba(255, 255, 255, 0.2);
-    padding-bottom: 12px;
-}
-.step-pill {
-    padding: 6px 12px;
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 4px;
-    font-size: 13px;
-    font-weight: bold;
-    color: #bbb;
-    flex: 1;
-    text-align: center;
-    max-width: 250px;
-}
-.step-pill.active {
-    background: #FFA500;
-    color: white;
-}
-.form-group {
-    margin-bottom: 20px;
-    text-align: left;
-}
-.form-group label {
-    display: block;
-    font-weight: bold;
-    margin-bottom: 6px;
-    font-size: 13px;
-}
-.form-group select, .form-group input[type="file"], .form-group input[type="text"] {
-    width: 100%;
-    padding: 8px 10px;
-    font-size: 13px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box;
-    color: #333;
-    background: #fff;
-}
-.form-label {
-    display: block;
-    font-weight: bold;
-    margin-bottom: 8px;
-    font-size: 13px;
-    color: #FFA500;
-}
-.form-select, .form-input {
-    width: 100%;
-    padding: 10px 12px;
-    font-size: 13px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 6px;
-    box-sizing: border-box;
-    color: #fff;
-    background: rgba(0, 0, 0, 0.4);
-    transition: all 0.3s ease;
-    outline: none;
-}
-.form-select:focus, .form-input:focus {
-    border-color: #FFA500;
-    background: rgba(0, 0, 0, 0.6);
-    box-shadow: 0 0 8px rgba(255, 165, 0, 0.3);
-}
-.form-select option {
-    background: #2b5e7c;
-    color: #fff;
-}
-.form-select:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-.module-hint {
-    margin-top: 8px;
-    font-size: 12px;
-    color: #FFD700;
-    line-height: 1.5;
-}
-.staging-banner {
-    margin-bottom: 18px;
-    padding: 10px 12px;
-    background: rgba(255, 215, 0, 0.15);
-    border: 1px solid rgba(255, 215, 0, 0.4);
-    border-radius: 4px;
-    font-size: 12px;
-    text-align: left;
-    color: #FFD700;
-}
-.btn-action {
-    background-color: #FFA500;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 15px;
-    font-weight: bold;
-    transition: background-color 0.2s;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-}
-.btn-action:hover {
-    background-color: #e59400;
-}
-.btn-secondary {
-    background-color: rgba(255, 255, 255, 0.2);
-    color: white;
-    padding: 10px 20px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 15px;
-    margin-right: 10px;
-    text-decoration: none;
-}
-.btn-secondary:hover {
-    background-color: rgba(255, 255, 255, 0.3);
-}
-.msg-container {
-    padding: 12px 15px;
-    border-radius: 4px;
-    margin-bottom: 20px;
-    font-size: 13px;
-    font-weight: bold;
-    text-align: left;
-}
-.msg-error {
-    background: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
-}
-.msg-success {
-    background: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
-}
-.badge {
-    padding: 3px 6px;
-    border-radius: 3px;
-    font-size: 11px;
-    font-weight: bold;
-}
-.results-summary {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 15px;
-    margin-bottom: 25px;
-}
-.result-card {
-    background: rgba(0, 0, 0, 0.25);
-    padding: 15px;
-    border-radius: 6px;
-    text-align: center;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-.result-card .num {
-    font-size: 24px;
-    font-weight: bold;
-    margin-top: 5px;
-}
-.color-total { color: #87CEEB; }
-.color-success { color: #90EE90; }
-.color-skipped { color: #FFD700; }
-.color-failed { color: #FFB6C1; }
-.progress-bar-wrap {
-    margin: 15px 0;
-    background: rgba(0,0,0,0.3);
-    border-radius: 4px;
-    height: 22px;
-    overflow: hidden;
-}
-.progress-bar-fill {
-    height: 100%;
-    background: #FFA500;
-    width: 0%;
-    transition: width 0.4s ease;
-    text-align: center;
-    font-size: 11px;
-    line-height: 22px;
-    color: #fff;
-    font-weight: bold;
-}
-
-/* Tab Layout Styles */
-.nav-tabs {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 25px;
-}
-.nav-tab-btn {
-    background: rgba(0, 0, 0, 0.4);
-    color: #ccc;
-    padding: 12px 24px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 15px;
-    font-weight: bold;
-    transition: all 0.3s ease;
-}
-.nav-tab-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #fff;
-}
-.nav-tab-btn.active {
-    background: #FFA500;
-    color: #000;
-    border-color: #FFA500;
-    box-shadow: 0 0 10px rgba(255, 165, 0, 0.4);
-}
-.tab-content {
-    display: none;
-}
-.tab-content.active {
-    display: block;
-}
-
-/* Custom Table Wizard Layout */
-.wizard-card {
-    background: rgba(0, 0, 0, 0.25);
-    border-radius: 8px;
-    padding: 22px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    margin-bottom: 20px;
-}
-.wizard-title {
-    font-size: 18px;
-    margin-bottom: 18px;
-    color: #FFA500;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    padding-bottom: 8px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-.form-row {
-    display: flex;
-    gap: 20px;
-    margin-bottom: 15px;
-}
-.form-col {
-    flex: 1;
-    text-align: left;
-}
-.upload-dropzone {
-    border: 2px dashed rgba(255, 255, 255, 0.3);
-    border-radius: 8px;
-    padding: 35px;
-    text-align: center;
-    background: rgba(255, 255, 255, 0.02);
-    cursor: pointer;
-    transition: all 0.3s ease;
-    margin-bottom: 15px;
-}
-.upload-dropzone:hover {
-    border-color: #FFA500;
-    background: rgba(255, 255, 255, 0.08);
-}
-.upload-filename {
-    font-size: 14px;
-    font-weight: bold;
-    color: #90EE90;
-    margin-top: 10px;
-    display: none;
-}
-.preview-table-wrapper {
-    overflow: auto;
-    max-height: 400px;
-    margin-top: 15px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 8px;
-    background: rgba(0, 0, 0, 0.3);
-}
-.preview-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 12px;
-    color: #fff;
-}
-.preview-table th, .preview-table td {
-    padding: 10px 12px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    text-align: left;
-}
-.preview-table th {
-    background: rgba(0, 0, 0, 0.5);
-    color: #FFA500;
-    font-weight: bold;
-    position: sticky;
-    top: 0;
-}
-.preview-table td.preview-readonly {
-    background: rgba(255, 255, 255, 0.05);
-}
-.preview-table td[contenteditable="true"] {
-    background: rgba(255, 255, 255, 0.05);
-    outline: none;
-    cursor: text;
-}
-.preview-table td[contenteditable="true"]:focus {
-    background: rgba(255, 165, 0, 0.15);
-    border-color: #FFA500;
-    box-shadow: inset 0 0 5px rgba(255, 165, 0, 0.5);
-}
-.preview-table tr:nth-child(even) {
-    background: rgba(255, 255, 255, 0.02);
-}
-.progress-card {
-    background: rgba(0, 0, 0, 0.4);
-    border-radius: 8px;
-    padding: 25px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    margin-top: 20px;
-}
-.progress-log {
-    background: rgba(0, 0, 0, 0.6);
-    padding: 15px;
-    border-radius: 5px;
-    font-family: monospace;
-    font-size: 12px;
-    color: #90EE90;
-    height: 150px;
-    overflow-y: auto;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    margin-top: 15px;
+.upload-wrapper p {
+    color: #5b6b7c;
+    margin-bottom: 12px;
 }
 </style>
 <!-- Loaded last so it overrides the dark-background colours above, which are
@@ -1041,11 +700,11 @@ if ($openAfterUpload === '') {
                     <input type="hidden" name="action" value="upload_file" />
                     <input type="hidden" name="next_action" id="next-action" value="" />
 
-                    <div class="upload-layout<?= $uploadPage === 'sdr' ? ' upload-layout--file-only' : '' ?>">
+                    <div class="upload-layout row g-3<?= $uploadPage === 'sdr' ? ' upload-layout--file-only' : '' ?>">
                       <?php if ($fixedModule === ''): ?>
-                      <div class="form-group">
-                        <label for="module">Select Module</label>
-                        <select name="module" id="module" required="required" onchange="updateModuleHint(this.value)">
+                      <div class="form-group col-12 col-md-6 col-lg-4">
+                        <label class="form-label" for="module">Select Module</label>
+                        <select class="form-select" name="module" id="module" required="required" onchange="updateModuleHint(this.value)">
                           <option value="">-- Choose Module --</option>
                           <?php foreach ($modules as $key => $conf): ?>
                             <option value="<?= htmlspecialchars($key) ?>"<?= ($selectedModule === $key ? ' selected="selected"' : '') ?>><?= htmlspecialchars($conf['name']) ?></option>
@@ -1057,9 +716,9 @@ if ($openAfterUpload === '') {
                       <input type="hidden" name="module" id="module" value="<?= htmlspecialchars($fixedModule, ENT_QUOTES) ?>" />
                       <?php endif; ?>
 
-                      <div class="form-group" id="standard-network-group" style="display: <?= $uploadPage === 'cdr' ? 'block' : 'none' ?>;">
-                        <label for="standard-network-select">Network <span class="req">*</span></label>
-                        <select name="network" id="standard-network-select"<?= $uploadPage === 'cdr' ? ' required="required"' : '' ?>>
+                      <div class="form-group col-12 col-md-6 col-lg-4<?= $uploadPage === 'cdr' ? '' : ' d-none' ?>" id="standard-network-group">
+                        <label class="form-label" for="standard-network-select">Network <span class="req">*</span></label>
+                        <select class="form-select" name="network" id="standard-network-select"<?= $uploadPage === 'cdr' ? ' required="required"' : '' ?>>
                           <option value="">Select network</option>
                           <option value="2">Airtel</option>
                           <option value="15">Jio</option>
@@ -1068,8 +727,8 @@ if ($openAfterUpload === '') {
                         </select>
                       </div>
 
-                      <div class="form-group upload-field-file">
-                        <label for="cdr_file" id="file-label"><?= $uploadPage === 'sdr' ? 'Backup file' : 'CDR file' ?></label>
+                      <div class="form-group upload-field-file col-12">
+                        <label class="form-label" for="cdr_file" id="file-label"><?= $uploadPage === 'sdr' ? 'Backup file' : 'CDR file' ?></label>
                         <input type="file" name="cdr_file[]" id="cdr_file"
                           accept="<?= $uploadPage === 'sdr' ? '.bak' : '.csv,.xls,.xlsx' ?>"
                           <?= $uploadPage === 'sdr' ? '' : 'multiple="multiple"' ?>
@@ -1077,10 +736,10 @@ if ($openAfterUpload === '') {
                       </div>
                     </div>
 
-                    <div class="upload-actions" id="upload-form-actions">
-                      <a href="<?= htmlspecialchars($historyUrl, ENT_QUOTES) ?>" class="btn-secondary"><i class="fa-solid fa-clock-rotate-left"></i> History</a>
-                      <button type="button" class="btn-staging" id="form-staging-btn" data-staging-url="<?= htmlspecialchars($stagingUrl, ENT_QUOTES) ?>"><i class="fa-solid fa-table-list"></i> Staging</button>
-                      <button type="button" class="btn-insert" id="form-insert-btn" data-job-id="<?= (int)$formJobId ?>"<?= $formCanInsert ? '' : ' data-needs-upload="1"' ?>><i class="fa-solid fa-database"></i> Insert to Live</button>
+                    <div class="upload-actions d-flex flex-wrap gap-2 justify-content-end mt-4 pt-3 border-top" id="upload-form-actions">
+                      <a href="<?= htmlspecialchars($historyUrl, ENT_QUOTES) ?>" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-clock-rotate-left"></i> History</a>
+                      <button type="button" class="btn btn-outline-primary btn-sm" id="form-staging-btn" data-staging-url="<?= htmlspecialchars($stagingUrl, ENT_QUOTES) ?>"><i class="fa-solid fa-table-list"></i> Staging</button>
+                      <button type="button" class="btn btn-primary btn-sm" id="form-insert-btn" data-job-id="<?= (int)$formJobId ?>"<?= $formCanInsert ? '' : ' data-needs-upload="1"' ?>><i class="fa-solid fa-database"></i> Insert to Live</button>
                     </div>
                   </form>
 
@@ -1095,8 +754,8 @@ if ($openAfterUpload === '') {
                       <div id="sdr-upload-stats" style="font-size:11px; color:#ccc; margin:8px 0;"></div>
                       <div id="sdr-upload-log" style="font-size:11px; color:#ddd; max-height:120px; overflow-y:auto; background:rgba(0,0,0,0.2); padding:8px; border-radius:4px;"></div>
                       <div style="margin-top:12px; text-align:right;">
-                        <button type="button" class="btn-secondary" id="sdr-upload-pause-btn" onclick="pauseSdrUpload()">Pause</button>
-                        <button type="button" class="btn-secondary" id="sdr-upload-cancel-btn" onclick="cancelSdrUpload()" style="margin-left:8px;">Cancel</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="sdr-upload-pause-btn" onclick="pauseSdrUpload()">Pause</button>
+                        <button type="button" class="btn btn-outline-danger btn-sm ms-2" id="sdr-upload-cancel-btn" onclick="cancelSdrUpload()">Cancel</button>
                       </div>
                     </div>
                   </div>
@@ -1108,7 +767,7 @@ if ($openAfterUpload === '') {
                           <p>First rows after operator parsing. Edit in Staging after upload.</p>
                       </div>
                       <div id="standard-preview-summary" class="preview-card__summary" style="display:none;"></div>
-                      <div id="standard-preview-pager" class="preview-card__pager" style="display:none;"></div>
+                      <div id="standard-preview-pager" class="preview-card__pager d-none gap-1 flex-wrap" style=""></div>
                       <div id="standard-preview-files"></div>
                   </div>
                 <?php endif; ?>
@@ -1126,8 +785,8 @@ if ($openAfterUpload === '') {
                     <div class="wizard-card">
                         <div class="wizard-title"><i class="fa-solid fa-database"></i> 1. Database & Table Selection</div>
                         
-                        <div class="form-row">
-                            <div class="form-col">
+                        <div class="form-row row g-3">
+                            <div class="form-col col-12 col-md-6 col-lg-4">
                                 <label class="form-label" for="custom-db-select">Tower Database</label>
                                 <select id="custom-db-select" class="form-select" onchange="loadCustomTables()">
                                     <option value="">-- Tower Database --</option>
@@ -1139,14 +798,14 @@ if ($openAfterUpload === '') {
                                 </select>
                             </div>
                             
-                            <div class="form-col">
+                            <div class="form-col col-12 col-md-6 col-lg-4">
                                 <label class="form-label" for="custom-table-select">Select Target Table</label>
                                 <select id="custom-table-select" class="form-select" onchange="handleCustomTableChange()" disabled>
                                     <option value="">-- Choose Table --</option>
                                 </select>
                             </div>
 
-                            <div class="form-col">
+                            <div class="form-col col-12 col-md-6 col-lg-4">
                                 <label class="form-label" for="custom-network-select">Select Network</label>
                                 <select id="custom-network-select" class="form-select">
                                     <option value="ALL">All Networks</option>
@@ -1159,20 +818,20 @@ if ($openAfterUpload === '') {
                         </div>
 
                         <!-- Predefined Auto-Columns Table Creator (Hidden by default, shown when 'new table' is selected) -->
-                        <div id="custom-table-creator-section" style="margin-top: 15px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); padding: 15px; border-radius: 6px; display: none;">
-                            <div style="font-weight: bold; font-size:13px; color:#FFA500; margin-bottom:10px;"><i class="fa-solid fa-plus-circle"></i> Create New Table with Predefined Columns</div>
+                        <div id="custom-table-creator-section" class="mt-3 p-3 rounded-3 border bg-light-subtle" style="display: none;">
+                            <div class="fw-semibold mb-2"><i class="fa-solid fa-plus-circle"></i> Create New Table with Predefined Columns</div>
                             
-                            <div class="form-row" style="align-items: flex-end;">
-                                <div class="form-col" style="flex:2;">
+                            <div class="form-row row g-3 align-items-end">
+                                <div class="form-col col-12 col-md-8">
                                     <label class="form-label" for="custom-new-table-name">New Table Name</label>
                                     <input type="text" id="custom-new-table-name" class="form-input" placeholder="e.g. suspect_walkin_details" />
                                 </div>
-                                <div class="form-col" style="flex:1;">
-                                    <button type="button" class="btn-action" style="width:100%; justify-content:center;" onclick="createCustomTable()"><i class="fa-solid fa-plus"></i> Create Table</button>
+                                <div class="form-col col-12 col-md-4">
+                                    <button type="button" class="btn btn-primary w-100 justify-content-center" onclick="createCustomTable()"><i class="fa-solid fa-plus"></i> Create Table</button>
                                 </div>
                             </div>
                             
-                            <div style="margin-top: 10px; font-size: 11px; color:#bbb;">
+                            <div class="mt-2 small text-secondary">
                                 <strong>System Note:</strong> The table will be automatically created with the following columns:
                                 <code style="color:#FFA500;">phone</code>, 
                                 <code style="color:#FFA500;">imei</code>, 
@@ -1184,14 +843,14 @@ if ($openAfterUpload === '') {
                         </div>
                     </div>
 
-                    <div class="wizard-card" style="margin-top:20px;">
+                    <div class="wizard-card mt-4">
                         <div class="wizard-title"><i class="fa-solid fa-file-excel"></i> 2. File Upload & Location</div>
                         
                         <!-- Drag & Drop Zone -->
                         <div class="upload-dropzone" onclick="document.getElementById('custom-file-input').click()" id="custom-dropzone">
                             <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
-                            <h3 style="margin:5px 0;">Drag & Drop or Click to Select File</h3>
-                            <p style="font-size:12px; color:#bbb; margin:0;">Supports CSV, XLS, XLSX formats</p>
+                            <h3 class="my-1">Drag & Drop or Click to Select File</h3>
+                            <p class="small text-secondary mb-0">Supports CSV, XLS, XLSX formats</p>
                             <input type="file" id="custom-file-input" style="display:none;" accept=".csv, .xls, .xlsx" onchange="handleCustomFile(this.files)" />
                             
                             <div class="upload-filename" id="custom-file-details">
@@ -1200,23 +859,23 @@ if ($openAfterUpload === '') {
                         </div>
 
                         <!-- Location Input Field -->
-                        <div class="form-group" style="margin-top:15px;">
-                            <label class="form-label" for="custom-location-input">Location Value <span style="color:#ff6b6b;">*</span></label>
+                        <div class="form-group mt-3">
+                            <label class="form-label" for="custom-location-input">Location Value <span class="text-danger">*</span></label>
                             <input type="text" id="custom-location-input" class="form-input" placeholder="e.g. Hyderabad, Madhapur PS, Cyberabad" />
-                            <span style="font-size: 11px; color:#aaa; margin-top:4px; display:block;">This value is mandatory and will be populated for all sheet records in the <strong>location</strong> column.</span>
+                            <span class="d-block mt-1 small text-secondary">This value is mandatory and will be populated for all sheet records in the <strong>location</strong> column.</span>
                         </div>
                     </div>
 
-                    <div style="text-align: right; margin-top:20px;">
-                        <a href="<?= htmlspecialchars(function_exists('cdat_href') ? cdat_href('/data-upload/history') : '/data-upload/history') ?>?type=custom" class="btn-secondary" style="margin-right:10px;"><i class="fa-solid fa-clock-rotate-left"></i> Upload History</a>
-                        <button type="button" class="btn-action" onclick="generatePreviewGrid()"><i class="fa-solid fa-table-list"></i> Preview Data</button>
+                    <div class="d-flex flex-wrap justify-content-end gap-2 mt-4">
+                        <a href="<?= htmlspecialchars(function_exists('cdat_href') ? cdat_href('/data-upload/history') : '/data-upload/history') ?>?type=custom" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-clock-rotate-left"></i> Upload History</a>
+                        <button type="button" class="btn btn-primary btn-sm" onclick="generatePreviewGrid()"><i class="fa-solid fa-table-list"></i> Preview Data</button>
                     </div>
 
                     <!-- Editable Sheet Preview & Data Grid Section (Displayed directly on the same page) -->
-                    <div id="custom-preview-container" style="display:none; margin-top: 25px;">
+                    <div id="custom-preview-container" class="mt-4" style="display:none;">
                         <div class="wizard-card">
                             <div class="wizard-title"><i class="fa-solid fa-edit"></i> 3. Preview & Edit Uploaded Sheet</div>
-                            <p style="font-size:12px; color:#ccc; margin-bottom:12px;">
+                            <p class="small text-secondary mb-3">
                                Below is the complete content of your uploaded sheet. You can double-click any cell to **edit its value** before inserting.
                             </p>
                             
@@ -1227,8 +886,8 @@ if ($openAfterUpload === '') {
                             </div>
                         </div>
 
-                        <div style="text-align: right; margin-top:20px;">
-                            <button type="button" class="btn-action" style="background:#28a745;" onclick="insertCustomData()"><i class="fa-solid fa-database"></i> Insert Mapped Data</button>
+                        <div class="d-flex justify-content-end mt-4">
+                            <button type="button" class="btn btn-success" onclick="insertCustomData()"><i class="fa-solid fa-database"></i> Insert Mapped Data</button>
                         </div>
                     </div>
                 </div>
@@ -1243,22 +902,22 @@ if ($openAfterUpload === '') {
                 </div>
 
                 <!-- Success Section -->
-                <div id="custom-success-section" style="display:none; text-align: left; margin-top:20px;">
-                    <div class="msg-container msg-success" style="font-size: 16px;"><i class="fa-solid fa-circle-check"></i> Data processing completed successfully!</div>
+                <div id="custom-success-section" class="mt-4 text-start" style="display:none;">
+                    <div class="msg-container msg-success fs-6"><i class="fa-solid fa-circle-check"></i> Data processing completed successfully!</div>
                     
-                    <div class="wizard-card" style="background: rgba(40, 167, 69, 0.05); border-color: rgba(40, 167, 69, 0.2); line-height: 1.8; font-size:13px;">
-                       <h3 style="margin-top:0; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 6px; color:#28a745;">Upload Summary Details</h3>
+                    <div class="wizard-card border-success-subtle bg-success-subtle" style="line-height: 1.8; font-size:13px;">
+                       <h3 class="mt-0 pb-2 border-bottom text-success">Upload Summary Details</h3>
                        <strong>Uploaded by:</strong> <?= htmlspecialchars($_SESSION['audit_username'] ?? 'Admin') ?><br/>
                        <strong>Database:</strong> <span id="success-custom-db"></span><br/>
                        <strong>Target Table:</strong> <span id="success-custom-table"></span><br/>
                        <strong>Processed File:</strong> <span id="success-custom-file"></span><br/>
-                       <strong>Location:</strong> <span id="success-custom-location" style="color:#FFA500; font-weight:bold;"></span><br/>
-                       <strong>Total Records Inserted:</strong> <span id="success-custom-rows" style="color:#90EE90; font-weight:bold;"></span><br/>
+                       <strong>Location:</strong> <span id="success-custom-location" class="fw-bold text-warning-emphasis"></span><br/>
+                       <strong>Total Records Inserted:</strong> <span id="success-custom-rows" class="fw-bold text-success"></span><br/>
                        <strong>Status:</strong> <span class="badge-success">Success</span>
                     </div>
 
-                    <div style="text-align: right; margin-top:20px;">
-                       <button type="button" class="btn-secondary" onclick="resetCustomWizard()"><i class="fa-solid fa-refresh"></i> Upload Another File</button>
+                    <div class="d-flex justify-content-end mt-4">
+                       <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetCustomWizard()"><i class="fa-solid fa-refresh"></i> Upload Another File</button>
                     </div>
                 </div>
             </div>
@@ -1446,11 +1105,7 @@ function updateModuleHint(moduleVal) {
     var netGroup = document.getElementById('standard-network-group');
     var networkSelect = document.getElementById('standard-network-select');
     if (netGroup) {
-        if (moduleVal === 'cdr') {
-            netGroup.style.display = 'block';
-        } else {
-            netGroup.style.display = 'none';
-        }
+        netGroup.classList.toggle('d-none', moduleVal !== 'cdr');
     }
     if (networkSelect) {
         networkSelect.required = (moduleVal === 'cdr');
@@ -1566,15 +1221,13 @@ function showPreviewNotice(message) {
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);display:flex;'
         + 'align-items:center;justify-content:center;z-index:99999;';
     var card = document.createElement('div');
-    card.style.cssText = 'max-width:460px;width:90%;background:#123c4f;color:#eaf3f8;'
-        + 'border:2px solid #FFA500;border-radius:12px;padding:26px 26px 22px;'
-        + 'box-shadow:0 18px 50px rgba(0,0,0,0.55);font-family:Verdana,Arial,sans-serif;text-align:center;';
+    card.style.cssText = 'max-width:460px;width:90%;background:#fff;border-radius:12px;padding:26px 26px 22px;'
+        + 'box-shadow:0 18px 50px rgba(0,0,0,0.55);text-align:center;';
     card.innerHTML =
         '<div style="font-size:38px;line-height:1;margin-bottom:12px;">⚠️</div>'
-        + '<div style="font-size:16px;font-weight:bold;margin-bottom:10px;color:#FFA500;">Cannot preview this file</div>'
-        + '<div style="font-size:13.5px;line-height:1.6;color:#eaf3f8;margin-bottom:22px;"></div>'
-        + '<button type="button" style="background:#FFA500;color:#10222b;border:0;border-radius:8px;'
-        + 'padding:10px 34px;font-size:14px;font-weight:bold;cursor:pointer;">OK</button>';
+        + '<div style="font-size:16px;font-weight:bold;margin-bottom:10px;">Cannot preview this file</div>'
+        + '<div style="font-size:13.5px;line-height:1.6;margin-bottom:22px;"></div>'
+        + '<button type="button" class="btn btn-primary px-4">OK</button>';
     card.querySelector('div:nth-child(3)').textContent = message;
     var btn = card.querySelector('button');
     btn.onclick = function () { overlay.remove(); };
@@ -1790,17 +1443,14 @@ function renderPreviewPager() {
     var pager = document.getElementById('standard-preview-pager');
     if (!pager) return;
     var n = previewState.files.length;
-    if (n <= 1) { pager.style.display = 'none'; pager.innerHTML = ''; return; }
-    pager.style.display = 'flex';
-    var base = 'border:1px solid #FFA500;border-radius:6px;padding:5px 11px;font-size:12px;cursor:pointer;font-family:inherit;';
-    var html = '<button type="button" data-pv="prev" style="' + base + 'background:transparent;color:#FFA500;">&laquo; Prev</button>';
+    if (n <= 1) { pager.classList.add('d-none'); pager.classList.remove('d-flex'); pager.innerHTML = ''; return; }
+    pager.classList.remove('d-none'); pager.classList.add('d-flex');
+    var html = '<button type="button" class="btn btn-outline-secondary btn-sm" data-pv="prev">&laquo; Prev</button>';
     for (var i = 0; i < n; i++) {
         var active = (i === previewState.current);
-        html += '<button type="button" data-pv="' + i + '" style="' + base
-            + (active ? 'background:#FFA500;color:#10222b;font-weight:bold;' : 'background:transparent;color:#eaf3f8;')
-            + '">' + (i + 1) + '</button>';
+        html += '<button type="button" class="btn btn-sm ' + (active ? 'btn-primary' : 'btn-outline-secondary') + '" data-pv="' + i + '">' + (i + 1) + '</button>';
     }
-    html += '<button type="button" data-pv="next" style="' + base + 'background:transparent;color:#FFA500;">Next &raquo;</button>';
+    html += '<button type="button" class="btn btn-outline-secondary btn-sm" data-pv="next">Next &raquo;</button>';
     pager.innerHTML = html;
     pager.querySelectorAll('button').forEach(function(b) {
         b.onclick = function() {
@@ -2321,7 +1971,7 @@ function printCustomLog(text) {
     <div class="staging-modal__head">
       <h2 id="staging-modal-title">Staging Preview &amp; Edit</h2>
       <div class="staging-modal__actions">
-        <button type="button" class="staging-modal__close" id="staging-modal-close">Close</button>
+        <button type="button" class="staging-modal__close btn btn-outline-secondary btn-sm" id="staging-modal-close">Close</button>
       </div>
     </div>
     <iframe id="staging-modal-frame" class="staging-modal__frame" title="Staging preview"></iframe>

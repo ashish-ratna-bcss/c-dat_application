@@ -1,0 +1,116 @@
+/* CDAT theme on top of Bootstrap 5 — load after bootstrap.min.css, before app.css */
+
+:root,
+[data-bs-theme="light"] {
+    --bs-primary: #1668c3;
+    --bs-primary-rgb: 22, 104, 195;
+    --bs-secondary: #475569;
+    --bs-success: #198754;
+    --bs-info: #0d9488;
+    --bs-warning: #ffc107;
+    --bs-danger: #b3261e;
+    --bs-body-bg: #eef2f7;
+    --bs-body-color: #1b2733;
+    --bs-border-color: #dbe3ec;
+    --bs-link-color: #1668c3;
+    --bs-link-hover-color: #12559f;
+    --bs-border-radius: 0.625rem;
+    --bs-border-radius-sm: 0.5rem;
+    --bs-border-radius-lg: 0.75rem;
+    --cdat-sidebar: #0f2740;
+    --cdat-sidebar-2: #16334f;
+}
+
+body {
+    background: var(--bs-body-bg);
+    color: var(--bs-body-color);
+}
+
+/* Shell */
+.cdat-shell { min-height: 100vh; }
+
+/*
+ * Bootstrap .offcanvas-lg uses background-color: transparent !important
+ * at the lg breakpoint so the panel can sit in-flow. That wiped the navy
+ * sidebar and left pale menu text on the light page background.
+ */
+.sidebar.cdat-sidebar,
+.sidebar.cdat-sidebar .offcanvas-body {
+    --bs-offcanvas-bg: var(--cdat-sidebar);
+    --bs-offcanvas-color: #cfe0f0;
+    background-color: var(--cdat-sidebar) !important;
+    color: #cfe0f0;
+    border-right: 0;
+}
+
+.sidebar.cdat-sidebar {
+    width: var(--sw, 264px);
+    flex: 0 0 var(--sw, 264px);
+}
+
+.cdat-page {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    background: transparent;
+}
+
+.cdat-content-card {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+}
+
+/* Bootstrap form helpers inside legacy pages */
+.content .form-label {
+    font-size: .72rem;
+    font-weight: 600;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: #64748b;
+}
+
+.content .form-control,
+.content .form-select {
+    font-size: .95rem;
+}
+
+.content .btn-primary {
+    --bs-btn-bg: #1668c3;
+    --bs-btn-border-color: #1668c3;
+    --bs-btn-hover-bg: #12559f;
+    --bs-btn-hover-border-color: #12559f;
+}
+
+/* Upload / history panels on dark translucent backgrounds */
+.cdat-topbar {
+    background: #fff;
+    border-bottom: 1px solid var(--bs-border-color);
+    min-height: 3.25rem;
+    z-index: 1030;
+}
+
+.cdat-panel-dark {
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 1.25rem;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: var(--bs-border-radius);
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Isolate sidebar menu from Bootstrap .nav (flex row) */
+.cdat-nav {
+    display: block;
+    flex-wrap: nowrap;
+    padding-left: 0;
+    margin-bottom: 0;
+    list-style: none;
+}
+
+@media (max-width: 767.98px) {
+    .cdat-topbar .uname { display: none; }
+}

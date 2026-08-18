@@ -1,9 +1,6 @@
 /* CDAT application shell + legacy-content normalisation.
-   ------------------------------------------------------------------
-   The second half matters as much as the first: ~200 pages still emit
-   <font>, bgcolor="#921215", border=1 tables and inline widths. Rather
-   than rewrite that markup, the rules under "Legacy content" neutralise
-   it so old pages inherit the new look automatically. */
+   Bootstrap 5 base styles load from vendor/bootstrap; theme overrides in
+   cdat-bootstrap.css. Rules here extend Bootstrap and normalise legacy markup. */
 
 :root {
     --bg:        #eef2f7;
@@ -45,14 +42,19 @@ a { color: var(--brand); }
 
 /* ---------------- shell ---------------- */
 
-.shell { display: flex; min-height: 100vh; }
+.shell { min-height: 100vh; }
 
 .sidebar {
     width: var(--sw); flex: 0 0 var(--sw);
-    background: var(--sidebar);
+    background: var(--sidebar) !important;
     color: #cfe0f0;
     display: flex; flex-direction: column;
-    position: sticky; top: 0; height: 100vh;
+}
+
+@media (min-width: 992px) {
+    .sidebar {
+        position: sticky; top: 0; height: 100vh;
+    }
 }
 
 .brand {
@@ -103,7 +105,7 @@ a { color: var(--brand); }
 
 /* While filtering, groups are forced open so matching children are visible. */
 .nav-group.is-filtered > .nav-sub { max-height: none; overflow: visible; }
-.nav [hidden] { display: none !important; }
+.cdat-nav [hidden] { display: none !important; }
 mark.hit { background: #ffd44d; color: #10243a; border-radius: 3px; padding: 0 1px; }
 
 .sidebar nav { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: .6rem .55rem 1rem; -webkit-overflow-scrolling: touch; }
@@ -111,7 +113,7 @@ mark.hit { background: #ffd44d; color: #10243a; border-radius: 3px; padding: 0 1
 .sidebar nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,.28); border-radius: 8px; }
 .sidebar nav::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.42); }
 
-.nav, .nav-sub { list-style: none; margin: 0; padding: 0; }
+.cdat-nav, .nav-sub { list-style: none; margin: 0; padding: 0; }
 
 .nav-item, .nav-parent {
     display: flex; align-items: center; gap: .6rem; width: 100%;
@@ -176,7 +178,7 @@ mark.hit { background: #ffd44d; color: #10243a; border-radius: 3px; padding: 0 1
 }
 .uname { font-size: .88rem; color: var(--ink-soft); }
 
-.burger { display: none; border: 0; background: none; padding: .3rem; cursor: pointer; color: var(--ink); }
+.burger { border: 0; background: none; padding: .3rem; cursor: pointer; color: var(--ink); }
 .burger svg { width: 22px; height: 22px; }
 
 /* ---------------- quick links ----------------
@@ -278,46 +280,21 @@ mark.hit { background: #ffd44d; color: #10243a; border-radius: 3px; padding: 0 1
 }
 .ql-msg { flex: 1 1 auto; font-size: .83rem; color: var(--ink-soft); }
 .ql-msg.is-error { color: var(--danger); }
-.ql-btn-primary, .ql-btn-ghost {
-    font: inherit; font-size: .9rem; font-weight: 600;
-    padding: .5rem 1.15rem; border-radius: 8px; cursor: pointer;
-}
-.ql-btn-primary { background: var(--brand); color: #fff; border: 1px solid transparent; }
-.ql-btn-primary:hover { background: #12559f; }
-.ql-btn-primary:disabled { opacity: .6; cursor: default; }
-.ql-btn-ghost { background: #fff; color: var(--ink); border: 1px solid #c6d2e0; }
-.ql-btn-ghost:hover { background: #f1f5fa; }
+/* ql-btn-* classes are now co-tagged with Bootstrap btn classes in markup — no separate rules needed */
 
 /* the dashboard panel */
 .ql-panel { margin: 0; }
 .ql-head { display: flex; align-items: center; gap: .8rem; margin-bottom: .85rem; }
 .ql-head h2 { margin: 0; font-size: 1.05rem; font-weight: 700; color: #0f2740; }
-.content .ql-edit,
-.content button.ql-edit,
-.ql-edit {
-    margin-left: auto; margin-top: 0 !important; margin-bottom: 0 !important;
-    font: inherit; font-size: .82rem !important; font-weight: 600 !important;
-    background: #fff !important; color: #12559f !important;
-    border: 1px solid #c6d2e0 !important; border-radius: 8px !important;
-    padding: .4rem .9rem !important; cursor: pointer;
-}
-.content .ql-edit:hover,
-.content button.ql-edit:hover,
-.ql-edit:hover {
-    background: #eef5fd !important; color: #0e3d6b !important;
-}
+/* .ql-edit is co-tagged with Bootstrap btn btn-outline-secondary btn-sm in markup */
+.ql-edit { margin-left: auto; }
 
-.ql-grid {
-    display: grid; gap: .75rem;
-    grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
-}
+.ql-grid { display: flex; flex-wrap: wrap; }
 .ql-tile {
     display: flex; flex-direction: column; gap: .4rem;
     padding: 1rem .95rem; text-decoration: none;
-    background: #fff; color: var(--ink);
+    background: transparent; color: var(--ink);
     border: 1px solid #dbe7f3; border-radius: 12px;
-    box-shadow: 0 1px 3px rgba(15, 39, 64, .06);
-    transition: transform .14s ease, border-color .14s ease, box-shadow .14s ease;
 }
 .ql-tile:hover {
     transform: translateY(-2px); border-color: #1668c3;
@@ -334,40 +311,41 @@ mark.hit { background: #ffd44d; color: #10243a; border-radius: 3px; padding: 0 1
     text-transform: uppercase; color: #64748b; }
 
 .ql-empty {
-    background: #f5f8fc; border: 1px dashed #c6d2e0; border-radius: 12px;
+    background: transparent; border: 1px dashed #c6d2e0; border-radius: 12px;
     padding: 1.75rem 1.25rem; text-align: center; color: #64748b;
 }
 .ql-empty p { margin: 0 0 .4rem; font-size: .9rem; }
 .ql-empty strong { color: #0f172a; }
-.content .ql-cta,
-.content button.ql-cta,
-.ql-cta {
-    margin-top: .75rem !important; font: inherit; font-size: .9rem !important;
-    font-weight: 600 !important; background: var(--brand) !important; color: #fff !important;
-    border: 0 !important; border-radius: 8px !important;
-    padding: .55rem 1.2rem !important; cursor: pointer;
-}
-.content .ql-cta:hover,
-.content button.ql-cta:hover,
-.ql-cta:hover { background: #12559f !important; }
+/* .ql-cta is co-tagged with Bootstrap btn btn-primary in markup */
+.ql-cta { margin-top: .75rem !important; }
 
-.content { flex: 1 1 auto; padding: 1.25rem; }
-.card {
+.content { flex: 1 1 auto; }
+.card:not(.cdat-content-card) {
     background: var(--surface); border: 1px solid var(--line);
     border-radius: var(--radius); box-shadow: var(--shadow);
     padding: 1.15rem 1.25rem; overflow-x: auto;
 }
-.foot { padding: .9rem 1.25rem; color: var(--ink-soft); font-size: .8rem; }
+.cdat-content-card { overflow-x: auto; }
+
+.cdat-page {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    background: transparent;
+}
+.foot { padding: 0; color: var(--ink-soft); font-size: .8rem; }
 
 .scrim { position: fixed; inset: 0; background: rgba(8,18,28,.45); z-index: 25; }
 
-@media (max-width: 900px) {
+@media (max-width: 991.98px) {
     .sidebar {
-        position: fixed; z-index: 30; left: 0; top: 0;
+        position: fixed; z-index: 1040; left: 0; top: 0;
         transform: translateX(-100%); transition: transform .2s ease;
+        height: 100vh;
     }
     body.nav-open .sidebar { transform: none; }
-    .burger { display: block; }
+    body.nav-open .scrim { display: block !important; }
+    body.nav-open .scrim[hidden] { display: block !important; }
 }
 
 /* ---------------- Legacy content ----------------
@@ -489,13 +467,18 @@ mark.hit { background: #ffd44d; color: #10243a; border-radius: 3px; padding: 0 1
 .content input[style*=" height:"], .content select[style*=" height:"] {
     height: auto !important;
 }
-.content input[type=submit], .content input[type=button], .content button {
+/* Minimal fallback for truly unclassed legacy controls that have no Bootstrap class applied.
+   Any control with a .btn-* class is handled entirely by Bootstrap instead. */
+.content input[type=submit]:not([class*="btn"]),
+.content input[type=button]:not([class*="btn"]),
+.content button:not([class*="btn"]):not([class*="sum-"]):not([class*="ql-"]):not([class*="sum_"]) {
     font: inherit; font-weight: 600;
     padding: .5rem 1.05rem; margin: .15rem .25rem;
     background: var(--brand); color: var(--brand-ink);
     border: 1px solid transparent; border-radius: 8px; cursor: pointer;
 }
-.content input[type=submit]:hover, .content button:hover { background: #12559f; }
+.content input[type=submit]:not([class*="btn"]):hover,
+.content button:not([class*="btn"]):not([class*="sum-"]):not([class*="ql-"]):hover { background: #12559f; }
 .content .sum-dp button,
 .content .sum-dp__panel button {
     background: #f4f7fb !important;
@@ -536,7 +519,7 @@ mark.hit { background: #ffd44d; color: #10243a; border-radius: 3px; padding: 0 1
 .content .form-group input[type="text"],
 .content .form-group input[type="password"],
 .content .form-group select { width: 100%; margin: 0; }
-.content .btn-submit { width: 100%; margin-top: .4rem; }
+/* .btn-submit replaced by Bootstrap w-100 utilities — no custom rule needed */
 
 /* admin_sql_console.php -- the editor stays dark on purpose, it is a code area */
 .content .console-editor {
@@ -545,14 +528,10 @@ mark.hit { background: #ffd44d; color: #10243a; border-radius: 3px; padding: 0 1
     border: 1px solid #0b1929; border-radius: 10px; padding: .8rem .9rem;
     font-family: ui-monospace, Consolas, "Courier New", monospace; font-size: .85rem;
 }
-/* input.btn-clear, not .btn-clear: these are <input type="button">, so the
-   generic .content input[type=button] rule above would otherwise outrank it. */
-.content input.btn-clear { background: var(--danger); }
-.content input.btn-clear:hover { background: #8d1d16; }
-.content input.btn-secondary {
-    background: #fff; color: var(--ink); border: 1px solid #c6d2e0;
-}
-.content input.btn-secondary:hover { background: #f1f5fa; }
+/* Legacy named input buttons — Bootstrap classes on these inputs now handle them.
+   Keep only danger override which Bootstrap does not express via an input. */
+.content input.btn-clear, .content input[type=button].btn-danger { background: var(--danger); border-color: var(--danger); }
+.content input.btn-clear:hover, .content input[type=button].btn-danger:hover { background: #8d1d16; }
 .content .history-item {
     background: #f7fafd; border: 1px solid var(--line); border-radius: 8px;
     margin: .35rem 0; padding: .45rem .6rem; cursor: pointer;
@@ -704,9 +683,9 @@ mark.hit { background: #ffd44d; color: #10243a; border-radius: 3px; padding: 0 1
 
 /* ---------------- Summary dashboard (sum_home.php) ---------------- */
 
-/* Flatten outer shell — avoid card-inside-card with .sum-search-card / dash cards */
-.card:has(.sum-page) {
-    padding: 0;
+/* Flatten outer shell — page content brings its own cards/panels */
+.card:has(.sum-page),
+.cdat-page:has(.sum-page) {
     overflow: visible;
     background: transparent;
     border: 0;
@@ -714,20 +693,26 @@ mark.hit { background: #ffd44d; color: #10243a; border-radius: 3px; padding: 0 1
     border-radius: 0;
 }
 
-.sum-page { max-width: 100%; }
+.sum-page {
+    max-width: 100%;
+    width: 100%;
+}
 
 /* ---- Search card ---- */
 .sum-search-card {
-    background: #fff;
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    padding: 1.1rem 1.25rem 1.2rem;
+    background: transparent;
+    border: 0;
     color: var(--ink);
-    box-shadow: var(--shadow);
+    box-shadow: none;
 }
+.sum-search-card.card {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+}
+.sum-search-card.card .card-body { padding: 0; }
 .sum-search-card__head {
     display: flex; align-items: flex-start; gap: .85rem;
-    margin-bottom: 1rem;
 }
 .sum-search-card__icon {
     flex: 0 0 auto; width: 40px; height: 40px;
@@ -743,9 +728,9 @@ mark.hit { background: #ffd44d; color: #10243a; border-radius: 3px; padding: 0 1
 }
 
 .sum-search-form {
-    display: flex; flex-wrap: wrap; align-items: flex-end; gap: .65rem .85rem;width:40%;
+    width: 100%;
 }
-.sum-search-form__field { flex: 1 1 200px; min-width: 0; }
+.sum-search-form__field { min-width: 0; }
 .sum-search-form__field label {
     display: block; margin-bottom: .3rem;
     font-size: .72rem; font-weight: 600; letter-spacing: .05em;
@@ -1243,11 +1228,14 @@ input.sum-date-input[readonly] {
 }
 
 /* Dashboard home */
-.sum-dashboard { max-width: 1100px; display: flex; flex-direction: column; gap: 1rem; }
+.sum-dashboard { max-width: none; display: flex; flex-direction: column; gap: 1rem; }
 .sum-dash-hero {
-    background: #fff; border: 1px solid var(--line);
-    border-radius: 12px; padding: 1.15rem 1.25rem 1.2rem;
-    color: var(--ink); box-shadow: var(--shadow);
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+    color: var(--ink);
+    box-shadow: none;
 }
 .sum-dash-hero__head {
     display: flex; align-items: flex-start; gap: .85rem; margin-bottom: 1rem;
@@ -1279,8 +1267,10 @@ input.sum-date-input[readonly] {
 }
 .sum-notice-bar--alt strong { color: #1e40af; }
 .sum-dash-links {
-    background: #fff; border: 1px solid #dbe7f3; border-radius: 12px;
-    padding: 1rem 1.1rem 1.15rem; box-shadow: var(--shadow);
+    background: transparent;
+    border: 0;
+    padding: 0;
+    box-shadow: none;
 }
 .sum-dashboard__title {
     margin: 0 0 .85rem; font-size: 1.15rem; font-weight: 700; color: #0f172a;
@@ -1297,7 +1287,7 @@ input.sum-date-input[readonly] {
 .sum-cell-img img { max-width: 120px; height: auto; border-radius: 6px; }
 
 /* Admin console panels */
-.sum-admin-layout { max-width: 1280px; }
+.sum-admin-layout { max-width: none; }
 .sum-admin-grid {
     display: grid; grid-template-columns: 1fr 280px; gap: 1rem;
 }
@@ -1305,9 +1295,9 @@ input.sum-date-input[readonly] {
     .sum-admin-grid { grid-template-columns: 1fr; }
 }
 .sum-console-panel {
-    background: #fff; border: 1px solid var(--line);
-    border-radius: 10px; padding: .85rem 1rem; margin-bottom: .85rem;
-    box-shadow: var(--shadow);
+    background: transparent; border: 0;
+    border-radius: 0; padding: 0; margin-bottom: 1rem;
+    box-shadow: none;
 }
 .sum-console-panel__title {
     margin: 0 0 .65rem; font-size: .88rem; font-weight: 700;
@@ -1320,12 +1310,7 @@ input.sum-date-input[readonly] {
     background: #f8fafc; color: var(--ink);
 }
 .sum-console-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .65rem; }
-.sum-console-btn {
-    padding: .45rem .95rem; border: 0; border-radius: 8px;
-    background: var(--brand); color: #fff; font-size: .82rem; font-weight: 600; cursor: pointer;
-}
-.sum-console-btn:hover { background: #12559f; }
-.sum-console-btn--secondary { background: #475569; }
+/* sum-console-btn co-tagged with Bootstrap btn classes in markup — no custom color rules needed */
 .sum-history-item {
     margin-bottom: .55rem; padding: .55rem .65rem; border-radius: 8px;
     background: #f5f8fc; border: 1px solid #e2e8f0; cursor: pointer;
@@ -1374,21 +1359,20 @@ input.sum-date-input[readonly] {
 
 /* ---- Subject hero card ---- */
 .sum-subject-card {
-    background: #fff;
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    overflow: hidden;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    overflow: visible;
     margin-bottom: .85rem;
-    box-shadow: var(--shadow);
+    box-shadow: none;
 }
 
 .sum-subject-hero {
-    display: flex; flex-wrap: wrap; align-items: stretch;
     gap: 0;
-    background: #f5f8fc;
+    background: transparent;
     border-bottom: 1px solid var(--line);
     color: var(--ink);
-    padding: 1rem 1.15rem;
+    padding: 0 0 1rem;
 }
 .sum-subject-hero__identity {
     flex: 1 1 200px; min-width: 0;
@@ -1442,9 +1426,9 @@ input.sum-date-input[readonly] {
 }
 
 .sum-subject-address {
-    padding: .75rem 1.15rem;
+    padding: .75rem 0 0;
     border-top: 1px solid var(--line);
-    background: #f7fafd;
+    background: transparent;
 }
 .sum-subject-address__label {
     display: block; font-size: .68rem; font-weight: 700;
@@ -1459,17 +1443,15 @@ input.sum-date-input[readonly] {
 
 /* ---- Contact table panel ---- */
 .sum-table-panel {
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    overflow: hidden;
-    background: #fff;
-    box-shadow: var(--shadow);
+    border: 0;
+    border-radius: 0;
+    overflow: visible;
+    background: transparent;
+    box-shadow: none;
 }
 .sum-table-panel__head {
-    display: flex; align-items: center; justify-content: space-between;
-    gap: .6rem; flex-wrap: wrap;
-    padding: .7rem 1rem;
-    background: #f7fafd;
+    padding: 0 0 .55rem;
+    background: transparent;
     border-bottom: 1px solid var(--line);
 }
 .sum-table-panel__head-left {
@@ -1730,10 +1712,10 @@ input.sum-date-input[readonly] {
 
 /* Fallback for non-panel tables */
 .sum-results .datatable-wrapper {
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: var(--shadow);
+    border: 0;
+    border-radius: 0;
+    overflow: visible;
+    box-shadow: none;
 }
 
 @media (max-width: 900px) {
@@ -1750,10 +1732,7 @@ input.sum-date-input[readonly] {
 
 @media (max-width: 640px) {
     .card:has(.sum-page) { padding: 0; background: transparent; border: 0; box-shadow: none; }
-    .sum-search-form { flex-direction: column; align-items: stretch; }
     .sum-search-form__submit { width: 100%; }
-    .sum-page--has-results .sum-search-form { flex-direction: row; }
-    .sum-page--has-results .sum-search-form__submit { width: auto; }
     .sum-table-panel__head { flex-direction: column; align-items: stretch; }
     .sum-table-panel__actions { margin-left: 0; }
     .sum-table-panel__actions .cdat-dt-toolbar { justify-content: flex-end; }

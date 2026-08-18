@@ -16,6 +16,9 @@ $login  = htmlspecialchars(rtrim(CDAT_BASE, '/') . '/login', ENT_QUOTES);
 <title>Login — Call Data Analysis Tool</title>
 <link rel="icon" type="image/png" sizes="32x32" href="<?= $assets ?>/images/favicon.png">
 <link rel="apple-touch-icon" href="<?= $assets ?>/images/apple-touch-icon.png">
+<link rel="stylesheet" href="<?= $assets ?>/vendor/bootstrap/css/bootstrap.min.css">
+<link rel="stylesheet" href="<?= $assets ?>/css/cdat-bootstrap.css">
+<link rel="stylesheet" href="<?= $assets ?>/css/app.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -178,23 +181,12 @@ body::after {
 }
 
 .pw-wrap { position: relative; }
-.pw-wrap input { padding-right: 4.25rem; }
-.pw-toggle {
-    position: absolute;
-    right: .4rem; top: 50%;
-    transform: translateY(-50%);
-    border: 0;
-    background: #f0f5fb;
-    color: var(--brand);
-    font: inherit;
-    font-size: .72rem;
-    font-weight: 700;
-    letter-spacing: .04em;
-    padding: .35rem .55rem;
-    border-radius: 6px;
-    cursor: pointer;
+.pw-wrap.input-group .pw-toggle {
+    position: static;
+    transform: none;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
 }
-.pw-toggle:hover { background: #e2edf8; }
 
 .field-error {
     display: none;
@@ -235,22 +227,13 @@ body::after {
     border: 1px solid #a7f3d0;
 }
 
+/* .login-submit: Bootstrap btn btn-primary w-100 handles colors; keep only size tweaks */
 .login-submit {
-    width: 100%;
-    margin: .35rem 0 0;
     padding: .75rem 1rem;
-    border: 0;
-    border-radius: 9px;
-    background: var(--brand);
-    color: #fff;
-    font: inherit;
     font-size: 1rem;
     font-weight: 700;
-    cursor: pointer;
 }
-.login-submit:hover { background: #12559f; }
 .login-submit:disabled {
-    opacity: .7;
     cursor: progress;
 }
 
@@ -278,42 +261,44 @@ body::after {
     <p class="login-brand__sub">Sign in to continue</p>
   </header>
 
-  <section class="login-card" aria-label="Sign in">
+  <section class="login-card card shadow-lg border-0" aria-label="Sign in">
+    <div class="card-body p-4">
     <div class="login-card__head">
-      <h1>Login</h1>
-      <p>Enter your username and password.</p>
+      <h1 class="h5 mb-1">Login</h1>
+      <p class="text-secondary small mb-0">Enter your username and password.</p>
     </div>
 
     <!-- novalidate: browser bubbles replaced by messages below.
          action/method kept so the form still works without JS. -->
-    <form action="<?= $login ?>" method="post" id="loginForm" novalidate>
+    <form action="<?= $login ?>" method="post" id="loginForm" class="mt-3" novalidate>
       <p class="form-msg" id="formMsg" role="alert"></p>
 
-      <div class="login-field">
-        <label for="USERNAME">Username</label>
-        <input type="text" name="USERNAME" id="USERNAME"
+      <div class="login-field mb-3">
+        <label class="form-label" for="USERNAME">Username</label>
+        <input type="text" class="form-control" name="USERNAME" id="USERNAME"
                placeholder="Enter username"
                autocomplete="username" required autofocus
                aria-describedby="errUser">
-        <span class="field-error" id="errUser"></span>
+        <span class="field-error invalid-feedback" id="errUser"></span>
       </div>
 
-      <div class="login-field">
-        <label for="PASSWORD">Password</label>
-        <div class="pw-wrap">
-          <input type="password" name="PASSWORD" id="PASSWORD"
+      <div class="login-field mb-3">
+        <label class="form-label" for="PASSWORD">Password</label>
+        <div class="pw-wrap input-group">
+          <input type="password" class="form-control" name="PASSWORD" id="PASSWORD"
                  placeholder="Enter password"
                  autocomplete="current-password" required
                  aria-describedby="errPass capsHint">
-          <button type="button" class="pw-toggle" id="pwToggle"
+          <button type="button" class="pw-toggle btn btn-outline-secondary btn-sm" id="pwToggle"
                   aria-label="Show password">SHOW</button>
         </div>
-        <span class="field-error" id="errPass"></span>
-        <span class="hint" id="capsHint">Caps Lock is on</span>
+        <span class="field-error invalid-feedback d-block" id="errPass"></span>
+        <span class="hint form-text text-warning" id="capsHint">Caps Lock is on</span>
       </div>
 
-      <button type="submit" class="login-submit" id="loginBtn">Login</button>
+      <button type="submit" class="login-submit btn btn-primary w-100" id="loginBtn">Login</button>
     </form>
+    </div>
   </section>
 
   <p class="login-foot">Hyderabad City Police · Call Data Analysis Tool</p>

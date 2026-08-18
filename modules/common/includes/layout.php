@@ -17,6 +17,9 @@ if (!defined('CDAT_BASE')) {
 if (!defined('CDAT_ASSETS')) {
     define('CDAT_ASSETS', rtrim(CDAT_BASE, '/') . '/public/assets');
 }
+if (!defined('CDAT_BOOTSTRAP')) {
+    define('CDAT_BOOTSTRAP', CDAT_ASSETS . '/vendor/bootstrap');
+}
 
 /**
  * Is this menu entry the page currently being viewed?
@@ -257,7 +260,7 @@ function cdat_icon(string $name): string
 
 function cdat_render_nav(array $items): void
 {
-    echo '<ul class="nav">';
+    echo '<ul class="cdat-nav">';
     foreach ($items as $i => $item) {
         $label = htmlspecialchars($item['label'], ENT_QUOTES);
         if (!empty($item['children'])) {
@@ -326,15 +329,18 @@ function layout_begin(string $title = 'Call Data Analysis Tool', string $subtitl
 <title><?= $t ?> &mdash; CDAT</title>
 <link rel="icon" type="image/png" sizes="32x32" href="<?= CDAT_ASSETS ?>/images/favicon.png">
 <link rel="apple-touch-icon" href="<?= CDAT_ASSETS ?>/images/apple-touch-icon.png">
+<link rel="stylesheet" href="<?= CDAT_BOOTSTRAP ?>/css/bootstrap.min.css">
 <link href="https://cdn.jsdelivr.net/npm/simple-datatables@latest/dist/style.css" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="<?= CDAT_ASSETS ?>/css/cdat-bootstrap.css?v=<?= time() ?>">
 <link rel="stylesheet" href="<?= CDAT_ASSETS ?>/css/app.css?v=<?= time() ?>">
 <?= $head ?>
 </head>
 <body>
-<a class="skip" href="#main">Skip to content</a>
-<div class="shell">
+<a class="skip visually-hidden-focusable" href="#main">Skip to content</a>
+<div class="container-fluid g-0">
+<div class="shell cdat-shell row g-0 flex-nowrap min-vh-100">
 
-  <aside class="sidebar" id="sidebar">
+  <aside class="sidebar cdat-sidebar col-auto" id="sidebar">
     <div class="brand">
       <img src="<?= CDAT_ASSETS ?>/images/logo.png" alt="" onerror="this.remove()">
       <div>
@@ -345,7 +351,8 @@ function layout_begin(string $title = 'Call Data Analysis Tool', string $subtitl
     <div class="nav-search">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
            stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-      <input type="search" id="navSearch" placeholder="Search menu&hellip;"
+      <input type="search" id="navSearch"
+             placeholder="Search menu&hellip;"
              autocomplete="off" spellcheck="false" aria-label="Search the menu"
              aria-describedby="navSearchHint">
       <button type="button" class="nav-search-clear" aria-label="Clear search" hidden>&times;</button>
@@ -364,38 +371,41 @@ function layout_begin(string $title = 'Call Data Analysis Tool', string $subtitl
     </div>
   </aside>
 
-  <div class="main-wrap">
-    <header class="topbar">
-      <button class="burger" type="button" aria-label="Toggle navigation" aria-controls="sidebar">
+  <div class="main-wrap col min-vw-0 d-flex flex-column">
+    <header class="topbar cdat-topbar navbar navbar-expand sticky-top">
+      <div class="container-fluid px-3 px-lg-4">
+      <button class="burger btn btn-link text-dark d-lg-none p-1 me-2" type="button"
+              aria-label="Toggle navigation" aria-controls="sidebar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-             stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+             stroke-linecap="round" width="22" height="22" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
       </button>
-      <div class="page-title">
-        <h1><?= $t ?></h1>
+      <div class="page-title flex-grow-1 min-w-0">
+        <h1 class="h5 mb-0 fw-semibold text-truncate"><?= $t ?></h1>
         <?php if ($subtitle !== ''): ?>
-          <p><?= htmlspecialchars($subtitle, ENT_QUOTES) ?></p>
+          <p class="mb-0 small text-secondary text-truncate"><?= htmlspecialchars($subtitle, ENT_QUOTES) ?></p>
         <?php endif; ?>
       </div>
       <?php if ($user !== ''): ?>
-        <div class="user" title="Signed in">
-          <button type="button" class="ql-open" data-ql-open
+        <div class="user d-flex align-items-center gap-2 ms-auto" title="Signed in">
+          <button type="button" class="ql-open btn btn-outline-secondary btn-sm rounded-pill" data-ql-open
                   title="Choose the pages on your dashboard">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
-                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="15" height="15"
                  ><path d="m12 3 2.6 5.6 6 .8-4.4 4.2 1.1 6.1L12 16.8 6.7 19.7l1.1-6.1L3.4 9.4l6-.8L12 3Z"/></svg>
             <span>Quick Links</span>
             <?php if ($qlCount > 0): ?>
-              <span class="ql-badge"><?= (int)$qlCount ?></span>
+              <span class="ql-badge badge text-bg-primary"><?= (int)$qlCount ?></span>
             <?php endif; ?>
           </button>
           <span class="avatar"><?= htmlspecialchars(strtoupper(substr($user, 0, 1)), ENT_QUOTES) ?></span>
-          <span class="uname"><?= htmlspecialchars($user, ENT_QUOTES) ?></span>
+          <span class="uname d-none d-md-inline small text-secondary"><?= htmlspecialchars($user, ENT_QUOTES) ?></span>
         </div>
       <?php endif; ?>
+      </div>
     </header>
 
-    <main id="main" class="content">
-      <div class="card">
+    <main id="main" class="content flex-grow-1 min-vw-0">
+      <div class="cdat-page container-fluid px-3 px-lg-4 py-3">
     <?php
 }
 
@@ -410,10 +420,11 @@ function layout_end(): void
     ?>
       </div>
     </main>
-    <footer class="foot">Hyderabad City Police &middot; Call Data Analysis Tool</footer>
+    <footer class="foot container-fluid px-3 px-lg-4 py-3 small text-secondary">Hyderabad City Police &middot; Call Data Analysis Tool</footer>
   </div>
 </div>
-<div class="scrim" hidden></div>
+</div>
+<div class="scrim d-none" hidden aria-hidden="true"></div>
 <?php
 require_once __DIR__ . '/quick_links.php';
 cdat_ql_render_modal();
@@ -424,6 +435,7 @@ window.CDAT_CSRF  = <?= json_encode(cdat_csrf()) ?>;
 window.CDAT_BASE  = <?= json_encode($base) ?>;
 window.CDAT_QLAPI = <?= json_encode(cdat_href('/api/quick-links')) ?>;
 </script>
+<script src="<?= CDAT_BOOTSTRAP ?>/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/simple-datatables@latest" type="text/javascript"></script>
 <script src="<?= CDAT_ASSETS ?>/js/app.js?v=<?= time() ?>"></script>
 </body>

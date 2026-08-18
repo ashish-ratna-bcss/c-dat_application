@@ -71,9 +71,9 @@ function cdat_sum_address_lines(string $address): string
 function cdat_sum_field_phone(string $value = '', string $id = 'SUM'): string
 {
     $val = cdat_sum_h($value);
-    return '<div class="sum-search-form__field">'
-         . '<label for="' . $id . '">Mobile No</label>'
-         . '<input type="text" name="PHONE_NO" id="' . $id . '" placeholder="Enter mobile number"'
+    return '<div class="sum-search-form__field col-12 col-sm-6 col-lg-4">'
+         . '<label class="form-label" for="' . $id . '">Mobile No</label>'
+         . '<input type="text" name="PHONE_NO" id="' . $id . '" class="form-control" placeholder="Enter mobile number"'
          . ' required="required" minlength="7" maxlength="15" pattern="^\+?[0-9]+$"'
          . ' title="Please enter a valid phone number (numbers and optional + only)"'
          . ' oninput="this.value = this.value.replace(/[^0-9+]/g, \'\')" autocomplete="off"'
@@ -135,10 +135,10 @@ function cdat_sum_searchable_select(string $name, string $label, array $options,
     $idAttr = $id !== '' ? $id : $name;
     $req = $required ? ' required="required"' : '';
     $extra = $fieldClass !== '' ? ' ' . $fieldClass : '';
-    $html = '<div class="sum-search-form__field' . $extra . '">'
-          . '<label for="' . cdat_sum_h($idAttr) . '">' . cdat_sum_h($label) . '</label>'
+    $html = '<div class="sum-search-form__field col-12 col-sm-6 col-lg-4' . $extra . '">'
+          . '<label class="form-label" for="' . cdat_sum_h($idAttr) . '">' . cdat_sum_h($label) . '</label>'
           . '<select name="' . cdat_sum_h($name) . '" id="' . cdat_sum_h($idAttr) . '"'
-          . $req . ' class="sum-select" data-searchable-select="1"'
+          . $req . ' class="form-select sum-select" data-searchable-select="1"'
           . ' data-placeholder="' . cdat_sum_h($placeholder) . '">';
     foreach ($options as $value => $optLabel) {
         $isPlaceholder = ((string) $value === '');
@@ -161,16 +161,16 @@ function cdat_sum_field_hms(string $hName, string $mName, string $sName, string 
                             bool $required = true): string
 {
     $req = $required ? ' required="required"' : '';
-    return '<div class="sum-search-form__field sum-search-form__field--hms">'
-         . '<label>' . cdat_sum_h($label) . '</label>'
-         . '<div class="sum-hms">'
-         . '<input type="number" name="' . cdat_sum_h($hName) . '" min="0" max="23" value="'
+    return '<div class="sum-search-form__field sum-search-form__field--hms col-12 col-sm-6 col-lg-4">'
+         . '<label class="form-label">' . cdat_sum_h($label) . '</label>'
+         . '<div class="sum-hms input-group">'
+         . '<input type="number" class="form-control" name="' . cdat_sum_h($hName) . '" min="0" max="23" value="'
          . cdat_sum_h($h) . '"' . $req . ' />'
          . '<span>:</span>'
-         . '<input type="number" name="' . cdat_sum_h($mName) . '" min="0" max="59" value="'
+         . '<input type="number" class="form-control" name="' . cdat_sum_h($mName) . '" min="0" max="59" value="'
          . cdat_sum_h($m) . '"' . $req . ' />'
          . '<span>:</span>'
-         . '<input type="number" name="' . cdat_sum_h($sName) . '" min="0" max="59" value="'
+         . '<input type="number" class="form-control" name="' . cdat_sum_h($sName) . '" min="0" max="59" value="'
          . cdat_sum_h($s) . '"' . $req . ' />'
          . '</div></div>';
 }
@@ -192,10 +192,10 @@ function cdat_sum_field_date(string $name, string $label, string $id = '', strin
 {
     $idAttr = $id !== '' ? $id : $name;
     $req = $required ? ' required="required"' : '';
-    return '<div class="sum-search-form__field sum-search-form__field--date">'
-         . '<label for="' . cdat_sum_h($idAttr) . '">' . cdat_sum_h($label) . '</label>'
+    return '<div class="sum-search-form__field sum-search-form__field--date col-12 col-sm-6 col-lg-3">'
+         . '<label class="form-label" for="' . cdat_sum_h($idAttr) . '">' . cdat_sum_h($label) . '</label>'
          . '<input type="text" name="' . cdat_sum_h($name) . '" id="' . cdat_sum_h($idAttr) . '"'
-         . ' class="sum-date-input" data-date-picker="1" placeholder="yyyy-mm-dd"'
+         . ' class="form-control sum-date-input" data-date-picker="1" placeholder="yyyy-mm-dd"'
          . ' pattern="^\d{4}-\d{2}-\d{2}$" readonly="readonly" inputmode="none" autocomplete="off"'
          . ' title="Select a date from the calendar"' . $req
          . ' value="' . cdat_sum_h($value) . '"/>'
@@ -216,7 +216,7 @@ function cdat_sum_back_link(string $url, string $label = 'Back to search'): void
     } elseif ($url !== '' && function_exists('cdat_href') && str_starts_with($url, '/')) {
         $url = cdat_href($url);
     }
-    echo '<p class="sum-back-link"><a href="' . cdat_sum_h($url) . '">&larr; ' . cdat_sum_h($label) . '</a></p>';
+    echo '<p class="sum-back-link"><a href="' . cdat_sum_h($url) . '" class="btn btn-outline-secondary btn-sm">&larr; ' . cdat_sum_h($label) . '</a></p>';
 }
 
 function cdat_sum_page_open(string $extraClass = ''): void
@@ -235,23 +235,25 @@ function cdat_sum_search_card(string $title, string $desc, string $action, strin
                               string $method = 'post'): void
 {
     $methodAttr = strtolower($method) === 'get' ? 'get' : 'post';
-    $formClass = 'sum-search-form' . ($methodAttr === 'get' ? ' no-ajax' : '');
-    echo '<section class="sum-search-card" aria-label="Search">';
-    echo '<div class="sum-search-card__head">';
+    $formClass = 'sum-search-form row g-3 align-items-end' . ($methodAttr === 'get' ? ' no-ajax' : '');
+    echo '<section class="sum-search-card mb-3 pb-3 border-bottom" aria-label="Search">';
+    echo '<div class="sum-search-card__head mb-3">';
     echo '<div class="sum-search-card__icon" aria-hidden="true">';
     echo '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"'
        . ' stroke-linecap="round" stroke-linejoin="round">'
        . '<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2Z"/></svg>';
     echo '</div><div>';
-    echo '<h2 class="sum-search-card__title">' . cdat_sum_h($title) . '</h2>';
-    echo '<p class="sum-search-card__desc">' . cdat_sum_h($desc) . '</p>';
+    echo '<h2 class="sum-search-card__title h5 mb-1">' . cdat_sum_h($title) . '</h2>';
+    echo '<p class="sum-search-card__desc text-secondary small mb-0">' . cdat_sum_h($desc) . '</p>';
     echo '</div></div>';
     $formAction = function_exists('cdat_form_action') ? cdat_form_action($action) : $action;
     echo '<form id="form1" name="form1" method="' . $methodAttr . '" action="' . cdat_sum_h($formAction)
        . '" class="' . $formClass . '">';
     echo $fieldsHtml;
+    echo '<div class="col-12 col-sm-auto">';
     echo '<input type="submit" name="' . cdat_sum_h($submitName) . '" id="' . cdat_sum_h($submitName) . '"'
-       . ' class="sum-search-form__submit" value="' . cdat_sum_h($submitValue) . '" />';
+       . ' class="sum-search-form__submit btn btn-primary w-100 w-sm-auto" value="' . cdat_sum_h($submitValue) . '" />';
+    echo '</div>';
     echo '</form></section>';
     echo '<div id="global-ajax-results" class="sum-ajax-results" aria-live="polite"></div>';
 }
@@ -263,9 +265,9 @@ function cdat_sum_field_text(string $name, string $label, string $value = '', st
     $req = $required ? ' required="required"' : '';
     $ph = $placeholder !== '' ? ' placeholder="' . cdat_sum_h($placeholder) . '"' : '';
     $mode = $inputMode !== '' ? ' inputmode="' . cdat_sum_h($inputMode) . '"' : '';
-    return '<div class="sum-search-form__field">'
-         . '<label for="' . cdat_sum_h($idAttr) . '">' . cdat_sum_h($label) . '</label>'
-         . '<input type="text" name="' . cdat_sum_h($name) . '" id="' . cdat_sum_h($idAttr) . '"' . $ph . $req
+    return '<div class="sum-search-form__field col-12 col-sm-6 col-lg-4">'
+         . '<label class="form-label" for="' . cdat_sum_h($idAttr) . '">' . cdat_sum_h($label) . '</label>'
+         . '<input type="text" class="form-control" name="' . cdat_sum_h($name) . '" id="' . cdat_sum_h($idAttr) . '"' . $ph . $req
          . ' autocomplete="off" value="' . cdat_sum_h($value) . '"' . $mode . '/>'
          . '</div>';
 }
@@ -277,9 +279,9 @@ function cdat_sum_field_other_phone(string $value = ''): string
 
 function cdat_sum_field_imei(string $value = ''): string
 {
-    return '<div class="sum-search-form__field">'
-         . '<label for="IMEI">IMEI Number</label>'
-         . '<input type="text" name="IMEI_NO" id="IMEI" placeholder="Enter IMEI number"'
+    return '<div class="sum-search-form__field col-12 col-sm-6 col-lg-4">'
+         . '<label class="form-label" for="IMEI">IMEI Number</label>'
+         . '<input type="text" name="IMEI_NO" id="IMEI" class="form-control" placeholder="Enter IMEI number"'
          . ' required="required" minlength="15" maxlength="15" pattern="^[0-9]{15}$"'
          . ' title="IMEI must be exactly 15 digits"'
          . ' oninput="this.value = this.value.replace(/[^0-9]/g, \'\')" autocomplete="off"'
@@ -289,9 +291,9 @@ function cdat_sum_field_imei(string $value = ''): string
 
 function cdat_sum_field_textarea(string $name, string $label, string $value = '', string $placeholder = ''): string
 {
-    return '<div class="sum-search-form__field sum-search-form__field--textarea">'
-         . '<label for="' . cdat_sum_h($name) . '">' . cdat_sum_h($label) . '</label>'
-         . '<textarea name="' . cdat_sum_h($name) . '" id="' . cdat_sum_h($name) . '" rows="3"'
+    return '<div class="sum-search-form__field sum-search-form__field--textarea col-12">'
+         . '<label class="form-label" for="' . cdat_sum_h($name) . '">' . cdat_sum_h($label) . '</label>'
+         . '<textarea name="' . cdat_sum_h($name) . '" id="' . cdat_sum_h($name) . '" class="form-control" rows="3"'
          . ' placeholder="' . cdat_sum_h($placeholder) . '" required="required">'
          . cdat_sum_h($value) . '</textarea></div>';
 }
@@ -445,17 +447,17 @@ function cdat_sum_generic_table_open(string $panelTitle, array $headers,
                                      string $exportName = 'export.csv', int $count = 0,
                                      string $tbodyId = ''): void
 {
-    echo '<section class="sum-table-panel" aria-label="' . cdat_sum_h($panelTitle) . '">';
-    echo '<div class="sum-table-panel__head">';
-    echo '<div class="sum-table-panel__head-left">';
-    echo '<h3 class="sum-table-panel__title">' . cdat_sum_h($panelTitle) . '</h3>';
+    echo '<section class="sum-table-panel mb-3" aria-label="' . cdat_sum_h($panelTitle) . '">';
+    echo '<div class="sum-table-panel__head d-flex flex-wrap align-items-center gap-2 mb-2">';
+    echo '<div class="sum-table-panel__head-left d-flex flex-wrap align-items-center gap-2">';
+    echo '<h3 class="sum-table-panel__title h6 mb-0">' . cdat_sum_h($panelTitle) . '</h3>';
     if ($count > 0) {
-        echo '<span class="sum-badge">' . (int) $count . ' records</span>';
+        echo '<span class="sum-badge badge text-bg-primary">' . (int) $count . ' records</span>';
     }
     echo '</div>';
-    echo '<div class="sum-table-panel__actions" id="sum-table-actions"></div>';
+    echo '<div class="sum-table-panel__actions ms-auto" id="sum-table-actions"></div>';
     echo '</div>';
-    echo '<div class="sum-table-scroll"><table id="' . cdat_sum_h($tableId) . '" class="sum-data-table"'
+    echo '<div class="table-responsive sum-table-scroll"><table id="' . cdat_sum_h($tableId) . '" class="table table-striped table-hover table-sm mb-0 sum-data-table"'
        . ' border="1" data-export-name="' . cdat_sum_h($exportName) . '"><thead><tr>';
     foreach ($headers as $header) {
         echo '<th>' . cdat_sum_h($header) . '</th>';
@@ -489,7 +491,7 @@ function cdat_sum_table_row(array $cells): void
 
 function cdat_sum_empty_state(string $message = 'Records not found'): void
 {
-    echo '<div class="sum-empty-state" role="alert">' . cdat_sum_h($message) . '</div>';
+    echo '<div class="alert alert-warning sum-empty-state" role="alert">' . cdat_sum_h($message) . '</div>';
 }
 
 function cdat_sum_results_open(): void
@@ -511,20 +513,20 @@ function cdat_sum_subject_card(array $row, int $contactCount, string $reportLabe
     $last = trim((string) ($row['LAST_CALL'] ?? ''));
     $address = cdat_sum_address_lines((string) ($row['ADDRESS'] ?? ''));
 
-    echo '<section class="sum-subject-card" aria-label="Subject summary">';
-    echo '<div class="sum-subject-hero">';
-    echo '<div class="sum-subject-hero__identity">';
-    echo '<span class="sum-subject-hero__eyebrow">' . cdat_sum_h($reportLabel) . '</span>';
-    echo '<span class="sum-subject-hero__phone">' . cdat_sum_h($phone) . '</span>';
+    echo '<section class="sum-subject-card mb-3 pb-3 border-bottom" aria-label="Subject summary">';
+    echo '<div class="sum-subject-hero row g-3 align-items-start">';
+    echo '<div class="sum-subject-hero__identity col-12 col-md-5">';
+    echo '<span class="sum-subject-hero__eyebrow text-uppercase small text-secondary">' . cdat_sum_h($reportLabel) . '</span>';
+    echo '<span class="sum-subject-hero__phone h4 d-block mb-1">' . cdat_sum_h($phone) . '</span>';
     if ($nick !== '') {
-        echo '<span class="sum-subject-hero__nick">' . cdat_sum_h($nick) . '</span>';
+        echo '<span class="sum-subject-hero__nick text-secondary">' . cdat_sum_h($nick) . '</span>';
     }
-    echo '</div><div class="sum-subject-stats">';
-    echo '<div class="sum-stat-tile"><span class="sum-stat-tile__label">First Call</span>'
+    echo '</div><div class="sum-subject-stats col-12 col-md-7 row row-cols-1 row-cols-sm-3 g-2 m-0">';
+    echo '<div class="sum-stat-tile col"><span class="sum-stat-tile__label">First Call</span>'
        . '<span class="sum-stat-tile__value">' . cdat_sum_h($first !== '' ? $first : '—') . '</span></div>';
-    echo '<div class="sum-stat-tile"><span class="sum-stat-tile__label">Last Call</span>'
+    echo '<div class="sum-stat-tile col"><span class="sum-stat-tile__label">Last Call</span>'
        . '<span class="sum-stat-tile__value">' . cdat_sum_h($last !== '' ? $last : '—') . '</span></div>';
-    echo '<div class="sum-stat-tile sum-stat-tile--accent"><span class="sum-stat-tile__label">Contacts</span>'
+    echo '<div class="sum-stat-tile sum-stat-tile--accent col"><span class="sum-stat-tile__label">Contacts</span>'
        . '<span class="sum-stat-tile__value">' . (int) $contactCount . '</span></div>';
     echo '</div></div>';
     if ($address !== '') {
@@ -538,15 +540,15 @@ function cdat_sum_subject_card(array $row, int $contactCount, string $reportLabe
 function cdat_sum_table_panel_open(string $title, int $count, string $tableId = 'contact_results_table',
                                    string $exportName = 'contact_analysis.csv'): void
 {
-    echo '<section class="sum-table-panel" aria-label="' . cdat_sum_h($title) . '">';
-    echo '<div class="sum-table-panel__head">';
-    echo '<div class="sum-table-panel__head-left">';
-    echo '<h3 class="sum-table-panel__title">' . cdat_sum_h($title) . '</h3>';
-    echo '<span class="sum-badge">' . (int) $count . ' contacts</span>';
+    echo '<section class="sum-table-panel mb-3" aria-label="' . cdat_sum_h($title) . '">';
+    echo '<div class="sum-table-panel__head d-flex flex-wrap align-items-center gap-2 mb-2">';
+    echo '<div class="sum-table-panel__head-left d-flex flex-wrap align-items-center gap-2">';
+    echo '<h3 class="sum-table-panel__title h6 mb-0">' . cdat_sum_h($title) . '</h3>';
+    echo '<span class="sum-badge badge text-bg-primary">' . (int) $count . ' contacts</span>';
     echo '</div>';
-    echo '<div class="sum-table-panel__actions" id="sum-table-actions"></div>';
+    echo '<div class="sum-table-panel__actions ms-auto" id="sum-table-actions"></div>';
     echo '</div>';
-    echo '<div class="sum-table-scroll"><table id="' . cdat_sum_h($tableId) . '" class="sum-data-table"'
+    echo '<div class="table-responsive sum-table-scroll"><table id="' . cdat_sum_h($tableId) . '" class="table table-striped table-hover table-sm mb-0 sum-data-table"'
        . ' border="1" data-export-name="' . cdat_sum_h($exportName) . '">';
     echo '<thead><tr>'
        . '<th>PHONE</th><th>OTHER</th><th>IN</th><th>OUT</th><th>CALLS</th>'
@@ -631,7 +633,7 @@ function cdat_sum_entry_card_open(string $title, string $desc, string $action,
                                   string $method = 'post', string $enctype = '',
                                   string $formId = 'form1', string $formClass = ''): void
 {
-    echo '<section class="sum-search-card sum-entry-card" aria-label="' . cdat_sum_h($title) . '">';
+    echo '<section class="sum-search-card sum-entry-card mb-3 pb-3 border-bottom" aria-label="' . cdat_sum_h($title) . '">';
     echo '<div class="sum-search-card__head">';
     echo '<div class="sum-search-card__icon" aria-hidden="true">';
     echo '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"'
@@ -642,7 +644,7 @@ function cdat_sum_entry_card_open(string $title, string $desc, string $action,
     echo '<h2 class="sum-search-card__title">' . cdat_sum_h($title) . '</h2>';
     echo '<p class="sum-search-card__desc">' . cdat_sum_h($desc) . '</p>';
     echo '</div></div>';
-    $classes = 'sum-entry-form no-ajax' . ($formClass !== '' ? ' ' . $formClass : '');
+    $classes = 'sum-entry-form no-ajax row g-3' . ($formClass !== '' ? ' ' . $formClass : '');
     $formAction = function_exists('cdat_form_action') ? cdat_form_action($action) : $action;
     echo '<form id="' . cdat_sum_h($formId) . '" name="' . cdat_sum_h($formId) . '" method="'
        . cdat_sum_h(strtolower($method)) . '" action="' . cdat_sum_h($formAction) . '" class="'
@@ -656,8 +658,8 @@ function cdat_sum_entry_card_open(string $title, string $desc, string $action,
 function cdat_sum_entry_card_close(string $submitValue = 'Submit', string $submitName = ''): void
 {
     $nameAttr = $submitName !== '' ? ' name="' . cdat_sum_h($submitName) . '"' : '';
-    echo '<div class="sum-entry-form__actions">';
-    echo '<input type="submit"' . $nameAttr . ' class="sum-search-form__submit" value="'
+    echo '<div class="sum-entry-form__actions col-12">';
+    echo '<input type="submit"' . $nameAttr . ' class="sum-search-form__submit btn btn-primary" value="'
        . cdat_sum_h($submitValue) . '" />';
     echo '</div></form></section>';
     echo '<div id="global-ajax-results" class="sum-ajax-results" aria-live="polite"></div>';
@@ -665,14 +667,14 @@ function cdat_sum_entry_card_close(string $submitValue = 'Submit', string $submi
 
 function cdat_sum_status_message(string $message, bool $success = true): void
 {
-    $class = $success ? 'sum-status--success' : 'sum-status--error';
-    echo '<div class="sum-status ' . $class . '" role="status">' . cdat_sum_h($message) . '</div>';
+    $class = $success ? 'alert alert-success sum-status sum-status--success' : 'alert alert-danger sum-status sum-status--error';
+    echo '<div class="' . $class . '" role="status">' . cdat_sum_h($message) . '</div>';
 }
 
 function cdat_sum_hub_card(string $title, string $desc = '', string $image = '',
                            string $notice = ''): void
 {
-    echo '<section class="sum-search-card sum-hub-card" aria-label="' . cdat_sum_h($title) . '">';
+    echo '<section class="sum-search-card sum-hub-card mb-3 pb-3 border-bottom" aria-label="' . cdat_sum_h($title) . '">';
     echo '<div class="sum-search-card__head">';
     echo '<div class="sum-search-card__icon" aria-hidden="true">';
     echo '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"'

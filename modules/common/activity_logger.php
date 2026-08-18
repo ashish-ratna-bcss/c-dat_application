@@ -173,7 +173,10 @@ function audit_require_admin(): void
     audit_require_session();
     if (!audit_is_admin()) {
         http_response_code(403);
-        die('<h2 style="color:red;font-family:verdana">ACCESS DENIED: Admin only.</h2>');
+        die('<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+           . '<link rel="stylesheet" href="' . htmlspecialchars(CDAT_ASSETS, ENT_QUOTES) . '/vendor/bootstrap/css/bootstrap.min.css">'
+           . '</head><body class="bg-light"><main class="container py-5"><div class="alert alert-danger" role="alert">'
+           . '<h2 class="h5 mb-2">Access denied</h2><p class="mb-0">Admin only.</p></div></main></body></html>');
     }
 }
 
@@ -183,7 +186,10 @@ function audit_require_uploader(): void
     $role = $_SESSION['audit_role'] ?? '';
     if ($role !== 'admin' && $role !== 'poweruser') {
         http_response_code(403);
-        die('<h2 style="color:red;font-family:verdana">ACCESS DENIED: Insufficient permissions.</h2>');
+        die('<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+           . '<link rel="stylesheet" href="' . htmlspecialchars(CDAT_ASSETS, ENT_QUOTES) . '/vendor/bootstrap/css/bootstrap.min.css">'
+           . '</head><body class="bg-light"><main class="container py-5"><div class="alert alert-danger" role="alert">'
+           . '<h2 class="h5 mb-2">Access denied</h2><p class="mb-0">Insufficient permissions.</p></div></main></body></html>');
     }
 }
 

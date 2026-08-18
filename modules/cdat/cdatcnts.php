@@ -37,7 +37,7 @@ if ($hasSearch) {
     }
 
     if ($number === '') {
-        die('<center><font color="white">Phone number required</font></center>');
+        die('<div class="alert alert-warning mb-0" role="alert">Phone number required</div>');
     }
 
     // Use parameterized queries to prevent SQL injection
