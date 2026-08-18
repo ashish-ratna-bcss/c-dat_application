@@ -9,12 +9,6 @@ import psycopg2
 import psycopg2.extras
 from cdr_import.config import load_db_config
 JOBS_TABLE = 'document_jobs'
-SCHEMA_FILES = (
-    Path(__file__).resolve().parent.parent / 'sql' / 'document_processing_schema.sql',
-    Path(__file__).resolve().parent.parent / 'sql' / 'cdr_import_schema.sql',
-    Path(__file__).resolve().parent.parent / 'sql' / 'upload_staging_schema.sql',
-    Path(__file__).resolve().parent.parent / 'sql' / 'upload_approval_queue_schema.sql',
-)
 
 def file_sha256(path: Path) -> str:
     digest = hashlib.sha256()
@@ -37,9 +31,8 @@ def db_connection():
         conn.close()
 
 def ensure_schema(conn) -> None:
-    for schema in SCHEMA_FILES:
-        if schema.exists():
-            conn.cursor().execute(schema.read_text(encoding='utf-8'))
+    """Upload schema is defined in sql/cdr_db.sql and applied during DB setup."""
+    return
 
 def utcnow() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)

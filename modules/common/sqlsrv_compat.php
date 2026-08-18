@@ -36,28 +36,34 @@ function __sqlsrv_cfg(): array
 function __sqlsrv_dbname(array $connectionInfo): string
 {
     $name = strtolower((string)($connectionInfo['Database'] ?? 'cdatdupl'));
-    $db = __sqlsrv_cfg()['database'];
+    $mainDb = __sqlsrv_cfg()['database'];
+    // Final deployment layout:
+    // - CDR_DB is the only direct connection target for the PHP app
+    // - IR_DB / JRMS_DB / PDACT_DB / ROWDY_SHEETS_DB are mounted into CDR_DB
+    //   via postgres_fdw, so legacy sqlsrv_connect(Database => 'FORMS'|'JRMS'|...)
+    //   must still land on the main database.
     $map = [
-        'cdatdupl' => $db,
-        'cdat' => $db,
-        'postgres' => $db,
-        'twrmdb' => $db,
-        'irforms' => $db,
-        'forms' => $db,
-        'jrms' => $db,
-        'pdact' => $db,
-        'lostreport_hawkeye' => $db,
-        'migrant_labours_form' => $db,
-        'training_db' => $db,
-        'cpms' => $db,
-        'cafs' => $db,
-        'cis_data_base' => $db,
-        'cdat_import' => $db,
-        'testing_db' => $db,
-        'rough' => $db,
-        'distributed_db' => $db,
+        'cdatdupl' => $mainDb,
+        'cdat' => $mainDb,
+        'postgres' => $mainDb,
+        'twrmdb' => $mainDb,
+        'irforms' => $mainDb,
+        'forms' => $mainDb,
+        'jrms' => $mainDb,
+        'pdact' => $mainDb,
+        'rowdy_sheets_database' => $mainDb,
+        'lostreport_hawkeye' => $mainDb,
+        'migrant_labours_form' => $mainDb,
+        'training_db' => $mainDb,
+        'cpms' => $mainDb,
+        'cafs' => $mainDb,
+        'cis_data_base' => $mainDb,
+        'cdat_import' => $mainDb,
+        'testing_db' => $mainDb,
+        'rough' => $mainDb,
+        'distributed_db' => $mainDb,
     ];
-    return $map[$name] ?? $db;
+    return $map[$name] ?? $mainDb;
 }
 
 function sqlsrv_connect($serverName, array $connectionInfo = [])
@@ -150,6 +156,17 @@ function __sqlsrv_translate(string $sql): string
 
     // Bracket quoting from MSSQL
     $q = preg_replace('/\[dbo\]\./i', '', $q);
+    // Legacy MSSQL identifiers that contained spaces / trailing spaces were
+    // normalised in PostgreSQL. Translate them before the generic bracket-strip.
+    $q = preg_replace('/\[Remarks\s*\]/i', 'remarks', $q);
+    $q = preg_replace('/\[Operators\s*\]/i', 'operators', $q);
+    $q = preg_replace('/\[ADMISSION DATE\]/i', 'admission_date', $q);
+    $q = preg_replace('/\[POLICE STATION\]/i', 'police_station', $q);
+    $q = preg_replace('/\[PHYSICAL STATUS\]/i', 'physical_status', $q);
+    $q = preg_replace('/\[IDENTIFICATION MARKS\]/i', 'identification_marks', $q);
+    $q = preg_replace('/\[Latitude1\s*\]/i', 'latitude1', $q);
+    $q = preg_replace('/\[Langitude1\s*\]/i', 'langitude1', $q);
+    $q = preg_replace('/\[Langitude2\s*\]/i', 'langitude2', $q);
     $q = preg_replace('/\[IN\]/i', '"IN"', $q);
     $q = preg_replace('/\[OUT\]/i', '"OUT"', $q);
     $q = preg_replace('/\[([A-Za-z0-9_]+)\]/', '$1', $q);

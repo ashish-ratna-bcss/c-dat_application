@@ -37,38 +37,34 @@ function audit_db(): PDO
 
 /**
  * Called on successful login.
- * Creates a new session record and stores session ID in PHP session.
+ * Creates a new session record and stores the session token in PHP session.
  */
-function audit_login(string $username, string $fullname = '', int $user_id = 0): int
+function audit_login(string $username, string $fullname = '', int $user_id = 0): string
 {
     try {
-        $token  = bin2hex(random_bytes(32));
-        $ip     = $_SERVER['REMOTE_ADDR']  ?? 'unknown';
-        $ua     = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
-        $device = _detect_device($ua);
+        $token = bin2hex(random_bytes(32));
+        $ip    = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+        $role  = (string) ($_SESSION['audit_role'] ?? 'user');
 
         $stmt = audit_db()->prepare("
             INSERT INTO user_sessions
-                (user_id, username, fullname, login_time, ip_address, browser_info, device_info, session_token)
+                (session_id, user_id, username, role, ip_address, expires_at, last_active_at)
             VALUES
-                (:uid, :uname, :fname, NOW(), :ip, :browser, :device, :token)
-            RETURNING id
+                (:sid, :uid, :uname, :role, :ip, NOW() + INTERVAL '12 hours', NOW())
         ");
-        $stmt->execute([
+        $ok = $stmt->execute([
+            ':sid'     => $token,
             ':uid'     => $user_id,
             ':uname'   => $username,
-            ':fname'   => $fullname,
+            ':role'    => $role,
             ':ip'      => $ip,
-            ':browser' => substr($ua, 0, 500),
-            ':device'  => $device,
-            ':token'   => $token,
         ]);
-
-        $row = $stmt->fetch();
-        $session_id = (int) $row['id'];
+        if (!$ok) {
+            return '';
+        }
 
         // Store in PHP session
-        $_SESSION['audit_session_id'] = $session_id;
+        $_SESSION['audit_session_id'] = $token;
         $_SESSION['audit_username']   = $username;
         $_SESSION['audit_fullname']   = $fullname;
         $_SESSION['audit_user_id']    = $user_id;
@@ -76,10 +72,10 @@ function audit_login(string $username, string $fullname = '', int $user_id = 0):
         // Log the LOGIN action itself
         audit_log('System', 'LOGIN', ['ip' => $ip]);
 
-        return $session_id;
+        return $token;
     } catch (Throwable $e) {
         error_log('audit_login error: ' . $e->getMessage());
-        return 0;
+        return '';
     }
 }
 
@@ -94,13 +90,13 @@ function audit_logout(): void
 
         audit_log('System', 'LOGOUT', []);
 
-        $sid = (int) $_SESSION['audit_session_id'];
+        $sid = (string) $_SESSION['audit_session_id'];
         audit_db()->prepare("
             UPDATE user_sessions
             SET
-                logout_time      = NOW(),
-                session_duration = EXTRACT(EPOCH FROM (NOW() - login_time))::INTEGER
-            WHERE id = :id
+                last_active_at = NOW(),
+                expires_at = NOW()
+            WHERE session_id = :id
         ")->execute([':id' => $sid]);
 
     } catch (Throwable $e) {
@@ -125,6 +121,7 @@ function audit_log(string $module, string $action_type, array $search_data = [])
         $sid      = $_SESSION['audit_session_id'] ?? null;
         $uid      = $_SESSION['audit_user_id']    ?? 0;
         $username = $_SESSION['audit_username']   ?? 'unknown';
+        $ip       = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
 
         if (empty($username) || $username === 'unknown') return;
 
@@ -132,17 +129,24 @@ function audit_log(string $module, string $action_type, array $search_data = [])
 
         audit_db()->prepare("
             INSERT INTO user_activity_logs
-                (session_id, user_id, username, module_name, action_type, search_data)
+                (username, module, action, detail, ip_address)
             VALUES
-                (:sid, :uid, :uname, :module, :action, :data::jsonb)
+                (:uname, :module, :action, :data, :ip)
         ")->execute([
-            ':sid'    => $sid,
-            ':uid'    => $uid,
             ':uname'  => $username,
             ':module' => $module,
             ':action' => $action_type,
             ':data'   => $json,
+            ':ip'     => $ip,
         ]);
+
+        if (!empty($sid)) {
+            audit_db()->prepare("
+                UPDATE user_sessions
+                SET last_active_at = NOW()
+                WHERE session_id = :sid
+            ")->execute([':sid' => (string) $sid]);
+        }
     } catch (Throwable $e) {
         error_log('audit_log error: ' . $e->getMessage());
     }
