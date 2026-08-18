@@ -513,22 +513,24 @@ function cdat_sum_subject_card(array $row, int $contactCount, string $reportLabe
     $last = trim((string) ($row['LAST_CALL'] ?? ''));
     $address = cdat_sum_address_lines((string) ($row['ADDRESS'] ?? ''));
 
-    echo '<section class="sum-subject-card mb-3 pb-3 border-bottom" aria-label="Subject summary">';
-    echo '<div class="sum-subject-hero row g-3 align-items-start">';
-    echo '<div class="sum-subject-hero__identity col-12 col-md-5">';
-    echo '<span class="sum-subject-hero__eyebrow text-uppercase small text-secondary">' . cdat_sum_h($reportLabel) . '</span>';
-    echo '<span class="sum-subject-hero__phone h4 d-block mb-1">' . cdat_sum_h($phone) . '</span>';
+    echo '<section class="sum-subject-card mb-3" aria-label="Subject summary">';
+    echo '<div class="sum-subject-hero">';
+    echo '<div class="sum-subject-hero__identity">';
+    echo '<span class="sum-subject-hero__eyebrow">' . cdat_sum_h($reportLabel) . '</span>';
+    echo '<span class="sum-subject-hero__phone">' . cdat_sum_h($phone) . '</span>';
     if ($nick !== '') {
-        echo '<span class="sum-subject-hero__nick text-secondary">' . cdat_sum_h($nick) . '</span>';
+        echo '<span class="sum-subject-hero__nick">' . cdat_sum_h($nick) . '</span>';
     }
-    echo '</div><div class="sum-subject-stats col-12 col-md-7 row row-cols-1 row-cols-sm-3 g-2 m-0">';
-    echo '<div class="sum-stat-tile col"><span class="sum-stat-tile__label">First Call</span>'
+    echo '</div>';
+    echo '<div class="sum-subject-stats">';
+    echo '<div class="sum-stat-tile"><span class="sum-stat-tile__label">First Call</span>'
        . '<span class="sum-stat-tile__value">' . cdat_sum_h($first !== '' ? $first : '—') . '</span></div>';
-    echo '<div class="sum-stat-tile col"><span class="sum-stat-tile__label">Last Call</span>'
+    echo '<div class="sum-stat-tile"><span class="sum-stat-tile__label">Last Call</span>'
        . '<span class="sum-stat-tile__value">' . cdat_sum_h($last !== '' ? $last : '—') . '</span></div>';
-    echo '<div class="sum-stat-tile sum-stat-tile--accent col"><span class="sum-stat-tile__label">Contacts</span>'
+    echo '<div class="sum-stat-tile sum-stat-tile--accent"><span class="sum-stat-tile__label">Contacts</span>'
        . '<span class="sum-stat-tile__value">' . (int) $contactCount . '</span></div>';
-    echo '</div></div>';
+    echo '</div>';
+    echo '</div>';
     if ($address !== '') {
         echo '<div class="sum-subject-address"><span class="sum-subject-address__label">Address</span>'
            . '<div class="sum-subject-address__body" title="' . cdat_sum_h((string) ($row['ADDRESS'] ?? '')) . '">'
