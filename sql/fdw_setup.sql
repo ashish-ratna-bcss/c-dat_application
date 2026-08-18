@@ -1,23 +1,21 @@
 -- =============================================================================
--- postgres_fdw setup: mount IR_DB, JRMS_DB, PDACT_DB, ROWDY_SHEETS_DB
--- as foreign tables inside CDR_DB (the main application database).
+-- postgres_fdw setup: mount satellite databases into CDR_DB.
 --
--- Run this ONCE inside CDR_DB after all 5 databases have been created
--- and their tables loaded:
+-- Do not run this file directly. Apply it from .env:
 --
---   psql -h localhost -p 5432 -U sadhudinakar -d CDR_DB -f sql/fdw_setup.sql
+--   bash sql/apply_fdw.sh
 --
--- After this, the app connects only to CDR_DB and sees all tables as local.
+-- After this, the app connects only to CDR_DB_NAME and sees all tables as local.
 -- =============================================================================
 
--- Step 1: enable the extension (safe to re-run)
+\if :{?ir_db}
+\else
+\echo 'Run: bash sql/apply_fdw.sh  (database names come from .env)'
+\quit 1
+\endif
+
 CREATE EXTENSION IF NOT EXISTS postgres_fdw;
 
--- =============================================================================
--- Step 2: foreign servers (one per satellite database)
--- =============================================================================
-
--- Drop existing servers if re-running (cascade removes dependent mappings/tables)
 DROP SERVER IF EXISTS ir_server      CASCADE;
 DROP SERVER IF EXISTS jrms_server    CASCADE;
 DROP SERVER IF EXISTS pdact_server   CASCADE;
@@ -25,44 +23,35 @@ DROP SERVER IF EXISTS rowdy_server   CASCADE;
 
 CREATE SERVER ir_server
     FOREIGN DATA WRAPPER postgres_fdw
-    OPTIONS (host 'localhost', port '5432', dbname 'IR_DB');
+    OPTIONS (host :'db_host', port :'db_port', dbname :'ir_db');
 
 CREATE SERVER jrms_server
     FOREIGN DATA WRAPPER postgres_fdw
-    OPTIONS (host 'localhost', port '5432', dbname 'JRMS_DB');
+    OPTIONS (host :'db_host', port :'db_port', dbname :'jrms_db');
 
 CREATE SERVER pdact_server
     FOREIGN DATA WRAPPER postgres_fdw
-    OPTIONS (host 'localhost', port '5432', dbname 'PDACT_DB');
+    OPTIONS (host :'db_host', port :'db_port', dbname :'pdact_db');
 
 CREATE SERVER rowdy_server
     FOREIGN DATA WRAPPER postgres_fdw
-    OPTIONS (host 'localhost', port '5432', dbname 'ROWDY_SHEETS_DB');
+    OPTIONS (host :'db_host', port :'db_port', dbname :'rowdy_db');
 
--- =============================================================================
--- Step 3: user mappings (replace 'sadhudinakar' with your actual PG user)
--- =============================================================================
-
-CREATE USER MAPPING FOR sadhudinakar
+CREATE USER MAPPING FOR CURRENT_USER
     SERVER ir_server
-    OPTIONS (user 'sadhudinakar', password '');
+    OPTIONS (user :'db_user', password :'db_password');
 
-CREATE USER MAPPING FOR sadhudinakar
+CREATE USER MAPPING FOR CURRENT_USER
     SERVER jrms_server
-    OPTIONS (user 'sadhudinakar', password '');
+    OPTIONS (user :'db_user', password :'db_password');
 
-CREATE USER MAPPING FOR sadhudinakar
+CREATE USER MAPPING FOR CURRENT_USER
     SERVER pdact_server
-    OPTIONS (user 'sadhudinakar', password '');
+    OPTIONS (user :'db_user', password :'db_password');
 
-CREATE USER MAPPING FOR sadhudinakar
+CREATE USER MAPPING FOR CURRENT_USER
     SERVER rowdy_server
-    OPTIONS (user 'sadhudinakar', password '');
-
--- =============================================================================
--- Step 4: import all foreign tables into the public schema of CDR_DB
--- This makes every table in each satellite DB appear as a local table.
--- =============================================================================
+    OPTIONS (user :'db_user', password :'db_password');
 
 IMPORT FOREIGN SCHEMA public
     EXCEPT (logins)
@@ -80,10 +69,6 @@ IMPORT FOREIGN SCHEMA public
 IMPORT FOREIGN SCHEMA public
     FROM SERVER rowdy_server
     INTO public;
-
--- =============================================================================
--- Step 5: verify — list all foreign tables now visible in CDR_DB
--- =============================================================================
 
 SELECT
     ft.foreign_table_name AS table_name,
