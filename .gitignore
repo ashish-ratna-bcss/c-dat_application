@@ -37,7 +37,6 @@ Thumbs.db
 *~
 
 # Dependencies (if added later)
-vendor/
 node_modules/
 
 # Python
