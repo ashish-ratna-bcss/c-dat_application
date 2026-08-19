@@ -43,16 +43,6 @@ CREATE TABLE IF NOT EXISTS local_contacts_facilitators (
 -- ------------------------------------------------------------
 
 
--- TABLE: LOGINS
--- ------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS logins (
-    USERNAME varchar(50) NULL,
-    PASSWORD varchar(50) NULL
-);
-
--- ------------------------------------------------------------
-
-
 -- TABLE: HABITUAL_OFFENDERS
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS habitual_offenders (
@@ -217,31 +207,6 @@ CREATE TABLE IF NOT EXISTS brief_facts (
 
 -- ------------------------------------------------------------
 
-
--- TABLE: JAIL
--- ------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS jail (
-    CIN varchar(5000) NULL,
-    TYPE varchar(5000) NULL,
-    NAME varchar(5000) NULL,
-    FATHERNAME varchar(5000) NULL,
-    AGE varchar(5000) NULL,
-    PHONE varchar(5000) NULL,
-    ID_PROOF varchar(5000) NULL,
-    ADDRESS varchar(5000) NULL,
-    STATE varchar(5000) NULL,
-    admission_date varchar(5000) NULL,
-    RELEASEDATE varchar(5000) NULL,
-    MO varchar(5000) NULL,
-    CRIMENO varchar(5000) NULL,
-    SEC varchar(5000) NULL,
-    police_station varchar(5000) NULL,
-    JAIL varchar(5000) NULL,
-    STATUS varchar(5000) NULL,
-    HEIGHT varchar(5000) NULL,
-    physical_status varchar(5000) NULL,
-    identification_marks varchar(5000) NULL
-);
 
 -- ------------------------------------------------------------
 

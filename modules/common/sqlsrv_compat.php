@@ -38,8 +38,8 @@ function __sqlsrv_dbname(array $connectionInfo): string
     $name = strtolower((string)($connectionInfo['Database'] ?? 'cdatdupl'));
     $mainDb = __sqlsrv_cfg()['database'];
     // Final deployment layout:
-    // - CDR_DB is the only direct connection target for the PHP app
-    // - IR_DB / JRMS_DB / PDACT_DB / ROWDY_SHEETS_DB are mounted into CDR_DB
+    // - CDATDUPL_DB is the only direct connection target for the PHP app
+    // - IR_DB / JRMS_DB / PDACT_DB / ROWDY_SHEETS_DB are mounted into CDATDUPL_DB
     //   via postgres_fdw, so legacy sqlsrv_connect(Database => 'FORMS'|'JRMS'|...)
     //   must still land on the main database.
     $map = [

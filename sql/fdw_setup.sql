@@ -1,5 +1,5 @@
 -- =============================================================================
--- postgres_fdw setup: mount satellite databases into CDR_DB.
+-- postgres_fdw setup: mount satellite databases into CDATDUPL_DB.
 --
 -- Do not run this file directly. Apply it from .env:
 --

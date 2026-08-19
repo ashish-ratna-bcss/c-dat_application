@@ -1,5 +1,5 @@
 -- =============================================================================
--- MSSQL to PostgreSQL Migration: CDR_DB
+-- MSSQL to PostgreSQL Migration: CDATDUPL_DB
 -- Source: /Desktop/old/mssql/*.sql
 -- Branch: mssql-to-postgres-migration
 -- Only tables/views actually referenced by the application are included.
@@ -8,14 +8,14 @@
 
 -- ------------------------------------------------------------
 
--- Target database: CDR_DB
+-- Target database: CDATDUPL_DB
 
 -- TABLE: CDATPCSUSPECT
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS cdatpcsuspect (
-    UCID SERIAL NOT NULL,
-    PHONE varchar(15) NOT NULL,
-    OTHER varchar(15) NOT NULL,
+    UCID BIGINT NOT NULL,
+    PHONE varchar(25) NOT NULL,
+    OTHER varchar(50) NOT NULL,
     STARTTIME TIMESTAMP NOT NULL,
     DURATION numeric(5, 0) NOT NULL,
     INCOMING SMALLINT NOT NULL,
@@ -487,16 +487,16 @@ CREATE TABLE IF NOT EXISTS cdat_licence (
     PHONE varchar(20) NULL,
     FULLNAME varchar(250) NULL,
     FATHER_NAME varchar(200) NULL,
-    DOB varchar(20) NULL,
+    DOB varchar(100) NULL,
     GENDER varchar(10) NULL,
     BLOOD_GROUP varchar(500) NULL,
     IDENTIFICATION_MARKS varchar(150) NULL,
     FULLADDRESS varchar(500) NULL,
     TEMP_FULLADDRES varchar(500) NULL,
-    ISSUE_DATE varchar(15) NULL,
-    LICENCE_VALIDUPTO varchar(20) NULL,
-    BADGE_NO varchar(15) NULL,
-    ENTRY_DATE varchar(20) NULL
+    ISSUE_DATE varchar(100) NULL,
+    LICENCE_VALIDUPTO varchar(100) NULL,
+    BADGE_NO varchar(100) NULL,
+    ENTRY_DATE varchar(100) NULL
 );
 
 -- ------------------------------------------------------------
@@ -554,7 +554,7 @@ CREATE TABLE IF NOT EXISTS cdat_provider_master (
 CREATE TABLE IF NOT EXISTS cdat_rta (
     Regn_No varchar(500) NULL,
     FULLNAME varchar(500) NULL,
-    DOB varchar(25) NULL,
+    DOB varchar(100) NULL,
     FATHERNAME varchar(500) NULL,
     PHONE varchar(500) NULL,
     FULLADDRESS varchar(500) NULL,
@@ -565,7 +565,7 @@ CREATE TABLE IF NOT EXISTS cdat_rta (
     CHAS_NO varchar(500) NULL,
     MKR_NAME varchar(500) NULL,
     MKR_CLAS varchar(500) NULL,
-    MFG_YR varchar(25) NULL,
+    MFG_YR varchar(100) NULL,
     COLOUR varchar(500) NULL,
     Seat_Capacity varchar(500) NULL,
     TR_Number varchar(500) NULL,
@@ -616,7 +616,7 @@ CREATE TABLE IF NOT EXISTS cdat_rta (
     AADHARNO varchar(50) NULL,
     PANNUMBER varchar(50) NULL,
     Remarks varchar(100) NULL,
-    asondate TIMESTAMP NOT NULL
+    asondate TIMESTAMP NULL  -- nullable: source data may not have this
 );
 
 -- ------------------------------------------------------------
@@ -633,69 +633,6 @@ CREATE TABLE IF NOT EXISTS cdat_state_master (
 
 -- ------------------------------------------------------------
 
-
--- TABLE: CDATADDRESS_OLD
--- ------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS cdataddress_old (
-    CDAT_SDR_KEY BIGSERIAL NOT NULL,
-    PHONE varchar(15) NOT NULL,
-    TITLE varchar(10) NULL,
-    SURNAME varchar(15) NULL,
-    FIRSTNAME varchar(50) NULL,
-    MIDDLENAME varchar(50) NULL,
-    LASTNAME varchar(50) NULL,
-    FULLNAME varchar(255) NULL,
-    ADDRESS1 varchar(250) NULL,
-    ADDRESS2 varchar(100) NULL,
-    ADDRESS3 varchar(100) NULL,
-    FULLADDRESS varchar(1000) NULL,
-    CITY varchar(255) NULL,
-    DISTRICT varchar(50) NULL,
-    STATE varchar(50) NULL,
-    PINCODE varchar(10) NULL,
-    COUNTRY varchar(30) NULL,
-    NATIONALITY varchar(30) NULL,
-    DOA date NOT NULL,
-    PERMANENTADDRESS varchar(500) NULL,
-    FATHERNAME varchar(80) NULL,
-    RETAILER_DETAILS varchar(50) NULL,
-    DISTRIBUTOR_DETAILS varchar(50) NULL,
-    CONNECTION_TYPE varchar(20) NULL,
-    CATEGORY_TYPE varchar(100) NULL,
-    CAF_NO varchar(50) NULL,
-    POI_NAME varchar(100) NULL,
-    POI_NO varchar(100) NULL,
-    CURRENT_STATUS varchar(50) NULL,
-    REF_CONTACT_NAME varchar(50) NULL,
-    REF_CONTACT_ADDRESS varchar(150) NULL,
-    REF_CONTACT_NO varchar(150) NULL,
-    SUBSCRIBER_STATUS varchar(50) NULL,
-    REVER_STATUS varchar(50) NULL,
-    MOBILE_PORTABILITY varchar(50) NULL,
-    POA_NAME varchar(60) NULL,
-    POA_NO varchar(50) NULL,
-    POA_ADDRESS varchar(150) NULL,
-    ALT_CNT_NO varchar(40) NULL,
-    EMAILADDRESS varchar(50) NULL,
-    BARRED varchar(10) NULL,
-    GIVENNAME varchar(50) NULL,
-    GENDER varchar(12) NULL,
-    DOB date NULL,
-    LRN_CODE int NULL,
-    POI_ADDRESS varchar(255) NULL,
-    PER_ADDRESS1 varchar(100) NULL,
-    PER_ADDRESS2 varchar(100) NULL,
-    PER_ADDRESS3 varchar(100) NULL,
-    PER_PINCODE int NULL,
-    PER_CITY varchar(50) NULL,
-    PER_DISTRICT varchar(50) NULL,
-    PER_STATE varchar(50) NULL,
-    REMARKS varchar(255) NULL,
-    OPERATOR varchar(25) NULL,
-    EFF_FROM_DATE TIMESTAMP NULL,
-    EFF_TO_DATE TIMESTAMP NULL,
-    imsi varchar(20) NULL
-);
 
 -- ------------------------------------------------------------
 

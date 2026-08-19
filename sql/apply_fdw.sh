@@ -17,7 +17,7 @@ set +a
 
 : "${CDR_DB_HOST:=localhost}"
 : "${CDR_DB_PORT:=5432}"
-: "${CDR_DB_NAME:=CDR_DB}"
+: "${CDR_DB_NAME:=CDATDUPL_DB}"
 : "${CDR_DB_USER:=postgres}"
 : "${CDR_DB_PASSWORD:=}"
 : "${IR_DB_NAME:=IR_DB}"
