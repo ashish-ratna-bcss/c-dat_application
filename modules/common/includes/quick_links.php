@@ -104,14 +104,14 @@ function cdat_ql_ensure_table(PDO $db): bool
              username   VARCHAR(100) NOT NULL,
              url        VARCHAR(255) NOT NULL,
              label      VARCHAR(150) NOT NULL DEFAULT \'\',
-             position   INTEGER      NOT NULL DEFAULT 0,
+             sort_order INTEGER      NOT NULL DEFAULT 0,
              created_at TIMESTAMP    NOT NULL DEFAULT NOW(),
              CONSTRAINT user_quick_links_unique UNIQUE (username, url)
          )'
     ) !== false;
     if ($ok) {
         $db->exec('CREATE INDEX IF NOT EXISTS user_quick_links_user_pos
-                   ON user_quick_links (username, position)');
+                   ON user_quick_links (username, sort_order)');
     }
     return $ok;
 }
@@ -146,7 +146,7 @@ function cdat_ql_load(): array
             return [];
         }
         $stmt = $db->prepare('SELECT url FROM user_quick_links
-                              WHERE username = :u ORDER BY position, id');
+                              WHERE username = :u ORDER BY sort_order, id');
         if (!$stmt || !$stmt->execute([':u' => $user])) {
             return [];
         }
@@ -205,7 +205,7 @@ function cdat_ql_save(array $urls): array
         $del = $db->prepare('DELETE FROM user_quick_links WHERE username = :u');
         $del->execute([':u' => $user]);
         if ($clean) {
-            $ins = $db->prepare('INSERT INTO user_quick_links (username, url, label, position)
+            $ins = $db->prepare('INSERT INTO user_quick_links (username, url, label, sort_order)
                                  VALUES (:u, :url, :label, :pos)');
             foreach ($clean as $i => $url) {
                 $ins->execute([

@@ -1,6 +1,6 @@
 ====================================================================================================
   MSSQL → PostgreSQL Migration Status Report
-  Generated: 2026-08-19 18:49:56
+  Generated: 2026-08-20 11:34:06
 ====================================================================================================
 
 1. COMPLETED TABLES
@@ -28,7 +28,8 @@ CDATDUPL_DB            cdat_passport                                            
 CDATDUPL_DB            cdat_provider_master                                              15  old postgres DB           cdat_provider_master
 CDATDUPL_DB            cdat_rta                                                  21,170,482  distributed_db            rta_data
 CDATDUPL_DB            cdat_state_master                                                 52  old postgres DB           cdat_state_master
-CDATDUPL_DB            cdatpcsuspect                                                    998  mssql_dump_cdatdupl       CDATPCSUSPECT
+CDATDUPL_DB            cdatpcsuspect                                                    998  mssql_dump_cdatdupl       CDATPCSUSPECT (sample only)
+CDATDUPL_DB            cdatcelltowerareanew                                      75,221,616  cellids_db                CELLIDS
 CDATDUPL_DB            cdatphonearea                                                 33,759  mssql_dump_cdatdupl       CDATPHONEAREA
 CDATDUPL_DB            cdatsuspect                                                   91,992  mssql_dump_cdatdupl       CDATSUSPECT
 CDATDUPL_DB            complete_mo_classification                                     7,646  mssql_dump_cdatdupl       COMPLETE_MO_CLASSIFICATION
@@ -40,7 +41,6 @@ CDATDUPL_DB            mo_image_table                                           
 ----------------------------------------------------------------------------------------------------
 Database               Table                               Progress                       Source                              ETA
 ----------------------------------------------------------------------------------------------------
-CDATDUPL_DB            cdatcelltowerareanew                ~37M / 75.2M rows (49%)        cellids_db → CELLIDS                ~50 min remaining
 
 3. PENDING — NO SOURCE IDENTIFIED (Team Input Required)
 ----------------------------------------------------------------------------------------------------
@@ -54,14 +54,24 @@ CDATDUPL_DB            suspect_image_table                 No MSSQL source found
 ----------------------------------------------------------------------------------------------------
 Database               Table                         Size  MSSQL Source              Note
 ----------------------------------------------------------------------------------------------------
+CDATDUPL_DB            cdatpcsuspect (full CDR)  ~1.05B rows / ~430 GB PG  HYD_UNIT_CDAT             Full call records — not in 4 dumps. HYD_UNIT_CDATPCSUSPECT.BAK never restored. Deferred: disk space.
 CDATDUPL_DB            address_other_state         1.9 TB  address_db (MSSQL)        Needs ~2 TB free space
 CDATDUPL_DB            cdataddress                 195 GB  address_db (MSSQL)        Needs ~200 GB free space
 
-5. SUMMARY
+5. WHY HYD_UNIT PCSUSPECT (FULL CDR) IS MISSING
 ----------------------------------------------------------------------------------------------------
-  Completed tables  : 28
-  In progress       : 1
+  • cdatpcsuspect in Postgres currently has only 998 rows — copied from mssql_dump_cdatdupl (CDATDUPL2 backup).
+  • That dump holds a small suspect/sample table, NOT the full Call Detail Record (CDR) data.
+  • Full CDR call logs live in MSSQL database HYD_UNIT_CDAT (~1.05 billion rows, ~222 GB on disk).
+  • The separate backup HYD_UNIT_CDATPCSUSPECT_22042026.BAK was never restored as mssql_dump_cdr.
+  • Full cdatpcsuspect migration was intentionally deferred: Postgres needs ~430 GB but /mnt/storage1 had ~350 GB free.
+  • To migrate later: copy from HYD_UNIT_CDAT using scripts/migrate_cdr.sh or migrate_copy.py cdr job.
+
+6. SUMMARY
+----------------------------------------------------------------------------------------------------
+  Completed tables  : 29
+  In progress       : 0
   Missing source    : 3  (need team input)
-  Storage blocked   : 2  (need extra disk space)
+  Storage blocked   : 3  (includes full cdatpcsuspect + address tables)
 
 ====================================================================================================
