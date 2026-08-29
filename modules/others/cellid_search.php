@@ -27,33 +27,26 @@ if ($hasSearch) {
             'Search'
         );
     }
-
-    $serverName = "CPHYDERABAD1\DAU_HYD_2023";
-    $connectionInfo = array( "Database"=>"CDATDUPL");
-    $conn = sqlsrv_connect( $serverName, $connectionInfo );
-    if( $conn === false ) {
-        die( print_r( sqlsrv_errors(), true));
-    }
-
-    $cellidEsc = str_replace("'", "''", $cellid);
+    $conn = get_cdat_pdo();
+        $cellidEsc = str_replace("'", "''", $cellid);
     $likePattern = (strpos($cellid, '%') !== false || strpos($cellid, '_') !== false)
         ? $cellidEsc
         : $cellidEsc . '%';
     $opNorm = strtoupper(preg_replace('/_TOWER$/i', '', $operator));
-    $stNorm = strtoupper($state);
+    $stNorm = cdat_sum_phone_area_state_canonical($state) ?? cdat_sum_normalize_phone_area_state($state);
     $opFilter = $operator !== ''
         ? "AND UPPER(REPLACE(OPERATOR, '_TOWER', '')) = '".str_replace("'", "''", $opNorm)."'"
         : '';
-    $stateFilter = $state !== ''
-        ? "AND UPPER(STATE) = '".str_replace("'", "''", $stNorm)."'"
+    $stateFilter = $state !== '' && $stNorm !== ''
+        ? 'AND ' . cdat_sum_sql_phone_area_state_filter('STATE', $stNorm)
         : '';
 
     $sql1 ="select DISTINCT CELLTOWERID,BTS_ID,AREADESCRIPTION,SITEADDRESS,LAT,LONG,AZIMUTH,OPERATOR,STATE, OTYPE, LASTUPDATE
-from cdatdupl.dbo.CDATCELLTOWERAREANEW
+from CDATCELLTOWERAREANEW
 WHERE CELLTOWERID LIKE '{$likePattern}' {$opFilter} {$stateFilter}
 ORDER BY LASTUPDATE DESC";
 
-    $st1 = sqlsrv_query( $conn, $sql1 );
+    $st1 = $conn->query($sql1);
     $rows = cdat_sum_fetch_all($st1);
 
     if (empty($rows)) {
@@ -97,9 +90,9 @@ ORDER BY LASTUPDATE DESC";
     }
 
     if ($st1) {
-        sqlsrv_free_stmt($st1);
+        $st1 = null;
     }
-    sqlsrv_close($conn);
+    $conn = null;
 
     if ($isAjax) {
         exit;

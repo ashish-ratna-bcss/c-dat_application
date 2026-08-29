@@ -31,33 +31,26 @@ if ($hasSearch) {
             'Submit'
         );
     }
-
-    $serverName = "10.10.46.14\\DAU_HYD_2023";
-    $connectionInfo = array('Database' => 'CDATDUPL');
-    $conn = sqlsrv_connect($serverName, $connectionInfo);
-    if ($conn === false) {
-        die(print_r(sqlsrv_errors(), true));
-    }
-
-    $number = $gender;
+    $conn = get_cdat_pdo();
+        $number = $gender;
     $number1 = $crimeHead;
 
-    $sql8 = "SELECT 'DETAILS OF : '+'$number' as PHONE1";
+    $sql8 = "SELECT 'DETAILS OF : ' || '$number' as PHONE1";
 
-    $sql9 = "SELECT DISTINCT A.IRKEY,(CASE WHEN A.IRKEY IN (SELECT DISTINCT REPLACE(IRKEY,' ','') FROM PDACT..PDACT_MAIN_TABLE
-WHERE ISNUMERIC(IRKEY)=1) THEN 'PDACT IS IMPOSED CLICK HERE TO VIEW THE DETAILS' ELSE '' END) PDACT,CASE WHEN A.IRKEY IN (SELECT DISTINCT REPLACE(IRKEY,' ','') FROM PDACT..PDACT_MAIN_TABLE
-WHERE ISNUMERIC(IRKEY)=1) THEN (SELECT DISTINCT CONVERT(VARCHAR(20), MAX(PDACT_KEY)) FROM PDACT..PDACT_MAIN_TABLE
-WHERE REPLACE(IRKEY,' ','')=A.IRKEY AND ISNUMERIC(IRKEY)='1')
-ELSE '' END PDACT_KEY,NAME,ALIAS_NAME,FATHER_NAME,AGE,SEX,PRESENT_ADDRESS,CRIME_HEAD,MO,CRIME_NO,YEAR,SEC_OF_LAW,POLICE_STATION,CONVERT(VARCHAR(20),DATE_OF_ARREST) DATE_OF_ARREST FROM FORMS..IR_PARTICULARS A
-INNER JOIN FORMS..OFFENCE_DETAILS B ON A.SEX ='$number' AND (B.CRIME_HEAD LIKE '%'+REPLACE('$number1',' ','%')+'%' OR
-B.MO LIKE '%'+REPLACE('$number1',' ','%')+'%') AND
+    $sql9 = "SELECT DISTINCT A.IRKEY,(CASE WHEN A.IRKEY IN (SELECT DISTINCT REPLACE(IRKEY,' ','') FROM pdact_main_table
+WHERE IRKEY ~ '^[0-9]+$') THEN 'PDACT IS IMPOSED CLICK HERE TO VIEW THE DETAILS' ELSE '' END) PDACT,CASE WHEN A.IRKEY IN (SELECT DISTINCT REPLACE(IRKEY,' ','') FROM pdact_main_table
+WHERE IRKEY ~ '^[0-9]+$') THEN (SELECT DISTINCT (MAX(PDACT_KEY)::varchar) FROM pdact_main_table
+WHERE REPLACE(IRKEY,' ','')=A.IRKEY AND IRKEY ~ '^[0-9]+$')
+ELSE '' END PDACT_KEY,NAME,ALIAS_NAME,FATHER_NAME,AGE,SEX,PRESENT_ADDRESS,CRIME_HEAD,MO,CRIME_NO,YEAR,SEC_OF_LAW,POLICE_STATION,(DATE_OF_ARREST)::varchar DATE_OF_ARREST FROM ir_particulars A
+INNER JOIN OFFENCE_DETAILS B ON A.SEX ='$number' AND (B.CRIME_HEAD LIKE '%' || REPLACE('$number1',' ','%') || '%' OR
+B.MO LIKE '%' || REPLACE('$number1',' ','%') || '%') AND
 ltrim(rtrim('$number'))!=''  AND A.IRKEY=B.IRKEY ORDER BY DATE_OF_ARREST DESC";
 
-    $st8 = sqlsrv_query($conn, $sql8);
-    $st9 = sqlsrv_query($conn, $sql9);
+    $st8 = $conn->query($sql8);
+    $st9 = $conn->query($sql9);
 
     $banner = 'DETAILS OF : ' . $number;
-    if ($st8 && ($b = sqlsrv_fetch_array($st8, SQLSRV_FETCH_ASSOC))) {
+    if ($st8 && ($b = $st8->fetch(PDO::FETCH_ASSOC))) {
         $banner = (string) ($b['PHONE1'] ?? $banner);
     }
     $rows = cdat_sum_fetch_all($st9);
@@ -99,7 +92,7 @@ ltrim(rtrim('$number'))!=''  AND A.IRKEY=B.IRKEY ORDER BY DATE_OF_ARREST DESC";
         cdat_sum_generic_table_close();
         cdat_sum_results_close();
     }
-    sqlsrv_close($conn);
+    $conn = null;
 
     if ($isAjax) {
         exit;

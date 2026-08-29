@@ -2,7 +2,7 @@
 /**
  * Main PHP entry. Route table is routes/web.php.
  *
- *   php -S localhost:8020 -d auto_prepend_file="$(pwd)/modules/common/sqlsrv_compat.php" main.php
+ *   php -S localhost:8020 main.php
  */
 $root = __DIR__;
 $uri  = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
@@ -41,13 +41,11 @@ if (str_starts_with($path, '/config')) {
 $deny = [
     'activity_logger.php',
     'bootstrap.php',
-    'cdr_enrichment_sql.php',
     'cdr_upload_config.php',
     'cdr_upload_parser.php',
     'db_config.php',
     'document_processing_client.php',
     'excel_converter.php',
-    'sqlsrv_compat.php',
     'upload_verification_service.php',
     'web.php',
 ];

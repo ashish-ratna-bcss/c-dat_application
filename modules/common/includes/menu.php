@@ -79,7 +79,6 @@ return [
     ['label' => 'Offenders List', 'icon' => 'file', 'children' => [
         ['label' => 'Habitual Offenders',       'url' => '/offenders-list/habitual'],
         ['label' => 'Undetected Cases List',    'url' => '/offenders-list/undetected'],
-        ['label' => 'List - 1',                 'url' => '/offenders-list/list-1'],
     ]],
 
     ['label' => 'Others', 'icon' => 'map', 'children' => [

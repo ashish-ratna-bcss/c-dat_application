@@ -29,65 +29,60 @@ if ($hasSearch) {
     }
 
     audit_log('IMEI Search', 'Search', ['imei_number' => $_POST['IMEI_NO'] ?? '']);
+    $conn = get_cdat_pdo();
 
-    $serverName = "CPHYDERABAD1\DAU_HYD_2023";
-    $connectionInfo = array( "Database"=>"CDATDUPL");
-    $conn = sqlsrv_connect( $serverName, $connectionInfo );
-
-    if( $conn === false ) {
-        die( print_r( sqlsrv_errors(), true));
-    }
-
-    $number = sql_safe_imei($_POST['IMEI_NO'] ?? '');
+        $number = sql_safe_imei($_POST['IMEI_NO'] ?? '');
 
     // Use parameterized queries to prevent SQL injection
-    $sql1 = "SELECT * INTO #T FROM CDATDUPL.DBO.CDATPCSUSPECT WHERE IMEINUMBER = ?";
+    $sql1 = "CREATE TEMP TABLE temp_t AS SELECT * FROM CDATPCSUSPECT WHERE IMEINUMBER = ?";
     $params1 = array($number);
-    $st1 = sqlsrv_prepare($conn, $sql1, $params1);
-    sqlsrv_execute($st1);
-    sqlsrv_render_query_error($st1, 'IMEI lookup');
+    $st1 = $conn->prepare($sql1);
+    $st1->execute($params1);
+    
+    
 
-    $sql2 = "SELECT DISTINCT PHONE, IMEINUMBER,
-            SUM(CASE WHEN INCOMING='1' THEN 1 ELSE 0 END) AS 'IN',
-            SUM(CASE WHEN INCOMING='0' THEN 1 ELSE 0 END) AS 'OUT',
+    $sql2 = "CREATE TEMP TABLE temp_tt AS SELECT DISTINCT PHONE, IMEINUMBER,
+            SUM(CASE WHEN INCOMING='1' THEN 1 ELSE 0 END) AS \"IN\",
+            SUM(CASE WHEN INCOMING='0' THEN 1 ELSE 0 END) AS \"OUT\",
             COUNT(PHONE) AS CALLS, SUM(DURATION) AS DUR,
-            CONVERT(VARCHAR, MIN(STARTTIME), 20) AS FIRST_CALL,
-            CONVERT(VARCHAR, MAX(STARTTIME), 20) AS LAST_CALL 
-            INTO #TT FROM #T
+            TO_CHAR((MIN(STARTTIME))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS FIRST_CALL,
+            TO_CHAR((MAX(STARTTIME))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS LAST_CALL 
+             FROM temp_t
             GROUP BY PHONE, IMEINUMBER ORDER BY LAST_CALL";
-    $st2 = sqlsrv_query($conn, $sql2);
-    sqlsrv_render_query_error($st2, 'IMEI aggregation');
+    $st2 = $conn->query($sql2);
+    
 
-    $sql3 = "SELECT A.PHONE, IMEINUMBER, [IN], [OUT], CALLS, DUR, FIRST_CALL, LAST_CALL, 
+    $sql3 = "SELECT A.PHONE, IMEINUMBER, \"IN\", \"OUT\", CALLS, DUR, FIRST_CALL, LAST_CALL, 
             CASE WHEN C.PHONE IS NOT NULL
-            THEN COALESCE(C.FULLNAME + ', ' + C.FULLADDRESS, '') + ' ' + COALESCE(C.CATEGORY_TYPE, '')
+            THEN COALESCE(C.FULLNAME || ', ' || C.FULLADDRESS, '') || ' ' || COALESCE(C.CATEGORY_TYPE, '')
             WHEN D.PHONE IS NOT NULL
-            THEN COALESCE(D.FULLNAME + ', ' + D.FULLADDRESS, '') + ' ' + COALESCE(D.CATEGORY_TYPE, '')
-            ELSE AREADESCRIPTION END AS ADDRESS FROM #TT A
-            LEFT JOIN CDATDUPL.DBO.CDATADDRESS C ON A.PHONE = C.PHONE AND C.EFF_TO_DATE IS NULL
-            LEFT JOIN CDATDUPL.DBO.ADDRESS_OTHER_STATE D ON A.PHONE = D.PHONE AND D.EFF_TO_DATE IS NULL
-            LEFT JOIN CDATDUPL.DBO.CDATPHONEAREA E ON A.PHONE LIKE PHONEPREFIX + '%'
+            THEN COALESCE(D.FULLNAME || ', ' || D.FULLADDRESS, '') || ' ' || COALESCE(D.CATEGORY_TYPE, '')
+            ELSE AREADESCRIPTION END AS ADDRESS FROM temp_tt A
+            LEFT JOIN CDATADDRESS C ON A.PHONE = C.PHONE AND C.EFF_TO_DATE IS NULL
+            LEFT JOIN ADDRESS_OTHER_STATE D ON A.PHONE = D.PHONE AND D.EFF_TO_DATE IS NULL
+            LEFT JOIN CDATPHONEAREA E ON A.PHONE LIKE PHONEPREFIX || '%'
             ORDER BY LAST_CALL";
-    $st3 = sqlsrv_query($conn, $sql3);
-    sqlsrv_render_query_error($st3, 'IMEI address join');
+    $st3 = $conn->query($sql3);
+    
 
-    $sql4 = "SELECT 'LIST OF PHONE NOs USED IN IMEI: ' + ? as PHONE1";
+    $sql4 = "SELECT 'LIST OF PHONE NOs USED IN IMEI: ' || ? as PHONE1";
     $params4 = array($number);
-    $st4 = sqlsrv_prepare($conn, $sql4, $params4);
-    sqlsrv_execute($st4);
+    $st4 = $conn->prepare($sql4);
+    $st4->execute($params4);
+    
 
-    $sql5 = "SELECT CASE WHEN COUNT(PHONE) >= 1 THEN '' ELSE '*** NO PHONES ARE AVAILABLE IN IMEI $number ***' END as PHONE FROM #tt";
-    $st5 = sqlsrv_query($conn, $sql5);
+    $sql5 = "SELECT CASE WHEN COUNT(PHONE) >= 1 THEN '' ELSE '*** NO PHONES ARE AVAILABLE IN IMEI $number ***' END as PHONE FROM temp_tt";
+    $st5 = $conn->query($sql5);
 
     $bannerTitle = 'LIST OF PHONE NOs USED IN IMEI: ' . $number;
-    if ($st4 && ($bannerRow = sqlsrv_fetch_array($st4, SQLSRV_FETCH_ASSOC))) {
+    if ($st4 && ($bannerRow = $st4->fetch(PDO::FETCH_ASSOC))) {
         $bannerTitle = (string) ($bannerRow['PHONE1'] ?? $bannerTitle);
     }
 
     $rows = cdat_sum_fetch_all($st3);
 
     $emptyMsg = '';
-    if ($st5 && ($emptyRow = sqlsrv_fetch_array($st5, SQLSRV_FETCH_ASSOC))) {
+    if ($st5 && ($emptyRow = $st5->fetch(PDO::FETCH_ASSOC))) {
         $emptyMsg = trim((string) ($emptyRow['PHONE'] ?? ''));
     }
 
@@ -122,9 +117,9 @@ if ($hasSearch) {
     }
 
     if ($st3) {
-        sqlsrv_free_stmt($st3);
+        $st3 = null;
     }
-    sqlsrv_close($conn);
+    $conn = null;
 
     if ($isAjax) {
         exit;

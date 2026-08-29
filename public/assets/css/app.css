@@ -787,8 +787,19 @@ mark.hit { background: #ffd44d; color: #10243a; border-radius: 3px; padding: 0 1
 }
 
 /* Searchable custom select */
+.sum-search-form__field:has(.sum-ss) {
+    position: relative;
+    overflow: visible;
+    z-index: 1;
+}
+.sum-search-form__field:has(.sum-ss.is-open) {
+    z-index: 60;
+}
+.sum-search-form.row {
+    overflow: visible;
+}
 .sum-ss {
-    position: relative; width: 100%;
+    position: relative; width: 100%; display: block;
 }
 .sum-ss__native {
     position: absolute !important; width: 1px !important; height: 1px !important;

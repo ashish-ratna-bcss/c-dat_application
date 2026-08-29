@@ -22,36 +22,28 @@ if ($hasSearch) {
     }
 
     set_time_limit(0);
-    require_once CDAT_COMMON . '/cdr_enrichment_sql.php';
-
-    $serverName = "CPHYDERABAD1\DAU_HYD_2023";
-    $connectionInfo = array("Database" => "CDATDUPL");
-    $conn = sqlsrv_connect($serverName, $connectionInfo);
-    if ($conn === false) {
-        die(print_r(sqlsrv_errors(), true));
-    }
-
-    $sql10 = "SELECT DISTINCT A.PHONE,CONVERT(VARCHAR,MIN(STARTTIME),20) AS FIRST_CALL,CONVERT(VARCHAR,MAX(STARTTIME),20) AS LAST_CALL,B.NICKNAME,B.MO,CATEGORY,CONVERT(VARCHAR,MAX(A.ASONDATE),20) AS LAST_UPDATED,
+        $conn = get_cdat_pdo();
+        $sql10 = "CREATE TEMP TABLE temp_S AS SELECT DISTINCT A.PHONE,TO_CHAR((MIN(STARTTIME))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS FIRST_CALL,TO_CHAR((MAX(STARTTIME))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS LAST_CALL,B.NICKNAME,B.MO,CATEGORY,TO_CHAR((MAX(A.ASONDATE))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS LAST_UPDATED,
 INC_OFFICER 
-INTO #S FROM CDATDUPL.DBO.CDATPCSUSPECT A LEFT JOIN CDATDUPL.DBO.CDATSUSPECT B ON A.PHONE=B.PHONE WHERE A.PHONE='$number'  GROUP BY A.PHONE,B.NICKNAME,MO,CATEGORY, INC_OFFICER";
+ FROM CDATPCSUSPECT A LEFT JOIN CDATSUSPECT B ON A.PHONE=B.PHONE WHERE A.PHONE='$number'  GROUP BY A.PHONE,B.NICKNAME,MO,CATEGORY, INC_OFFICER";
 
-    $sql1 = "SELECT DISTINCT PHONE,OTHER,CONVERT(VARCHAR,STARTTIME,20) AS STARTTIME,DURATION,
+    $sql1 = "CREATE TEMP TABLE temp_TT AS SELECT DISTINCT PHONE,OTHER,TO_CHAR((STARTTIME)::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS STARTTIME,DURATION,
 CASE WHEN INCOMING='1' THEN 'IN' ELSE 'OUT' END AS TYPE,
-IMEINUMBER,CELLTOWERID,STATE_KEY,PROVIDER_KEY  INTO #TT FROM CDATDUPL.DBO.CDATPCSUSPECT WHERE PHONE='$number' AND OTHER='$number1'";
+IMEINUMBER,CELLTOWERID,STATE_KEY,PROVIDER_KEY   FROM CDATPCSUSPECT WHERE PHONE='$number' AND OTHER='$number1'";
 
-    $sql2 = cdr_sql_enrich_tt('', '', ['with_last_update' => true, 'with_lat_long' => true]);
+    $sql2 = cdr_sql_enrich_tt_local('', '', ['with_last_update' => true, 'with_lat_long' => true]);
 
-    $sql5 = "SELECT PHONE,OTHER,NICKNAME,STARTTIME,DURATION,TYPE,IMEINUMBER,CELLTOWERID,OPERATOR,AREADESCRIPTION,LAT,LONG,AZM from #temp_cdrs  ORDER BY STARTTIME";
+    $sql5 = "SELECT PHONE,OTHER,NICKNAME,STARTTIME,DURATION,TYPE,IMEINUMBER,CELLTOWERID,OPERATOR,AREADESCRIPTION,LAT,LONG,AZM from temp_temp_cdrs  ORDER BY STARTTIME";
 
-    $sql6 = "select 'CALL DETAILS OF MOBILE NO. '+'$number' + 'AND OTHER NO. '+'$number1' as PHONE";
+    $sql6 = "select 'CALL DETAILS OF MOBILE NO. ' || '$number' || 'AND OTHER NO. ' || '$number1' as PHONE";
 
-    $st1 = sqlsrv_query($conn, $sql1);
-    $st2 = sqlsrv_query($conn, $sql2);
-    $st5 = sqlsrv_query($conn, $sql5);
-    $st6 = sqlsrv_query($conn, $sql6);
+    $st1 = $conn->query($sql1);
+    $st2 = $conn->query($sql2);
+    $st5 = $conn->query($sql5);
+    $st6 = $conn->query($sql6);
 
     $bannerTitle = "CALL DETAILS OF MOBILE NO. {$number} AND OTHER NO. {$number1}";
-    if ($st6 && ($bannerRow = sqlsrv_fetch_array($st6, SQLSRV_FETCH_ASSOC))) {
+    if ($st6 && ($bannerRow = $st6->fetch(PDO::FETCH_ASSOC))) {
         $bannerTitle = (string) ($bannerRow['PHONE'] ?? $bannerTitle);
     }
 
@@ -91,9 +83,9 @@ IMEINUMBER,CELLTOWERID,STATE_KEY,PROVIDER_KEY  INTO #TT FROM CDATDUPL.DBO.CDATPC
     }
 
     if ($st5) {
-        sqlsrv_free_stmt($st5);
+        $st5 = null;
     }
-    sqlsrv_close($conn);
+    $conn = null;
 
     if ($isAjax) {
         exit;
@@ -113,3 +105,70 @@ cdat_sum_search_card(
 );
 cdat_sum_page_close();
 layout_end();
+
+function cdr_escape_sql_literal_local(string $value): string
+{
+    return str_replace("'", "''", $value);
+}
+
+function cdr_sql_enrich_tt_local(string $operator = '', string $state = '', array $opts = []): string
+{
+    $operator = cdr_escape_sql_literal_local($operator);
+    $state = cdr_escape_sql_literal_local($state);
+    $useKeys = !empty($opts['use_keys']);
+    $withLastUpdate = !empty($opts['with_last_update']);
+    $withLatLong = !empty($opts['with_lat_long']);
+    $withStateCol = !empty($opts['with_state_col']);
+    $withDateTimeCols = !empty($opts['with_date_time_cols']);
+    $outputTable = $opts['output_table'] ?? 'temp_temp_cdrs';
+
+    $joinOn = $useKeys
+        ? 'A.CELLTOWERID=B.CELLTOWERID AND A.STATE_KEY=B.STATE_KEY AND A.PROVIDER_KEY=B.PROVIDER_KEY'
+        : 'A.CELLTOWERID=B.CELLTOWERID';
+
+    if ($withLastUpdate) {
+        $areaExpr = "(CASE WHEN A.CELLTOWERID=B.CELLTOWERID THEN MAX(COALESCE(SITEADDRESS, AREADESCRIPTION, '')) ELSE '' END ||', LAST_UPDATE:'||TO_CHAR((LASTUPDATE)::timestamp, 'YYYY-MM-DD HH24:MI:SS'))";
+    } else {
+        $areaExpr = "CASE WHEN A.CELLTOWERID=B.CELLTOWERID THEN MAX(COALESCE(SITEADDRESS, AREADESCRIPTION, '')) ELSE '' END";
+    }
+
+    $dateTimeSelect = $withDateTimeCols ? 'DATE,TIME,' : '';
+    $stateSelect = $withStateCol ? ',B.STATE' : '';
+    $latSelect = $withLatLong ? ',LAT,LONG,AZIMUTH AS AZM' : '';
+
+    $groupCols = ['A.PHONE', 'OTHER', 'NICKNAME'];
+    if ($withDateTimeCols) {
+        $groupCols[] = 'DATE';
+        $groupCols[] = 'TIME';
+    }
+    $groupCols = array_merge($groupCols, [
+        'STARTTIME', 'DURATION', 'TYPE', 'A.IMEINUMBER', 'A.CELLTOWERID',
+        'B.CELLTOWERID', 'LASTUPDATE', 'B.OPERATOR',
+    ]);
+    if ($withStateCol) {
+        $groupCols[] = 'B.STATE';
+    }
+    if ($withLatLong) {
+        $groupCols[] = 'LAT';
+        $groupCols[] = 'LONG';
+        $groupCols[] = 'AZIMUTH';
+    }
+    $groupBy = implode(', ', $groupCols);
+
+    $filters = [];
+    if ($operator !== '') {
+        $filters[] = "B.OPERATOR='{$operator}'";
+    }
+    if ($state !== '') {
+        $filters[] = "B.STATE='{$state}'";
+    }
+    $where = $filters ? 'WHERE ' . implode(' AND ', $filters) : '';
+
+    return "CREATE TEMP TABLE {$outputTable} AS SELECT DISTINCT A.PHONE,OTHER,CASE WHEN other in (select phone from cdatsuspect) THEN nickname ELSE ' ' END as NICKNAME,
+{$dateTimeSelect}STARTTIME,DURATION,TYPE,A.IMEINUMBER,A.CELLTOWERID,COALESCE(B.OPERATOR, '') AS OPERATOR{$stateSelect},
+{$areaExpr} AS AREADESCRIPTION{$latSelect} FROM temp_TT A
+LEFT JOIN cdatcelltowerareanew B ON {$joinOn}
+left join cdatsuspect c on a.other=c.phone
+{$where}
+GROUP BY {$groupBy}";
+}

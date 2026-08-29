@@ -24,58 +24,53 @@ if ($hasSearch) {
 
     set_time_limit(0);
     require_once CDAT_COMMON . '/activity_logger.php';
-    require_once CDAT_COMMON . '/cdr_enrichment_sql.php';
-
+    
     audit_log('CDAT Contacts', 'Search', ['phone_number' => $_POST['PHONE_NO'] ?? '']);
+    $conn = get_cdat_pdo();
 
-    $serverName = "CPHYDERABAD1\DAU_HYD_2023";
-    $connectionInfo = array( "Database"=>"CDATDUPL");
-    $conn = sqlsrv_connect( $serverName, $connectionInfo );
-
-    if( $conn === false ) {
-        die( print_r( sqlsrv_errors(), true));
-    }
-
-    if ($number === '') {
+        if ($number === '') {
         die('<div class="alert alert-warning mb-0" role="alert">Phone number required</div>');
     }
 
     // Use parameterized queries to prevent SQL injection
-    $sql10 = "SELECT DISTINCT A.PHONE,CONVERT(VARCHAR,MIN(STARTTIME),20) AS FIRST_CALL,CONVERT(VARCHAR,MAX(STARTTIME),20) AS LAST_CALL,B.NICKNAME+'_'+B.ROLE NICKNAME,B.MO,CATEGORY,CONVERT(VARCHAR,MAX(A.ASONDATE),20) AS LAST_UPDATED,
+    $sql10 = "SELECT DISTINCT A.PHONE,TO_CHAR((MIN(STARTTIME))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS FIRST_CALL,TO_CHAR((MAX(STARTTIME))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS LAST_CALL,B.NICKNAME || '_' || B.ROLE NICKNAME,B.MO,CATEGORY,TO_CHAR((MAX(A.ASONDATE))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS LAST_UPDATED,
     INC_OFFICER 
-    FROM CDATDUPL.DBO.CDATPCSUSPECT A LEFT JOIN CDATDUPL.DBO.CDATSUSPECT B ON A.PHONE=B.PHONE WHERE A.PHONE=? GROUP BY A.PHONE,B.NICKNAME,MO,CATEGORY, INC_OFFICER,B.ROLE";
+    FROM CDATPCSUSPECT A LEFT JOIN CDATSUSPECT B ON A.PHONE=B.PHONE WHERE A.PHONE=? GROUP BY A.PHONE,B.NICKNAME,MO,CATEGORY, INC_OFFICER,B.ROLE";
     $params10 = array($number);
-    $st10 = sqlsrv_prepare($conn, $sql10, $params10);
-    sqlsrv_execute($st10);
+    $st10 = $conn->prepare($sql10);
+    $st10->execute($params10);
+    
 
-    $sql4 = "SELECT * INTO #XX FROM CDAT_DETAILS1 WHERE PHONE=? and other!=''";
+    $sql4 = "CREATE TEMP TABLE temp_xx AS SELECT * FROM CDAT_DETAILS1 WHERE PHONE=? and other!=''";
     $params4 = array($number);
-    $st4 = sqlsrv_prepare($conn, $sql4, $params4);
-    sqlsrv_execute($st4);
+    $st4 = $conn->prepare($sql4);
+    $st4->execute($params4);
+    
 
-    $sql5 = "select distinct a.PHONE,OTHER, NICKNAME+'_'+ROLE NICKNAME,
-    SUM(CASE WHEN INCOMING='1' THEN 1 ELSE 0 END) AS 'IN',
-    SUM(CASE WHEN INCOMING='0' THEN 1 ELSE 0 END) AS 'OUT', count(*) as CALLS,sum(cast(duration as numeric)) as dur,CONVERT(VARCHAR,MIN(STARTTIME),20) as FIRST_CALL,CONVERT(VARCHAR,MAX(STARTTIME),20) as LAST_CALL,
-    MO, CATEGORY, INC_OFFICER INTO #TT from #XX a
-    left join cdatdupl.dbo.cdatsuspect b on a.other=b.phone
-    WHERE OTHER IN (SELECT PHONE FROM CDATDUPL.DBO.CDATSUSPECT)
+    $sql5 = "CREATE TEMP TABLE temp_tt AS select distinct a.PHONE,OTHER, NICKNAME || '_' || ROLE NICKNAME,
+    SUM(CASE WHEN INCOMING='1' THEN 1 ELSE 0 END) AS \"IN\",
+    SUM(CASE WHEN INCOMING='0' THEN 1 ELSE 0 END) AS \"OUT\", count(*) as CALLS,sum(cast(duration as numeric)) as dur,TO_CHAR((MIN(STARTTIME))::timestamp, 'YYYY-MM-DD HH24:MI:SS') as FIRST_CALL,TO_CHAR((MAX(STARTTIME))::timestamp, 'YYYY-MM-DD HH24:MI:SS') as LAST_CALL,
+    MO, CATEGORY, INC_OFFICER  from temp_xx a
+    left join cdatsuspect b on a.other=b.phone
+    WHERE OTHER IN (SELECT PHONE FROM CDATSUSPECT)
     group by a.phone, A.other, nickname,ROLE, MO, CATEGORY, INC_OFFICER order by  calls desc, other";
-    $st5 = sqlsrv_query($conn, $sql5);
+    $st5 = $conn->query($sql5);
 
     if ($st5 === false) {
-        die(print_r(sqlsrv_errors(), true));
+        die(print_r(error_get_last(), true));
     }
 
-    $sql8 = "SELECT 'CDAT CONTACTS OF MOBILE NO: ' + ? as PHONE";
+    $sql8 = "SELECT 'CDAT CONTACTS OF MOBILE NO: ' || ? as PHONE";
     $params8 = array($number);
-    $st8 = sqlsrv_prepare($conn, $sql8, $params8);
-    sqlsrv_execute($st8);
+    $st8 = $conn->prepare($sql8);
+    $st8->execute($params8);
+    
 
-    $phoneAreaPrefixes = cdat_load_phonearea_prefixes($conn);
-    $cdatAddressMap = cdat_fetch_cdataddress_map($conn, [$number]);
-    $otherStateMap = cdat_fetch_other_state_address_map($conn, [$number]);
-    $defaultImage = cdat_default_suspect_image($conn);
-    $suspectProfile = cdat_fetch_suspect_profile_map($conn, [$number]);
+    $phoneAreaPrefixes = cdat_load_phonearea_prefixes_local($conn);
+    $cdatAddressMap = cdat_fetch_cdataddress_map_local($conn, [$number]);
+    $otherStateMap = cdat_fetch_other_state_address_map_local($conn, [$number]);
+    $defaultImage = cdat_default_suspect_image_local($conn);
+    $suspectProfile = cdat_fetch_suspect_profile_map_local($conn, [$number]);
     $searchedSuspect = $suspectProfile[$number] ?? null;
 
     $headerRow = [
@@ -85,12 +80,12 @@ if ($hasSearch) {
         'NICKNAME' => $searchedSuspect['nickname_label'] ?? '',
         'MO' => $searchedSuspect['mo'] ?? '',
         'CAT' => $searchedSuspect['category'] ?? '',
-        'ADDRESS' => cdat_format_sum_header_address($number, $cdatAddressMap, $otherStateMap, cdat_phonearea_lookup($phoneAreaPrefixes, $number)),
+        'ADDRESS' => cdat_format_sum_header_address_local($number, $cdatAddressMap, $otherStateMap, cdat_phonearea_lookup_local($phoneAreaPrefixes, $number)),
         'INC_OFFICER' => $searchedSuspect['inc_officer'] ?? '',
         'IMAGE' => $defaultImage,
     ];
 
-    if ($st10 && ($stats = sqlsrv_fetch_array($st10, SQLSRV_FETCH_ASSOC))) {
+    if ($st10 && ($stats = $st10->fetch(PDO::FETCH_ASSOC))) {
         $headerRow['FIRST_CALL'] = $stats['FIRST_CALL'] ?? '';
         $headerRow['LAST_CALL'] = $stats['LAST_CALL'] ?? '';
         if ($searchedSuspect === null) {
@@ -101,31 +96,31 @@ if ($hasSearch) {
         }
     }
 
-    $headerImages = cdat_fetch_suspect_image_map($conn, [$number]);
+    $headerImages = cdat_fetch_suspect_image_map_local($conn, [$number]);
     if (isset($headerImages[$number])) {
         $headerRow['IMAGE'] = $headerImages[$number];
     }
 
     $contactRows = [];
     $lookupPhones = [$number];
-    $stContacts = sqlsrv_query($conn, 'SELECT * FROM #TT ORDER BY CALLS DESC, OTHER');
+    $stContacts = $conn->query('SELECT * FROM temp_tt ORDER BY CALLS DESC, OTHER');
     if ($stContacts) {
-        while ($row = sqlsrv_fetch_array($stContacts, SQLSRV_FETCH_ASSOC)) {
+        while ($row = $stContacts->fetch(PDO::FETCH_ASSOC)) {
             $contactRows[] = $row;
             $lookupPhones[] = $row['OTHER'] ?? '';
         }
     }
 
-    $contactAddressMap = cdat_fetch_cdataddress_map($conn, $lookupPhones);
-    $contactOtherStateMap = cdat_fetch_other_state_address_map($conn, $lookupPhones);
-    $contactSuspectMap = cdat_fetch_suspect_profile_map($conn, array_column($contactRows, 'OTHER'));
-    $irFormsMap = cdat_fetch_ir_forms_map($conn, array_column($contactRows, 'OTHER'));
-    $contactImageMap = cdat_fetch_suspect_image_map($conn, array_column($contactRows, 'OTHER'));
+    $contactAddressMap = cdat_fetch_cdataddress_map_local($conn, $lookupPhones);
+    $contactOtherStateMap = cdat_fetch_other_state_address_map_local($conn, $lookupPhones);
+    $contactSuspectMap = cdat_fetch_suspect_profile_map_local($conn, array_column($contactRows, 'OTHER'));
+    $irFormsMap = cdat_fetch_ir_forms_map_local($conn, array_column($contactRows, 'OTHER'));
+    $contactImageMap = cdat_fetch_suspect_image_map_local($conn, array_column($contactRows, 'OTHER'));
 
     $displayContacts = [];
     foreach ($contactRows as $row) {
         $other = trim((string) ($row['OTHER'] ?? ''));
-        $address = cdat_format_cdatcnts_tt_address(
+        $address = cdat_format_cdatcnts_tt_address_local(
             $other,
             $row['CALLS'] ?? 0,
             $row['DUR'] ?? 0,
@@ -133,7 +128,7 @@ if ($hasSearch) {
             $phoneAreaPrefixes
         );
         if (isset($contactOtherStateMap[$other])) {
-            $address = cdat_format_cdatcnts_other_state_address($contactOtherStateMap[$other]);
+            $address = cdat_format_cdatcnts_other_state_address_local($contactOtherStateMap[$other]);
         }
 
         $suspect = $contactSuspectMap[$other] ?? null;
@@ -160,7 +155,7 @@ if ($hasSearch) {
     $noContactsMsg = count($displayContacts) >= 1 ? '' : "*** NO CDAT CONTACTS TO $number ***";
 
     $bannerTitle = 'CDAT CONTACTS OF MOBILE NO: ' . $number;
-    if ($st8 && ($bannerRow = sqlsrv_fetch_array($st8, SQLSRV_FETCH_ASSOC))) {
+    if ($st8 && ($bannerRow = $st8->fetch(PDO::FETCH_ASSOC))) {
         $bannerTitle = (string) ($bannerRow['PHONE'] ?? $bannerTitle);
     }
 
@@ -228,7 +223,7 @@ if ($hasSearch) {
     }
 
     cdat_sum_results_close();
-    sqlsrv_close($conn);
+    $conn = null;
 
     if ($isAjax) {
         exit;
@@ -251,3 +246,322 @@ cdat_sum_search_card(
 );
 cdat_sum_page_close();
 layout_end();
+
+function cdat_phone_prefix_key_local(?string $phone): string
+{
+    $phone = trim((string) $phone);
+    if ($phone === '') {
+        return '';
+    }
+    $len = strlen($phone);
+    if ($len === 10) {
+        return $phone;
+    }
+    if ($len > 10) {
+        return '00' . $phone;
+    }
+
+    return $phone;
+}
+
+function cdat_load_phonearea_prefixes_local($conn): array
+{
+    static $cache = null;
+    if ($cache !== null) {
+        return $cache;
+    }
+
+    $cache = [];
+    $st = $conn->query('SELECT phoneprefix, areadescription FROM cdatphonearea ORDER BY length(phoneprefix) DESC');
+    if ($st === false) {
+        return $cache;
+    }
+
+    while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+        $prefix = trim((string) ($row['PHONEPREFIX'] ?? ''));
+        if ($prefix === '') {
+            continue;
+        }
+        $cache[] = [
+            'prefix' => $prefix,
+            'area' => trim((string) ($row['AREADESCRIPTION'] ?? '')),
+        ];
+    }
+
+    return $cache;
+}
+
+function cdat_phonearea_lookup_local(array $prefixes, ?string $phone): string
+{
+    $key = cdat_phone_prefix_key_local($phone);
+    if ($key === '') {
+        return '';
+    }
+
+    foreach ($prefixes as $row) {
+        if (strncmp($key, $row['prefix'], strlen($row['prefix'])) === 0) {
+            return $row['area'];
+        }
+    }
+
+    return '';
+}
+
+function cdat_fetch_suspect_profile_map_local($conn, array $phones): array
+{
+    $phones = array_values(array_unique(array_filter(array_map('strval', $phones))));
+    if ($phones === []) {
+        return [];
+    }
+
+    $placeholders = implode(',', array_fill(0, count($phones), '?'));
+    $st = $conn->prepare("SELECT phone,
+                COALESCE(nickname, '') AS nickname,
+                COALESCE(mo, '') AS mo,
+                COALESCE(inc_officer, '') AS inc_officer,
+                COALESCE(category, '') AS category,
+                COALESCE(role, '') AS role
+         FROM cdatsuspect
+         WHERE phone IN ($placeholders)"
+    );
+    $st->execute($phones);
+    if ($st === false) {
+        return [];
+    }
+
+    $map = [];
+    while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+        $nickname = $row['NICKNAME'] ?? '';
+        $role = $row['ROLE'] ?? '';
+        $label = $nickname;
+        if ($role !== '') {
+            $label = $nickname !== '' ? $nickname . '_' . $role : $role;
+        }
+
+        $map[$row['PHONE']] = [
+            'nickname_label' => $label,
+            'nickname' => $nickname,
+            'mo' => $row['MO'] ?? '',
+            'inc_officer' => $row['INC_OFFICER'] ?? '',
+            'category' => $row['CATEGORY'] ?? '',
+            'role' => $role,
+        ];
+    }
+
+    return $map;
+}
+
+function cdat_fetch_cdataddress_map_local($conn, array $phones): array
+{
+    $phones = array_values(array_unique(array_filter(array_map('strval', $phones))));
+    if ($phones === []) {
+        return [];
+    }
+
+    $placeholders = implode(',', array_fill(0, count($phones), '?'));
+    $st = $conn->prepare("SELECT phone,
+                COALESCE(fullname, '') AS fullname,
+                COALESCE(fulladdress, '') AS fulladdress,
+                COALESCE(category_type, '') AS category_type,
+                doa
+         FROM cdataddress
+         WHERE phone IN ($placeholders) AND eff_to_date IS NULL");
+    $st->execute($phones);
+    if ($st === false) {
+        return [];
+    }
+
+    $map = [];
+    while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+        $map[$row['PHONE']] = [
+            'fullname' => $row['FULLNAME'] ?? '',
+            'fulladdress' => $row['FULLADDRESS'] ?? '',
+            'category_type' => $row['CATEGORY_TYPE'] ?? '',
+            'doa' => $row['DOA'] ?? '',
+        ];
+    }
+
+    return $map;
+}
+
+function cdat_fetch_other_state_address_map_local($conn, array $phones): array
+{
+    $phones = array_values(array_unique(array_filter(array_map('strval', $phones))));
+    if ($phones === []) {
+        return [];
+    }
+
+    $placeholders = implode(',', array_fill(0, count($phones), '?'));
+    $st = $conn->prepare("SELECT phone,
+                COALESCE(fullname, '') AS fullname,
+                COALESCE(fulladdress, '') AS fulladdress,
+                COALESCE(category_type, '') AS category_type,
+                doa
+         FROM address_other_state
+         WHERE phone IN ($placeholders) AND eff_to_date IS NULL");
+    $st->execute($phones);
+    if ($st === false) {
+        return [];
+    }
+
+    $map = [];
+    while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+        $map[$row['PHONE']] = [
+            'fullname' => $row['FULLNAME'] ?? '',
+            'fulladdress' => $row['FULLADDRESS'] ?? '',
+            'category_type' => $row['CATEGORY_TYPE'] ?? '',
+            'doa' => $row['DOA'] ?? '',
+        ];
+    }
+
+    return $map;
+}
+
+function cdat_format_address_from_row_local(array $row): string
+{
+    $parts = array_filter([
+        trim(($row['fullname'] ?? '') . ', ' . ($row['fulladdress'] ?? '')),
+        isset($row['doa']) && $row['doa'] !== '' ? 'DOA:' . $row['doa'] : '',
+        $row['category_type'] ?? '',
+    ]);
+
+    return trim(implode(' ', $parts));
+}
+
+function cdat_format_sum_header_address_local(
+    string $phone,
+    array $cdatAddressMap,
+    array $otherStateMap,
+    string $phoneAreaDescription
+): string {
+    if (isset($cdatAddressMap[$phone])) {
+        $row = $cdatAddressMap[$phone];
+        $category = $row['category_type'] !== '' ? $row['category_type'] : $phoneAreaDescription;
+        return cdat_format_address_from_row_local([
+            'fullname' => $row['fullname'],
+            'fulladdress' => $row['fulladdress'],
+            'doa' => $row['doa'],
+            'category_type' => $category,
+        ]);
+    }
+    if (isset($otherStateMap[$phone])) {
+        $row = $otherStateMap[$phone];
+        $category = $row['category_type'] !== '' ? $row['category_type'] : $phoneAreaDescription;
+        return trim(($row['fullname'] ?? '') . ', ' . ($row['fulladdress'] ?? '') . ', ' . ($row['doa'] ?? '') . ', ' . $category);
+    }
+
+    return $phoneAreaDescription;
+}
+
+function cdat_format_cdatcnts_tt_address_local(
+    string $other,
+    $calls,
+    $dur,
+    array $cdatAddressMap,
+    array $phoneAreaPrefixes
+): string {
+    $other = trim($other);
+    $addr = $cdatAddressMap[$other] ?? null;
+    $prefix = ($addr && ($addr['fullname'] ?? '') !== '') ? $addr['fullname'] . ' ' : '';
+
+    if ($addr && ($addr['fulladdress'] ?? '') !== '') {
+        return trim($prefix . $addr['fulladdress'] . ',' . ($addr['category_type'] ?? ''));
+    }
+
+    $calls = (int) $calls;
+    $dur = (int) $dur;
+    $len = strlen($other);
+    $isNumeric = preg_match('/^[0-9]+$/', $other) === 1;
+    $junk = ($calls === $dur && $len !== 10)
+        || (!in_array(substr($other, 0, 1), ['9', '8'], true) && $len > 14)
+        || $len < 10
+        || ($len >= 14 && str_contains(substr($other, 4, 10), '0000'))
+        || !$isNumeric;
+
+    if ($junk) {
+        return trim($prefix . 'JUNK-COULD BE bulk SMS or VOIP calls');
+    }
+
+    $area = cdat_phonearea_lookup_local($phoneAreaPrefixes, $other);
+
+    return trim($prefix . ($area !== '' ? $area : 'code n/a'));
+}
+
+function cdat_format_cdatcnts_other_state_address_local(array $row): string
+{
+    $doa = $row['doa'] ?? '';
+    if ($doa !== '') {
+        $ts = strtotime((string) $doa);
+        $doa = $ts ? date('d-m-Y', $ts) : (string) $doa;
+    }
+
+    return trim(
+        ($row['fullname'] ?? '') . ',' .
+        ($row['fulladdress'] ?? '') . ',' .
+        ($row['category_type'] ?? '') . ',' .
+        $doa
+    );
+}
+
+function cdat_fetch_ir_forms_map_local($conn, array $phones): array
+{
+    $phones = array_values(array_unique(array_filter(array_map('strval', $phones))));
+    if ($phones === []) {
+        return [];
+    }
+
+    $map = [];
+    $chunkSize = 50;
+    for ($offset = 0; $offset < count($phones); $offset += $chunkSize) {
+        $chunk = array_slice($phones, $offset, $chunkSize);
+        $conditions = [];
+        $params = [];
+        foreach ($chunk as $phone) {
+            $conditions[] = 'mobile LIKE ?';
+            $params[] = '%' . $phone . '%';
+        }
+        $st = $conn->prepare('SELECT mobile FROM ir_particulars WHERE ' . implode(' OR ', $conditions));
+        $st->execute($params);
+        if ($st === false) {
+            continue;
+        }
+
+        $mobiles = [];
+        while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+            $mobiles[] = (string) ($row['MOBILE'] ?? '');
+        }
+
+        foreach ($chunk as $phone) {
+            foreach ($mobiles as $mobile) {
+                if ($mobile !== '' && str_contains($mobile, $phone)) {
+                    $map[$phone] = 'IR AVAILABLE CLICK HERE TO VIEW IR';
+                    break;
+                }
+            }
+        }
+    }
+
+    return $map;
+}
+
+function cdat_fetch_suspect_image_map_local($conn, array $phones): array
+{
+    $phones = array_values(array_unique(array_filter(array_map('strval', $phones))));
+    if ($phones === []) {
+        return [];
+    }
+
+    $placeholders = implode(',', array_fill(0, count($phones), '?'));
+    $st = $conn->prepare("SELECT mobile, image FROM suspect_image_table WHERE mobile IN ($placeholders)");
+    $st->execute($phones);
+    if ($st === false) {
+        return [];
+    }
+
+    $map = [];
+    while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+        $map[$row['MOBILE']] = cdat_pg_binary_to_string($row['IMAGE'] ?? null);
+    }
+
+    return $map;
+}

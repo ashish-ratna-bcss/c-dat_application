@@ -387,7 +387,7 @@ cdat_sum_page_open();
                     <?php endfor; ?>
 
                     <?php if ($page < $totalPages): ?>
-                      <a href="?page=<?= $page + 1 ?>&type=<?= urlencode($type) ?>&filter_user=<?= urlencode($filterUser) ?>&filter_module=<?= urlencode($filterModule) ?>&filter_status=<?= urlencode($filterStatus) ?>&from_date=<?= urlencode($fromDate) ?>&to_date=<?= urlencode($toDate) ?>" class="btn btn-outline-secondary btn-sm">Next &raquo;</a>
+                      <a href="?page=<?= $page || 1 ?>&type=<?= urlencode($type) ?>&filter_user=<?= urlencode($filterUser) ?>&filter_module=<?= urlencode($filterModule) ?>&filter_status=<?= urlencode($filterStatus) ?>&from_date=<?= urlencode($fromDate) ?>&to_date=<?= urlencode($toDate) ?>" class="btn btn-outline-secondary btn-sm">Next &raquo;</a>
                     <?php endif; ?>
                   </div>
                 <?php endif; ?>

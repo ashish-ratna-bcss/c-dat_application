@@ -42,28 +42,15 @@ if ($USERNAME === '') {
 if ($PASSWORD === '') {
     login_fail($wantsJson, 'Enter your password.', 'PASSWORD');
 }
-
-$serverName     = "CPHYDERABAD1\\DAU_HYD_2023";
-$connectionInfo = ["Database" => "FORMS"];
-$conn           = sqlsrv_connect($serverName, $connectionInfo);
-
-if ($conn === false) {
-    error_log('login1: ' . print_r(sqlsrv_errors(), true));
-    // The old code printed the driver's error array to the page, which tells an
-    // unauthenticated visitor the server name, database and driver version.
-    login_fail($wantsJson, 'The login service is unavailable. Try again shortly.', '', 503);
-}
+$conn           = get_cdat_pdo();
 
 // Placeholders, not interpolation. This query used to be built by pasting
 // $USERNAME and $PASSWORD straight into the string, so a username of
 //     ' OR '1'='1' --
 // returned the first row in LOGINS and signed the visitor in as that user.
-$st1 = sqlsrv_query(
-    $conn,
-    "SELECT * FROM LOGINS WHERE USERNAME = ?",
-    [$USERNAME]
-);
-$row = $st1 ? sqlsrv_fetch_array($st1, SQLSRV_FETCH_ASSOC) : false;
+$st1 = $conn->prepare("SELECT * FROM LOGINS WHERE USERNAME = ?");
+    $st1->execute([$USERNAME]);
+$row = $st1 ? $st1->fetch(PDO::FETCH_ASSOC) : false;
 
 $stored = (string)($row['PASSWORD'] ?? $row['password'] ?? '');
 $valid = false;
@@ -74,7 +61,8 @@ if ($row && $stored !== '') {
         $valid = hash_equals($stored, $PASSWORD);
         if ($valid) {
             $hashed = password_hash($PASSWORD, PASSWORD_DEFAULT);
-            sqlsrv_query($conn, "UPDATE LOGINS SET PASSWORD = ? WHERE USERNAME = ?", [$hashed, $USERNAME]);
+            $stmt = $conn->prepare("UPDATE logins SET PASSWORD = ? WHERE USERNAME = ?");
+            $stmt->execute([$hashed, $USERNAME]);
         }
     }
 }

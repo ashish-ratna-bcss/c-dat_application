@@ -25,30 +25,24 @@ if (!$isAjax) {
     cdat_sum_page_open();
     cdat_sum_back_link('pdact_search.php');
 }
-
-$serverName = "CPHYDERABAD1\\DAU_HYD_2023";
-$connectionInfo = array("Database" => "PDACT");
-$conn = sqlsrv_connect($serverName, $connectionInfo);
-if ($conn === false) {
-    die(print_r(sqlsrv_errors(), true));
-}
+$conn = get_cdat_pdo();
 $number = $_GET['PDACT_KEY'];
 
-$sql0 = "select distinct PDACT_KEY,IRKEY,NAME,FATHER_NAME,AGE,DISTRICT NATIVE_DISTRICT,STATE NATIVE_STATE INTO #TEMP from PDACT_MAIN_TABLE
+$sql0 = "CREATE TEMP TABLE temp_jrms_temp AS SELECT distinct PDACT_KEY,IRKEY,NAME,FATHER_NAME,AGE,DISTRICT NATIVE_DISTRICT,STATE NATIVE_STATE from pdact_main_table
 WHERE PDACT_KEY='$number'";
 
-$sql2 = "select A.PDACT_KEY,A.IRKEY,A.NAME,A.FATHER_NAME,A.AGE,NATIVE_DISTRICT,NATIVE_STATE,CASE WHEN CONVERT(VARCHAR(20),A.IRKEY)=CONVERT(VARCHAR(20),B.IRKEY)
-THEN IMAGE ELSE (SELECT IMAGE FROM FORMS..IMAGE_TABLE WHERE IRKEY='113769')END  AS IMAGE from #TEMP A LEFT JOIN 
-FORMS..IMAGE_TABLE B ON CONVERT(VARCHAR(20),A.IRKEY)=CONVERT(VARCHAR(20),B.IRKEY)";
+$sql2 = "select A.PDACT_KEY,A.IRKEY,A.NAME,A.FATHER_NAME,A.AGE,NATIVE_DISTRICT,NATIVE_STATE,CASE WHEN (A.IRKEY)::varchar=(B.IRKEY)::varchar
+THEN IMAGE ELSE (SELECT IMAGE FROM image_table WHERE IRKEY='113769')END  AS IMAGE FROM temp_jrms_temp A LEFT JOIN 
+image_table B ON (A.IRKEY)::varchar=(B.IRKEY)::varchar";
 
-$sql1 = "SELECT distinct  PD_ACT_PS,ZONE,FILE_NO,DETENU_NO,CONVERT(VARCHAR(20),ORDER_ISSUED_ON) ORDER_ISSUED_ON,APPROVAL_ORDERS_NO,CONFIRMATION_REVOCATION_ORDERS,CRIME_HEAD,MINOR_HEAD
+$sql1 = "SELECT distinct  PD_ACT_PS,ZONE,FILE_NO,DETENU_NO,(ORDER_ISSUED_ON)::varchar ORDER_ISSUED_ON,APPROVAL_ORDERS_NO,CONFIRMATION_REVOCATION_ORDERS,CRIME_HEAD,MINOR_HEAD
 MODUSOPERENDI,POLICE_STATION,WHETHER_INVOLVED_IN_OTHER_UNIT_CASES,NAME_OF_UNITS,NO_OF_CASES,
-CONVERT(VARCHAR(20),DATE_OF_ARREST) PDACT_DATE,CONVERT(VARCHAR(20),DATE_OF_RELEASE) DATE_OF_RELEASE,BRIEF_FACTS FROM PDACT_MAIN_TABLE
+(DATE_OF_ARREST)::varchar PDACT_DATE,(DATE_OF_RELEASE)::varchar DATE_OF_RELEASE,BRIEF_FACTS FROM pdact_main_table
 WHERE PDACT_KEY='$number'";
 
-sqlsrv_query($conn, $sql0);
-$st2 = sqlsrv_query($conn, $sql2);
-$st1 = sqlsrv_query($conn, $sql1);
+$conn->query($sql0);
+$st2 = $conn->query($sql2);
+$st1 = $conn->query($sql1);
 $heroRows = cdat_sum_fetch_all($st2);
 $detailRows = cdat_sum_fetch_all($st1);
 
@@ -106,7 +100,7 @@ if (empty($detailRows)) {
 }
 cdat_sum_results_close();
 
-sqlsrv_close($conn);
+$conn = null;
 
 if ($isAjax) {
     exit;

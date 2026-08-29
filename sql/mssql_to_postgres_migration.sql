@@ -1,18 +1,15 @@
 -- =============================================================================
 -- MSSQL to PostgreSQL Migration: CDATDUPL Application Tables
--- Source: /Desktop/old/mssql/*.sql
--- Branch: mssql-to-postgres-migration
--- Only tables/views actually referenced by the application are included.
--- Safe to re-run: CREATE TABLE IF NOT EXISTS / CREATE OR REPLACE VIEW
+-- NOTE: Prefer sql/cdr_db.sql as the canonical schema; this file is legacy combined dump.
 -- =============================================================================
 
 -- ------------------------------------------------------------
 -- TABLE: CDATPCSUSPECT
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS cdatpcsuspect (
-    UCID SERIAL NOT NULL,
-    PHONE varchar(15) NOT NULL,
-    OTHER varchar(15) NOT NULL,
+    UCID BIGINT NOT NULL,
+    PHONE varchar(25) NOT NULL,
+    OTHER varchar(50) NOT NULL,
     STARTTIME TIMESTAMP NOT NULL,
     DURATION numeric(5, 0) NOT NULL,
     INCOMING SMALLINT NOT NULL,

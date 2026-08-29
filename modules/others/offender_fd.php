@@ -25,13 +25,7 @@ if (!$isAjax) {
     cdat_sum_page_open();
     cdat_sum_back_link('offender_search_by_mo.php');
 }
-
-$serverName = "CPHYDERABAD1\\DAU_HYD_2023";
-$connectionInfo = array("Database" => "CDATDUPL");
-$conn = sqlsrv_connect($serverName, $connectionInfo);
-if ($conn === false) {
-    die(print_r(sqlsrv_errors(), true));
-}
+$conn = get_cdat_pdo();
 $number = $_GET['MO_KEY'];
 
 $sql0 = "SELECT ACC_NAME,IMAGE FROM COMPLETE_MO_CLASSIFICATION A LEFT JOIN MO_IMAGE_TABLE B ON A.MO_KEY=B.MO_KEY WHERE A.MO_KEY='$number'";
@@ -39,10 +33,10 @@ $sql0 = "SELECT ACC_NAME,IMAGE FROM COMPLETE_MO_CLASSIFICATION A LEFT JOIN MO_IM
 $sql1 = "SELECT DISTINCT MO_KEY, PHONE, ROLE, CATEGORY, ACC_NAME, FATHER_NAME, DATE_OF_BIRTH, AGE, FULLADDRESS, CITY_OR_DISTRICT, STATE, 
 ID_PROOF, CRIME_HEAD, MO1, MO2, CRIME_NO, Year, SEC_OF_LAW, DATE_OF_ARREST, 
 PLACE_OF_OFF, off_lat, off_long, POLICE_STATION, PS_DIVISION, PS_ZONE, 
-INC_OFFICER, OFFICIAL_MAILID FROM CDATDUPL..COMPLETE_MO_CLASSIFICATION WHERE MO_KEY='$number'";
+INC_OFFICER, OFFICIAL_MAILID FROM COMPLETE_MO_CLASSIFICATION WHERE MO_KEY='$number'";
 
-$st0 = sqlsrv_query($conn, $sql0);
-$st1 = sqlsrv_query($conn, $sql1);
+$st0 = $conn->query($sql0);
+$st1 = $conn->query($sql1);
 $heroRows = cdat_sum_fetch_all($st0);
 $detailRows = cdat_sum_fetch_all($st1);
 
@@ -102,7 +96,7 @@ if (empty($detailRows)) {
 }
 cdat_sum_results_close();
 
-sqlsrv_close($conn);
+$conn = null;
 
 if ($isAjax) {
     exit;

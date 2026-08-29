@@ -25,49 +25,44 @@ if ($hasSearch) {
             'Submit'
         );
     }
+    $conn = get_cdat_pdo();
 
-    $serverName = "10.10.46.14\DAU_HYD_2023";
-    $connectionInfo = array("Database" => "CDATDUPL");
-    $conn = sqlsrv_connect($serverName, $connectionInfo);
-
-    if ($conn === false) {
-        // die( print_r( sqlsrv_errors(), true));
-    }
-
-    // Use parameterized queries to prevent SQL injection
-    $sql8 = "SELECT 'DETAILS OF : ' + ? as PHONE1";
+        // Use parameterized queries to prevent SQL injection
+    $sql8 = "SELECT 'DETAILS OF : ' || ? as PHONE1";
     $params8 = array($name);
-    $st8 = sqlsrv_prepare($conn, $sql8, $params8);
-    sqlsrv_execute($st8);
+    $st8 = $conn->prepare($sql8);
+    $st8->execute($params8);
+    
 
     $sql9 = "SELECT DISTINCT A.IRKEY,
-                    (CASE WHEN A.IRKEY IN (SELECT DISTINCT REPLACE(IRKEY,' ','') FROM PDACT..PDACT_MAIN_TABLE
-                    WHERE ISNUMERIC(IRKEY)=1) THEN 'PDACT IS IMPOSED CLICK HERE TO VIEW THE DETAILS' ELSE '' END) PDACT,
-                    CASE WHEN A.IRKEY IN (SELECT DISTINCT REPLACE(IRKEY,' ','') FROM PDACT..PDACT_MAIN_TABLE
-                    WHERE ISNUMERIC(IRKEY)=1) THEN (SELECT DISTINCT CONVERT(VARCHAR(20), MAX(PDACT_KEY)) FROM PDACT..PDACT_MAIN_TABLE 
-                    WHERE REPLACE(IRKEY,' ','')=A.IRKEY AND ISNUMERIC(IRKEY)='1') 
+                    (CASE WHEN A.IRKEY IN (SELECT DISTINCT REPLACE(IRKEY,' ','') FROM pdact_main_table
+                    WHERE IRKEY ~ '^[0-9]+$') THEN 'PDACT IS IMPOSED CLICK HERE TO VIEW THE DETAILS' ELSE '' END) PDACT,
+                    CASE WHEN A.IRKEY IN (SELECT DISTINCT REPLACE(IRKEY,' ','') FROM pdact_main_table
+                    WHERE IRKEY ~ '^[0-9]+$') THEN (SELECT DISTINCT (MAX(PDACT_KEY)::varchar) FROM pdact_main_table 
+                    WHERE REPLACE(IRKEY,' ','')=A.IRKEY AND IRKEY ~ '^[0-9]+$') 
                     ELSE '' END PDACT_KEY,
                     A.NAME,A.ALIAS_NAME,A.FATHER_NAME,A.AGE,A.PRESENT_ADDRESS,A.CRIME_HEAD,A.MO,A.CRIME_NO,A.YEAR,A.SEC_OF_LAW,A.POLICE_STATION,
-                    CONVERT(VARCHAR(20),A.DATE_OF_ARREST) DATE_OF_ARREST 
-                    FROM FORMS..IR_PARTICULARS A
-                    INNER JOIN FORMS..OFFENCE_DETAILS B ON A.NAME LIKE '%' + REPLACE(?, ' ', '%') + '%' 
-                    AND (B.CRIME_HEAD LIKE '%' + REPLACE(?, ' ', '%') + '%' OR 
-                    B.MO LIKE '%' + REPLACE(?, ' ', '%') + '%') 
+                    (A.DATE_OF_ARREST)::varchar DATE_OF_ARREST 
+                    FROM ir_particulars A
+                    INNER JOIN OFFENCE_DETAILS B ON A.NAME LIKE '%' || REPLACE(?, ' ', '%') || '%' 
+                    AND (B.CRIME_HEAD LIKE '%' || REPLACE(?, ' ', '%') || '%' OR 
+                    B.MO LIKE '%' || REPLACE(?, ' ', '%') || '%') 
                     AND LTRIM(RTRIM(?)) != '' 
-                    AND LEN(REPLACE(?, ' ', '')) > '4' 
+                    AND LENGTH(REPLACE(?, ' ', '')) > '4' 
                     AND A.IRKEY = B.IRKEY 
                     ORDER BY DATE_OF_ARREST DESC";
 
     $params9 = array($name, $crimeHead, $crimeHead, $name, $name);
-    $st9 = sqlsrv_prepare($conn, $sql9, $params9);
-    sqlsrv_execute($st9);
+    $st9 = $conn->prepare($sql9);
+    $st9->execute($params9);
+    
 
     if ($st9 === false) {
-        //  die(print_r(sqlsrv_errors(), true));
+        //  die(print_r(error_get_last(), true));
     }
 
     $bannerTitle = 'DETAILS OF : ' . $name;
-    if ($st8 && ($bannerRow = sqlsrv_fetch_array($st8, SQLSRV_FETCH_ASSOC))) {
+    if ($st8 && ($bannerRow = $st8->fetch(PDO::FETCH_ASSOC))) {
         $bannerTitle = (string) ($bannerRow['PHONE1'] ?? $bannerTitle);
     }
 
@@ -123,10 +118,10 @@ if ($hasSearch) {
     }
 
     if ($st9) {
-        sqlsrv_free_stmt($st9);
+        $st9 = null;
     }
     if ($conn) {
-        sqlsrv_close($conn);
+        $conn = null;
     }
 
     if ($isAjax) {

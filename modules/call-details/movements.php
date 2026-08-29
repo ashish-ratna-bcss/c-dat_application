@@ -22,15 +22,9 @@ if ($hasSearch) {
 
     set_time_limit(0);
     require_once CDAT_COMMON . '/activity_logger.php';
-    require_once CDAT_COMMON . '/cdr_enrichment_sql.php';
     audit_log('Movements / Call Details', 'Search', ['phone_number' => $number]);
 
-    $serverName = 'CPHYDERABAD1\\DAU_HYD_2023';
-    $connectionInfo = ['Database' => 'CDATDUPL'];
-    $conn = sqlsrv_connect($serverName, $connectionInfo);
-    if ($conn === false) {
-        die(print_r(sqlsrv_errors(), true));
-    }
+    $conn = get_cdat_pdo();
 
     $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
     if ($page <= 0) {
@@ -41,33 +35,35 @@ if ($hasSearch) {
 
     $sql = "
 SELECT DISTINCT
-    A.PHONE, A.OTHER, ISNULL(C.NICKNAME,'') AS NICKNAME,
-    CONVERT(VARCHAR(10),A.STARTTIME,120) AS DATE1,
-    CONVERT(VARCHAR(8),A.STARTTIME,108) AS TIME1,
-    CONVERT(VARCHAR,A.STARTTIME,120) AS STARTTIME,
+    A.PHONE, A.OTHER, COALESCE(C.NICKNAME,'') AS NICKNAME,
+    TO_CHAR(A.STARTTIME, 'YYYY-MM-DD') AS DATE1,
+    TO_CHAR(A.STARTTIME, 'HH24:MI:SS') AS TIME1,
+    TO_CHAR(A.STARTTIME, 'YYYY-MM-DD HH24:MI:SS') AS STARTTIME,
     A.DURATION,
     CASE WHEN A.INCOMING='1' THEN 'IN' ELSE 'OUT' END AS TYPE,
     A.IMEINUMBER, A.CELLTOWERID
-FROM CDATDUPL.dbo.CDATPCSUSPECT A WITH (NOLOCK)
-LEFT JOIN CDATDUPL.dbo.CDATSUSPECT C WITH (NOLOCK) ON A.OTHER = C.PHONE
+FROM CDATPCSUSPECT A 
+LEFT JOIN CDATSUSPECT C  ON A.OTHER = C.PHONE
 WHERE A.PHONE = ?
 ORDER BY STARTTIME ASC
-OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+LIMIT ? OFFSET ?";
 
-    $st = sqlsrv_query($conn, $sql, [$number, $offset, $limit], ['Scrollable' => SQLSRV_CURSOR_KEYSET]);
+    $st = $conn->prepare($sql);
+    $st->execute([$number, $offset, $limit]);
     if ($st === false) {
-        die(print_r(sqlsrv_errors(), true));
+        die(print_r(error_get_last(), true));
     }
 
-    $count_stmt = sqlsrv_query($conn, 'SELECT COUNT(*) AS TOTAL FROM CDATDUPL.dbo.CDATPCSUSPECT WITH (NOLOCK) WHERE PHONE = ?', [$number]);
-    $count_row = sqlsrv_fetch_array($count_stmt, SQLSRV_FETCH_ASSOC);
+    $count_stmt = $conn->prepare('SELECT COUNT(*) AS TOTAL FROM CDATPCSUSPECT  WHERE PHONE = ?');
+    $count_stmt->execute([$number]);
+    $count_row = $count_stmt->fetch(PDO::FETCH_ASSOC);
     $total_records = (int) ($count_row['TOTAL'] ?? 0);
 
     $rows = [];
-    while ($row = sqlsrv_fetch_array($st, SQLSRV_FETCH_ASSOC)) {
+    while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
         $rows[] = $row;
     }
-    $towerMap = cdat_fetch_tower_map($conn, array_column($rows, 'CELLTOWERID'));
+    $towerMap = cdat_fetch_tower_map_local($conn, array_column($rows, 'CELLTOWERID'));
 
     if (empty($rows)) {
         cdat_sum_empty_state();
@@ -111,8 +107,8 @@ OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
         echo '</div>';
     }
 
-    sqlsrv_free_stmt($st);
-    sqlsrv_close($conn);
+    $st = null;
+    $conn = null;
 
     if ($isAjax) {
         exit;
@@ -132,3 +128,67 @@ cdat_sum_search_card(
 );
 cdat_sum_page_close();
 layout_end();
+
+function cdat_celltower_short_id_local(?string $cellTowerId): string
+{
+    $cellTowerId = trim((string) $cellTowerId);
+    if ($cellTowerId === '') {
+        return '';
+    }
+
+    return (string) preg_replace('/^[^-]+-[^-]+-/', '', $cellTowerId);
+}
+
+function cdat_fetch_tower_map_local($conn, array $rawCellTowerIds): array
+{
+    $shortByRaw = [];
+    foreach ($rawCellTowerIds as $rawId) {
+        $rawId = trim((string) $rawId);
+        if ($rawId === '') {
+            continue;
+        }
+        $shortByRaw[$rawId] = cdat_celltower_short_id_local($rawId);
+    }
+
+    $shortIds = array_values(array_unique(array_filter($shortByRaw)));
+    if ($shortIds === []) {
+        return [];
+    }
+
+    $placeholders = implode(',', array_fill(0, count($shortIds), '?'));
+    $sql = "SELECT DISTINCT ON (celltowerid)
+                celltowerid,
+                COALESCE(operator, '') AS operator,
+                COALESCE(state, '') AS state,
+                COALESCE(siteaddress, areadescription, '') AS areadescription,
+                COALESCE(lat, '') AS lat,
+                COALESCE(long, '') AS long,
+                COALESCE(azimuth, '') AS azimuth
+            FROM cdatcelltowerareanew
+            WHERE celltowerid IN ($placeholders)
+            ORDER BY celltowerid, lastupdate DESC NULLS LAST";
+
+    $st = $conn->prepare($sql);
+    $st->execute($shortIds);
+
+    $byShort = [];
+    while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+        $byShort[$row['CELLTOWERID']] = [
+            'operator' => $row['OPERATOR'] ?? '',
+            'state' => $row['STATE'] ?? '',
+            'areadescription' => $row['AREADESCRIPTION'] ?? '',
+            'lat' => $row['LAT'] ?? '',
+            'long' => $row['LONG'] ?? '',
+            'azimuth' => $row['AZIMUTH'] ?? '',
+        ];
+    }
+
+    $byRaw = [];
+    foreach ($shortByRaw as $rawId => $shortId) {
+        if ($shortId !== '' && isset($byShort[$shortId])) {
+            $byRaw[$rawId] = $byShort[$shortId];
+        }
+    }
+
+    return $byRaw;
+}

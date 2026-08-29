@@ -31,19 +31,11 @@ if ($hasSearch) {
 
     require_once CDAT_COMMON . '/activity_logger.php';
     require_once CDAT_COMMON . '/sql_safe.php';
-    require_once CDAT_COMMON . '/cdr_enrichment_sql.php';
-
+    
     audit_require_session();
+    $conn = get_cdat_pdo();
 
-    $serverName = "CPHYDERABAD1\DAU_HYD_2023";
-    $connectionInfo = array("Database" => "CDATDUPL");
-    $conn = sqlsrv_connect($serverName, $connectionInfo);
-
-    if ($conn === false) {
-        die(print_r(sqlsrv_errors(), true));
-    }
-
-    // Sanitize input
+        // Sanitize input
     $number = sql_safe_phone($_POST['PHONE_NO'] ?? '');
     $operator = sql_safe_alnum($_POST['OPERATOR'] ?? '', 50);
     $state = sql_safe_alnum($_POST['STATE'] ?? '', 50);
@@ -60,34 +52,35 @@ if ($hasSearch) {
     ]);
 
     // Use parameterized queries to prevent SQL injection
-    $sql1 = "SELECT DISTINCT PHONE,OTHER,CONVERT(VARCHAR,STARTTIME,20) AS STARTTIME,DURATION,
+    $sql1 = "CREATE TEMP TABLE temp_TT AS SELECT DISTINCT PHONE,OTHER,TO_CHAR((STARTTIME)::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS STARTTIME,DURATION,
             CASE WHEN INCOMING='1' THEN 'IN' ELSE 'OUT' END AS TYPE,
             IMEINUMBER,CELLTOWERID,STATE_KEY,PROVIDER_KEY  
-            INTO #TT FROM CDATDUPL.DBO.CDATPCSUSPECT 
-            WHERE PHONE = ? AND convert(char(10),STARTTIME,121) BETWEEN ? AND ?";
+             FROM CDATPCSUSPECT 
+            WHERE PHONE = ? AND TO_CHAR(STARTTIME, 'YYYY-MM-DD') BETWEEN ? AND ?";
     $params1 = array($number, $f_date, $t_date);
-    $st1 = sqlsrv_prepare($conn, $sql1, $params1);
-    sqlsrv_execute($st1);
-    sqlsrv_render_query_error($st1, 'Calls between dates base');
+    $st1 = $conn->prepare($sql1);
+    $st1->execute($params1);
+    
+    
 
-    // Use the cdr_sql_enrich_tt function
-    $sql2 = cdr_sql_enrich_tt($operator, $state);
-    $st2 = sqlsrv_query($conn, $sql2);
-    sqlsrv_render_query_error($st2, 'Tower enrichment');
+    $sql2 = cdr_sql_enrich_tt_local($operator, $state);
+    $st2 = $conn->query($sql2);
+    
 
     $sql5 = "SELECT PHONE,OTHER,NICKNAME,STARTTIME,DURATION,TYPE,IMEINUMBER,CELLTOWERID,OPERATOR,AREADESCRIPTION 
-             FROM #temp_cdrs ORDER BY STARTTIME";
-    $st5 = sqlsrv_query($conn, $sql5);
-    sqlsrv_render_query_error($st5, 'Result ordering');
+             FROM temp_temp_cdrs ORDER BY STARTTIME";
+    $st5 = $conn->query($sql5);
+    
 
-    $sql6 = "SELECT 'CALL DETAILS OF MOBILE NO: ' + ? + ' FROM: ' + ? + ' TO: ' + ? AS PHONE";
+    $sql6 = "SELECT 'CALL DETAILS OF MOBILE NO: ' || ? || ' FROM: ' || ? || ' TO: ' || ? AS PHONE";
     $params6 = array($number, $f_date, $t_date);
-    $st6 = sqlsrv_prepare($conn, $sql6, $params6);
-    sqlsrv_execute($st6);
-    sqlsrv_render_query_error($st6, 'Title');
+    $st6 = $conn->prepare($sql6);
+    $st6->execute($params6);
+    
+    
 
     $bannerTitle = '';
-    while ($row = sqlsrv_fetch_array($st6, SQLSRV_FETCH_ASSOC)) {
+    while ($row = $st6->fetch(PDO::FETCH_ASSOC)) {
         $bannerTitle = (string) ($row['PHONE'] ?? '');
     }
 
@@ -124,9 +117,9 @@ if ($hasSearch) {
     }
 
     if ($st5) {
-        sqlsrv_free_stmt($st5);
+        $st5 = null;
     }
-    sqlsrv_close($conn);
+    $conn = null;
 
     if ($isAjax) {
         exit;
@@ -151,3 +144,70 @@ cdat_sum_search_card(
 );
 cdat_sum_page_close();
 layout_end();
+
+function cdr_escape_sql_literal_local(string $value): string
+{
+    return str_replace("'", "''", $value);
+}
+
+function cdr_sql_enrich_tt_local(string $operator = '', string $state = '', array $opts = []): string
+{
+    $operator = cdr_escape_sql_literal_local($operator);
+    $state = cdr_escape_sql_literal_local($state);
+    $useKeys = !empty($opts['use_keys']);
+    $withLastUpdate = !empty($opts['with_last_update']);
+    $withLatLong = !empty($opts['with_lat_long']);
+    $withStateCol = !empty($opts['with_state_col']);
+    $withDateTimeCols = !empty($opts['with_date_time_cols']);
+    $outputTable = $opts['output_table'] ?? 'temp_temp_cdrs';
+
+    $joinOn = $useKeys
+        ? 'A.CELLTOWERID=B.CELLTOWERID AND A.STATE_KEY=B.STATE_KEY AND A.PROVIDER_KEY=B.PROVIDER_KEY'
+        : 'A.CELLTOWERID=B.CELLTOWERID';
+
+    if ($withLastUpdate) {
+        $areaExpr = "(CASE WHEN A.CELLTOWERID=B.CELLTOWERID THEN MAX(COALESCE(SITEADDRESS, AREADESCRIPTION, '')) ELSE '' END ||', LAST_UPDATE:'||TO_CHAR((LASTUPDATE)::timestamp, 'YYYY-MM-DD HH24:MI:SS'))";
+    } else {
+        $areaExpr = "CASE WHEN A.CELLTOWERID=B.CELLTOWERID THEN MAX(COALESCE(SITEADDRESS, AREADESCRIPTION, '')) ELSE '' END";
+    }
+
+    $dateTimeSelect = $withDateTimeCols ? 'DATE,TIME,' : '';
+    $stateSelect = $withStateCol ? ',B.STATE' : '';
+    $latSelect = $withLatLong ? ',LAT,LONG,AZIMUTH AS AZM' : '';
+
+    $groupCols = ['A.PHONE', 'OTHER', 'NICKNAME'];
+    if ($withDateTimeCols) {
+        $groupCols[] = 'DATE';
+        $groupCols[] = 'TIME';
+    }
+    $groupCols = array_merge($groupCols, [
+        'STARTTIME', 'DURATION', 'TYPE', 'A.IMEINUMBER', 'A.CELLTOWERID',
+        'B.CELLTOWERID', 'LASTUPDATE', 'B.OPERATOR',
+    ]);
+    if ($withStateCol) {
+        $groupCols[] = 'B.STATE';
+    }
+    if ($withLatLong) {
+        $groupCols[] = 'LAT';
+        $groupCols[] = 'LONG';
+        $groupCols[] = 'AZIMUTH';
+    }
+    $groupBy = implode(', ', $groupCols);
+
+    $filters = [];
+    if ($operator !== '') {
+        $filters[] = "B.OPERATOR='{$operator}'";
+    }
+    if ($state !== '') {
+        $filters[] = "B.STATE='{$state}'";
+    }
+    $where = $filters ? 'WHERE ' . implode(' AND ', $filters) : '';
+
+    return "CREATE TEMP TABLE {$outputTable} AS SELECT DISTINCT A.PHONE,OTHER,CASE WHEN other in (select phone from cdatsuspect) THEN nickname ELSE ' ' END as NICKNAME,
+{$dateTimeSelect}STARTTIME,DURATION,TYPE,A.IMEINUMBER,A.CELLTOWERID,COALESCE(B.OPERATOR, '') AS OPERATOR{$stateSelect},
+{$areaExpr} AS AREADESCRIPTION{$latSelect} FROM temp_TT A
+LEFT JOIN cdatcelltowerareanew B ON {$joinOn}
+left join cdatsuspect c on a.other=c.phone
+{$where}
+GROUP BY {$groupBy}";
+}

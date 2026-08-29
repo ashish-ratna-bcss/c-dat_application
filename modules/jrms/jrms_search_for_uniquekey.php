@@ -9,39 +9,34 @@ if (!$isAjax) {
     cdat_sum_page_open();
     cdat_sum_back_link('jrms_search.php');
 }
-
-$serverName = "CPHYDERABAD1\\DAU_HYD_2023";
-$connectionInfo = array( "Database"=>"CDATDUPL");
-$conn = sqlsrv_connect( $serverName, $connectionInfo );
-if( $conn === false ) {
-    die( print_r( sqlsrv_errors(), true));
-}
+$conn = get_cdat_pdo();
 $UNIQUE_KEY = $_GET['UNIQUE_KEY'];
 
 
 
-$sql1 ="SET DATEFORMAT DMY SELECT DISTINCT PRISONERNO,PSARRESTED,NAME,FATHERSNAME,CRIMENOS,HEADOFCRIME,MOBILENO PHONE,
-CASE WHEN LEN(RIGHT(NAME,CHARINDEX('/',REVERSE(NAME))))>1 THEN RIGHT(NAME,CHARINDEX('/',REVERSE(NAME))-1) ELSE '' END IDPROOF,
+$sql1 ="CREATE TEMP TABLE temp_jrms_temp AS SELECT DISTINCT PRISONERNO,PSARRESTED,NAME,FATHERSNAME,CRIMENOS,HEADOFCRIME,MOBILENO PHONE,
+CASE WHEN LENGTH(RIGHT(NAME,POSITION('/' IN REVERSE(NAME))))>1 THEN RIGHT(NAME,POSITION('/' IN REVERSE(NAME))-1) ELSE '' END IDPROOF,
 ADDR_DURINGRELEASE ADDR_DURING_RELEASE,GENDER,JAILNAME,
-CONVERT(VARCHAR(20),CONVERT(DATE,ADMISSION_TO_JAIL)) ADD_TO_JAIL,CONVERT(VARCHAR(20),CONVERT(DATE,RELEASEDT)) RELEASE_DATE,PHOTO INTO #TEMP FROM 
-JRMS..JRMS_TOTAL_2012_TO_2017
+TO_CHAR(NULLIF(TRIM(admission_to_jail), '')::date, 'YYYY-MM-DD') AS add_to_jail,
+TO_CHAR(NULLIF(TRIM(releasedt), '')::date, 'YYYY-MM-DD') AS release_date, photo  FROM 
+jrms_total_2012_to_2017
 WHERE  UNIQUE_KEY='$UNIQUE_KEY' ";
 
 $sql2 ="SELECT PRISONERNO,PSARRESTED,NAME,FATHERSNAME,CRIMENOS,HEADOFCRIME,PHONE,IDPROOF,ADDR_DURING_RELEASE,
-JAILNAME,ADD_TO_JAIL,RELEASE_DATE,CONVERT(IMAGE,PHOTO) PHOTO,CASE WHEN IDPROOF!='' AND ISNUMERIC(IDPROOF)='1' AND IDPROOF in (select distinct AADHAR_NO FROM FORMS..IR_PARTICULARS) THEN 'IR AVAILABLE' ELSE '' END IRFORM,
-CASE WHEN IDPROOF!='' AND ISNUMERIC(IDPROOF)='1' AND 
-IDPROOF in (select distinct AADHAR_NO FROM FORMS..IR_PARTICULARS) THEN (SELECT DISTINCT CONVERT(VARCHAR(20),MAX(IRKEY)) IRKEY FROM FORMS..IR_PARTICULARS WHERE 
-AADHAR_NO !='' AND AADHAR_NO=CONVERT(VARCHAR(20),IDPROOF))  ELSE '' END IRKEY FROM #TEMP ORDER BY JAILNAME, RELEASE_DATE DESC";
+JAILNAME,ADD_TO_JAIL,RELEASE_DATE, photo,CASE WHEN IDPROOF!='' AND IDPROOF ~ '^[0-9]+$' AND IDPROOF in (select distinct AADHAR_NO FROM ir_particulars) THEN 'IR AVAILABLE' ELSE '' END IRFORM,
+CASE WHEN IDPROOF!='' AND IDPROOF ~ '^[0-9]+$' AND 
+IDPROOF in (select distinct AADHAR_NO FROM ir_particulars) THEN (SELECT DISTINCT (MAX(IRKEY)::varchar) IRKEY FROM ir_particulars WHERE 
+AADHAR_NO !='' AND AADHAR_NO=(IDPROOF)::varchar)  ELSE '' END IRKEY FROM temp_jrms_temp ORDER BY JAILNAME, RELEASE_DATE DESC";
 
 $sql6="SELECT 'ACCUSED RELEASED FROM JAIL' PHONE ";
 
 
-$st1 = sqlsrv_query( $conn, $sql1 );
-$st2 = sqlsrv_query( $conn, $sql2 );
-$st6 = sqlsrv_query( $conn, $sql6 );
+$st1 = $conn->query($sql1);
+$st2 = $conn->query($sql2);
+$st6 = $conn->query($sql6);
 
 $banner = 'ACCUSED RELEASED FROM JAIL';
-if ($st6 && ($b = sqlsrv_fetch_array($st6, SQLSRV_FETCH_ASSOC))) {
+if ($st6 && ($b = $st6->fetch(PDO::FETCH_ASSOC))) {
     $banner = (string) ($b['PHONE'] ?? $banner);
 }
 $rows = cdat_sum_fetch_all($st2);
@@ -80,7 +75,7 @@ if (empty($rows)) {
     cdat_sum_generic_table_close();
 }
 cdat_sum_results_close();
-sqlsrv_close($conn);
+$conn = null;
 if ($isAjax) {
     exit;
 }

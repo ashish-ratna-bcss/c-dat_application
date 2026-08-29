@@ -10,7 +10,7 @@ $hasSearch = $ps !== '';
 cdat_sum_ajax_need_search($hasSearch, 'Select a police station and try again.');
 
 $db_handle = new DBController();
-$query = "SELECT DISTINCT UPPER(LTRIM(RTRIM(PD_ACT_PS))) PD_ACT_PS FROM PDACT..PDACT_MAIN_TABLE";
+$query = "SELECT DISTINCT UPPER(LTRIM(RTRIM(PD_ACT_PS))) PD_ACT_PS FROM pdact_main_table";
 $psRows = $db_handle->runQuery($query) ?: [];
 $psOptions = ['' => 'Select Police Station'];
 foreach ($psRows as $r) {
@@ -41,25 +41,19 @@ if ($hasSearch) {
             'Submit'
         );
     }
+    $conn = get_cdat_pdo();
+        $number = $ps;
 
-    $serverName = "CPHYDERABAD1\\DAU_HYD_2023";
-    $connectionInfo = array('Database' => 'PDACT');
-    $conn = sqlsrv_connect($serverName, $connectionInfo);
-    if ($conn === false) {
-        die(print_r(sqlsrv_errors(), true));
-    }
-    $number = $ps;
-
-    $sql0 = "select distinct PDACT_KEY,REPLACE(IRKEY,' ','') AS IRKEY,NAME,FATHER_NAME,AGE,DISTRICT AS NATIVE_DISTRICT,STATE AS NATIVE_STATE,PD_ACT_PS,
-CONVERT(VARCHAR(20),Date_Of_Arrest) AS DATE_OF_PDACT into #temp from PDACT_MAIN_TABLE WHERE PD_ACT_PS LIKE '%$number%'";
+    $sql0 = "CREATE TEMP TABLE temp_jrms_temp AS select distinct PDACT_KEY,REPLACE(IRKEY,' ','') AS IRKEY,NAME,FATHER_NAME,AGE,DISTRICT AS NATIVE_DISTRICT,STATE AS NATIVE_STATE,PD_ACT_PS,
+(Date_Of_Arrest)::varchar AS DATE_OF_PDACT  from pdact_main_table WHERE PD_ACT_PS LIKE '%$number%'";
 
     $sql1 = "select PDACT_KEY,A.IRKEY,NAME,FATHER_NAME,AGE,NATIVE_DISTRICT,NATIVE_STATE,PD_ACT_PS,
-CONVERT(VARCHAR(20),DATE_OF_PDACT) AS DATE_OF_PDACT,CASE WHEN CONVERT(VARCHAR(20),A.IRKEY)=CONVERT(VARCHAR(20),B.IRKEY)
-THEN IMAGE ELSE (SELECT IMAGE FROM FORMS..IMAGE_TABLE WHERE IRKEY='113769')END  AS IMAGE
-FROM #TEMP A LEFT JOIN FORMS..IMAGE_TABLE B ON CONVERT(VARCHAR(20),A.IRKEY)=CONVERT(VARCHAR(20),B.IRKEY) ";
+(DATE_OF_PDACT)::varchar AS DATE_OF_PDACT,CASE WHEN (A.IRKEY)::varchar=(B.IRKEY)::varchar
+THEN IMAGE ELSE (SELECT IMAGE FROM image_table WHERE IRKEY='113769')END  AS IMAGE
+FROM temp_jrms_temp A LEFT JOIN image_table B ON (A.IRKEY)::varchar=(B.IRKEY)::varchar ";
 
-    sqlsrv_query($conn, $sql0);
-    $st1 = sqlsrv_query($conn, $sql1);
+    $conn->query($sql0);
+    $st1 = $conn->query($sql1);
     $rows = cdat_sum_fetch_all($st1);
 
     if (empty($rows)) {
@@ -93,7 +87,7 @@ FROM #TEMP A LEFT JOIN FORMS..IMAGE_TABLE B ON CONVERT(VARCHAR(20),A.IRKEY)=CONV
         cdat_sum_generic_table_close();
         cdat_sum_results_close();
     }
-    sqlsrv_close($conn);
+    $conn = null;
 
     if ($isAjax) {
         exit;

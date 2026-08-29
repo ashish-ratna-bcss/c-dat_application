@@ -5,24 +5,18 @@ require_once CDAT_COMMON . '/includes/sum_ui.php';
 
 layout_begin('Undetected Cases List');
 cdat_sum_page_open();
-
-$serverName = "CPHYDERABAD1\\DAU_HYD_2023";
-$connectionInfo = array('Database' => 'CDATDUPL');
-$conn = sqlsrv_connect($serverName, $connectionInfo);
-if ($conn === false) {
-    die(print_r(sqlsrv_errors(), true));
-}
-
+cdat_sum_begin_heavy_search();
+$conn = get_cdat_pdo();
 $sql8 = "select 'UNDETECTED CASES MATCHED WITH OLD OFFENDERS FINGER PRINT LIST' PHONE1";
 $sql9 = "select SNO, POLICE_STATION, ZONE, CRIME_NO, SECTION, TIN_NO, DATE_OF_IDENTITY,
-LOSS_OF_PROPERTY, NAME_AND_PARTICULARS, IRKEY, CCNO, DOA, REMARKS,IMAGE  from IRFORMS..FINGERPRINT_MATCHED_UNDETECTED_CASES_WITHIMAGE
+LOSS_OF_PROPERTY, NAME_AND_PARTICULARS, IRKEY, CCNO, DOA, REMARKS FROM fingerprint_matched_undetected_cases_withimage
 ORDER BY ZONE,IRKEY";
 
-$st8 = sqlsrv_query($conn, $sql8);
-$st9 = sqlsrv_query($conn, $sql9);
+$st8 = $conn->query($sql8);
+$st9 = $conn->query($sql9);
 
 $banner = 'UNDETECTED CASES MATCHED WITH OLD OFFENDERS FINGER PRINT LIST';
-if ($st8 && ($b = sqlsrv_fetch_array($st8, SQLSRV_FETCH_ASSOC))) {
+if ($st8 && ($b = $st8->fetch(PDO::FETCH_ASSOC))) {
     $banner = (string) ($b['PHONE1'] ?? $banner);
 }
 
@@ -62,9 +56,9 @@ if (empty($rows)) {
 }
 
 if ($st9) {
-    sqlsrv_free_stmt($st9);
+    $st9 = null;
 }
-sqlsrv_close($conn);
+$conn = null;
 
 cdat_sum_page_close();
 layout_end();

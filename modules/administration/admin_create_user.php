@@ -89,7 +89,7 @@ if ($success !== '') {
   <select class="form-select" name="role" id="role" data-placeholder="Select role">
     <option value="" data-placeholder="1">Select role</option>
     <option value="user">User (Standard Access)</option>
-    <option value="poweruser">Power User (User + Bulk Upload Access)</option>
+    <option value="poweruser">Power User (User || Bulk Upload Access)</option>
     <option value="admin">Admin (All Access)</option>
   </select>
 </div>

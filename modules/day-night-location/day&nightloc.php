@@ -6,8 +6,7 @@ require_once CDAT_COMMON . '/includes/sum_ui.php';
 $isAjax = cdat_sum_is_ajax();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    require_once CDAT_COMMON . '/cdr_enrichment_sql.php';
-    require_once CDAT_COMMON . '/sql_safe.php';
+        require_once CDAT_COMMON . '/sql_safe.php';
 
     $number = sql_safe_phone($_POST['PHONE_NO'] ?? '');
     if ($number !== '') {
@@ -15,34 +14,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             layout_begin('Day / Night Location');
             cdat_sum_page_open();
         }
-
-        $serverName = 'CPHYDERABAD1\\DAU_HYD_2023';
-        $connectionInfo = ['Database' => 'CDATDUPL'];
-        $conn = sqlsrv_connect($serverName, $connectionInfo);
-        if ($conn === false) {
-            die(print_r(sqlsrv_errors(), true));
-        }
-
-        $numberSql = cdr_escape_sql_literal($number);
+        $conn = get_cdat_pdo();
+                $numberSql = cdr_escape_sql_literal_local($number);
 
         $dn_top_towers = static function ($conn, string $numberSql, string $timePredicate): array {
-            $sql = "SELECT TOP 10
+            $sql = "SELECT 
                         PHONE,
                         CELLTOWERID,
                         COUNT(CELLTOWERID) AS CALLS
-                    FROM CDATDUPL.DBO.CDATPCSUSPECT
+                    FROM CDATPCSUSPECT
                     WHERE PHONE = '{$numberSql}'
                       AND ({$timePredicate})
                     GROUP BY PHONE, CELLTOWERID
-                    ORDER BY CALLS DESC";
+                    ORDER BY CALLS DESC
+                    LIMIT 10";
 
-            $st = sqlsrv_query($conn, $sql);
+            $st = $conn->query($sql);
             if ($st === false) {
                 return [];
             }
 
             $rows = [];
-            while ($row = sqlsrv_fetch_array($st, SQLSRV_FETCH_ASSOC)) {
+            while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
                 $rows[] = $row;
             }
             return $rows;
@@ -84,8 +77,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             cdat_sum_generic_table_close();
         };
 
-        $dayPred = "CONVERT(CHAR(8),STARTTIME,108)<'22:00:00' AND CONVERT(CHAR(8),STARTTIME,108)>'05:00:00'";
-        $nightPred = "CONVERT(CHAR(8),STARTTIME,108)>'22:00:00' OR CONVERT(CHAR(8),STARTTIME,108)<'07:00:00'";
+        $dayPred = "TO_CHAR(STARTTIME, 'HH24:MI:SS')<'22:00:00' AND TO_CHAR(STARTTIME, 'HH24:MI:SS')>'05:00:00'";
+        $nightPred = "TO_CHAR(STARTTIME, 'HH24:MI:SS')>'22:00:00' OR TO_CHAR(STARTTIME, 'HH24:MI:SS')<'07:00:00'";
 
         $dayRows = $dn_top_towers($conn, $numberSql, $dayPred);
         $nightRows = $dn_top_towers($conn, $numberSql, $nightPred);
@@ -94,14 +87,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             array_column($dayRows, 'CELLTOWERID'),
             array_column($nightRows, 'CELLTOWERID')
         );
-        $towerMap = cdat_fetch_tower_map($conn, $towerIds);
+        $towerMap = cdat_fetch_tower_map_local($conn, $towerIds);
 
         echo '<div class="sum-results">';
         $dn_render_loc_table($dayRows, $towerMap, 'Day Location of Mobile No: ' . $number, 'day_loc_table', 'day_location.csv');
         $dn_render_loc_table($nightRows, $towerMap, 'Night Location of Mobile No: ' . $number, 'night_loc_table', 'night_location.csv');
         echo '</div>';
 
-        sqlsrv_close($conn);
+        $conn = null;
 
         if ($isAjax) {
             exit;
@@ -128,3 +121,75 @@ cdat_sum_search_card(
 );
 cdat_sum_page_close();
 layout_end();
+
+function cdr_escape_sql_literal_local(string $value): string
+{
+    return str_replace("'", "''", $value);
+}
+
+function cdat_celltower_short_id_local(?string $cellTowerId): string
+{
+    $cellTowerId = trim((string) $cellTowerId);
+    if ($cellTowerId === '') {
+        return '';
+    }
+
+    return (string) preg_replace('/^[^-]+-[^-]+-/', '', $cellTowerId);
+}
+
+function cdat_fetch_tower_map_local($conn, array $rawCellTowerIds): array
+{
+    $shortByRaw = [];
+    foreach ($rawCellTowerIds as $rawId) {
+        $rawId = trim((string) $rawId);
+        if ($rawId === '') {
+            continue;
+        }
+        $shortByRaw[$rawId] = cdat_celltower_short_id_local($rawId);
+    }
+
+    $shortIds = array_values(array_unique(array_filter($shortByRaw)));
+    if ($shortIds === []) {
+        return [];
+    }
+
+    $placeholders = implode(',', array_fill(0, count($shortIds), '?'));
+    $sql = "SELECT DISTINCT ON (celltowerid)
+                celltowerid,
+                COALESCE(operator, '') AS operator,
+                COALESCE(state, '') AS state,
+                COALESCE(siteaddress, areadescription, '') AS areadescription,
+                COALESCE(lat, '') AS lat,
+                COALESCE(long, '') AS long,
+                COALESCE(azimuth, '') AS azimuth
+            FROM cdatcelltowerareanew
+            WHERE celltowerid IN ($placeholders)
+            ORDER BY celltowerid, lastupdate DESC NULLS LAST";
+
+    $st = $conn->prepare($sql);
+    $st->execute($shortIds);
+    if ($st === false) {
+        return [];
+    }
+
+    $byShort = [];
+    while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+        $byShort[$row['CELLTOWERID']] = [
+            'operator' => $row['OPERATOR'] ?? '',
+            'state' => $row['STATE'] ?? '',
+            'areadescription' => $row['AREADESCRIPTION'] ?? '',
+            'lat' => $row['LAT'] ?? '',
+            'long' => $row['LONG'] ?? '',
+            'azimuth' => $row['AZIMUTH'] ?? '',
+        ];
+    }
+
+    $byRaw = [];
+    foreach ($shortByRaw as $rawId => $shortId) {
+        if ($shortId !== '' && isset($byShort[$shortId])) {
+            $byRaw[$rawId] = $byShort[$shortId];
+        }
+    }
+
+    return $byRaw;
+}

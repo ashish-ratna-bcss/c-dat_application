@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../common/bootstrap.php';
 // One page for both halves of this screen: the form, and the results.
-// Was view/bulk_cdat_contacts.htm (form) + controller/bulk_cdat_contacts.php (handler).
+// Was view/bulk_cdat_contacts.htm (form) || controller/bulk_cdat_contacts.php (handler).
 // GET shows the form; a submit renders the form and the results below it.
 // !empty($_GET) covers links that pass parameters in the query string.
 $__submitted = ($_SERVER['REQUEST_METHOD'] === 'POST') || !empty($_GET);
@@ -32,96 +32,96 @@ if ($__submitted && $phoneValue !== '') {
             'Search'
         );
     }
-
-    $serverName = "CPHYDERABAD1\DAU_HYD_2023";
-    $connectionInfo = array( "Database"=>"CDATDUPL");
-    $conn = sqlsrv_connect( $serverName, $connectionInfo );
-    if( $conn === false ) {
-        die( print_r( sqlsrv_errors(), true));
-    }
-    $number = (string) ($_POST['PHONE_NO'] ?? '');
+    $conn = get_cdat_pdo();
+    cdat_sum_begin_heavy_search();
+        $number = (string) ($_POST['PHONE_NO'] ?? '');
     $phones = cdat_sum_split_phones($number);
     $number2 = cdat_sum_sql_phone_in($phones);
 
-    $sqlB1= "CREATE TABLE #T1 (PHONE NVARCHAR (20) NULL)";
+    $sqlB1= "CREATE TEMP TABLE temp_t1 (phone varchar(20))";
 
-    $sql1="SELECT  DISTINCT PHONE,'' AS FIRST_CALL,'' AS LAST_CALL,'' AS NICKNAME,''AS MO,'' AS CATEGORY,''LAST_UPDATED,''INC_OFFICER INTO #T FROM #T1";
+    $sql1="CREATE TEMP TABLE temp_t AS SELECT DISTINCT PHONE,'' AS FIRST_CALL,'' AS LAST_CALL,'' AS NICKNAME,''AS MO,'' AS CATEGORY,''LAST_UPDATED,''INC_OFFICER FROM temp_t1";
 
-    $sql10="SELECT DISTINCT A.PHONE,CONVERT(VARCHAR,MIN(STARTTIME),20) AS FIRST_CALL,CONVERT(VARCHAR,MAX(STARTTIME),20) AS LAST_CALL,B.NICKNAME+'_'+B.ROLE NICKNAME,B.MO,CATEGORY,CONVERT(VARCHAR,MAX(A.ASONDATE),20) AS LAST_UPDATED,INC_OFFICER INTO #S FROM CDATDUPL.DBO.CDATPCSUSPECT A LEFT JOIN CDATDUPL.DBO.CDATSUSPECT B ON A.PHONE=B.PHONE 
+    $sql10="CREATE TEMP TABLE temp_s AS SELECT DISTINCT A.PHONE,TO_CHAR((MIN(STARTTIME))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS FIRST_CALL,TO_CHAR((MAX(STARTTIME))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS LAST_CALL,B.NICKNAME || '_' || B.ROLE NICKNAME,B.MO,CATEGORY,TO_CHAR((MAX(A.ASONDATE))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS LAST_UPDATED,INC_OFFICER FROM CDATPCSUSPECT A LEFT JOIN CDATSUSPECT B ON A.PHONE=B.PHONE 
 WHERE A.PHONE IN ('$number2') GROUP BY A.PHONE,B.NICKNAME,MO,CATEGORY, INC_OFFICER,B.ROLE";
 
-    $sqlA="select distinct * INTO #CDATADDRESS from cdatdupl..cdataddress where phone in ('$number2')";
+    $sqlA="CREATE TEMP TABLE CDATADDRESS AS SELECT distinct * from cdataddress where phone in ('$number2')";
 
-    $sqlB="select distinct * INTO #ADDRESS_OTHER_STATE from cdatdupl..ADDRESS_OTHER_STATE where phone in ('$number2')";
-
-
+    $sqlB="CREATE TEMP TABLE ADDRESS_OTHER_STATE AS SELECT distinct * from ADDRESS_OTHER_STATE where phone in ('$number2')";
 
 
-    $sql3="SELECT DISTINCT PHONE, IMEINUMBER, CONVERT(VARCHAR,MIN(STARTTIME),20) AS FIRST_CALL, CONVERT(VARCHAR,MAX(STARTTIME),20) AS LAST_CALL,
-CONVERT(VARCHAR,MAX(ASONDATE),20) AS LAST_UPDATED FROM CDATDUPL.DBO.CDATPCSUSPECT WHERE PHONE IN ('$number2') GROUP BY PHONE,IMEINUMBER ORDER BY LAST_UPDATED";
 
-    $sql4="SELECT * INTO #XX FROM CDAT_DETAILS1 WHERE PHONE IN ('$number2') and other!=''";
 
-    $sql5 = "select distinct a.PHONE,OTHER, NICKNAME+'_'+ROLE NICKNAME,
-SUM(CASE WHEN INCOMING='1' THEN 1 ELSE 0 END) AS 'IN',
-SUM(CASE WHEN INCOMING='0' THEN 1 ELSE 0 END) AS 'OUT', count(*) as CALLS,sum(cast(duration as numeric)) as dur,CONVERT(VARCHAR,MIN(STARTTIME),20) as FIRST_CALL,CONVERT(VARCHAR,MAX(STARTTIME),20) as LAST_CALL INTO #TT from #XX a
-left join cdatdupl.dbo.cdatsuspect b on a.other=b.phone
-WHERE OTHER IN (SELECT PHONE FROM CDATDUPL.DBO.CDATSUSPECT)
+    $sql3="SELECT DISTINCT PHONE, IMEINUMBER, TO_CHAR((MIN(STARTTIME))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS FIRST_CALL, TO_CHAR((MAX(STARTTIME))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS LAST_CALL,
+TO_CHAR((MAX(ASONDATE))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS LAST_UPDATED FROM CDATPCSUSPECT WHERE PHONE IN ('$number2') GROUP BY PHONE,IMEINUMBER ORDER BY LAST_UPDATED";
+
+    $sql4="CREATE TEMP TABLE temp_xx AS SELECT * FROM CDAT_DETAILS1 WHERE PHONE IN ('$number2') and other!=''";
+
+    $sql5 = "CREATE TEMP TABLE temp_tt AS select distinct a.PHONE,OTHER, NICKNAME || '_' || ROLE NICKNAME,
+SUM(CASE WHEN INCOMING='1' THEN 1 ELSE 0 END) AS \"IN\",
+SUM(CASE WHEN INCOMING='0' THEN 1 ELSE 0 END) AS \"OUT\", count(*) as CALLS,sum(cast(duration as numeric)) as dur,TO_CHAR((MIN(STARTTIME))::timestamp, 'YYYY-MM-DD HH24:MI:SS') as FIRST_CALL,TO_CHAR((MAX(STARTTIME))::timestamp, 'YYYY-MM-DD HH24:MI:SS') as LAST_CALL  from temp_xx a
+left join cdatsuspect b on a.other=b.phone
+WHERE OTHER IN (SELECT PHONE FROM CDATSUSPECT)
  group by a.phone, A.other, nickname,ROLE order by  calls desc, other";
 
-    $sql6 = "SELECT A.PHONE,A.OTHER,A.NICKNAME,MO,CATEGORY,[IN],[OUT],CALLS,DUR,FIRST_CALL,LAST_CALL,
-CASE WHEN FULLNAME IS NULL THEN '' ELSE FULLNAME END+' '+
-CASE WHEN b.FULLADDRESS IS NULL THEN  
-CASE WHEN (CALLS=DUR AND LEN(OTHER)<>10) 
-OR (LEFT(OTHER,1)NOT IN ('9','8') AND LEN(OTHER)>14) 
-OR LEN(OTHER)<10  OR SUBSTRING(OTHER,5,10) LIKE '%0000%' or isnumeric(other)=0
---or (len(other)>11 and '00'+other not in (select phoneprefix+'%' from cdatphonearea))
+    $sql6 = "CREATE TEMP TABLE temp_WITHADDRESS AS SELECT A.PHONE,A.OTHER,A.NICKNAME,MO,CATEGORY,\"IN\",\"OUT\",CALLS,DUR,FIRST_CALL,LAST_CALL,
+CASE WHEN FULLNAME IS NULL THEN '' ELSE FULLNAME END || ' ' || CASE WHEN b.FULLADDRESS IS NULL THEN  
+CASE WHEN (CALLS=DUR AND LENGTH(OTHER)<>10) 
+OR (LEFT(OTHER,1)NOT IN ('9','8') AND LENGTH(OTHER)>14) 
+OR LENGTH(OTHER)<10  OR SUBSTRING(OTHER,5,10) LIKE '%0000%' or NOT (other ~ '^[0-9]+$')
+--or (LENGTH(other)>11 and '00' || other not in (CREATE TEMP TABLE temp_WITHADDRESS AS select phoneprefix || '%' from cdatphonearea))
 THEN 'JUNK-COULD BE bulk SMS or VOIP calls' else
 case when min(areadescription) is null then 'code n/a' else min(areadescription) end
-END  ELSE b.FULLADDRESS+','+ISNULL(CATEGORY_type,'') 
-END AS ADDRESS,INC_OFFICER INTO #WITHADDRESS FROM #TT  A 
-LEFT JOIN CDATDUPL.DBO.CDATADDRESS B ON OTHER=B.PHONE AND B.EFF_TO_DATE IS NULL
-LEFT JOIN CDATDUPL.DBO.CDATSUSPECT C ON A.OTHER=C.PHONE
-left join cdatdupl.dbo.cdatphonearea d on case when len(other)=10 then other else case when len(other)>10 then '00'+other else null end end
-like phoneprefix+'%'
-group by a.PHONE, other,[IN],[OUT],calls,dur, FIRST_CALL,
+END  ELSE b.FULLADDRESS || ',' || COALESCE(CATEGORY_type,'') 
+END AS ADDRESS,INC_OFFICER  FROM temp_tt  A 
+LEFT JOIN CDATADDRESS B ON OTHER=B.PHONE AND B.EFF_TO_DATE IS NULL
+LEFT JOIN CDATSUSPECT C ON A.OTHER=C.PHONE
+left join cdatphonearea d on case when LENGTH(other)=10 then other else case when LENGTH(other)>10 then '00' || other else null end end
+like phoneprefix || '%'
+group by a.PHONE, other,\"IN\",\"OUT\",calls,dur, FIRST_CALL,
 LAST_CALL,FULLNAME,b.FULLADDRESS, A.nickname,CATEGORY_type,MO,CATEGORY, INC_OFFICER";
 
-    $sql7 = "SELECT A.PHONE,OTHER,NICKNAME,MO,CATEGORY AS CAT,[IN],[OUT],CALLS,DUR,FIRST_CALL,LAST_CALL,
-CASE WHEN A.OTHER=B.PHONE THEN ISNULL(B.FULLNAME,'')+','+ISNULL(B.FULLADDRESS,'')+','+
-ISNULL(CATEGORY_TYPE,'')+','+CONVERT(CHAR(10),CAST(DOA AS DATETIME),105)  ELSE A.ADDRESS END AS ADDRESS, 
-INC_OFFICER INTO #WITHADDRESS1 FROM #WITHADDRESS A
-LEFT JOIN CDATDUPL.DBO.ADDRESS_OTHER_STATE B ON A.OTHER=B.PHONE AND B.EFF_TO_DATE IS NULL";
+    $sql7 = "CREATE TEMP TABLE temp_WITHADDRESS1 AS SELECT A.PHONE,OTHER,NICKNAME,MO,CATEGORY AS CAT,\"IN\",\"OUT\",CALLS,DUR,FIRST_CALL,LAST_CALL,
+CASE WHEN A.OTHER=B.PHONE THEN COALESCE(B.FULLNAME,'') || ',' || COALESCE(B.FULLADDRESS,'') || ',' || COALESCE(CATEGORY_TYPE,'') || ',' || TO_CHAR(DOA::timestamp, 'DD-MM-YYYY')  ELSE A.ADDRESS END AS ADDRESS, 
+INC_OFFICER  FROM temp_WITHADDRESS A
+LEFT JOIN ADDRESS_OTHER_STATE B ON A.OTHER=B.PHONE AND B.EFF_TO_DATE IS NULL";
 
-    $sql71="Select A.*,CASE WHEN B.MOBILE=A.OTHER THEN B.IMAGE ELSE (SELECT IMAGE FROM SUSPECT_IMAGE_TABLE WHERE IRKEY='113769') END AS IMAGE FROM #WITHADDRESS1 A LEFT JOIN 
-SUSPECT_IMAGE_TABLE B ON B.MOBILE=A.OTHER ORDER BY PHONE,CALLS DESC,OTHER";
+    $sql71 = "SELECT A.*, B.IMAGE FROM temp_WITHADDRESS1 A
+LEFT JOIN suspect_image_table B ON B.MOBILE = A.OTHER
+ORDER BY PHONE, CALLS DESC, OTHER";
 
-    $sql8 ="SELECT 'CDAT CONTACTS OF MOBILE NO: '+'$number' as PHONE";
+    $sql8 ="SELECT 'CDAT CONTACTS OF MOBILE NO: ' || '$number' as PHONE";
 
-    $sql9="SELECT case when count(PHONE)>=1 THEN '' ELSE '*** NO CDAT CONTACTS TO $number ***' end as CNTS FROM #WITHADDRESS";
+    $sql9="SELECT case when count(PHONE)>=1 THEN '' ELSE '*** NO CDAT CONTACTS TO $number ***' end as CNTS FROM temp_WITHADDRESS";
 
-    $stA = sqlsrv_query($conn, $sqlA);
-    $stB = sqlsrv_query($conn, $sqlB);
-    $stB1 = sqlsrv_query($conn, $sqlB1);
-    cdat_sum_insert_phones($conn, '#T1', $phones);
-    $st3 = sqlsrv_query( $conn, $sql3 );
-    $st4 = sqlsrv_query( $conn, $sql4 );
-    $st5 = sqlsrv_query( $conn, $sql5 );
-    $st6 = sqlsrv_query( $conn, $sql6 );
-    $st7 = sqlsrv_query( $conn, $sql7 );
-    $st71= sqlsrv_query( $conn, $sql71);
-    $st8 = sqlsrv_query( $conn, $sql8 );
-    $st9 = sqlsrv_query( $conn, $sql9 );
+    $stA = $conn->query($sqlA);
+    $stB = $conn->query($sqlB);
+    $stB1 = $conn->query($sqlB1);
+        cdat_sum_insert_phones($conn, 'temp_t1', $phones);
+    $st3 = $conn->query($sql3);
+    $st4 = $conn->query($sql4);
+    $st5 = $conn->query($sql5);
+    $st6 = $conn->query($sql6);
+    $st7 = $conn->query($sql7);
+    $st71= $conn->query($sql71);
+    $st8 = $conn->query($sql8);
+    $st9 = $conn->query($sql9);
 
     $bannerTitle = 'CDAT CONTACTS OF MOBILE NO: ' . $number;
-    if ($st8 && ($bannerRow = sqlsrv_fetch_array($st8, SQLSRV_FETCH_ASSOC))) {
+    if ($st8 && ($bannerRow = $st8->fetch(PDO::FETCH_ASSOC))) {
         $bannerTitle = (string) ($bannerRow['PHONE'] ?? $bannerTitle);
     }
 
+    $defaultImage = cdat_default_suspect_image_local($conn);
     $rows = cdat_sum_fetch_all($st71);
+    foreach ($rows as &$row) {
+        $img = cdat_pg_binary_to_string($row['IMAGE'] ?? null);
+        $row['IMAGE'] = $img !== null && $img !== '' ? $img : $defaultImage;
+    }
+    unset($row);
 
     $noContactsMsg = '';
-    if ($st9 && ($cntRow = sqlsrv_fetch_array($st9, SQLSRV_FETCH_ASSOC))) {
+    if ($st9 && ($cntRow = $st9->fetch(PDO::FETCH_ASSOC))) {
         $noContactsMsg = (string) ($cntRow['CNTS'] ?? '');
     }
 

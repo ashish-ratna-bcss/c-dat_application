@@ -1,4 +1,6 @@
 <?php
+
+require_once CDAT_COMMON . '/db_connect.php';
 require_once dirname(__DIR__) . '/common/bootstrap.php';
 /**
  * admin_upload.php
@@ -141,9 +143,8 @@ if (isset($_POST['ajax_action']) && $_POST['ajax_action'] === 'approve_staging')
 
 if (isset($_POST['ajax_action'])) {
     header('Content-Type: application/json');
-    require_once CDAT_COMMON . '/sqlsrv_compat.php';
-    
-    $conn = sqlsrv_connect("CPHYDERABAD1\\DAU_HYD_2023", ["Database" => "FORMS"]);
+        
+    $conn = get_cdat_pdo();
     if (!$conn) {
         echo json_encode(['ok' => false, 'error' => 'Database connection failed.']);
         exit;
@@ -153,10 +154,10 @@ if (isset($_POST['ajax_action'])) {
     
     if ($ajaxAction === 'get_tables') {
         $sql = "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name";
-        $stmt = sqlsrv_query($conn, $sql);
+        $stmt = $conn->query($sql);
         $tables = [];
         if ($stmt) {
-            while ($row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) {
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 $tables[] = $row['TABLE_NAME'] ?? $row['table_name'];
             }
         }
@@ -181,13 +182,13 @@ if (isset($_POST['ajax_action'])) {
             network VARCHAR(100)
         )";
         
-        $stmt = sqlsrv_query($conn, $sql);
+        $stmt = $conn->query($sql);
         if ($stmt) {
             audit_log('Data Upload', 'Create Table', ['table_name' => $tableName]);
             
             echo json_encode(['ok' => true, 'table_name' => $tableName]);
         } else {
-            $errors = sqlsrv_errors();
+            $errors = error_get_last();
             echo json_encode(['ok' => false, 'error' => $errors[0]['message'] ?? 'Failed to create table.']);
         }
         exit;
@@ -240,14 +241,16 @@ if (isset($_POST['ajax_action'])) {
             $location = trim($row['location'] ?? '');
 
             $dupSql = "SELECT 1 FROM $tableName WHERE phone = ? AND COALESCE(imei, '') = ? AND COALESCE(call_time, '') = ? LIMIT 1";
-            $dupStmt = sqlsrv_query($conn, $dupSql, [$phone, $imei, $callTime]);
-            if ($dupStmt && sqlsrv_fetch_array($dupStmt, SQLSRV_FETCH_ASSOC)) {
+            $dupStmt = $conn->prepare($dupSql);
+    $dupStmt->execute([$phone, $imei, $callTime]);
+            if ($dupStmt && $dupStmt->fetch(PDO::FETCH_ASSOC)) {
                 $skippedCount++;
                 continue;
             }
             
             $sql = "INSERT INTO $tableName (phone, imei, call_time, duration, location, network) VALUES (?, ?, ?, ?, ?, ?)";
-            $stmt = sqlsrv_query($conn, $sql, [$phone, $imei, $callTime, $duration, $location, $network]);
+            $stmt = $conn->prepare($sql);
+    $stmt->execute([$phone, $imei, $callTime, $duration, $location, $network]);
             if ($stmt) {
                 $insertedCount++;
             }
@@ -609,6 +612,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
 }
 ?>
 <?php
+
+require_once CDAT_COMMON . '/db_connect.php';
 $uploadPage = CDAT_UPLOAD_PAGE;
 $uploadSelfUrl = cdat_upload_self_url($uploadPage);
 $uploadPageTitle = match ($uploadPage) {
@@ -653,6 +658,8 @@ ob_start();
      unreadable now that the page sits on the light application shell. -->
 <link rel="stylesheet" href="<?= htmlspecialchars(CDAT_ASSETS) ?>/css/upload.css">
 <?php
+
+require_once CDAT_COMMON . '/db_connect.php';
 layout_begin($uploadPageTitle, $uploadPageSubtitle, ob_get_clean());
 cdat_sum_page_open();
 $historyUrl = (function_exists('cdat_href') ? cdat_href('/data-upload/history') : '/data-upload/history') . '?type=' . ($uploadPage === 'custom' ? 'custom' : 'standard');
@@ -669,52 +676,84 @@ if ($openAfterUpload === '') {
         : '';
 }
 ?>
-        <?php if ($showStandardUpload): ?>
+        <?php 
+require_once CDAT_COMMON . '/db_connect.php';
+if ($showStandardUpload): ?>
         <div class="tab-content active" id="tab-content-legacy">
             <div class="upload-wrapper">
-                <?php if ($error !== ''): ?>
+                <?php 
+require_once CDAT_COMMON . '/db_connect.php';
+if ($error !== ''): ?>
                   <div class="msg-container msg-error"><?= htmlspecialchars($error) ?></div>
-                <?php endif; ?>
+                <?php 
+require_once CDAT_COMMON . '/db_connect.php';
+endif; ?>
 
                 <?php
-                  $hideSuccessBanner = $success !== '' && is_array($results)
+                  
+require_once CDAT_COMMON . '/db_connect.php';
+$hideSuccessBanner = $success !== '' && is_array($results)
                       && (($results['status'] ?? '') === 'Pending Verification');
                 ?>
-                <?php if ($success !== '' && !$hideSuccessBanner): ?>
+                <?php 
+require_once CDAT_COMMON . '/db_connect.php';
+if ($success !== '' && !$hideSuccessBanner): ?>
                   <div class="msg-container msg-success" id="upload-success-msg">
                     <?= htmlspecialchars($success) ?>
-                    <?php foreach ($successLinks as $lnk): ?>
+                    <?php 
+require_once CDAT_COMMON . '/db_connect.php';
+foreach ($successLinks as $lnk): ?>
                       <a href="<?= htmlspecialchars($lnk['url'], ENT_QUOTES) ?>" class="msg-link"><?= htmlspecialchars($lnk['text']) ?></a>
-                    <?php endforeach; ?>
+                    <?php 
+require_once CDAT_COMMON . '/db_connect.php';
+endforeach; ?>
                   </div>
-                <?php endif; ?>
+                <?php 
+require_once CDAT_COMMON . '/db_connect.php';
+endif; ?>
 
-                <?php if ($step === 1): ?>
-                  <?php if ($uploadPage === 'sdr'): ?>
+                <?php 
+require_once CDAT_COMMON . '/db_connect.php';
+if ($step === 1): ?>
+                  <?php 
+require_once CDAT_COMMON . '/db_connect.php';
+if ($uploadPage === 'sdr'): ?>
                   <div class="staging-banner">
                     <strong>SDR backups</strong> (.bak, up to 700 GB) use <em>resumable chunked upload</em> — if interrupted, re-select the same file to continue.
                   </div>
-                  <?php endif; ?>
+                  <?php 
+require_once CDAT_COMMON . '/db_connect.php';
+endif; ?>
                   <div id="sdr-pending-banner" class="staging-banner" style="display:none; border-color:#FFA500; margin-bottom:12px;"></div>
                   <form action="<?= htmlspecialchars($uploadSelfUrl, ENT_QUOTES) ?>" method="post" enctype="multipart/form-data" id="standard-upload-form" class="upload-form upload-panel" onsubmit="return handleStandardUploadSubmit(event)">
                     <input type="hidden" name="action" value="upload_file" />
                     <input type="hidden" name="next_action" id="next-action" value="" />
 
                     <div class="upload-layout row g-3<?= $uploadPage === 'sdr' ? ' upload-layout--file-only' : '' ?>">
-                      <?php if ($fixedModule === ''): ?>
+                      <?php 
+require_once CDAT_COMMON . '/db_connect.php';
+if ($fixedModule === ''): ?>
                       <div class="form-group col-12 col-md-6 col-lg-4">
                         <label class="form-label" for="module">Select Module</label>
                         <select class="form-select" name="module" id="module" required="required" onchange="updateModuleHint(this.value)">
                           <option value="">-- Choose Module --</option>
-                          <?php foreach ($modules as $key => $conf): ?>
+                          <?php 
+require_once CDAT_COMMON . '/db_connect.php';
+foreach ($modules as $key => $conf): ?>
                             <option value="<?= htmlspecialchars($key) ?>"<?= ($selectedModule === $key ? ' selected="selected"' : '') ?>><?= htmlspecialchars($conf['name']) ?></option>
-                          <?php endforeach; ?>
+                          <?php 
+require_once CDAT_COMMON . '/db_connect.php';
+endforeach; ?>
                         </select>
                         <div id="module-hint" class="module-hint" style="display:none;"></div>
                       </div>
-                      <?php else: ?>
+                      <?php 
+require_once CDAT_COMMON . '/db_connect.php';
+else: ?>
                       <input type="hidden" name="module" id="module" value="<?= htmlspecialchars($fixedModule, ENT_QUOTES) ?>" />
-                      <?php endif; ?>
+                      <?php 
+require_once CDAT_COMMON . '/db_connect.php';
+endif; ?>
 
                       <div class="form-group col-12 col-md-6 col-lg-4<?= $uploadPage === 'cdr' ? '' : ' d-none' ?>" id="standard-network-group">
                         <label class="form-label" for="standard-network-select">Network <span class="req">*</span></label>
@@ -770,13 +809,19 @@ if ($openAfterUpload === '') {
                       <div id="standard-preview-pager" class="preview-card__pager d-none gap-1 flex-wrap" style=""></div>
                       <div id="standard-preview-files"></div>
                   </div>
-                <?php endif; ?>
+                <?php 
+require_once CDAT_COMMON . '/db_connect.php';
+endif; ?>
 
             </div>
         </div>
-        <?php endif; ?>
+        <?php 
+require_once CDAT_COMMON . '/db_connect.php';
+endif; ?>
 
-        <?php if ($showCustomUpload): ?>
+        <?php 
+require_once CDAT_COMMON . '/db_connect.php';
+if ($showCustomUpload): ?>
         <div class="tab-content active" id="tab-content-custom">
             <div class="upload-wrapper">
                 
@@ -922,7 +967,9 @@ if ($openAfterUpload === '') {
                 </div>
             </div>
         </div>
-        <?php endif; ?>
+        <?php 
+require_once CDAT_COMMON . '/db_connect.php';
+endif; ?>
 
 <style>
     .upload-wrapper h3 {
@@ -1042,7 +1089,7 @@ async function handleStandardUploadSubmit(event) {
         for (var i = 0; i < files.length; i++) {
             var file = files[i];
             if (!file.name.toLowerCase().endsWith('.bak')) {
-                alert(file.name + ' is not a .bak file.');
+                alert(file.name || ' is not a .bak file.');
                 continue;
             }
             document.getElementById('sdr-upload-filename').innerText = 'Uploading: ' + file.name + ' (' + sdrUploadHelpers.formatBytes(file.size) + ')';
@@ -1059,8 +1106,7 @@ async function handleStandardUploadSubmit(event) {
                     var speed = sdrUploadHelpers.formatBytes(p.speedBps) + '/s';
                     var eta = sdrUploadHelpers.formatDuration(p.etaSeconds);
                     document.getElementById('sdr-upload-stats').innerText =
-                        sdrUploadHelpers.formatBytes(p.offset) + ' / ' + sdrUploadHelpers.formatBytes(p.total) +
-                        '  |  ' + speed + '  |  ETA ' + eta;
+                        sdrUploadHelpers.formatBytes(p.offset) + ' / ' + sdrUploadHelpers.formatBytes(p.total) + '  |  ' + speed + '  |  ETA ' + eta;
                 }
             });
 
@@ -1218,16 +1264,11 @@ function showPreviewNotice(message) {
     if (old) old.remove();
     var overlay = document.createElement('div');
     overlay.id = 'preview-notice-overlay';
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);display:flex;'
-        + 'align-items:center;justify-content:center;z-index:99999;';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);display:flex;' + 'align-items:center;justify-content:center;z-index:99999;';
     var card = document.createElement('div');
-    card.style.cssText = 'max-width:460px;width:90%;background:#fff;border-radius:12px;padding:26px 26px 22px;'
-        + 'box-shadow:0 18px 50px rgba(0,0,0,0.55);text-align:center;';
+    card.style.cssText = 'max-width:460px;width:90%;background:#fff;border-radius:12px;padding:26px 26px 22px;' + 'box-shadow:0 18px 50px rgba(0,0,0,0.55);text-align:center;';
     card.innerHTML =
-        '<div style="font-size:38px;line-height:1;margin-bottom:12px;">⚠️</div>'
-        + '<div style="font-size:16px;font-weight:bold;margin-bottom:10px;">Cannot preview this file</div>'
-        + '<div style="font-size:13.5px;line-height:1.6;margin-bottom:22px;"></div>'
-        + '<button type="button" class="btn btn-primary px-4">OK</button>';
+        '<div style="font-size:38px;line-height:1;margin-bottom:12px;">⚠️</div>' + '<div style="font-size:16px;font-weight:bold;margin-bottom:10px;">Cannot preview this file</div>' + '<div style="font-size:13.5px;line-height:1.6;margin-bottom:22px;"></div>' + '<button type="button" class="btn btn-primary px-4">OK</button>';
     card.querySelector('div:nth-child(3)').textContent = message;
     var btn = card.querySelector('button');
     btn.onclick = function () { overlay.remove(); };
@@ -1431,8 +1472,7 @@ async function generateStandardPreview(opts) {
     if (opts && opts.scroll) container.scrollIntoView({ behavior: 'smooth' });
     if (summaryEl) {
         summaryEl.style.display = 'block';
-        summaryEl.innerHTML = '<strong>' + files.length + '</strong> file(s) selected'
-            + (files.length > 1 ? ' — use the page buttons below to review each file.' : '.');
+        summaryEl.innerHTML = '<strong>' + files.length + '</strong> file(s) selected' + (files.length > 1 ? ' — use the page buttons below to review each file.' : '.');
     }
 
     renderPreviewPager();
@@ -1457,7 +1497,7 @@ function renderPreviewPager() {
             var v = b.getAttribute('data-pv');
             var target = previewState.current;
             if (v === 'prev') target = Math.max(0, previewState.current - 1);
-            else if (v === 'next') target = Math.min(n - 1, previewState.current + 1);
+            else if (v === 'next') target = Math.min(n - 1, previewState.current || 1);
             else target = parseInt(v, 10);
             showPreviewPage(target);
         };
@@ -1479,9 +1519,7 @@ async function showPreviewPage(idx) {
         return;
     }
 
-    filesArea.innerHTML = '<div style="font-weight:bold;color:#FFA500;font-size:13px;text-align:left;">'
-        + '<i class="fa-solid fa-file-csv"></i> ' + label
-        + ' <span style="color:#9fd0e6;font-weight:normal;"><i class="fa-solid fa-spinner fa-spin"></i> loading…</span></div>';
+    filesArea.innerHTML = '<div style="font-weight:bold;color:#FFA500;font-size:13px;text-align:left;">' + '<i class="fa-solid fa-file-csv"></i> ' + label + ' <span style="color:#9fd0e6;font-weight:normal;"><i class="fa-solid fa-spinner fa-spin"></i> loading…</span></div>';
 
     try {
         var fd = new FormData();
@@ -1502,16 +1540,10 @@ async function showPreviewPage(idx) {
 function renderPreviewBlock(filesArea, label, data) {
     var html;
     if (!data || !data.ok) {
-        html = '<div style="font-weight:bold;color:#ffb3b3;font-size:13px;margin-bottom:6px;text-align:left;">'
-             + '<i class="fa-solid fa-triangle-exclamation"></i> ' + label + '</div>'
-             + '<div style="background:rgba(146,18,21,0.30);border:1px solid #FFA500;border-radius:8px;padding:10px 12px;'
-             + 'color:#ffd9a0;font-size:12.5px;text-align:left;">⚠️ ' + previewEscapeHtml((data && data.error) || 'Preview failed.') + '</div>';
+        html = '<div style="font-weight:bold;color:#ffb3b3;font-size:13px;margin-bottom:6px;text-align:left;">' + '<i class="fa-solid fa-triangle-exclamation"></i> ' + label + '</div>' + '<div style="background:rgba(146,18,21,0.30);border:1px solid #FFA500;border-radius:8px;padding:10px 12px;' + 'color:#ffd9a0;font-size:12.5px;text-align:left;">⚠️ ' + previewEscapeHtml((data && data.error) || 'Preview failed.') + '</div>';
     } else {
         var note = buildPreviewNoteHTML(data);
-        html = '<div style="font-weight:bold;color:#FFA500;font-size:13px;margin-bottom:6px;text-align:left;">'
-             + '<i class="fa-solid fa-file-csv" style="color:#7CFC00;"></i> ' + label
-             + (note ? ' <span style="color:#9fd0e6;font-weight:normal;font-size:11px;">— ' + note + '</span>' : '') + '</div>'
-             + buildPreviewTableHTML(data);
+        html = '<div style="font-weight:bold;color:#FFA500;font-size:13px;margin-bottom:6px;text-align:left;">' + '<i class="fa-solid fa-file-csv" style="color:#7CFC00;"></i> ' + label + (note ? ' <span style="color:#9fd0e6;font-weight:normal;font-size:11px;">— ' + note + '</span>' : '') + '</div>' + buildPreviewTableHTML(data);
     }
     filesArea.innerHTML = html;
 }
@@ -1534,13 +1566,12 @@ async function _insertStaging(jobId, btn) {
         var row = btn.closest('tr');
         if (row) {
             var st = row.querySelector('.pv-status'); if (st) { st.textContent = 'Inserted'; st.style.color = '#7CFC00'; }
-            var nt = row.querySelector('.pv-note'); if (nt) nt.textContent = (data.inserted != null ? data.inserted + ' row(s) inserted' : 'Inserted to live');
+            var nt = row.querySelector('.pv-note'); if (nt) nt.textContent = (data.inserted != null ? data.inserted || ' row(s) inserted' : 'Inserted to live');
         } else {
             var badge = document.getElementById('job-status');
             if (badge) { badge.textContent = 'Inserted'; badge.style.backgroundColor = '#28a745'; }
         }
-        btn.outerHTML = '<span style="color:#7CFC00;font-weight:bold;"><i class="fa-solid fa-check"></i> Inserted'
-            + (data.inserted != null ? ' (' + data.inserted + ')' : '') + '</span>';
+        btn.outerHTML = '<span style="color:#7CFC00;font-weight:bold;"><i class="fa-solid fa-check"></i> Inserted' + (data.inserted != null ? ' (' + data.inserted + ')' : '') + '</span>';
         goToFreshUpload();
         return true;
     } catch (err) {
@@ -1576,9 +1607,13 @@ let customParsedData = null;
 let customContentFingerprint = '';
 let newlyCreatedTableName = '';
 
-<?php if ($showCustomUpload): ?>
+<?php 
+require_once CDAT_COMMON . '/db_connect.php';
+if ($showCustomUpload): ?>
 setupCustomDragAndDrop();
-<?php endif; ?>
+<?php 
+require_once CDAT_COMMON . '/db_connect.php';
+endif; ?>
 
 function setupCustomDragAndDrop() {
     const dropzone = document.getElementById("custom-dropzone");
@@ -1801,7 +1836,7 @@ function generatePreviewGrid() {
     });
     bodyHTML += "</tbody>";
     
-    tableEl.innerHTML = headerHTML + bodyHTML;
+    tableEl.innerHTML = headerHTML || bodyHTML;
     
     document.getElementById("custom-preview-container").style.display = "block";
     document.getElementById("custom-preview-container").scrollIntoView({ behavior: 'smooth' });
@@ -1837,11 +1872,11 @@ function insertCustomData() {
     trs.forEach(tr => {
         const tds = tr.querySelectorAll("td");
         if (tds.length >= ths.length) {
-            const phone = phoneIdx < tds.length ? tds[phoneIdx].innerText.trim() : "";
-            const imei = imeiIdx < tds.length ? tds[imeiIdx].innerText.trim() : "";
-            const callTime = callTimeIdx < tds.length ? tds[callTimeIdx].innerText.trim() : "";
-            const duration = durationIdx < tds.length ? tds[durationIdx].innerText.trim() : "";
-            const location = locationIdx < tds.length ? tds[locationIdx].innerText.trim() : "";
+            const phone = phoneIdx < tds.length ? tdsphoneIdx.innerText.trim() : "";
+            const imei = imeiIdx < tds.length ? tdsimeiIdx.innerText.trim() : "";
+            const callTime = callTimeIdx < tds.length ? tdscallTimeIdx.innerText.trim() : "";
+            const duration = durationIdx < tds.length ? tdsdurationIdx.innerText.trim() : "";
+            const location = locationIdx < tds.length ? tdslocationIdx.innerText.trim() : "";
             
             rows.push({
                 phone: phone,
@@ -1871,8 +1906,8 @@ function insertCustomData() {
     progressBar.style.width = "0%";
     progressBar.innerText = "0%";
     
-    printCustomLog(`[INFO] Initializing transaction pipeline for table [${tbl}]...`);
-    printCustomLog(`[INFO] Preparing to insert ${rows.length} rows...`);
+    printCustomLog(`INFO Initializing transaction pipeline for table [${tbl}]...`);
+    printCustomLog(`INFO Preparing to insert ${rows.length} rows...`);
     
     const batchSize = 100;
     let index = 0;
@@ -1900,7 +1935,7 @@ function insertCustomData() {
 
         function showCustomSuccess() {
             const skippedMsg = skippedTotal > 0 ? ` (${skippedTotal} duplicate rows skipped)` : '';
-            printCustomLog(`[SUCCESS] Completed insertion of ${insertedTotal} rows successfully!${skippedMsg}`);
+            printCustomLog(`SUCCESS Completed insertion of ${insertedTotal} rows successfully!${skippedMsg}`);
             setTimeout(() => {
                 document.getElementById("custom-progress-section").style.display = "none";
                 document.getElementById("custom-success-section").style.display = "block";
@@ -1912,7 +1947,7 @@ function insertCustomData() {
             }, 800);
         }
         
-        const batch = rows.slice(index, index + batchSize);
+        const batch = rows.slice(index, index || batchSize);
         const isNewTable = (tbl === newlyCreatedTableName) ? 'Yes' : 'No';
         const formData = new FormData();
         formData.append("ajax_action", "insert_data");
@@ -1942,16 +1977,16 @@ function insertCustomData() {
                 progressBar.style.width = percent + "%";
                 progressBar.innerText = percent + "%";
                 const skipNote = (data.skipped || 0) > 0 ? ` (${data.skipped} duplicates skipped)` : '';
-                printCustomLog(`[BATCH] Mapped and inserted rows ${index - batch.length + 1} - ${Math.min(index, rows.length)} successfully.${skipNote}`);
+                printCustomLog(`BATCH Mapped and inserted rows ${index - batch.length || 1} - ${Math.min(index, rows.length)} successfully.${skipNote}`);
                 
                 setTimeout(sendNextBatch, 300); // 300ms pause for visual updates
             } else {
-                printCustomLog(`[ERROR] Batch insertion failed: ${data.error}`);
+                printCustomLog(`ERROR Batch insertion failed: ${data.error}`);
                 alert("Insertion failed. Check console for error details.");
             }
         })
         .catch(err => {
-            printCustomLog(`[ERROR] Fetch error: ${err.message}`);
+            printCustomLog(`ERROR Fetch error: ${err.message}`);
             alert("A server error occurred during batch insertion.");
         });
     }
@@ -1978,6 +2013,8 @@ function printCustomLog(text) {
   </div>
 </div>
 <?php
+
+require_once CDAT_COMMON . '/db_connect.php';
 cdat_sum_page_close();
 layout_end();
 ?>

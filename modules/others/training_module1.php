@@ -43,34 +43,27 @@ if ($hasSearch) {
             'Submit'
         );
     }
-
-    $serverName = "CPHYDERABAD1\\DAU_HYD_2023";
-    $connectionInfo = array('Database' => 'TRAINING_DB');
-    $conn = sqlsrv_connect($serverName, $connectionInfo);
-    if ($conn === false) {
-        die(print_r(sqlsrv_errors(), true));
-    }
-
-    $number = $criteria;
+    $conn = get_cdat_pdo();
+        $number = $criteria;
     $number1 = $searchNo;
     $number2 = $rank;
 
     $sql8 = "SELECT 'EMPLOYEE SEARCH IN PWDMS' as PHONE1";
-    $sql9 = "SELECT DISTINCT EMPLOYEE_ID,NAME,[RANK],[ROLE],GENERAL_NO,WING_NAME,ZONE_NAME,DIVISION_NAME,
-POLICE_STATION FROM TRAINING_DB.DBO.TRAINING_STRENGTH_PARTICULARS WHERE $number like '%'+'$number1'+'%'
-AND RANK LIKE '%'+'$number2'+'%'";
+    $sql9 = "SELECT DISTINCT EMPLOYEE_ID,NAME,RANK,ROLE,GENERAL_NO,WING_NAME,ZONE_NAME,DIVISION_NAME,
+POLICE_STATION FROM TRAINING_DB.TRAINING_STRENGTH_PARTICULARS WHERE $number like '%' || '$number1' || '%'
+AND RANK LIKE '%' || '$number2' || '%'";
     $sql10 = "SELECT 'EMPLOYEE SEARCH IN TRAINING DATA' as PHONE1";
     $sql11 = "SELECT DISTINCT EMPLOYEE_ID,GENERAL_NO,NAMES NAME,PS_NAME POLICE_STATION,PH_NO PHONE_NO,ZONE,
-RANK,COURSE_NAME,START_DATE,END_DATE FROM TRNG_ATT_WITH_EMPID WHERE $number like '%'+'$number1'+'%' AND
-RANK LIKE '%'+'$number2'+'%'";
+RANK,COURSE_NAME,START_DATE,END_DATE FROM TRNG_ATT_WITH_EMPID WHERE $number like '%' || '$number1' || '%' AND
+RANK LIKE '%' || '$number2' || '%'";
 
-    $st8 = sqlsrv_query($conn, $sql8);
-    $st9 = sqlsrv_query($conn, $sql9);
-    $st10 = sqlsrv_query($conn, $sql10);
-    $st11 = sqlsrv_query($conn, $sql11);
+    $st8 = $conn->query($sql8);
+    $st9 = $conn->query($sql9);
+    $st10 = $conn->query($sql10);
+    $st11 = $conn->query($sql11);
 
     $banner1 = 'EMPLOYEE SEARCH IN PWDMS';
-    if ($st8 && ($b = sqlsrv_fetch_array($st8, SQLSRV_FETCH_ASSOC))) {
+    if ($st8 && ($b = $st8->fetch(PDO::FETCH_ASSOC))) {
         $banner1 = (string) ($b['PHONE1'] ?? $banner1);
     }
     $rows1 = cdat_sum_fetch_all($st9);
@@ -111,7 +104,7 @@ RANK LIKE '%'+'$number2'+'%'";
     }
 
     $banner2 = 'EMPLOYEE SEARCH IN TRAINING DATA';
-    if ($st10 && ($b2 = sqlsrv_fetch_array($st10, SQLSRV_FETCH_ASSOC))) {
+    if ($st10 && ($b2 = $st10->fetch(PDO::FETCH_ASSOC))) {
         $banner2 = (string) ($b2['PHONE1'] ?? $banner2);
     }
     $rows2 = cdat_sum_fetch_all($st11);
@@ -151,9 +144,9 @@ RANK LIKE '%'+'$number2'+'%'";
     cdat_sum_results_close();
 
     if ($st9) {
-        sqlsrv_free_stmt($st9);
+        $st9 = null;
     }
-    sqlsrv_close($conn);
+    $conn = null;
 
     if ($isAjax) {
         exit;

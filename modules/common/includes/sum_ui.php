@@ -47,13 +47,24 @@ function cdat_sum_sql_phone_in(array $phones): string
     return implode("','", $esc);
 }
 
-/** Insert one row per phone into a #temp table (Postgres cannot run the old MSSQL multi-INSERT trick). */
+/** Insert one row per phone into a temp table (Postgres cannot run the old MSSQL multi-INSERT trick). */
 function cdat_sum_insert_phones($conn, string $tempTable, array $phones): void
 {
     $table = ltrim($tempTable, '#');
+    if (!preg_match('/^[a-z][a-z0-9_]*$/', $table)) {
+        throw new InvalidArgumentException('Invalid temp table name: ' . $tempTable);
+    }
+    if ($phones === []) {
+        return;
+    }
+
+    $st = $conn->prepare("INSERT INTO {$table} (phone) VALUES (?)");
     foreach ($phones as $p) {
-        $esc = str_replace("'", "''", $p);
-        sqlsrv_query($conn, "INSERT INTO #{$table} SELECT '$esc'");
+        $p = trim((string) $p);
+        if ($p === '') {
+            continue;
+        }
+        $st->execute([$p]);
     }
 }
 
@@ -75,48 +86,163 @@ function cdat_sum_field_phone(string $value = '', string $id = 'SUM'): string
          . '<label class="form-label" for="' . $id . '">Mobile No</label>'
          . '<input type="text" name="PHONE_NO" id="' . $id . '" class="form-control" placeholder="Enter mobile number"'
          . ' required="required" minlength="7" maxlength="15" pattern="^\+?[0-9]+$"'
-         . ' title="Please enter a valid phone number (numbers and optional + only)"'
+         . ' title="Please enter a valid phone number (numbers and optional || only)"'
          . ' oninput="this.value = this.value.replace(/[^0-9+]/g, \'\')" autocomplete="off"'
          . ' inputmode="tel" value="' . $val . '"/>'
          . '</div>';
 }
 
+/** Normalize cdatphonearea.state for dropdown values and SQL filters. */
+function cdat_sum_normalize_phone_area_state(string $state): string
+{
+    $state = strtoupper(trim($state));
+    $state = str_replace('-', '_', $state);
+    return preg_replace('/\s+/', ' ', $state) ?? $state;
+}
+
+/** SQL expression matching {@see cdat_sum_normalize_phone_area_state()}. */
+function cdat_sum_sql_phone_area_state_expr(string $column): string
+{
+    return 'UPPER(TRIM(REPLACE(' . $column . ", '-', '_')))";
+}
+
+/** Map cdatphonearea.state variants to a canonical Indian state / region label. */
+function cdat_sum_phone_area_state_canonical(string $state): ?string
+{
+    $norm = cdat_sum_normalize_phone_area_state($state);
+    if ($norm === '') {
+        return null;
+    }
+
+    static $excluded = [
+        'BSNL_INMARSAT' => true,
+        'BSNL INMARSAT' => true,
+    ];
+    if (isset($excluded[$norm])) {
+        return null;
+    }
+
+    static $aliases = [
+        'CHENNAI' => 'TAMILNADU',
+        'KOLKATA' => 'WEST BENGAL',
+        'MUMBAI' => 'MAHARASHTRA',
+        'UP_EAST' => 'UTTAR PRADESH',
+        'UP_WEST' => 'UTTAR PRADESH',
+        'UPEAST' => 'UTTAR PRADESH',
+        'UPWEST' => 'UTTAR PRADESH',
+        'HIMACHALPRADESH' => 'HIMACHAL PRADESH',
+        'MADHYAPRADESH' => 'MADHYA PRADESH',
+        'MAHARASTRA' => 'MAHARASHTRA',
+        'RAJASTAN' => 'RAJASTHAN',
+        'RAHASTHAN' => 'RAJASTHAN',
+        'PANJAB' => 'PUNJAB',
+        'KERLA' => 'KERALA',
+        'WESTBENGAL' => 'WEST BENGAL',
+        'JAMMUKASHMIR' => 'JAMMU_KASHMIR',
+    ];
+
+    return $aliases[$norm] ?? $norm;
+}
+
+/** @return list<string> DB state values that belong to a canonical state selection. */
+function cdat_sum_phone_area_state_db_values(string $state): array
+{
+    $canonical = cdat_sum_phone_area_state_canonical($state) ?? cdat_sum_normalize_phone_area_state($state);
+
+    static $circles = [
+        'TAMILNADU' => ['TAMILNADU', 'CHENNAI'],
+        'WEST BENGAL' => ['WEST BENGAL', 'WESTBENGAL', 'KOLKATA'],
+        'MAHARASHTRA' => ['MAHARASHTRA', 'MAHARASTRA', 'MUMBAI'],
+        'UTTAR PRADESH' => ['UP_EAST', 'UP_WEST', 'UPEAST', 'UPWEST'],
+        'HIMACHAL PRADESH' => ['HIMACHAL PRADESH', 'HIMACHALPRADESH'],
+        'MADHYA PRADESH' => ['MADHYA PRADESH', 'MADHYAPRADESH'],
+        'RAJASTHAN' => ['RAJASTHAN', 'RAJASTAN', 'RAHASTHAN'],
+        'PUNJAB' => ['PUNJAB', 'PANJAB'],
+        'KERALA' => ['KERALA', 'KERLA'],
+        'JAMMU_KASHMIR' => ['JAMMU_KASHMIR', 'JAMMUKASHMIR'],
+    ];
+
+    $values = $circles[$canonical] ?? [$canonical];
+    $out = [];
+    foreach ($values as $value) {
+        $norm = cdat_sum_normalize_phone_area_state($value);
+        if ($norm !== '') {
+            $out[$norm] = $norm;
+        }
+    }
+    return array_values($out);
+}
+
+function cdat_sum_sql_phone_area_state_filter(string $column, string $state, bool $exclude = false): string
+{
+    $expr = cdat_sum_sql_phone_area_state_expr($column);
+    $values = cdat_sum_phone_area_state_db_values($state);
+    if ($values === []) {
+        $escaped = str_replace("'", "''", cdat_sum_normalize_phone_area_state($state));
+        return $exclude ? "{$expr} <> '{$escaped}'" : "{$expr} = '{$escaped}'";
+    }
+
+    $quoted = [];
+    foreach ($values as $value) {
+        $quoted[] = "'" . str_replace("'", "''", $value) . "'";
+    }
+    $in = implode(', ', $quoted);
+
+    return $exclude ? "{$expr} NOT IN ({$in})" : "{$expr} IN ({$in})";
+}
+
+/** @return array<string,string> */
+function cdat_sum_phone_area_state_options(string $placeholder = 'Select state'): array
+{
+    static $loaded = false;
+    static $values = [];
+
+    if (!$loaded) {
+        $loaded = true;
+        try {
+            if (!function_exists('get_cdat_pdo')) {
+                require_once dirname(__DIR__) . '/db_connect.php';
+            }
+            $sql = 'SELECT DISTINCT UPPER(TRIM(REPLACE(state, \'-\', \'_\'))) AS state_norm'
+                 . ' FROM cdatphonearea'
+                 . ' WHERE state IS NOT NULL AND BTRIM(state) <> \'\''
+                 . ' ORDER BY 1';
+            $canonical = [];
+            foreach (get_cdat_pdo()->query($sql) as $row) {
+                $norm = trim((string) ($row['STATE_NORM'] ?? ''));
+                $label = cdat_sum_phone_area_state_canonical($norm);
+                if ($label !== null) {
+                    $canonical[$label] = $label;
+                }
+            }
+            $values = array_keys($canonical);
+            sort($values, SORT_STRING);
+        } catch (Throwable $e) {
+            $values = [];
+        }
+    }
+
+    $options = ['' => $placeholder];
+    static $labels = [
+        'NORTH_EAST' => 'NORTH EAST (telecom region)',
+        'DELHI' => 'DELHI (NCR circle)',
+        'JAMMU_KASHMIR' => 'JAMMU & KASHMIR',
+    ];
+    foreach ($values as $state) {
+        $options[$state] = $labels[$state] ?? $state;
+    }
+    return $options;
+}
+
 function cdat_sum_field_state(string $selected = '', bool $required = true): string
 {
-    $options = [
-        '' => 'Select state',
-        'ANDAMAN AND NICOBAR ISLANDS' => 'ANDAMAN AND NICOBAR ISLANDS',
-        'ANDHRA PRADESH' => 'ANDHRA PRADESH',
-        'ASSAM' => 'ASSAM',
-        'BIHAR' => 'BIHAR',
-        'CHENNAI' => 'CHENNAI',
-        'DELHI' => 'DELHI',
-        'GUJARAT' => 'GUJARAT',
-        'HARYANA' => 'HARYANA',
-        'HIMACHAL PRADESH' => 'HIMACHAL PRADESH',
-        'JAMMU_KASHMIR' => 'JAMMU_KASHMIR',
-        'KARNATAKA' => 'KARNATAKA',
-        'KERALA' => 'KERALA',
-        'KOLKATA' => 'KOLKATA',
-        'MADHYA PRADESH' => 'MADHYA PRADESH',
-        'MAHARASHTRA' => 'MAHARASHTRA',
-        'MUMBAI' => 'MUMBAI',
-        'NORTH_EAST' => 'NORTH_EAST',
-        'ORISSA' => 'ORISSA',
-        'PUNJAB' => 'PUNJAB',
-        'RAJASTHAN' => 'RAJASTHAN',
-        'TAMILNADU' => 'TAMILNADU',
-        'TELANGANA' => 'TELANGANA',
-        'UP_EAST' => 'UP_EAS',
-        'UP_WEST' => 'UP_WEST',
-        'WEST BENGAL' => 'WEST BENGAL',
-    ];
+    $options = cdat_sum_phone_area_state_options();
     return cdat_sum_searchable_select(
         'STATE',
-        'State',
+        'State / Region',
         $options,
         $selected,
-        'Select state',
+        'Select state or region',
         $required,
         'sum-search-form__field--state'
     );
@@ -181,10 +307,10 @@ function cdat_sum_tower_cascade_script(): void
        . '"></script>'
        . '<script>function getps(val){jQuery.ajax({type:"POST",url:'
        . json_encode(function_exists('cdat_href') ? cdat_href('/api/crime-numbers') : '/api/crime-numbers')
-       . ',data:"POLICE_STATION="+val,success:function(data){jQuery("#Crime-list").html(data);}});}'
+       . ',data:"POLICE_STATION="+val,success:function(data){jQuery("temp_Crime-list").html(data);}});}'
        . 'function getyear(val1){jQuery.ajax({type:"POST",url:'
        . json_encode(function_exists('cdat_href') ? cdat_href('/api/years') : '/api/years')
-       . ',data:"CRIME_NO="+val1,success:function(data){jQuery("#YEAR").html(data);}});}</script>';
+       . ',data:"CRIME_NO="+val1,success:function(data){jQuery("temp_YEAR").html(data);}});}</script>';
 }
 
 function cdat_sum_field_date(string $name, string $label, string $id = '', string $value = '',
@@ -378,42 +504,7 @@ function cdat_sum_field_operator(string $selected = ''): string
 /** @return array<string,string> */
 function cdat_sum_call_state_options(): array
 {
-    return [
-        '' => 'Select state',
-        'ANDAMAN AND NICOBAR ISLANDS' => 'ANDAMAN AND NICOBAR ISLANDS',
-        'ANDHRA PRADESH' => 'ANDHRA PRADESH',
-        'ARUNACHAL PRADESH' => 'ARUNACHAL PRADESH',
-        'ASSAM' => 'ASSAM',
-        'BIHAR' => 'BIHAR',
-        'CHENNAI' => 'CHENNAI',
-        'CHHATTISGARH' => 'CHHATTISGARH',
-        'DELHI' => 'DELHI',
-        'GUJARAT' => 'GUJARAT',
-        'HARYANA' => 'HARYANA',
-        'HIMACHAL PRADESH' => 'HIMACHAL PRADESH',
-        'JAMMU_KASHMIR' => 'JAMMU_KASHMIR',
-        'JHARKHAND' => 'JHARKHAND',
-        'KARNATAKA' => 'KARNATAKA',
-        'KERALA' => 'KERALA',
-        'KOLKATA' => 'KOLKATA',
-        'MADHYA PRADESH' => 'MADHYA PRADESH',
-        'MAHARASHTRA' => 'MAHARASHTRA',
-        'MANIPUR' => 'MANIPUR',
-        'MEGHALAYA' => 'MEGHALAYA',
-        'MIZORAM' => 'MIZORAM',
-        'MUMBAI' => 'MUMBAI',
-        'NAGALAND' => 'NAGALAND',
-        'NORTH_EAST' => 'NORTH_EAST',
-        'ORISSA' => 'ORISSA',
-        'PUNJAB' => 'PUNJAB',
-        'RAJASTHAN' => 'RAJASTHAN',
-        'TAMILNADU' => 'TAMILNADU',
-        'TELANGANA' => 'TELANGANA',
-        'TRIPURA' => 'TRIPURA',
-        'UP_EAST' => 'UP_EAST',
-        'UP_WEST' => 'UP_WEST',
-        'WEST BENGAL' => 'WEST BENGAL',
-    ];
+    return cdat_sum_phone_area_state_options();
 }
 
 function cdat_sum_field_call_state(string $selected = '', bool $required = false): string
@@ -585,6 +676,12 @@ function cdat_sum_contact_row(array $row): void
     echo '</tr>';
 }
 
+/** Allow long-running CDR/summary searches (PHP default is often 30s). */
+function cdat_sum_begin_heavy_search(): void
+{
+    set_time_limit(0);
+}
+
 /** @return array<int,array<string,mixed>> */
 function cdat_sum_fetch_all($stmt): array
 {
@@ -592,7 +689,7 @@ function cdat_sum_fetch_all($stmt): array
     if ($stmt === false) {
         return $rows;
     }
-    while ($row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) {
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $rows[] = $row;
     }
     return $rows;
@@ -604,7 +701,7 @@ function cdat_sum_fetch_one($stmt): ?array
     if ($stmt === false) {
         return null;
     }
-    $row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
     return $row ?: null;
 }
 
@@ -696,6 +793,90 @@ function cdat_sum_hub_card(string $title, string $desc = '', string $image = '',
            . '" alt="" /></div>';
     }
     echo '</section>';
+}
+
+/** Normalize PostgreSQL BYTEA / LOB values (may be a stream resource) to string. */
+function cdat_pg_binary_to_string($value): ?string
+{
+    if ($value === null) {
+        return null;
+    }
+    if (is_resource($value)) {
+        $contents = stream_get_contents($value);
+        return $contents === false ? null : $contents;
+    }
+    if (!is_string($value)) {
+        return (string) $value;
+    }
+    return $value;
+}
+
+function cdat_default_suspect_image_local($conn): ?string
+{
+    static $image = false;
+    if ($image !== false) {
+        return $image;
+    }
+
+    $st = $conn->query("SELECT image FROM suspect_image_table WHERE irkey = '113769' LIMIT 1");
+    if ($st && ($row = $st->fetch(PDO::FETCH_ASSOC))) {
+        $image = cdat_pg_binary_to_string($row['IMAGE'] ?? null);
+    } else {
+        $image = null;
+    }
+
+    return $image;
+}
+
+/**
+ * Build an img src value for base64 or binary image columns.
+ * Returns a data URI when image data exists, otherwise a static placeholder.
+ */
+function cdat_base64_image_src($data, string $fallback = 'IMAGES/emp.png'): string
+{
+    $data = cdat_pg_binary_to_string($data);
+    if ($data === null || $data === '') {
+        return $fallback;
+    }
+
+    // Raw binary image bytes from PostgreSQL BYTEA
+    if (isset($data[0]) && $data[0] === "\xFF" && ($data[1] ?? '') === "\xD8") {
+        return 'data:image/jpeg;base64,' . base64_encode($data);
+    }
+    if (str_starts_with($data, "\x89PNG")) {
+        return 'data:image/png;base64,' . base64_encode($data);
+    }
+    if (str_starts_with($data, 'GIF87a') || str_starts_with($data, 'GIF89a')) {
+        return 'data:image/gif;base64,' . base64_encode($data);
+    }
+
+    $data = trim($data);
+    if ($data === '') {
+        return $fallback;
+    }
+
+    if (stripos($data, 'data:image') === 0) {
+        $fixed = preg_replace('/^data:image;\s*base64,/i', 'data:image/jpeg;base64,', $data, 1);
+        return $fixed !== '' ? $fixed : $fallback;
+    }
+
+    if (preg_match('/^data:image\/[^;]+;base64,(.+)$/is', $data, $matches)) {
+        $data = $matches[1];
+    }
+
+    $data = preg_replace('/\s+/', '', $data);
+    if ($data === '') {
+        return $fallback;
+    }
+
+    $mime = 'image/jpeg';
+    if (str_starts_with($data, 'iVBORw0KGgo')) {
+        $mime = 'image/png';
+    } elseif (str_starts_with($data, 'R0lGOD')) {
+        $mime = 'image/gif';
+    }
+
+    return 'data:' . $mime . ';base64,' . $data;
 }
 
 function cdat_sum_img_html($src, int $width = 120, int $height = 120): string

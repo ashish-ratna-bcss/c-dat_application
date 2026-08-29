@@ -5,22 +5,16 @@ require_once CDAT_COMMON . '/includes/sum_ui.php';
 
 layout_begin('Habitual Offenders');
 cdat_sum_page_open();
-
-$serverName = "CPHYDERABAD1\\DAU_HYD_2023";
-$connectionInfo = array('Database' => 'CDATDUPL');
-$conn = sqlsrv_connect($serverName, $connectionInfo);
-if ($conn === false) {
-    die(print_r(sqlsrv_errors(), true));
-}
-
+cdat_sum_begin_heavy_search();
+$conn = get_cdat_pdo();
 $sql8 = "select 'HABITUAL OFFENDERS' PHONE1";
-$sql9 = "SELECT IRKEY, NAME, ALIAS_NAME, FATHER_NAME, AGE, PRESENT_ADDRESS, ARRESTED_IN_CRIMEHEAD, MO, CRIME_NO, YEAR, SEC_OF_LAW, POLICE_STATION, count1, image FROM IRFORMS..HABITUAL_OFFENDERS ORDER BY COUNT1 desc";
+$sql9 = "SELECT irkey, name, alias_name, father_name, age, present_address, arrested_in_crimehead, mo, crime_no, year, sec_of_law, police_station, count1 FROM habitual_offenders ORDER BY count1 DESC";
 
-$st8 = sqlsrv_query($conn, $sql8);
-$st9 = sqlsrv_query($conn, $sql9);
+$st8 = $conn->query($sql8);
+$st9 = $conn->query($sql9);
 
 $banner = 'HABITUAL OFFENDERS';
-if ($st8 && ($b = sqlsrv_fetch_array($st8, SQLSRV_FETCH_ASSOC))) {
+if ($st8 && ($b = $st8->fetch(PDO::FETCH_ASSOC))) {
     $banner = (string) ($b['PHONE1'] ?? $banner);
 }
 
@@ -44,7 +38,7 @@ if (empty($rows)) {
             ['html' => '<a href="' . htmlspecialchars(cdat_page('ir.php')) . '?IRKEY=' . cdat_sum_h(urlencode($irKey)) . '">' . cdat_sum_h($irKey) . '</a>', 'class' => 'sum-cell-num'],
             (string) ($row['NAME'] ?? ''),
             (string) ($row['ALIAS_NAME'] ?? ''),
-            ['html' => cdat_sum_img_html($row['image'] ?? '', 120, 120), 'class' => 'sum-cell-img'],
+            ['html' => cdat_sum_img_html($row['IMAGE'] ?? '', 120, 120), 'class' => 'sum-cell-img'],
             (string) ($row['FATHER_NAME'] ?? ''),
             ['text' => (string) ($row['AGE'] ?? ''), 'class' => 'sum-cell-num'],
             ['html' => $addr !== '' ? $addr : '—', 'class' => 'sum-address-cell'],
@@ -62,9 +56,9 @@ if (empty($rows)) {
 }
 
 if ($st9) {
-    sqlsrv_free_stmt($st9);
+    $st9 = null;
 }
-sqlsrv_close($conn);
+$conn = null;
 
 cdat_sum_page_close();
 layout_end();

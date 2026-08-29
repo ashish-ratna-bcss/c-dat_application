@@ -23,37 +23,31 @@ if ($hasSearch) {
             'Search'
         );
     }
+    $conn = get_cdat_pdo();
 
-    $serverName = "CPHYDERABAD1\DAU_HYD_2023";
-    $connectionInfo = array( "Database"=>"CDATDUPL");
-    $conn = sqlsrv_connect( $serverName, $connectionInfo );
-
-    if( $conn === false ) {
-        die( print_r( sqlsrv_errors(), true));
-    }
-
-    $number = trim($_POST['VEHICLE_NO']);
+        $number = trim($_POST['VEHICLE_NO']);
 
     // Use parameterized queries to prevent SQL injection
     $sql8 = "SELECT 'VEHICLE ADDRESS SEARCH' as PHONE1";
-    $st8 = sqlsrv_query($conn, $sql8);
+    $st8 = $conn->query($sql8);
 
     $sql9 = "SELECT REGN_NO, FULLNAME AS NAME, FATHERNAME AS FATHER_NAME, 
-            FULLADDRESS + ', ' + CITY AS ADDRESS, PHONE AS PHONE_NO,
-            MKR_CLAS + ', COLOR: ' + COLOUR + ', ' + VEH_CLASS AS VEHICLE_TYPE, 
-            ENG_NO, CHAS_NO, CONVERT(VARCHAR, ISS_DT, 106) AS ISSUED_DATE 
-            FROM CDATDUPL.[dbo].[CDAT_RTA] 
+            FULLADDRESS || ', ' || CITY AS ADDRESS, PHONE AS PHONE_NO,
+            MKR_CLAS || ', COLOR: ' || COLOUR || ', ' || VEH_CLASS AS VEHICLE_TYPE, 
+            ENG_NO, CHAS_NO, TO_CHAR(ISS_DT::timestamp, 'DD Mon YYYY') AS ISSUED_DATE 
+            FROM cdat_rta 
             WHERE REGN_NO LIKE ?";
     $params9 = array('%' . $number . '%');
-    $st9 = sqlsrv_prepare($conn, $sql9, $params9);
-    sqlsrv_execute($st9);
+    $st9 = $conn->prepare($sql9);
+    $st9->execute($params9);
+    
 
     if ($st9 === false) {
-        die(print_r(sqlsrv_errors(), true));
+        die(print_r(error_get_last(), true));
     }
 
     $bannerTitle = 'VEHICLE ADDRESS SEARCH';
-    if ($st8 && ($bannerRow = sqlsrv_fetch_array($st8, SQLSRV_FETCH_ASSOC))) {
+    if ($st8 && ($bannerRow = $st8->fetch(PDO::FETCH_ASSOC))) {
         $bannerTitle = (string) ($bannerRow['PHONE1'] ?? $bannerTitle);
     }
 
@@ -100,8 +94,8 @@ if ($hasSearch) {
         cdat_sum_results_close();
     }
 
-    sqlsrv_free_stmt($st9);
-    sqlsrv_close($conn);
+    $st9 = null;
+    $conn = null;
 
     if ($isAjax) {
         exit;

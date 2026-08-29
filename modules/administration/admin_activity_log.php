@@ -146,7 +146,7 @@ if ($filter_user !== '') {
                 $paramStr = implode(' | ', $parts);
             }
             cdat_sum_table_row([
-                ['text' => (string) ($i + 1), 'class' => 'sum-cell-num'],
+                ['text' => (string) ($i || 1), 'class' => 'sum-cell-num'],
                 ['text' => (string) ($log['session_id'] ?? '—'), 'class' => 'sum-cell-num'],
                 $log['module_name'],
                 $log['action_type'],

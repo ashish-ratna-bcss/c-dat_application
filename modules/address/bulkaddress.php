@@ -12,56 +12,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             layout_begin('Bulk Address');
             cdat_sum_page_open();
         }
-
-        $serverName = "CPHYDERABAD1\DAU_HYD_2023";
-        $connectionInfo = array( "Database"=>"CDATDUPL");
-        $conn = sqlsrv_connect( $serverName, $connectionInfo );
-        if( $conn === false ) {
-            die( print_r( sqlsrv_errors(), true));
-        }
-
-        $phones = cdat_sum_split_phones($number);
+        $conn = get_cdat_pdo();
+                $phones = cdat_sum_split_phones($number);
         $number2 = cdat_sum_sql_phone_in($phones);
 
-        $sql1= "CREATE TABLE #T1 (PHONE NVARCHAR (20) NULL)";
+        $sql1= "CREATE TEMP TABLE temp_t1 (phone varchar(20))";
 
-        $sql3= "SELECT DISTINCT A.PHONE, MIN(STARTTIME) AS FIRST_CALL,MAX(STARTTIME) AS LAST_CALL, MAX(A.ASONDATE) AS LAST_UPDATED,NICKNAME INTO #T2
-FROM CDATDUPL.DBO.CDATPCSUSPECT A 
-LEFT JOIN CDATDUPL.DBO.CDATSUSPECT B ON A.PHONE=B.PHONE WHERE A.PHONE IN ('$number2')
+        $sql3= "CREATE TEMP TABLE temp_t2 AS SELECT DISTINCT A.PHONE, MIN(STARTTIME) AS FIRST_CALL,MAX(STARTTIME) AS LAST_CALL, MAX(A.ASONDATE) AS LAST_UPDATED,NICKNAME
+FROM CDATPCSUSPECT A 
+LEFT JOIN CDATSUSPECT B ON A.PHONE=B.PHONE WHERE A.PHONE IN ('$number2')
 GROUP BY A.PHONE,NICKNAME";
 
-        $sql4 = "SELECT DISTINCT A.PHONE, FIRST_CALL,LAST_CALL,LAST_UPDATED,NICKNAME INTO #T3 FROM #T1 A
-LEFT JOIN #T2 B ON A.PHONE=B.PHONE";
+        $sql4 = "CREATE TEMP TABLE temp_t3 AS SELECT DISTINCT A.PHONE, FIRST_CALL,LAST_CALL,LAST_UPDATED,NICKNAME FROM temp_t1 A
+LEFT JOIN temp_t2 B ON A.PHONE=B.PHONE";
 
-        $sql5= "SELECT PHONE,FULLNAME,FULLADDRESS,CATEGORY_TYPE,DOA, EFF_FROM_DATE INTO #T4   FROM CDATDUPL.DBO.CDATADDRESS 
+        $sql5= "CREATE TEMP TABLE temp_t4 AS SELECT PHONE,FULLNAME,FULLADDRESS,CATEGORY_TYPE,DOA, EFF_FROM_DATE   FROM CDATADDRESS 
 WHERE PHONE IN ('$number2') AND EFF_TO_DATE IS NULL";
 
-        $sql6 = "INSERT INTO #T4
-SELECT PHONE,FULLNAME,FULLADDRESS,CATEGORY_TYPE, DOA, EFF_FROM_DATE FROM CDATDUPL.DBO.ADDRESS_OTHER_STATE
+        $sql6 = "INSERT INTO temp_t4
+SELECT PHONE,FULLNAME,FULLADDRESS,CATEGORY_TYPE, DOA, EFF_FROM_DATE FROM ADDRESS_OTHER_STATE
 WHERE PHONE IN ('$number2') AND EFF_TO_DATE IS NULL";
 
-        $sql7 = "select DISTINCT A.PHONE,ISNULL(CONVERT(VARCHAR,FIRST_CALL,20),'NIL')  AS FIRST_CALL,
-ISNULL(CONVERT(VARCHAR,A.LAST_CALL,20),'NIL') AS LAST_CALL,
-ISNULL(CONVERT(VARCHAR,A.LAST_UPDATED,20),'NIL') AS LAST_UPDATED,ISNULL(NICKNAME,'NIL') AS NICKNAME,
-CASE WHEN A.PHONE IN (SELECT PHONE FROM #T4) THEN FULLNAME+', '+B.FULLADDRESS+', DOA: '+CONVERT(VARCHAR,DOA,106)+', LAST UPDATE: '+CONVERT(VARCHAR,EFF_FROM_DATE,106)
-ELSE AREADESCRIPTION END AS ADDRESS INTO #T5 FROM #T3 A
-LEFT JOIN #T4 B ON A.PHONE=B.PHONE
-LEFT JOIN CDATDUPL.DBO.CDATPHONEAREA E ON  CASE WHEN LEN(A.PHONE)=10 THEN A.PHONE ELSE CASE WHEN LEN(A.PHONE)>10 THEN '00'+A.PHONE ELSE 'CODE NOT AVAILABLE' END END
- LIKE PHONEPREFIX+'%' ORDER BY A.PHONE";
+        $sql7 = "CREATE TEMP TABLE temp_t5 AS SELECT DISTINCT A.PHONE,COALESCE(TO_CHAR((FIRST_CALL)::timestamp, 'YYYY-MM-DD HH24:MI:SS'),'NIL')  AS FIRST_CALL,
+COALESCE(TO_CHAR((A.LAST_CALL)::timestamp, 'YYYY-MM-DD HH24:MI:SS'),'NIL') AS LAST_CALL,
+COALESCE(TO_CHAR((A.LAST_UPDATED)::timestamp, 'YYYY-MM-DD HH24:MI:SS'),'NIL') AS LAST_UPDATED,COALESCE(NICKNAME,'NIL') AS NICKNAME,
+CASE WHEN A.PHONE IN (SELECT phone FROM temp_t4) THEN FULLNAME || ', ' || B.FULLADDRESS || ', DOA: ' || TO_CHAR(DOA::timestamp, 'DD Mon YYYY') || ', LAST UPDATE: ' || TO_CHAR(EFF_FROM_DATE::timestamp, 'DD Mon YYYY')
+ELSE AREADESCRIPTION END AS ADDRESS  FROM temp_t3 A
+LEFT JOIN temp_t4 B ON A.PHONE=B.PHONE
+LEFT JOIN CDATPHONEAREA E ON  CASE WHEN LENGTH(A.PHONE)=10 THEN A.PHONE ELSE CASE WHEN LENGTH(A.PHONE)>10 THEN '00' || A.PHONE ELSE 'CODE NOT AVAILABLE' END END
+ LIKE phoneprefix || '%' ORDER BY A.PHONE";
 
         $sql8 = "SELECT PHONE, FIRST_CALL,LAST_CALL,LAST_UPDATED,NICKNAME,
- CASE WHEN ADDRESS IS NULL AND LEN(PHONE)<>10 THEN 'JUNK OR VOIP CALL' 
- WHEN ADDRESS IS NULL AND SUBSTRING(PHONE,1,1) IN ('7','8','9') AND LEN(ADDRESS)>=10 THEN 'CODE NOT AVAILABLE' ELSE ADDRESS 
- END AS ADDRESS FROM #T5";
+ CASE WHEN ADDRESS IS NULL AND LENGTH(PHONE)<>10 THEN 'JUNK OR VOIP CALL' 
+ WHEN ADDRESS IS NULL AND SUBSTRING(PHONE,1,1) IN ('7','8','9') AND LENGTH(ADDRESS)>=10 THEN 'CODE NOT AVAILABLE' ELSE ADDRESS 
+ END AS ADDRESS FROM temp_t5";
 
-        $st1 = sqlsrv_query( $conn, $sql1 );
-        cdat_sum_insert_phones($conn, '#T1', $phones);
-        $st3 = sqlsrv_query( $conn, $sql3 );
-        $st4 = sqlsrv_query( $conn, $sql4 );
-        $st5 = sqlsrv_query( $conn, $sql5 );
-        $st6 = sqlsrv_query( $conn, $sql6 );
-        $st7 = sqlsrv_query( $conn, $sql7 );
-        $st8 = sqlsrv_query( $conn, $sql8 );
+        $st1 = $conn->query($sql1);
+        cdat_sum_insert_phones($conn, 'temp_t1', $phones);
+        $st3 = $conn->query($sql3);
+        $st4 = $conn->query($sql4);
+        $st5 = $conn->query($sql5);
+        $st6 = $conn->query($sql6);
+        $st7 = $conn->query($sql7);
+        $st8 = $conn->query($sql8);
 
         $rows = cdat_sum_fetch_all($st8);
 
@@ -95,7 +88,7 @@ LEFT JOIN CDATDUPL.DBO.CDATPHONEAREA E ON  CASE WHEN LEN(A.PHONE)=10 THEN A.PHON
         cdat_sum_results_close();
 
         if ($st8) {
-            sqlsrv_free_stmt($st8);
+            $st8 = null;
         }
 
         if ($isAjax) {

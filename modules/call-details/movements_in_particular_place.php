@@ -47,93 +47,94 @@ if ($hasSearch) {
 
     set_time_limit(0);
     require_once CDAT_COMMON . '/activity_logger.php';
-    require_once CDAT_COMMON . '/cdr_enrichment_sql.php';
-    audit_log('Movements in Particular Place', 'Search', [
+        audit_log('Movements in Particular Place', 'Search', [
         'phone_number' => $number,
         'lat'   => $lat,
         'long'  => $long,
         'range' => $range,
     ]);
-
-    $serverName     = 'CPHYDERABAD1\\DAU_HYD_2023';
-    $connectionInfo = ['Database' => 'CDATDUPL'];
-    $conn = sqlsrv_connect($serverName, $connectionInfo);
-    if ($conn === false) {
-        die(print_r(sqlsrv_errors(), true));
-    }
-
-    /* Step 1 – pull raw records for the phone into a temp table */
-    $sql2 = "SELECT DISTINCT PHONE, OTHER,
-                CONVERT(VARCHAR, STARTTIME, 20) AS STARTTIME, DURATION,
+    $conn = get_cdat_pdo();
+        /* Step 1 – pull raw records for the phone into a temp table */
+    $sql2 = "CREATE TEMP TABLE temp_tt AS SELECT DISTINCT PHONE, OTHER,
+                TO_CHAR((STARTTIME)::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS STARTTIME, DURATION,
                 CASE WHEN INCOMING='1' THEN 'IN' ELSE 'OUT' END AS TYPE,
                 IMEINUMBER, CELLTOWERID, STATE_KEY, PROVIDER_KEY
-             INTO #TT
-             FROM CDATDUPL.DBO.CDATPCSUSPECT
+              FROM CDATPCSUSPECT
              WHERE PHONE = ?";
 
     /* Step 2 – join with cell tower table */
-    $sql3 = "SELECT DISTINCT
+    $sql3 = "CREATE TEMP TABLE temp_ttp AS SELECT DISTINCT
                 A.PHONE, OTHER,
-                CASE WHEN OTHER IN (SELECT PHONE FROM CDATDUPL.DBO.CDATSUSPECT)
-                     THEN NICKNAME ELSE '' END AS NICKNAME,
+                CASE WHEN C.PHONE IS NOT NULL THEN C.NICKNAME ELSE '' END AS NICKNAME,
                 STARTTIME, DURATION, TYPE, A.IMEINUMBER, A.CELLTOWERID, OPERATOR,
                 (CASE WHEN A.CELLTOWERID = B.CELLTOWERID
-                      THEN MAX(SITEADDRESS) ELSE '' END
-                 + ', LAST_UPDATE:' + CONVERT(VARCHAR, LASTUPDATE, 20)) AS AREADESCRIPTION,
+                      THEN MAX(SITEADDRESS) ELSE '' END || ', LAST_UPDATE:' || TO_CHAR((LASTUPDATE)::timestamp, 'YYYY-MM-DD HH24:MI:SS')) AS AREADESCRIPTION,
                 LAT, LONG, AZIMUTH AS AZM
-             INTO #TTP
-             FROM #TT A
-             INNER JOIN CDATDUPL.DBO.CDATCELLTOWERAREANEW B
+              FROM temp_tt A
+             INNER JOIN CDATCELLTOWERAREANEW B
                 ON A.CELLTOWERID = B.CELLTOWERID
                AND A.STATE_KEY    = B.STATE_KEY
                AND A.PROVIDER_KEY = B.PROVIDER_KEY
-             LEFT JOIN CDATDUPL.DBO.CDATSUSPECT C ON A.OTHER = C.PHONE
+             LEFT JOIN CDATSUSPECT C ON A.OTHER = C.PHONE
              WHERE B.LASTUPDATE = (
-                 SELECT DISTINCT MAX(LASTUPDATE)
-                 FROM CDATDUPL.DBO.CDATCELLTOWERAREANEW X
+                 SELECT MAX(LASTUPDATE)
+                 FROM CDATCELLTOWERAREANEW X
                  WHERE X.CELLTOWERID   = B.CELLTOWERID
                    AND X.PROVIDER_KEY  = B.PROVIDER_KEY
                    AND X.STATE_KEY     = B.STATE_KEY
              )
-             GROUP BY A.PHONE, OTHER, NICKNAME, STARTTIME, DURATION, TYPE,
+             GROUP BY A.PHONE, OTHER, C.NICKNAME, C.PHONE, STARTTIME, DURATION, TYPE,
                       A.IMEINUMBER, A.CELLTOWERID, B.CELLTOWERID, LASTUPDATE,
                       OPERATOR, A.STATE_KEY, B.STATE_KEY, A.PROVIDER_KEY,
                       B.PROVIDER_KEY, LAT, LONG, AZIMUTH";
 
-    /* Step 3 – distance filter using stored function */
-    $sql4 = "DECLARE @lat    DECIMAL(14,10) = ?,
-                     @long   DECIMAL(14,10) = ?,
-                     @radius DECIMAL(15,10) = ?
-             SELECT PHONE, OTHER, NICKNAME, STARTTIME, DURATION, TYPE, CELLTOWERID,
-                    CAST(DBO.CALCULATEDISTANCE(@long, @lat, LONG, LAT) * 1000 AS INT) AS DIST,
-                    DBO.GETBEARING(LAT, LONG, @lat, @long) AS BR,
+    /* Step 3 – distance filter (haversine, metres) */
+    $sql4 = "SELECT PHONE, OTHER, NICKNAME, STARTTIME, DURATION, TYPE, CELLTOWERID,
+                    CAST(
+                        6371000 * acos(LEAST(1.0, GREATEST(-1.0,
+                            cos(radians(?)) * cos(radians(lat::double precision)) *
+                            cos(radians(long::double precision) - radians(?)) +
+                            sin(radians(?)) * sin(radians(lat::double precision))
+                        )))
+                    AS INT) AS DIST,
+                    CAST(degrees(atan2(
+                        sin(radians(long::double precision - ?)) * cos(radians(lat::double precision)),
+                        cos(radians(?)) * sin(radians(lat::double precision)) -
+                        sin(radians(?)) * cos(radians(lat::double precision)) * cos(radians(long::double precision - ?))
+                    )) AS INT) AS BR,
                     AREADESCRIPTION, OPERATOR, LAT, LONG, AZM
-             FROM #TTP
-             WHERE LAT  BETWEEN @lat  - 1 AND @lat  + 1
-               AND LONG BETWEEN @long - 1 AND @long + 1
-               AND ISNUMERIC(LAT)  = 1 AND LAT  IS NOT NULL
-               AND ISNUMERIC(LONG) = 1 AND LONG IS NOT NULL
-               AND DBO.CALCULATEDISTANCE(@long, @lat, LONG, LAT) * 1000 < @radius
+             FROM temp_ttp
+             WHERE lat ~ '^-?[0-9]+(\\.[0-9]+)?$' AND lat IS NOT NULL
+               AND long ~ '^-?[0-9]+(\\.[0-9]+)?$' AND long IS NOT NULL
+               AND lat::double precision BETWEEN ? - 1 AND ? + 1
+               AND long::double precision BETWEEN ? - 1 AND ? + 1
+               AND 6371000 * acos(LEAST(1.0, GREATEST(-1.0,
+                    cos(radians(?)) * cos(radians(lat::double precision)) *
+                    cos(radians(long::double precision) - radians(?)) +
+                    sin(radians(?)) * sin(radians(lat::double precision))
+               ))) < ?
              ORDER BY STARTTIME";
 
-    $st2 = sqlsrv_query($conn, $sql2, [$number]);
-    if ($st2 === false) { die(print_r(sqlsrv_errors(), true)); }
+    $st2 = $conn->prepare($sql2);
+    $st2->execute([$number]);
+    if ($st2 === false) { die(print_r(error_get_last(), true)); }
 
-    $st3 = sqlsrv_query($conn, $sql3);
-    if ($st3 === false) { die(print_r(sqlsrv_errors(), true)); }
+    $st3 = $conn->query($sql3);
+    if ($st3 === false) { die(print_r(error_get_last(), true)); }
 
-    $st4 = sqlsrv_query($conn, $sql4, [$lat, $long, $range]);
-    if ($st4 === false) { die(print_r(sqlsrv_errors(), true)); }
+    $st4 = $conn->prepare($sql4);
+    $st4->execute([$lat, $long, $lat, $long, $lat, $lat, $long, $lat, $lat, $long, $long, $lat, $long, $lat, $range]);
+    if ($st4 === false) { die(print_r(error_get_last(), true)); }
 
     $rows = [];
-    while ($row = sqlsrv_fetch_array($st4, SQLSRV_FETCH_ASSOC)) {
+    while ($row = $st4->fetch(PDO::FETCH_ASSOC)) {
         $rows[] = $row;
     }
 
-    sqlsrv_free_stmt($st2);
-    sqlsrv_free_stmt($st3);
-    sqlsrv_free_stmt($st4);
-    sqlsrv_close($conn);
+    $st2 = null;
+    $st3 = null;
+    $st4 = null;
+    $conn = null;
 
     if (empty($rows)) {
         cdat_sum_empty_state("No movements found for $number within {$range}m of $lat, $long");

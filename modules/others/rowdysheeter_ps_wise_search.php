@@ -10,7 +10,7 @@ $hasSearch = $ps !== '';
 cdat_sum_ajax_need_search($hasSearch, 'Select a police station and try again.');
 
 $db_handle = new DBController();
-$query = "SELECT DISTINCT UPPER(LTRIM(RTRIM(POLICE_STATION))) POLICE_STATION FROM CDATDUPL..ROWDY_SHEETER_DATA1";
+$query = "SELECT DISTINCT UPPER(LTRIM(RTRIM(POLICE_STATION))) POLICE_STATION FROM rowdy_sheeter_complete_data";
 $psRows = $db_handle->runQuery($query) ?: [];
 $psOptions = ['' => 'Select Police Station'];
 foreach ($psRows as $r) {
@@ -42,27 +42,21 @@ if ($hasSearch) {
             'Submit'
         );
     }
+    $conn = get_cdat_pdo();
+        $number = $ps;
 
-    $serverName = "CPHYDERABAD1\\DAU_HYD_2023";
-    $connectionInfo = array('Database' => 'CDATDUPL');
-    $conn = sqlsrv_connect($serverName, $connectionInfo);
-    if ($conn === false) {
-        die(print_r(sqlsrv_errors(), true));
-    }
-    $number = $ps;
-
-    $sql0 = "SELECT DISTINCT IRKEY,PDACT_KEY,NAME,AGE,FATHER_NAME,PHONE,PRESENT_ADDRESS,LAT_P PRESENT_ADDRESS_LAT,
-LONG_P PRESENT_ADDRESS_LONG,PERMANENT_ADDRESS,LAT PERMANENT_ADD_LAT,LONG PERMANENT_ADD_LONG,ID_PROOF_TYPE+' '+ID_NO IDPROOF,
-COMMUNAL_NONCOMMUNAL COMMUNAL_STATUS,LATEST_BIND_OVER_DATE BIND_OVER_DATE,POLICE_STATION,PRESENT_ACTIVITY,DATE_OF_OPENING_RWD INTO #TEMP FROM ROWDY_SHEETER_DATA1
+    $sql0 = "CREATE TEMP TABLE temp_jrms_temp AS SELECT DISTINCT IRKEY,PDACT_KEY,NAME,AGE,FATHER_NAME,PHONE,PRESENT_ADDRESS,LAT_P PRESENT_ADDRESS_LAT,
+LONG_P PRESENT_ADDRESS_LONG,PERMANENT_ADDRESS,LAT PERMANENT_ADD_LAT,LONG PERMANENT_ADD_LONG,ID_PROOF_TYPE || ' ' || ID_NO IDPROOF,
+COMMUNAL_NONCOMMUNAL COMMUNAL_STATUS,LATEST_BIND_OVER_DATE BIND_OVER_DATE,POLICE_STATION,PRESENT_ACTIVITY,DATE_OF_OPENING_RWD  FROM rowdy_sheeter_complete_data
 WHERE POLICE_STATION LIKE '%$number%'";
 
     $sql1 = "select PDACT_KEY,A.IRKEY,NAME,FATHER_NAME,AGE,PHONE,PRESENT_ADDRESS,PERMANENT_ADDRESS,PRESENT_ACTIVITY,IDPROOF,COMMUNAL_STATUS,
-CONVERT(VARCHAR(20),DATE_OF_OPENING_RWD) AS DATE_OF_OPENING_RWD,POLICE_STATION,CASE WHEN CONVERT(VARCHAR(20),A.IRKEY)=CONVERT(VARCHAR(20),B.IRKEY)
-THEN IMAGE ELSE (SELECT IMAGE FROM FORMS..IMAGE_TABLE WHERE IRKEY='113769')END  AS IMAGE
-FROM #TEMP A LEFT JOIN FORMS..IMAGE_TABLE B ON CONVERT(VARCHAR(20),A.IRKEY)=CONVERT(VARCHAR(20),B.IRKEY) ";
+(DATE_OF_OPENING_RWD)::varchar AS DATE_OF_OPENING_RWD,POLICE_STATION,CASE WHEN (A.IRKEY)::varchar=(B.IRKEY)::varchar
+THEN IMAGE ELSE (SELECT IMAGE FROM image_table WHERE IRKEY='113769')END  AS IMAGE
+FROM temp_jrms_temp A LEFT JOIN image_table B ON (A.IRKEY)::varchar=(B.IRKEY)::varchar ";
 
-    sqlsrv_query($conn, $sql0);
-    $st1 = sqlsrv_query($conn, $sql1);
+    $conn->query($sql0);
+    $st1 = $conn->query($sql1);
     $rows = cdat_sum_fetch_all($st1);
 
     if (empty($rows)) {
@@ -100,7 +94,7 @@ FROM #TEMP A LEFT JOIN FORMS..IMAGE_TABLE B ON CONVERT(VARCHAR(20),A.IRKEY)=CONV
         cdat_sum_results_close();
     }
 
-    sqlsrv_close($conn);
+    $conn = null;
 
     if ($isAjax) {
         exit;

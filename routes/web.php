@@ -397,13 +397,6 @@ return [
         'handler' => 'modules/offenders-list/fp_list.php',
     ],
 
-    [
-        'method'  => ['GET', 'POST'],
-        'path'    => '/offenders-list/list-1',
-        'name'    => 'offenders-list.list-1',
-        'handler' => 'modules/offenders-list/wanted1.php',
-    ],
-
     /*
     |--------------------------------------------------------------------------
     | Others

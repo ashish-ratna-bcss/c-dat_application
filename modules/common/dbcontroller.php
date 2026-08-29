@@ -1,21 +1,21 @@
 <?php
+
 require_once __DIR__ . '/bootstrap.php';
-require_once CDAT_COMMON . '/sqlsrv_compat.php';
 
 class DBController {
     private $conn;
 
     function __construct() {
-        $this->conn = sqlsrv_connect('postgres', ['Database' => 'CDATDUPL']);
+        $this->conn = get_cdat_pdo();
     }
 
     function runQuery($query) {
-        $result = sqlsrv_query($this->conn, $query);
+        $result = $this->conn->query($query);
         if ($result === false) {
             return null;
         }
         $resultset = [];
-        while ($row = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC)) {
+        while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
             $resultset[] = $row;
         }
         if (!empty($resultset)) {
@@ -24,8 +24,8 @@ class DBController {
     }
 
     function numRows($query) {
-        $result = sqlsrv_query($this->conn, $query);
-        return $result === false ? 0 : sqlsrv_num_rows($result);
+        $result = $this->conn->query($query);
+        return $result === false ? 0 : $result->rowCount();
     }
 }
 

@@ -23,37 +23,32 @@ if ($hasSearch) {
             'Search'
         );
     }
+    $conn = get_cdat_pdo();
 
-    $serverName = "CPHYDERABAD1\DAU_HYD_2023";
-    $connectionInfo = array( "Database"=>"CDATDUPL");
-    $conn = sqlsrv_connect( $serverName, $connectionInfo );
-
-    if( $conn === false ) {
-       // die( print_r( sqlsrv_errors(), true));
-    }
-
-    $number = trim($_POST['MO']);
+        $number = trim($_POST['MO']);
 
     // Use parameterized queries to prevent SQL injection
-    $sql8 = "SELECT 'DETAILS OF : ' + ? as PHONE1";
+    $sql8 = "SELECT 'DETAILS OF : ' || ? as PHONE1";
     $params8 = array($number);
-    $st8 = sqlsrv_prepare($conn, $sql8, $params8);
-    sqlsrv_execute($st8);
+    $st8 = $conn->prepare($sql8);
+    $st8->execute($params8);
+    
 
     $sql9 = "SELECT DISTINCT MO_KEY, ACC_NAME AS ACCUSED_NAME, FATHER_NAME, AGE, MO1, MO2, POLICE_STATION 
-            FROM CDATDUPL..COMPLETE_MO_CLASSIFICATION
+            FROM COMPLETE_MO_CLASSIFICATION
             WHERE (MO1 LIKE ? OR MO2 LIKE ? OR CRIME_HEAD LIKE ?)";
     $searchPattern = '%' . str_replace(' ', '%', $number) . '%';
     $params9 = array($searchPattern, $searchPattern, $searchPattern);
-    $st9 = sqlsrv_prepare($conn, $sql9, $params9);
-    sqlsrv_execute($st9);
+    $st9 = $conn->prepare($sql9);
+    $st9->execute($params9);
+    
 
     if ($st9 === false) {
-      //  die(print_r(sqlsrv_errors(), true));
+      //  die(print_r(error_get_last(), true));
     }
 
     $bannerTitle = 'DETAILS OF : ' . $number;
-    if ($st8 && ($bannerRow = sqlsrv_fetch_array($st8, SQLSRV_FETCH_ASSOC))) {
+    if ($st8 && ($bannerRow = $st8->fetch(PDO::FETCH_ASSOC))) {
         $bannerTitle = (string) ($bannerRow['PHONE1'] ?? $bannerTitle);
     }
 
@@ -91,10 +86,10 @@ if ($hasSearch) {
     }
 
     if ($st9) {
-        sqlsrv_free_stmt($st9);
+        $st9 = null;
     }
     if ($conn) {
-        sqlsrv_close($conn);
+        $conn = null;
     }
 
     if ($isAjax) {

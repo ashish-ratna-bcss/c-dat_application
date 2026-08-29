@@ -511,7 +511,7 @@ class UploadVerificationService
             ')->execute([':user' => $username, ':id' => $batchId]);
 
             // Shared filename staging: any other pending CDR batches pointing at the
-            // same staging table are also complete once the table is promoted+dropped.
+            // same staging table are also complete once the table is promoted || dropped.
             if ($module === 'cdr' && !empty($tables['cdr'])) {
                 $sibling = $this->db->prepare("
                     UPDATE upload_staging_batches

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Shared bootstrap for all module pages.
  */
@@ -21,4 +22,4 @@ if (!defined('CDAT_ASSETS')) {
     define('CDAT_ASSETS', rtrim((string) CDAT_BASE, '/') . '/public/assets');
 }
 
-require_once CDAT_COMMON . '/sqlsrv_compat.php';
+require_once CDAT_COMMON . '/db_connect.php';

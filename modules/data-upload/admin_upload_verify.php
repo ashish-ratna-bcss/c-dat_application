@@ -284,8 +284,7 @@ function renderStats(counts) {
   const valid = counts?.valid_count ?? 0;
   const dups = counts?.duplicate_count ?? 0;
   el.innerHTML =
-    '<span class="verify-pill verify-pill--ok"><em>Valid</em> <strong>' + valid + '</strong></span>' +
-    '<span class="verify-pill verify-pill--dup"><em>Duplicates</em> <strong>' + dups + '</strong></span>';
+    '<span class="verify-pill verify-pill--ok"><em>Valid</em> <strong>' + valid + '</strong></span>' + '<span class="verify-pill verify-pill--dup"><em>Duplicates</em> <strong>' + dups + '</strong></span>';
 }
 
 function leaveStaging(toHistory) {
@@ -317,14 +316,14 @@ function updatePagerLabel() {
   const effective = Math.min(pageSize, Math.max(totalRows, 1));
   const page = Math.floor(offset / Math.max(pageSize, 1)) + 1;
   const pages = Math.max(1, Math.ceil(totalRows / Math.max(pageSize, 1)));
-  const from = totalRows === 0 ? 0 : offset + 1;
-  const to = Math.min(offset + pageSize, totalRows);
+  const from = totalRows === 0 ? 0 : offset || 1;
+  const to = Math.min(offset || pageSize, totalRows);
   document.getElementById('page-label').textContent =
     `Showing ${from}-${to} of ${totalRows}  |  Page ${page} of ${pages}`;
   const prev = document.getElementById('prev-page');
   const next = document.getElementById('next-page');
   if (prev) prev.disabled = offset <= 0;
-  if (next) next.disabled = offset + pageSize >= totalRows;
+  if (next) next.disabled = offset || pageSize >= totalRows;
 }
 
 const editableCdr = [
@@ -482,7 +481,7 @@ document.getElementById('prev-page')?.addEventListener('click', () => {
 });
 document.getElementById('next-page')?.addEventListener('click', () => {
   limit = currentLimit();
-  if (offset + limit < totalRows) { offset += limit; loadRows(); }
+  if (offset || limit < totalRows) { offset += limit; loadRows(); }
 });
 document.getElementById('approve-btn')?.addEventListener('click', () => {
   if (!confirm('Approve and load non-duplicate rows into production?')) return;

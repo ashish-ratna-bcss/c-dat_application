@@ -12,7 +12,7 @@ $hasSearch = $fromDt !== '' && $toDt !== '';
 cdat_sum_ajax_need_search($hasSearch, 'Enter both dates and try again.');
 
 $db_handle = new DBController();
-$query = "SELECT distinct HEADOFCRIME FROM JRMS..JRMS_TOTAL_2012_TO_2017
+$query = "SELECT distinct HEADOFCRIME FROM jrms_total_2012_to_2017
 WHERE HEADOFCRIME!='' ORDER BY HEADOFCRIME";
 $results = $db_handle->runQuery($query) ?: [];
 $crimeOptions = ['' => 'Select CrimeHead'];
@@ -40,44 +40,38 @@ if ($hasSearch) {
             'Submit'
         );
     }
-
-    $serverName = "10.10.46.14\\DAU_HYD_2023";
-    $connectionInfo = array('Database' => 'CDATDUPL');
-    $conn = sqlsrv_connect($serverName, $connectionInfo);
-    if ($conn === false) {
-        die(print_r(sqlsrv_errors(), true));
-    }
-    $CRIMEHEAD = $crimeHead;
+    $conn = get_cdat_pdo();
+        $CRIMEHEAD = $crimeHead;
     $f_date = $fromDt;
     $t_date = $toDt;
 
-    $sql1 = "SET DATEFORMAT DMY SELECT DISTINCT PRISONERNO,UNIQUE_KEY,PSARRESTED,NAME,FATHERSNAME,CRIMENOS,HEADOFCRIME,MOBILENO PHONE,
-CASE WHEN LEN(RIGHT(NAME,CHARINDEX('/',REVERSE(NAME))))>1 THEN RIGHT(NAME,CHARINDEX('/',REVERSE(NAME))-1) ELSE '' END IDPROOF,
+    $sql1 = "CREATE TEMP TABLE temp_jrms_temp AS SELECT DISTINCT PRISONERNO,UNIQUE_KEY,PSARRESTED,NAME,FATHERSNAME,CRIMENOS,HEADOFCRIME,MOBILENO PHONE,
+CASE WHEN LENGTH(RIGHT(NAME,POSITION('/' IN REVERSE(NAME))))>1 THEN RIGHT(NAME,POSITION('/' IN REVERSE(NAME))-1) ELSE '' END IDPROOF,
 ADDR_DURINGRELEASE ADDR_DURING_RELEASE,GENDER,JAILNAME,
-CONVERT(VARCHAR(20),CONVERT(DATE,ADMISSION_TO_JAIL)) ADD_TO_JAIL,CONVERT(VARCHAR(20),CONVERT(DATE,RELEASEDT)) RELEASE_DATE,PHOTO INTO #TEMP FROM
-JRMS..JRMS_TOTAL_2012_TO_2017
-WHERE  (CONVERT(DATE,RELEASEDT) BETWEEN '$f_date' AND '$t_date') AND HEADOFCRIME LIKE '%'+'$CRIMEHEAD'+'%' AND HEADOFCRIME!='' ";
+TO_CHAR(NULLIF(TRIM(admission_to_jail), '')::date, 'YYYY-MM-DD') AS add_to_jail,
+TO_CHAR(NULLIF(TRIM(releasedt), '')::date, 'YYYY-MM-DD') AS release_date, photo  FROM
+jrms_total_2012_to_2017
+WHERE  ((RELEASEDT)::date BETWEEN '$f_date' AND '$t_date') AND HEADOFCRIME LIKE '%' || '$CRIMEHEAD' || '%' AND HEADOFCRIME!='' ";
 
-    $sql11 = "select distinct UNIQUE_KEY,COUNT(UNIQUE_KEY) NO_OF_TIMES_RELEASED INTO #COUNT from JRMS..JRMS_TOTAL_2012_TO_2017
+    $sql11 = "CREATE TEMP TABLE temp_jrms_count AS SELECT distinct UNIQUE_KEY,COUNT(UNIQUE_KEY) NO_OF_TIMES_RELEASED from jrms_total_2012_to_2017
 GROUP BY UNIQUE_KEY";
 
-    $sql2 = "SELECT PRISONERNO,A.UNIQUE_KEY,PSARRESTED,NAME,FATHERSNAME,CRIMENOS,HEADOFCRIME,NO_OF_TIMES_RELEASED
-NO_OF_TIMES_RELEASED,PHONE,IDPROOF,ADDR_DURING_RELEASE,
-JAILNAME,ADD_TO_JAIL,RELEASE_DATE,CONVERT(IMAGE,PHOTO) PHOTO,CASE WHEN IDPROOF!='' AND ISNUMERIC(IDPROOF)='1' AND IDPROOF in (select distinct AADHAR_NO FROM FORMS..IR_PARTICULARS) THEN 'IR AVAILABLE' ELSE '' END IRFORM,
-CASE WHEN IDPROOF!='' AND ISNUMERIC(IDPROOF)='1' AND
-IDPROOF in (select distinct AADHAR_NO FROM FORMS..IR_PARTICULARS) THEN (SELECT DISTINCT CONVERT(VARCHAR(20),MAX(IRKEY)) IRKEY FROM FORMS..IR_PARTICULARS WHERE
-AADHAR_NO !='' AND AADHAR_NO=CONVERT(VARCHAR(20),IDPROOF))  ELSE '' END IRKEY FROM #TEMP A
-LEFT JOIN #COUNT B ON A.UNIQUE_KEY=B.UNIQUE_KEY ORDER BY JAILNAME, RELEASE_DATE DESC";
+    $sql2 = "SELECT PRISONERNO,A.UNIQUE_KEY,PSARRESTED,NAME,FATHERSNAME,CRIMENOS,HEADOFCRIME,B.no_of_times_released,PHONE,IDPROOF,ADDR_DURING_RELEASE,
+JAILNAME,ADD_TO_JAIL,RELEASE_DATE, photo,CASE WHEN IDPROOF!='' AND IDPROOF ~ '^[0-9]+$' AND IDPROOF in (select distinct AADHAR_NO FROM ir_particulars) THEN 'IR AVAILABLE' ELSE '' END IRFORM,
+CASE WHEN IDPROOF!='' AND IDPROOF ~ '^[0-9]+$' AND
+IDPROOF in (select distinct AADHAR_NO FROM ir_particulars) THEN (SELECT DISTINCT (MAX(IRKEY)::varchar) IRKEY FROM ir_particulars WHERE
+AADHAR_NO !='' AND AADHAR_NO=(IDPROOF)::varchar)  ELSE '' END IRKEY FROM temp_jrms_temp A
+LEFT JOIN temp_jrms_count B ON A.UNIQUE_KEY=B.UNIQUE_KEY ORDER BY JAILNAME, RELEASE_DATE DESC";
 
-    $sql6 = "SELECT 'ACCUSED RELEASED FROM: '+'$f_date'+' TO: '+'$t_date' + ' UNDER CRIME HEAD ' + '$CRIMEHEAD' AS PHONE";
+    $sql6 = "SELECT 'ACCUSED RELEASED FROM: ' || '$f_date' || ' TO: ' || '$t_date' || ' UNDER CRIME HEAD ' || '$CRIMEHEAD' AS PHONE";
 
-    sqlsrv_query($conn, $sql1);
-    sqlsrv_query($conn, $sql11);
-    $st2 = sqlsrv_query($conn, $sql2);
-    $st6 = sqlsrv_query($conn, $sql6);
+    $conn->query($sql1);
+    $conn->query($sql11);
+    $st2 = $conn->query($sql2);
+    $st6 = $conn->query($sql6);
 
     $banner = 'ACCUSED RELEASED FROM: ' . $f_date . ' TO: ' . $t_date . ' UNDER CRIME HEAD ' . $CRIMEHEAD;
-    if ($st6 && ($b = sqlsrv_fetch_array($st6, SQLSRV_FETCH_ASSOC))) {
+    if ($st6 && ($b = $st6->fetch(PDO::FETCH_ASSOC))) {
         $banner = (string) ($b['PHONE'] ?? $banner);
     }
     $rows = cdat_sum_fetch_all($st2);
@@ -119,7 +113,7 @@ LEFT JOIN #COUNT B ON A.UNIQUE_KEY=B.UNIQUE_KEY ORDER BY JAILNAME, RELEASE_DATE 
         cdat_sum_generic_table_close();
         cdat_sum_results_close();
     }
-    sqlsrv_close($conn);
+    $conn = null;
 
     if ($isAjax) {
         exit;

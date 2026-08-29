@@ -38,40 +38,33 @@ if ($hasSearch) {
             'Submit'
         );
     }
-
-$serverName = "10.10.46.14\\DAU_HYD_2023";
-$connectionInfo = array( "Database"=>"FORMS");
-$conn = sqlsrv_connect( $serverName, $connectionInfo );
-if( $conn === false ) {
-    die( print_r( sqlsrv_errors(), true));
-}
+$conn = get_cdat_pdo();
 $number = (string) ($_GET['IRKEY'] ?? $_POST['IR_NO'] ?? '');
 
 
-$sql0="SELECT NAME,FATHER_NAME,IMAGE,B.CCNO FROM IR_PARTICULARS A LEFT JOIN IMAGE_TABLE B ON A.IRKEY=B.IRKEY WHERE A.IRKEY='$number'";
+$sql0="SELECT NAME,FATHER_NAME,IMAGE,B.CCNO FROM ir_particulars A LEFT JOIN image_table B ON A.IRKEY=B.IRKEY WHERE A.IRKEY='$number'";
 
 $sql1="SELECT DISTINCT 
-IRKEY, NAME, ALIAS_NAME, FATHER_NAME, AGE, CONVERT(VARCHAR,DATE_OF_BIRTH,20) DATE_OF_BIRTH, NATIONALITY, 
+IRKEY, NAME, ALIAS_NAME, FATHER_NAME, AGE, TO_CHAR((DATE_OF_BIRTH)::timestamp, 'YYYY-MM-DD HH24:MI:SS') DATE_OF_BIRTH, NATIONALITY, 
 RELIGION, CASTE, COMMUNITY, PRESENT_ADDRESS, PERMANENT_ADDRESS, MOBILE, 
 EMAIL_ID, SOCIAL_MEDIA_ACCOUNTS, AADHAR_NO, RATION_CARD_NO, VOTERID, PASSPORT, 
 PANCARD, ELECTRICITY_CONNECTION, GAS_CONNECTION, VEHICLES, DRIVING_LICENSE, 
 OTHER_ID_PROOFS, SEX, BUILT, HEIGHT, EYES, HAIR, FACE, COLOUR, TEETH, NOSE, 
 BEARD, MUSTACHES, EAR, IDENTIFICATION_MARKS, DEFORMITIES_PECULIARITIES, LANGUAGE_DIALECT, 
 BURN_MARKS, LEUCODEMA, MOLE, SCAR, TATTOO, LIVING_STATUS, MARITAL_STATUS, EDUCATION_DETAILS, 
-OCCUPATION, INCOME_GROUP, REGULAR_HABITS, CATEGORY FROM FORMS..IR_PARTICULARS
+OCCUPATION, INCOME_GROUP, REGULAR_HABITS, CATEGORY FROM ir_particulars
 WHERE IRKEY='$number'";
 
 
-$sql2="SELECT DISTINCT RELATIONSHIP RELATION,NAME+' FATHER_OR_SPOUSE: '+FATHER_OR_SPOUSE+' OCCUPATION: '+OCCUPATION
-+' PHONE_NO: '+PHONE+' AGE: '+AGE NAME,PRESENT_ADDRESS ADDRESS,CRIMINAL_BACKGROUND,STATUS FROM FAMILY_HISTORY WHERE IRKEY='$number' ORDER BY RELATION";
+$sql2="SELECT DISTINCT RELATIONSHIP RELATION,NAME || ' FATHER_OR_SPOUSE: ' || FATHER_OR_SPOUSE || ' OCCUPATION: ' || OCCUPATION || ' PHONE_NO: ' || PHONE || ' AGE: ' || AGE NAME,PRESENT_ADDRESS ADDRESS,CRIMINAL_BACKGROUND,STATUS FROM FAMILY_HISTORY WHERE IRKEY='$number' ORDER BY RELATION";
 
 $sql3="SELECT DISTINCT PERIOD_OF_OFFENCE FROM OFFENCE_DETAILS WHERE IRKEY='$number'";
 
-$sql4="SELECT DISTINCT TOWN_CITY_OR_VILLAGE,POLICE_STATION_LIMITS,NAME+' S/O '+FATHER_NAME+' AGE: '+AGE+' OCCUPATION: '+OCCUPATION NAME 
+$sql4="SELECT DISTINCT TOWN_CITY_OR_VILLAGE,POLICE_STATION_LIMITS,NAME || ' S/O ' || FATHER_NAME || ' AGE: ' || AGE || ' OCCUPATION: ' || OCCUPATION NAME 
 ,PHONE,ADDRESS_OF_CONTACT_PERSON ADDRESS FROM LOCAL_CONTACTS_FACILITATORS
 WHERE IRKEY='$number'";
 
-$sql5="SELECT DISTINCT REGULAR_HABITS FROM IR_PARTICULARS WHERE IRKEY='$number'";
+$sql5="SELECT DISTINCT REGULAR_HABITS FROM ir_particulars WHERE IRKEY='$number'";
 
 $sql6="SELECT DISTINCT INDULGANCE_BEFORE_OFFENCE FROM OFFENCE_DETAILS
 WHERE IRKEY='$number'";
@@ -91,14 +84,14 @@ WHERE IRKEY='$number'";
 $sql11="SELECT DISTINCT DISTRICT,CONFESSED_POLICE_STATION,CONFESSED_CRIME_NO,CONFESSED_YEAR,CONFESSED_SEC_OF_LAW,ASSOCIATES,PROPERTY_STOLEN,PROPERTY_RECOVERED,
 REMARKS FROM PREVIOUS_OFFENCE_DETAILS WHERE IRKEY='$number'";
 
-$sql12="SELECT DISTINCT CONVERT(VARCHAR,DATE_OF_ARREST) DATE_OF_ARREST,PLACE_OF_ARREST,'CRIME_NO: '+CONVERT(VARCHAR,CRIME_NO)+'/'+CONVERT(VARCHAR,YEAR)+' SEC_OF_LAW:'+SEC_OF_LAW
-[CRIME_NO_SEC_OF_LAW],POLICE_STATION,SUB_DIVISION,DISTRICT_OR_UNIT,
+$sql12="SELECT DISTINCT TO_CHAR(DATE_OF_ARREST::timestamp, 'YYYY-MM-DD HH24:MI:SS') DATE_OF_ARREST,PLACE_OF_ARREST,'CRIME_NO: ' || TO_CHAR(CRIME_NO::timestamp, 'YYYY-MM-DD HH24:MI:SS') || '/' || TO_CHAR(YEAR::timestamp, 'YYYY-MM-DD HH24:MI:SS') || ' SEC_OF_LAW:' || SEC_OF_LAW
+CRIME_NO_SEC_OF_LAW,POLICE_STATION,SUB_DIVISION,DISTRICT_OR_UNIT,
 ARRESTED_BY,INTERROGATED_BY,OTHERS_WHO_CAN_IDENTIFY FROM OFFENCE_DETAILS
 WHERE IRKEY='$number'";
 
-$sql13="SELECT DISTINCT BRIEF_FACTS1+'
-'+BRIEF_FACTS2+'
-'+BRIEF_FACTS3 BRIEF_FACTS FROM BRIEF_FACTS
+$sql13="SELECT DISTINCT BRIEF_FACTS1 || '
+' || BRIEF_FACTS2 || '
+' || BRIEF_FACTS3 BRIEF_FACTS FROM BRIEF_FACTS
 WHERE IRKEY='$number'";
 
 $sql20="select DISTINCT IRKEY,COUNT(*) TOTAL_NBWS_PENDING,FIRST_HEARING_DATE,DECISION_DATE,CASE_STATUS,NEXT_HEARING_DATE,NATURE_OF_DISPOSAL,COURT_NUMBER_AND_JUDGE,STAGE_OF_CASE,
@@ -107,24 +100,24 @@ WHERE CASE_STATUS LIKE '%PENDING%' AND IRKEY='$number'
 GROUP BY IRKEY,FIRST_HEARING_DATE,DECISION_DATE,CASE_STATUS,NEXT_HEARING_DATE,NATURE_OF_DISPOSAL,COURT_NUMBER_AND_JUDGE,STAGE_OF_CASE,
 PETITIONER_RESPONDENT,ACT_AND_SEC";
 
-$st0 = sqlsrv_query( $conn, $sql0 );
-$st1 = sqlsrv_query( $conn, $sql1 );
-$st2 = sqlsrv_query( $conn, $sql1 );
-$st3 = sqlsrv_query( $conn, $sql1 );
-$st4 = sqlsrv_query( $conn, $sql1 );
-$st5 = sqlsrv_query( $conn, $sql2 );
-$st6 = sqlsrv_query( $conn, $sql3 );
-$st7 = sqlsrv_query( $conn, $sql4 );
-$st8 = sqlsrv_query( $conn, $sql5 );
-$st9 = sqlsrv_query( $conn, $sql6 );
-$st10 = sqlsrv_query( $conn, $sql7 );
-$st11 = sqlsrv_query( $conn, $sql8 );
-$st12 = sqlsrv_query( $conn, $sql9 );
-$st13 = sqlsrv_query( $conn, $sql10 );
-$st14 = sqlsrv_query( $conn, $sql11 );
-$st15 = sqlsrv_query( $conn, $sql12 );
-$st20 = sqlsrv_query( $conn, $sql20 );
-$st16 = sqlsrv_query( $conn, $sql13 );
+$st0 = $conn->query($sql0);
+$st1 = $conn->query($sql1);
+$st2 = $conn->query($sql1);
+$st3 = $conn->query($sql1);
+$st4 = $conn->query($sql1);
+$st5 = $conn->query($sql2);
+$st6 = $conn->query($sql3);
+$st7 = $conn->query($sql4);
+$st8 = $conn->query($sql5);
+$st9 = $conn->query($sql6);
+$st10 = $conn->query($sql7);
+$st11 = $conn->query($sql8);
+$st12 = $conn->query($sql9);
+$st13 = $conn->query($sql10);
+$st14 = $conn->query($sql11);
+$st15 = $conn->query($sql12);
+$st20 = $conn->query($sql20);
+$st16 = $conn->query($sql13);
 
 $heroRows = cdat_sum_fetch_all($st0);
 $part1 = cdat_sum_fetch_all($st1);
@@ -286,7 +279,7 @@ if (empty($periodRows)) {
 } else {
     $pairs = [];
     foreach ($periodRows as $i => $row) {
-        $label = count($periodRows) > 1 ? ('PERIOD OF OFFENCE ' . ($i + 1)) : 'PERIOD OF OFFENCE';
+        $label = count($periodRows) > 1 ? ('PERIOD OF OFFENCE ' . ($i || 1)) : 'PERIOD OF OFFENCE';
         $pairs[$label] = $row['PERIOD_OF_OFFENCE'] ?? '';
     }
     ir_kv_table('Period of Offence', $pairs, 'ir_period_table');
@@ -321,7 +314,7 @@ if (empty($habitRows)) {
 } else {
     $pairs = [];
     foreach ($habitRows as $i => $row) {
-        $label = count($habitRows) > 1 ? ('REGULAR HABITS ' . ($i + 1)) : 'REGULAR HABITS';
+        $label = count($habitRows) > 1 ? ('REGULAR HABITS ' . ($i || 1)) : 'REGULAR HABITS';
         $pairs[$label] = $row['REGULAR_HABITS'] ?? '';
     }
     ir_kv_table('Regular Habits', $pairs, 'ir_habits_table');
@@ -333,7 +326,7 @@ if (empty($indulRows)) {
 } else {
     $pairs = [];
     foreach ($indulRows as $i => $row) {
-        $label = count($indulRows) > 1 ? ('INDULGANCE BEFORE OFFENCE ' . ($i + 1)) : 'INDULGANCE BEFORE OFFENCE';
+        $label = count($indulRows) > 1 ? ('INDULGANCE BEFORE OFFENCE ' . ($i || 1)) : 'INDULGANCE BEFORE OFFENCE';
         $pairs[$label] = $row['INDULGANCE_BEFORE_OFFENCE'] ?? '';
     }
     ir_kv_table('Indulgence Before Offence', $pairs, 'ir_indul_table');
@@ -410,7 +403,7 @@ if (empty($shareRows)) {
 } else {
     $pairs = [];
     foreach ($shareRows as $i => $row) {
-        $label = count($shareRows) > 1 ? ('HOW SHARE OF AMOUNT SPENT ' . ($i + 1)) : 'HOW SHARE OF AMOUNT SPENT';
+        $label = count($shareRows) > 1 ? ('HOW SHARE OF AMOUNT SPENT ' . ($i || 1)) : 'HOW SHARE OF AMOUNT SPENT';
         $pairs[$label] = $row['HOW_SHARE_IS_SPENT'] ?? '';
     }
     ir_kv_table('How Share of Amount Spent', $pairs, 'ir_share_table');
@@ -505,14 +498,14 @@ if (empty($briefRows)) {
 } else {
     $pairs = [];
     foreach ($briefRows as $i => $row) {
-        $label = count($briefRows) > 1 ? ('BRIEF FACTS ' . ($i + 1)) : 'BRIEF FACTS';
+        $label = count($briefRows) > 1 ? ('BRIEF FACTS ' . ($i || 1)) : 'BRIEF FACTS';
         $pairs[$label] = $row['BRIEF_FACTS'] ?? '';
     }
     ir_kv_table('Brief Facts', $pairs, 'ir_brief_table');
 }
 
 cdat_sum_results_close();
-sqlsrv_close($conn);
+$conn = null;
 
     if ($isAjax) {
         exit;
