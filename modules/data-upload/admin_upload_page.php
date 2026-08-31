@@ -62,65 +62,43 @@ function cdat_insert_staging_job(int $jobId): array
     if ($jobId <= 0) {
         return ['ok' => false, 'error' => 'Missing job id.', 'inserted' => null, 'status' => null, 'message' => null];
     }
-    $cfg = require CDAT_UPLOAD . '/cdr_upload_config.php';
-    $base = rtrim($cfg['api']['base_url'] ?? 'http://127.0.0.1:8088', '/');
-    $user = $_SESSION['audit_username'] ?? 'user';
-    $url = $base . '/api/v1/documents/' . $jobId . '/staging/approve?username=' . rawurlencode($user);
-    $ch = curl_init($url);
-    curl_setopt_array($ch, [
-        CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => '',
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT => 300,
-    ]);
-    if (!empty($cfg['api']['api_key'])) {
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['X-API-Key: ' . $cfg['api']['api_key']]);
-    }
-    $resp = curl_exec($ch);
-    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $curlErr = curl_error($ch);
-    curl_close($ch);
-    if ($resp === false) {
-        return [
-            'ok' => false,
-            'error' => 'Could not reach the upload service (is it running on port 8088?): ' . $curlErr,
-            'inserted' => null,
-            'status' => null,
-            'message' => null,
-        ];
-    }
-    $json = json_decode($resp, true);
-    if ($code >= 400 || !is_array($json)) {
-        $msg = is_array($json) ? ($json['detail'] ?? $json['message'] ?? 'Insert failed.') : ('Service error (HTTP ' . $code . ').');
-        return [
-            'ok' => false,
-            'error' => is_array($msg) ? json_encode($msg) : (string) $msg,
-            'inserted' => null,
-            'status' => null,
-            'message' => null,
-        ];
-    }
-    $inserted = (int) ($json['inserted'] ?? 0);
+
+    set_time_limit(0);
+
     try {
+        require_once CDAT_UPLOAD . '/upload_verification_service.php';
         $db = audit_db();
-        $db->prepare('
-            UPDATE upload_activity_logs
-            SET upload_status = \'Success\',
-                verification_status = \'approved\',
-                inserted_records = :ins,
-                failed_records = GREATEST(COALESCE(total_records, 0) - :ins, 0)
-            WHERE document_job_id = :jid
-        ')->execute([
-            ':ins' => $inserted,
-            ':jid' => $jobId,
-        ]);
-    } catch (Throwable $logEx) {
-        // Insert succeeded; history update is best-effort.
+        $stmt = $db->prepare('SELECT batch_id FROM upload_staging_batches WHERE document_job_id = :jid LIMIT 1');
+        $stmt->execute([':jid' => $jobId]);
+        $batchId = (int) $stmt->fetchColumn();
+        if ($batchId <= 0) {
+            return [
+                'ok' => false,
+                'error' => 'No staging batch found for this upload. Process the file first, then open Staging to review.',
+                'inserted' => null,
+                'status' => null,
+                'message' => null,
+            ];
+        }
+
+        $user = (string) ($_SESSION['audit_username'] ?? 'admin');
+        $service = new UploadVerificationService();
+        $result = $service->approveBatchNow($batchId, $user);
+
+        $inserted = (int) ($result['inserted'] ?? 0);
+        return [
+            'ok' => true,
+            'inserted' => $inserted,
+            'status' => 'completed',
+            'message' => $result['message'] ?? ('Approved. ' . $inserted . ' rows promoted to production.'),
+        ];
+    } catch (Throwable $e) {
+        return [
+            'ok' => false,
+            'error' => $e->getMessage(),
+            'inserted' => null,
+            'status' => null,
+            'message' => null,
+        ];
     }
-    return [
-        'ok' => true,
-        'inserted' => $json['inserted'] ?? $inserted,
-        'status' => $json['status'] ?? 'completed',
-        'message' => $json['message'] ?? 'Data inserted into the live table.',
-    ];
 }

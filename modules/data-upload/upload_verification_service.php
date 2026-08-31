@@ -15,6 +15,19 @@ class UploadVerificationService
         $this->db = audit_db();
     }
 
+    /** @param array<string, mixed>|false|null $row */
+    private function normalizeRow(array|false|null $row): ?array
+    {
+        if (!is_array($row)) {
+            return null;
+        }
+        $out = [];
+        foreach ($row as $key => $value) {
+            $out[strtolower((string) $key)] = $value;
+        }
+        return $out;
+    }
+
     public function getBatchByLogId(int $logId): ?array
     {
         $stmt = $this->db->prepare('
@@ -24,14 +37,14 @@ class UploadVerificationService
             WHERE l.id = :id
         ');
         $stmt->execute([':id' => $logId]);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        $row = $this->normalizeRow($stmt->fetch(PDO::FETCH_ASSOC));
         if (!$row) {
             return null;
         }
         if (empty($row['batch_id']) && !empty($row['document_job_id'])) {
             $stmt2 = $this->db->prepare('SELECT * FROM upload_staging_batches WHERE document_job_id = :jid');
             $stmt2->execute([':jid' => $row['document_job_id']]);
-            $batch = $stmt2->fetch(PDO::FETCH_ASSOC);
+            $batch = $this->normalizeRow($stmt2->fetch(PDO::FETCH_ASSOC));
             if ($batch) {
                 $row = array_merge($row, $batch);
             }
@@ -51,7 +64,7 @@ class UploadVerificationService
                 LIMIT 1
             ');
             $stmt3->execute([':jid' => (int)$row['document_job_id']]);
-            $batch = $stmt3->fetch(PDO::FETCH_ASSOC);
+            $batch = $this->normalizeRow($stmt3->fetch(PDO::FETCH_ASSOC));
             if ($batch) {
                 $row = array_merge($row, $batch);
                 $this->db->prepare('
@@ -362,6 +375,48 @@ class UploadVerificationService
         }
     }
 
+    public function approveBatchNow(int $batchId, string $username): array
+    {
+        $batch = $this->getBatchById($batchId);
+        if (!$batch) {
+            throw new RuntimeException('Staging batch not found.');
+        }
+        if (($batch['verification_status'] ?? '') === 'approved') {
+            return [
+                'queued' => false,
+                'inserted' => 0,
+                'message' => 'This batch is already approved.',
+            ];
+        }
+
+        $module = strtolower((string) ($batch['module'] ?? 'cdr'));
+        if (!$this->tryAcquireModulePromoteLock($module)) {
+            throw new RuntimeException('Another ' . strtoupper($module) . ' promotion is in progress. Try again in a moment.');
+        }
+
+        try {
+            $result = $this->promoteBatchUnlocked($batchId, $username);
+            $inserted = (int) ($result['inserted'] ?? 0);
+            $this->db->prepare("
+                UPDATE upload_approval_queue
+                SET status = 'completed',
+                    inserted_records = :ins,
+                    completed_at = NOW(),
+                    error_message = NULL
+                WHERE batch_id = :bid
+                  AND status IN ('queued', 'running')
+            ")->execute([':ins' => $inserted, ':bid' => $batchId]);
+
+            return [
+                'queued' => false,
+                'inserted' => $inserted,
+                'message' => 'Approved. ' . $inserted . ' rows promoted to production.',
+            ];
+        } finally {
+            $this->releaseModulePromoteLock($module);
+        }
+    }
+
     public function approveBatch(int $batchId, string $username): array
     {
         $batch = $this->getBatchById($batchId);
@@ -612,6 +667,21 @@ class UploadVerificationService
 
         if ($targetQueueId !== null) {
             $row = $this->getQueueRow($targetQueueId);
+            if ($row && in_array($row['status'], ['queued', 'running'], true)) {
+                $this->markQueueRunning($targetQueueId);
+                try {
+                    $result = $this->promoteBatchUnlocked((int) $row['batch_id'], (string) $row['username']);
+                    $this->markQueueCompleted($targetQueueId, (int) $result['inserted']);
+                    return $result + [
+                        'queued' => false,
+                        'queue_id' => $targetQueueId,
+                        'message' => 'Approved. ' . (int) $result['inserted'] . ' rows promoted to production.',
+                    ];
+                } catch (Throwable $e) {
+                    $this->markQueueFailed($targetQueueId, $e->getMessage());
+                    throw $e;
+                }
+            }
             if ($row && $row['status'] === 'completed') {
                 return [
                     'queued' => false,
@@ -660,7 +730,7 @@ class UploadVerificationService
             LIMIT 1
         ");
         $stmt->execute([':mod' => $module]);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        $row = $this->normalizeRow($stmt->fetch(PDO::FETCH_ASSOC));
         return $row ?: null;
     }
 
@@ -668,7 +738,7 @@ class UploadVerificationService
     {
         $stmt = $this->db->prepare('SELECT * FROM upload_approval_queue WHERE queue_id = :id');
         $stmt->execute([':id' => $queueId]);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        $row = $this->normalizeRow($stmt->fetch(PDO::FETCH_ASSOC));
         return $row ?: null;
     }
 
@@ -725,6 +795,16 @@ class UploadVerificationService
 
     private function recoverStaleApprovalRuns(string $module): void
     {
+        $this->db->prepare("
+            UPDATE upload_approval_queue
+            SET status = 'queued',
+                started_at = NULL,
+                error_message = NULL
+            WHERE module = :mod
+              AND status = 'running'
+              AND started_at < NOW() - INTERVAL '2 minutes'
+        ")->execute([':mod' => $module]);
+
         $this->db->prepare("
             UPDATE upload_approval_queue
             SET status = 'failed',
@@ -938,7 +1018,7 @@ class UploadVerificationService
     {
         $stmt = $this->db->prepare('SELECT * FROM upload_staging_batches WHERE batch_id = :id');
         $stmt->execute([':id' => $batchId]);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        $row = $this->normalizeRow($stmt->fetch(PDO::FETCH_ASSOC));
         return $row ?: null;
     }
 
