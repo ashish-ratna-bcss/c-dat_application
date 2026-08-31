@@ -255,12 +255,6 @@ return [
         'name'    => 'call-details.calls-between-dates',
         'handler' => 'modules/call-details/calls_btwn_dates.php',
     ],
-    [
-        'method'  => ['GET', 'POST'],
-        'path'    => '/call-details/movements-in-particular-place',
-        'name'    => 'call-details.movements-in-particular-place',
-        'handler' => 'modules/call-details/movements_in_particular_place.php',
-    ],
 
     /*
     |--------------------------------------------------------------------------
