@@ -57,16 +57,9 @@ RewriteRule ^(.*)\.(?:html?|php)$ $1.html [L,NC]
 # require() is unaffected by these rules. Two reasons to block direct requests:
 #   - db_config holds the live password; if PHP handling ever breaks it would be
 #     served as plain text.
-#   - sqlsrv_compat is already loaded via auto_prepend_file, so requesting it
-#     directly loads it twice and fatals on "Cannot redeclare __sqlsrv_root()".
-<FilesMatch "(?i)^(db_config(\.example)?|sqlsrv_compat|activity_logger|cdr_upload_config|cdr_upload_parser|excel_converter|cdr_enrichment_sql|upload_verification_service|document_processing_client)\.(php|html?|htm)$">
+<FilesMatch "(?i)^(db_config(\.example)?|activity_logger|cdr_upload_config|cdr_upload_parser|excel_converter|cdr_enrichment_sql|upload_verification_service|document_processing_client)\.(php|html?|htm)$">
     Require all denied
 </FilesMatch>
-
-# Preload the sqlsrv_* -> PostgreSQL shim. Legacy pages call sqlsrv_connect()
-# without requiring it; nginx injected this via fastcgi_param PHP_VALUE.
-# Scoped here rather than php.ini so other XAMPP projects are unaffected.
-php_value auto_prepend_file "C:/xampp/htdocs/cdat-web/modules/common/sqlsrv_compat.php"
 
 # Python 3.14 is installed but not on PATH as `python`, so excel_converter.php
 # and the CDR preview cannot find it. cdr_python_bin() honours CDR_PYTHON.

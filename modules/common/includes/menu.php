@@ -87,7 +87,6 @@ return [
         ['label' => 'Common Contacts',              'url' => '/others/common-contacts'],
         ['label' => 'Trainings',                    'url' => '/others/trainings'],
         ['label' => 'Offender Subclassification',   'url' => '/others/offender-subclassification'],
-        ['label' => 'Rowdy Sheeter Search by PS',   'url' => '/others/rowdy-sheeter'],
     ]],
 
     ['label' => 'Interrogation Reports', 'icon' => 'file', 'children' => [

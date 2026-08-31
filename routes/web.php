@@ -447,13 +447,6 @@ return [
 
     [
         'method'  => ['GET', 'POST'],
-        'path'    => '/others/rowdy-sheeter',
-        'name'    => 'others.rowdy-sheeter',
-        'handler' => 'modules/others/rowdysheeter_ps_wise_search.php',
-    ],
-
-    [
-        'method'  => ['GET', 'POST'],
         'path'    => '/others/offender-fd',
         'name'    => 'others.offender-fd',
         'handler' => 'modules/others/offender_fd.php',

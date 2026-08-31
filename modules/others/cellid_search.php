@@ -15,6 +15,29 @@ $fieldsHtml = cdat_sum_field_text('CELLID', 'Cell ID', $cellid, 'calls', 'Enter 
             . cdat_sum_field_call_state($state);
 
 if ($hasSearch) {
+    $cellidCore = str_replace(['%', '_'], '', $cellid);
+    if (strlen($cellidCore) < 5) {
+        if (!$isAjax) {
+            layout_begin('Cell ID Search');
+            cdat_sum_page_open();
+            cdat_sum_search_card(
+                'Cell ID Search',
+                'Search cell tower details by Cell ID, operator, and state.',
+                'cellid_search.php',
+                $fieldsHtml,
+                'BTN_SUM',
+                'Search'
+            );
+        }
+        cdat_sum_empty_state('Enter at least 5 characters of Cell ID to search (wildcards % and _ are allowed).');
+        if ($isAjax) {
+            exit;
+        }
+        cdat_sum_page_close();
+        layout_end();
+        exit;
+    }
+
     if (!$isAjax) {
         layout_begin('Cell ID Search');
         cdat_sum_page_open();
@@ -27,33 +50,41 @@ if ($hasSearch) {
             'Search'
         );
     }
+
     $conn = get_cdat_pdo();
-        $cellidEsc = str_replace("'", "''", $cellid);
     $likePattern = (strpos($cellid, '%') !== false || strpos($cellid, '_') !== false)
-        ? $cellidEsc
-        : $cellidEsc . '%';
+        ? $cellid
+        : $cellid . '%';
     $opNorm = strtoupper(preg_replace('/_TOWER$/i', '', $operator));
     $stNorm = cdat_sum_phone_area_state_canonical($state) ?? cdat_sum_normalize_phone_area_state($state);
-    $opFilter = $operator !== ''
-        ? "AND UPPER(REPLACE(OPERATOR, '_TOWER', '')) = '".str_replace("'", "''", $opNorm)."'"
-        : '';
-    $stateFilter = $state !== '' && $stNorm !== ''
-        ? 'AND ' . cdat_sum_sql_phone_area_state_filter('STATE', $stNorm)
-        : '';
 
-    $sql1 ="select DISTINCT CELLTOWERID,BTS_ID,AREADESCRIPTION,SITEADDRESS,LAT,LONG,AZIMUTH,OPERATOR,STATE, OTYPE, LASTUPDATE
-from CDATCELLTOWERAREANEW
-WHERE CELLTOWERID LIKE '{$likePattern}' {$opFilter} {$stateFilter}
-ORDER BY LASTUPDATE DESC";
+    $sql = 'SELECT DISTINCT CELLTOWERID, BTS_ID, AREADESCRIPTION, SITEADDRESS, LAT, LONG, AZIMUTH, OPERATOR, STATE, OTYPE, LASTUPDATE
+            FROM CDATCELLTOWERAREANEW
+            WHERE CELLTOWERID LIKE :pattern';
+    $params = [':pattern' => $likePattern];
 
-    $st1 = $conn->query($sql1);
+    if ($operator !== '') {
+        $sql .= " AND UPPER(REPLACE(OPERATOR, '_TOWER', '')) = :operator";
+        $params[':operator'] = $opNorm;
+    }
+    if ($state !== '' && $stNorm !== '') {
+        $sql .= ' AND ' . cdat_sum_sql_phone_area_state_filter('STATE', $stNorm);
+    }
+    $sql .= ' ORDER BY LASTUPDATE DESC LIMIT 501';
+
+    $st1 = $conn->prepare($sql);
+    $st1->execute($params);
     $rows = cdat_sum_fetch_all($st1);
+    $truncated = count($rows) > 500;
+    if ($truncated) {
+        $rows = array_slice($rows, 0, 500);
+    }
 
-    if (empty($rows)) {
+    if ($rows === []) {
         cdat_sum_empty_state();
     } else {
         cdat_sum_results_open();
-        cdat_sum_report_banner('Cell ID Search: ' . $cellid);
+        cdat_sum_report_banner('Cell ID Search: ' . $cellid . ($truncated ? ' (first 500 matches — refine search)' : ''));
         cdat_sum_generic_table_open(
             'Cell Tower Results',
             ['CELLTOWERID', 'BTS_ID', 'AREA DESCRIPTION', 'SITE ADDRESS', 'LAT', 'LONG', 'AZIMUTH', 'OPERATOR', 'STATE', 'OTYPE', 'QRCODE'],
@@ -89,9 +120,7 @@ ORDER BY LASTUPDATE DESC";
         cdat_sum_results_close();
     }
 
-    if ($st1) {
-        $st1 = null;
-    }
+    $st1 = null;
     $conn = null;
 
     if ($isAjax) {

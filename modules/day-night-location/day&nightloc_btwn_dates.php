@@ -6,10 +6,11 @@ require_once CDAT_COMMON . '/includes/sum_ui.php';
 $isAjax = cdat_sum_is_ajax();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    
-    $number = trim((string) ($_POST['PHONE_NO'] ?? ''));
-    $f_date = trim((string) ($_POST['FROM_DT'] ?? ''));
-    $t_date = trim((string) ($_POST['TO_DT'] ?? ''));
+    require_once CDAT_COMMON . '/sql_safe.php';
+
+    $number = sql_safe_phone((string) ($_POST['PHONE_NO'] ?? ''));
+    $f_date = sql_safe_date((string) ($_POST['FROM_DT'] ?? ''));
+    $t_date = sql_safe_date((string) ($_POST['TO_DT'] ?? ''));
     if ($number !== '' && $f_date !== '' && $t_date !== '') {
         if (!$isAjax) {
             layout_begin('Day / Night Between Dates');
@@ -18,7 +19,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $conn = get_cdat_pdo();
                 $sql1 = "CREATE TEMP TABLE temp_temp AS SELECT * FROM CDATPCSUSPECT WHERE 
 (TO_CHAR(STARTTIME, 'HH24:MI:SS')<'22:00:00' AND TO_CHAR(STARTTIME, 'HH24:MI:SS')>'05:00:00') 
-AND PHONE='$number' AND  TO_CHAR(STARTTIME, 'YYYY-MM-DD') BETWEEN '$f_date' AND '$t_date'";
+AND PHONE = ? AND TO_CHAR(STARTTIME, 'YYYY-MM-DD') BETWEEN ? AND ?";
+        $conn->prepare($sql1)->execute([$number, $f_date, $t_date]);
 
         $sql2 = cdr_sql_enrich_location_temp_local('temp_temp', 'temp_tt1');
 
@@ -28,13 +30,18 @@ GROUP BY PHONE,CELLTOWERID,SITEADDRESS,LAT,LONG,AZM ORDER BY CALLS DESC";
 
         $sql5 = 'SELECT  * FROM temp_t order by calls desc LIMIT 10';
 
-        $sql6 = "SELECT 'DAY LOCATION OF MOBILE NO: ' || '$number' || ' BETWEEN ' || '$f_date' || ' AND ' || '$t_date' as PHONE1";
+        $sql6 = "SELECT 'DAY LOCATION OF MOBILE NO: ' || ? || ' BETWEEN ' || ? || ' AND ' || ? as PHONE1";
+        $st6 = $conn->prepare($sql6);
+        $st6->execute([$number, $f_date, $t_date]);
 
-        $sql7 = "SELECT 'NIGHT LOCATION OF MOBILE NO: ' || '$number' || ' BETWEEN ' || '$f_date' || ' AND ' || '$t_date' as PHONE1";
+        $sql7 = "SELECT 'NIGHT LOCATION OF MOBILE NO: ' || ? || ' BETWEEN ' || ? || ' AND ' || ? as PHONE1";
+        $st7 = $conn->prepare($sql7);
+        $st7->execute([$number, $f_date, $t_date]);
 
         $sql8 = "CREATE TEMP TABLE temp_t1 AS SELECT * FROM CDATPCSUSPECT WHERE 
 (TO_CHAR(STARTTIME, 'HH24:MI:SS')>'22:00:00' OR TO_CHAR(STARTTIME, 'HH24:MI:SS')<'07:00:00') 
-AND PHONE='$number' AND  TO_CHAR(STARTTIME, 'YYYY-MM-DD') BETWEEN '$f_date' AND '$t_date'";
+AND PHONE = ? AND TO_CHAR(STARTTIME, 'YYYY-MM-DD') BETWEEN ? AND ?";
+        $conn->prepare($sql8)->execute([$number, $f_date, $t_date]);
 
         $sql9 = cdr_sql_enrich_location_temp_local('temp_t1', 'temp_t3');
 
@@ -44,13 +51,9 @@ GROUP BY PHONE,CELLTOWERID,SITEADDRESS,LAT,LONG,AZM ORDER BY CALLS DESC";
 
         $sql12 = 'SELECT  * FROM temp_t4 order by calls desc LIMIT 10';
 
-        $st1 = $conn->query($sql1);
         $st2 = $conn->query($sql2);
         $st4 = $conn->query($sql4);
         $st5 = $conn->query($sql5);
-        $st6 = $conn->query($sql6);
-        $st7 = $conn->query($sql7);
-        $st8 = $conn->query($sql8);
         $st9 = $conn->query($sql9);
         $st11 = $conn->query($sql11);
         $st12 = $conn->query($sql12);

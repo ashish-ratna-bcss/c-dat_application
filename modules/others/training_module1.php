@@ -44,23 +44,46 @@ if ($hasSearch) {
         );
     }
     $conn = get_cdat_pdo();
-        $number = $criteria;
-    $number1 = $searchNo;
-    $number2 = $rank;
+    $searchNo = $searchNo;
+    $rankPattern = $rank !== '' ? '%' . $rank . '%' : '%';
+
+    $pwdmsColumns = [
+        'EMPLOYEE_ID' => 'EMPLOYEE_ID',
+        'GENERAL_NO' => 'GENERAL_NO',
+        'NAME' => 'NAME',
+    ];
+    $trainingColumns = [
+        'EMPLOYEE_ID' => 'EMPLOYEE_ID',
+        'GENERAL_NO' => 'GENERAL_NO',
+        'NAME' => 'NAMES',
+    ];
+    if (!isset($pwdmsColumns[$criteria])) {
+        cdat_sum_empty_state('Invalid search criteria selected.');
+        if ($isAjax) {
+            exit;
+        }
+        cdat_sum_page_close();
+        layout_end();
+        exit;
+    }
+    $pwdmsCol = $pwdmsColumns[$criteria];
+    $trainingCol = $trainingColumns[$criteria];
 
     $sql8 = "SELECT 'EMPLOYEE SEARCH IN PWDMS' as PHONE1";
     $sql9 = "SELECT DISTINCT EMPLOYEE_ID,NAME,RANK,ROLE,GENERAL_NO,WING_NAME,ZONE_NAME,DIVISION_NAME,
-POLICE_STATION FROM TRAINING_DB.TRAINING_STRENGTH_PARTICULARS WHERE $number like '%' || '$number1' || '%'
-AND RANK LIKE '%' || '$number2' || '%'";
+POLICE_STATION FROM TRAINING_DB.TRAINING_STRENGTH_PARTICULARS WHERE {$pwdmsCol} LIKE :search
+AND RANK LIKE :rank LIMIT 501";
     $sql10 = "SELECT 'EMPLOYEE SEARCH IN TRAINING DATA' as PHONE1";
     $sql11 = "SELECT DISTINCT EMPLOYEE_ID,GENERAL_NO,NAMES NAME,PS_NAME POLICE_STATION,PH_NO PHONE_NO,ZONE,
-RANK,COURSE_NAME,START_DATE,END_DATE FROM TRNG_ATT_WITH_EMPID WHERE $number like '%' || '$number1' || '%' AND
-RANK LIKE '%' || '$number2' || '%'";
+RANK,COURSE_NAME,START_DATE,END_DATE FROM TRNG_ATT_WITH_EMPID WHERE {$trainingCol} LIKE :search AND
+RANK LIKE :rank LIMIT 501";
 
     $st8 = $conn->query($sql8);
-    $st9 = $conn->query($sql9);
+    $st9 = $conn->prepare($sql9);
+    $st9->execute([':search' => '%' . $searchNo . '%', ':rank' => $rankPattern]);
     $st10 = $conn->query($sql10);
-    $st11 = $conn->query($sql11);
+    $st11 = $conn->prepare($sql11);
+    $st11->execute([':search' => '%' . $searchNo . '%', ':rank' => $rankPattern]);
 
     $banner1 = 'EMPLOYEE SEARCH IN PWDMS';
     if ($st8 && ($b = $st8->fetch(PDO::FETCH_ASSOC))) {

@@ -10,7 +10,7 @@ $conn = get_cdat_pdo();
 $sql8 = "select 'UNDETECTED CASES MATCHED WITH OLD OFFENDERS FINGER PRINT LIST' PHONE1";
 $sql9 = "select SNO, POLICE_STATION, ZONE, CRIME_NO, SECTION, TIN_NO, DATE_OF_IDENTITY,
 LOSS_OF_PROPERTY, NAME_AND_PARTICULARS, IRKEY, CCNO, DOA, REMARKS FROM fingerprint_matched_undetected_cases_withimage
-ORDER BY ZONE,IRKEY";
+ORDER BY ZONE,IRKEY LIMIT 2000";
 
 $st8 = $conn->query($sql8);
 $st9 = $conn->query($sql9);

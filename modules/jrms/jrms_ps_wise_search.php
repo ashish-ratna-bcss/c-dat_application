@@ -51,9 +51,10 @@ if ($hasSearch) {
         );
     }
     $conn = get_cdat_pdo();
-        $CRIMEHEAD = $ps;
-    $f_date = $fromDt;
-    $t_date = $toDt;
+    require_once CDAT_COMMON . '/sql_safe.php';
+    $f_date = sql_safe_date($fromDt);
+    $t_date = sql_safe_date($toDt);
+    $psPattern = sql_like_pattern($ps, 200);
 
     $sql1 = "CREATE TEMP TABLE temp_jrms_temp AS SELECT DISTINCT PRISONERNO,UNIQUE_KEY,PSARRESTED,NAME,FATHERSNAME,CRIMENOS,HEADOFCRIME,MOBILENO PHONE,
 CASE WHEN LENGTH(RIGHT(NAME,POSITION('/' IN REVERSE(NAME))))>1 THEN RIGHT(NAME,POSITION('/' IN REVERSE(NAME))-1) ELSE '' END IDPROOF,
@@ -61,7 +62,8 @@ ADDR_DURINGRELEASE ADDR_DURING_RELEASE,GENDER,JAILNAME,
 TO_CHAR(NULLIF(TRIM(admission_to_jail), '')::date, 'YYYY-MM-DD') AS add_to_jail,
 TO_CHAR(NULLIF(TRIM(releasedt), '')::date, 'YYYY-MM-DD') AS release_date, photo  FROM
 jrms_total_2012_to_2017
-WHERE  ((RELEASEDT)::date BETWEEN '$f_date' AND '$t_date') AND PSARRESTED LIKE '%' || '$CRIMEHEAD' || '%' AND PSARRESTED!='' ";
+WHERE ((RELEASEDT)::date BETWEEN ? AND ?) AND PSARRESTED LIKE ? AND PSARRESTED != '' ";
+    $conn->prepare($sql1)->execute([$f_date, $t_date, $psPattern]);
 
     $sql11 = "CREATE TEMP TABLE temp_jrms_count AS SELECT distinct UNIQUE_KEY,COUNT(UNIQUE_KEY) NO_OF_TIMES_RELEASED from jrms_total_2012_to_2017
 GROUP BY UNIQUE_KEY";
@@ -73,14 +75,11 @@ IDPROOF in (select distinct AADHAR_NO FROM ir_particulars) THEN (SELECT DISTINCT
 AADHAR_NO !='' AND AADHAR_NO=(IDPROOF)::varchar)  ELSE '' END IRKEY FROM temp_jrms_temp A
 LEFT JOIN temp_jrms_count B ON A.UNIQUE_KEY=B.UNIQUE_KEY ORDER BY JAILNAME, RELEASE_DATE DESC";
 
-    $sql6 = "SELECT 'ACCUSED RELEASED FROM: ' || '$f_date' || ' TO: ' || '$t_date' || ' OF POLICE STATION ' || '$CRIMEHEAD' AS PHONE";
+    $sql6 = "SELECT 'ACCUSED RELEASED FROM: ' || ? || ' TO: ' || ? || ' OF POLICE STATION ' || ? AS PHONE";
+    $st6 = $conn->prepare($sql6);
+    $st6->execute([$f_date, $t_date, $ps]);
 
-    $conn->query($sql1);
-    $conn->query($sql11);
-    $st2 = $conn->query($sql2);
-    $st6 = $conn->query($sql6);
-
-    $banner = 'ACCUSED RELEASED FROM: ' . $f_date . ' TO: ' . $t_date . ' OF POLICE STATION ' . $CRIMEHEAD;
+    $banner = 'ACCUSED RELEASED FROM: ' . $f_date . ' TO: ' . $t_date . ' OF POLICE STATION ' . $ps;
     if ($st6 && ($b = $st6->fetch(PDO::FETCH_ASSOC))) {
         $banner = (string) ($b['PHONE'] ?? $banner);
     }

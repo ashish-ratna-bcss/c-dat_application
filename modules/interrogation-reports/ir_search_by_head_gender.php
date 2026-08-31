@@ -32,24 +32,26 @@ if ($hasSearch) {
         );
     }
     $conn = get_cdat_pdo();
-        $number = $gender;
-    $number1 = $crimeHead;
+    require_once CDAT_COMMON . '/sql_safe.php';
+    $genderSafe = sql_safe_enum($gender, ['FEMALE', 'MALE', 'TRANSGENDER']);
+    $likePat = '%' . str_replace(' ', '%', sql_safe_like_value($crimeHead, 200)) . '%';
 
-    $sql8 = "SELECT 'DETAILS OF : ' || '$number' as PHONE1";
+    $sql8 = "SELECT 'DETAILS OF : ' || ? as PHONE1";
+    $st8 = $conn->prepare($sql8);
+    $st8->execute([$genderSafe]);
 
     $sql9 = "SELECT DISTINCT A.IRKEY,(CASE WHEN A.IRKEY IN (SELECT DISTINCT REPLACE(IRKEY,' ','') FROM pdact_main_table
 WHERE IRKEY ~ '^[0-9]+$') THEN 'PDACT IS IMPOSED CLICK HERE TO VIEW THE DETAILS' ELSE '' END) PDACT,CASE WHEN A.IRKEY IN (SELECT DISTINCT REPLACE(IRKEY,' ','') FROM pdact_main_table
 WHERE IRKEY ~ '^[0-9]+$') THEN (SELECT DISTINCT (MAX(PDACT_KEY)::varchar) FROM pdact_main_table
 WHERE REPLACE(IRKEY,' ','')=A.IRKEY AND IRKEY ~ '^[0-9]+$')
 ELSE '' END PDACT_KEY,NAME,ALIAS_NAME,FATHER_NAME,AGE,SEX,PRESENT_ADDRESS,CRIME_HEAD,MO,CRIME_NO,YEAR,SEC_OF_LAW,POLICE_STATION,(DATE_OF_ARREST)::varchar DATE_OF_ARREST FROM ir_particulars A
-INNER JOIN OFFENCE_DETAILS B ON A.SEX ='$number' AND (B.CRIME_HEAD LIKE '%' || REPLACE('$number1',' ','%') || '%' OR
-B.MO LIKE '%' || REPLACE('$number1',' ','%') || '%') AND
-ltrim(rtrim('$number'))!=''  AND A.IRKEY=B.IRKEY ORDER BY DATE_OF_ARREST DESC";
+INNER JOIN OFFENCE_DETAILS B ON A.SEX = ? AND (B.CRIME_HEAD LIKE ? OR
+B.MO LIKE ?) AND
+BTRIM(?) <> '' AND A.IRKEY=B.IRKEY ORDER BY DATE_OF_ARREST DESC";
+    $st9 = $conn->prepare($sql9);
+    $st9->execute([$genderSafe, $likePat, $likePat, $genderSafe]);
 
-    $st8 = $conn->query($sql8);
-    $st9 = $conn->query($sql9);
-
-    $banner = 'DETAILS OF : ' . $number;
+    $banner = 'DETAILS OF : ' . $genderSafe;
     if ($st8 && ($b = $st8->fetch(PDO::FETCH_ASSOC))) {
         $banner = (string) ($b['PHONE1'] ?? $banner);
     }

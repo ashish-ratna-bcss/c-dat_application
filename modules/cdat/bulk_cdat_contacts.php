@@ -36,26 +36,25 @@ if ($__submitted && $phoneValue !== '') {
     cdat_sum_begin_heavy_search();
         $number = (string) ($_POST['PHONE_NO'] ?? '');
     $phones = cdat_sum_split_phones($number);
-    $number2 = cdat_sum_sql_phone_in($phones);
 
     $sqlB1= "CREATE TEMP TABLE temp_t1 (phone varchar(20))";
 
     $sql1="CREATE TEMP TABLE temp_t AS SELECT DISTINCT PHONE,'' AS FIRST_CALL,'' AS LAST_CALL,'' AS NICKNAME,''AS MO,'' AS CATEGORY,''LAST_UPDATED,''INC_OFFICER FROM temp_t1";
 
     $sql10="CREATE TEMP TABLE temp_s AS SELECT DISTINCT A.PHONE,TO_CHAR((MIN(STARTTIME))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS FIRST_CALL,TO_CHAR((MAX(STARTTIME))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS LAST_CALL,B.NICKNAME || '_' || B.ROLE NICKNAME,B.MO,CATEGORY,TO_CHAR((MAX(A.ASONDATE))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS LAST_UPDATED,INC_OFFICER FROM CDATPCSUSPECT A LEFT JOIN CDATSUSPECT B ON A.PHONE=B.PHONE 
-WHERE A.PHONE IN ('$number2') GROUP BY A.PHONE,B.NICKNAME,MO,CATEGORY, INC_OFFICER,B.ROLE";
+WHERE A.PHONE IN (SELECT phone FROM temp_t1) GROUP BY A.PHONE,B.NICKNAME,MO,CATEGORY, INC_OFFICER,B.ROLE";
 
-    $sqlA="CREATE TEMP TABLE CDATADDRESS AS SELECT distinct * from cdataddress where phone in ('$number2')";
+    $sqlA="CREATE TEMP TABLE CDATADDRESS AS SELECT distinct * from cdataddress where phone in (SELECT phone FROM temp_t1)";
 
-    $sqlB="CREATE TEMP TABLE ADDRESS_OTHER_STATE AS SELECT distinct * from ADDRESS_OTHER_STATE where phone in ('$number2')";
+    $sqlB="CREATE TEMP TABLE ADDRESS_OTHER_STATE AS SELECT distinct * from ADDRESS_OTHER_STATE where phone in (SELECT phone FROM temp_t1)";
 
 
 
 
     $sql3="SELECT DISTINCT PHONE, IMEINUMBER, TO_CHAR((MIN(STARTTIME))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS FIRST_CALL, TO_CHAR((MAX(STARTTIME))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS LAST_CALL,
-TO_CHAR((MAX(ASONDATE))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS LAST_UPDATED FROM CDATPCSUSPECT WHERE PHONE IN ('$number2') GROUP BY PHONE,IMEINUMBER ORDER BY LAST_UPDATED";
+TO_CHAR((MAX(ASONDATE))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS LAST_UPDATED FROM CDATPCSUSPECT WHERE PHONE IN (SELECT phone FROM temp_t1) GROUP BY PHONE,IMEINUMBER ORDER BY LAST_UPDATED";
 
-    $sql4="CREATE TEMP TABLE temp_xx AS SELECT * FROM CDAT_DETAILS1 WHERE PHONE IN ('$number2') and other!=''";
+    $sql4="CREATE TEMP TABLE temp_xx AS SELECT * FROM CDAT_DETAILS1 WHERE PHONE IN (SELECT phone FROM temp_t1) and other!=''";
 
     $sql5 = "CREATE TEMP TABLE temp_tt AS select distinct a.PHONE,OTHER, NICKNAME || '_' || ROLE NICKNAME,
 SUM(CASE WHEN INCOMING='1' THEN 1 ELSE 0 END) AS \"IN\",
@@ -90,9 +89,13 @@ LEFT JOIN ADDRESS_OTHER_STATE B ON A.OTHER=B.PHONE AND B.EFF_TO_DATE IS NULL";
 LEFT JOIN suspect_image_table B ON B.MOBILE = A.OTHER
 ORDER BY PHONE, CALLS DESC, OTHER";
 
-    $sql8 ="SELECT 'CDAT CONTACTS OF MOBILE NO: ' || '$number' as PHONE";
+    $sql8 ="SELECT 'CDAT CONTACTS OF MOBILE NO: ' || ? as PHONE";
+    $st8 = $conn->prepare($sql8);
+    $st8->execute([$number]);
 
-    $sql9="SELECT case when count(PHONE)>=1 THEN '' ELSE '*** NO CDAT CONTACTS TO $number ***' end as CNTS FROM temp_WITHADDRESS";
+    $sql9 = "SELECT case when count(PHONE)>=1 THEN '' ELSE '*** NO CDAT CONTACTS TO ' || ? || ' ***' end as CNTS FROM temp_WITHADDRESS";
+    $st9 = $conn->prepare($sql9);
+    $st9->execute([$number]);
 
     $stA = $conn->query($sqlA);
     $stB = $conn->query($sqlB);
@@ -104,8 +107,6 @@ ORDER BY PHONE, CALLS DESC, OTHER";
     $st6 = $conn->query($sql6);
     $st7 = $conn->query($sql7);
     $st71= $conn->query($sql71);
-    $st8 = $conn->query($sql8);
-    $st9 = $conn->query($sql9);
 
     $bannerTitle = 'CDAT CONTACTS OF MOBILE NO: ' . $number;
     if ($st8 && ($bannerRow = $st8->fetch(PDO::FETCH_ASSOC))) {

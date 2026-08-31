@@ -8,7 +8,7 @@ cdat_sum_page_open();
 cdat_sum_begin_heavy_search();
 $conn = get_cdat_pdo();
 $sql8 = "select 'HABITUAL OFFENDERS' PHONE1";
-$sql9 = "SELECT irkey, name, alias_name, father_name, age, present_address, arrested_in_crimehead, mo, crime_no, year, sec_of_law, police_station, count1 FROM habitual_offenders ORDER BY count1 DESC";
+$sql9 = "SELECT irkey, name, alias_name, father_name, age, present_address, arrested_in_crimehead, mo, crime_no, year, sec_of_law, police_station, count1 FROM habitual_offenders ORDER BY count1 DESC LIMIT 2000";
 
 $st8 = $conn->query($sql8);
 $st9 = $conn->query($sql9);

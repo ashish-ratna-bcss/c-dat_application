@@ -15,21 +15,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             cdat_sum_page_open();
         }
         $conn = get_cdat_pdo();
-                $numberSql = cdr_escape_sql_literal_local($number);
+        $numberSql = $number;
 
-        $dn_top_towers = static function ($conn, string $numberSql, string $timePredicate): array {
+        $dn_top_towers = static function ($conn, string $phone, string $timePredicate): array {
             $sql = "SELECT 
                         PHONE,
                         CELLTOWERID,
                         COUNT(CELLTOWERID) AS CALLS
                     FROM CDATPCSUSPECT
-                    WHERE PHONE = '{$numberSql}'
+                    WHERE PHONE = ?
                       AND ({$timePredicate})
                     GROUP BY PHONE, CELLTOWERID
                     ORDER BY CALLS DESC
                     LIMIT 10";
 
-            $st = $conn->query($sql);
+            $st = $conn->prepare($sql);
+            $st->execute([$phone]);
             if ($st === false) {
                 return [];
             }
@@ -121,11 +122,6 @@ cdat_sum_search_card(
 );
 cdat_sum_page_close();
 layout_end();
-
-function cdr_escape_sql_literal_local(string $value): string
-{
-    return str_replace("'", "''", $value);
-}
 
 function cdat_celltower_short_id_local(?string $cellTowerId): string
 {

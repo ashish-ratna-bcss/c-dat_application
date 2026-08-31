@@ -26,17 +26,30 @@ if (!$isAjax) {
     cdat_sum_back_link('offender_search_by_mo.php');
 }
 $conn = get_cdat_pdo();
-$number = $_GET['MO_KEY'];
+$moKey = trim((string) ($_GET['MO_KEY'] ?? ''));
+if ($moKey === '') {
+    cdat_sum_results_open();
+    cdat_sum_empty_state('MO key is required.');
+    cdat_sum_results_close();
+    if ($isAjax) {
+        exit;
+    }
+    cdat_sum_page_close();
+    layout_end();
+    exit;
+}
 
-$sql0 = "SELECT ACC_NAME,IMAGE FROM COMPLETE_MO_CLASSIFICATION A LEFT JOIN MO_IMAGE_TABLE B ON A.MO_KEY=B.MO_KEY WHERE A.MO_KEY='$number'";
+$sql0 = "SELECT ACC_NAME,IMAGE FROM COMPLETE_MO_CLASSIFICATION A LEFT JOIN MO_IMAGE_TABLE B ON A.MO_KEY=B.MO_KEY WHERE A.MO_KEY = :mo_key";
 
 $sql1 = "SELECT DISTINCT MO_KEY, PHONE, ROLE, CATEGORY, ACC_NAME, FATHER_NAME, DATE_OF_BIRTH, AGE, FULLADDRESS, CITY_OR_DISTRICT, STATE, 
 ID_PROOF, CRIME_HEAD, MO1, MO2, CRIME_NO, Year, SEC_OF_LAW, DATE_OF_ARREST, 
 PLACE_OF_OFF, off_lat, off_long, POLICE_STATION, PS_DIVISION, PS_ZONE, 
-INC_OFFICER, OFFICIAL_MAILID FROM COMPLETE_MO_CLASSIFICATION WHERE MO_KEY='$number'";
+INC_OFFICER, OFFICIAL_MAILID FROM COMPLETE_MO_CLASSIFICATION WHERE MO_KEY = :mo_key LIMIT 501";
 
-$st0 = $conn->query($sql0);
-$st1 = $conn->query($sql1);
+$st0 = $conn->prepare($sql0);
+$st0->execute([':mo_key' => $moKey]);
+$st1 = $conn->prepare($sql1);
+$st1->execute([':mo_key' => $moKey]);
 $heroRows = cdat_sum_fetch_all($st0);
 $detailRows = cdat_sum_fetch_all($st1);
 

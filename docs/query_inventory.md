@@ -70,8 +70,9 @@ Reference catalogs (not loaded at runtime):
 | `modules/others/common_cnts.php` | Done — `string_agg` replaces `FOR XML PATH` |
 | `modules/others/vehicle_search.php` | Done — `cdat_rta` |
 | `modules/others/cellid_search.php` | Done |
-| `modules/offenders-list/fp_list.php` | Done — FDW `fingerprint_matched_undetected_cases_withimage` |
-| `modules/offenders-list/habitual.php` | Done — FDW `habitual_offenders` |
+| `modules/offenders-list/habitual.php` | Done — FDW `habitual_offenders`, LIMIT 2000 |
+| `modules/offenders-list/fp_list.php` | Done — LIMIT 2000 |
+| `modules/others/training_module1.php` | Done — whitelisted column names + prepared statements |
 
 ## Removed runtime middleware
 
@@ -84,9 +85,27 @@ Reference catalogs (not loaded at runtime):
 - `modules/common/bootstrap.php` → `modules/common/db_connect.php` → `get_cdat_pdo()`
 - `modules/common/dbcontroller.php` — query helper (optional future removal)
 
+## API dropdowns (PostgreSQL prepared statements)
+
+| File | Status |
+|---|---|
+| `modules/common/get_ps.php` | Done — `offence_details` via FDW |
+| `modules/common/get_division.php` | Done — `offence_details.sub_division` |
+| `modules/common/get_year.php` | Done — prepared `crime_no` |
+| `modules/common/get_crno.php` | Done — prepared `police_station` |
+
+## Search performance guards
+
+- `cdat_sum_ajax_need_search()` calls `cdat_sum_begin_heavy_search()` when a valid search runs (fixes PHP 30s timeout on all search pages).
+- `cellid_search.php`, `vehicle_search.php`, JRMS detail searches: `LIMIT 500` + min prefix where applicable.
+
+## Out of scope
+
+- SDR `.bak` pipeline (`sdr_import/`) — unchanged; uses MSSQL restore tooling separately from PHP web pages.
+
 ## Grep gate
 
 ```bash
-rg -l 'TOP\s+\d+|GETDATE|ISNULL|NOLOCK|JRMS\.\.|FORMS\.\.|SET DATEFORMAT|sqlsrv_|cdr_enrichment_sql' modules/
-# should return nothing
+bash scripts/audit_mssql_usage.sh
+# scans modules/, public/, routes/, sql/ (*.php, *.sql) — exit 0 = clean
 ```

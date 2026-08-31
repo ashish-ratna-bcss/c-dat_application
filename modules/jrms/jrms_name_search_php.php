@@ -39,8 +39,9 @@ if ($hasSearch) {
         );
     }
     $conn = get_cdat_pdo();
-        $CRIMEHEAD = $crimeHead;
-    $NAME = $name;
+    require_once CDAT_COMMON . '/sql_safe.php';
+    $crimeHeadPattern = sql_like_pattern($crimeHead, 200);
+    $namePattern = sql_like_pattern($name, 200);
 
     $sql1 = "CREATE TEMP TABLE temp_jrms_temp AS SELECT DISTINCT PRISONERNO,UNIQUE_KEY,PSARRESTED,NAME,FATHERSNAME,CRIMENOS,HEADOFCRIME,MOBILENO PHONE,
 CASE WHEN LENGTH(RIGHT(NAME,POSITION('/' IN REVERSE(NAME))))>1 THEN RIGHT(NAME,POSITION('/' IN REVERSE(NAME))-1) ELSE '' END IDPROOF,
@@ -48,7 +49,7 @@ ADDR_DURINGRELEASE ADDR_DURING_RELEASE,GENDER,JAILNAME,
 TO_CHAR(NULLIF(TRIM(admission_to_jail), '')::date, 'YYYY-MM-DD') AS add_to_jail,
 TO_CHAR(NULLIF(TRIM(releasedt), '')::date, 'YYYY-MM-DD') AS release_date, photo  FROM
 jrms_total_2012_to_2017
-WHERE  NAME LIKE '%' || '$NAME' || '%' AND HEADOFCRIME LIKE '%' || '$CRIMEHEAD' || '%' AND HEADOFCRIME!='' ";
+WHERE NAME LIKE :name AND HEADOFCRIME LIKE :crimehead AND HEADOFCRIME != '' ";
 
     $sql11 = "CREATE TEMP TABLE temp_jrms_count AS SELECT distinct UNIQUE_KEY,COUNT(UNIQUE_KEY) NO_OF_TIMES_RELEASED from jrms_total_2012_to_2017
 GROUP BY UNIQUE_KEY";
@@ -57,26 +58,32 @@ GROUP BY UNIQUE_KEY";
 CASE WHEN IDPROOF!='' AND IDPROOF ~ '^[0-9]+$' AND
 IDPROOF in (select distinct AADHAR_NO FROM ir_particulars) THEN (SELECT DISTINCT (MAX(IRKEY)::varchar) IRKEY FROM ir_particulars WHERE
 AADHAR_NO !='' AND AADHAR_NO=(IDPROOF)::varchar)  ELSE '' END IRKEY FROM temp_jrms_temp A
-LEFT JOIN temp_jrms_count B ON A.UNIQUE_KEY=B.UNIQUE_KEY ORDER BY JAILNAME, RELEASE_DATE DESC";
+LEFT JOIN temp_jrms_count B ON A.UNIQUE_KEY=B.UNIQUE_KEY ORDER BY JAILNAME, RELEASE_DATE DESC LIMIT 501";
 
-    $sql6 = "SELECT 'ACCUSED RELEASED FROM JAIL UNDER CRIME HEAD ' || '$CRIMEHEAD' || ' BY NAME ' || '$NAME' AS PHONE";
+    $sql6 = "SELECT 'ACCUSED RELEASED FROM JAIL UNDER CRIME HEAD ' || :crimehead || ' BY NAME ' || :name AS PHONE";
 
-    $conn->query($sql1);
+    $st1 = $conn->prepare($sql1);
+    $st1->execute([':name' => $namePattern, ':crimehead' => $crimeHeadPattern]);
     $conn->query($sql11);
     $st2 = $conn->query($sql2);
-    $st6 = $conn->query($sql6);
+    $st6 = $conn->prepare($sql6);
+    $st6->execute([':crimehead' => $crimeHead, ':name' => $name]);
 
-    $banner = 'ACCUSED RELEASED FROM JAIL UNDER CRIME HEAD ' . $CRIMEHEAD . ' BY NAME ' . $NAME;
+    $banner = 'ACCUSED RELEASED FROM JAIL UNDER CRIME HEAD ' . $crimeHead . ' BY NAME ' . $name;
     if ($st6 && ($b = $st6->fetch(PDO::FETCH_ASSOC))) {
         $banner = (string) ($b['PHONE'] ?? $banner);
     }
     $rows = cdat_sum_fetch_all($st2);
+    $truncated = count($rows) > 500;
+    if ($truncated) {
+        $rows = array_slice($rows, 0, 500);
+    }
 
     if (empty($rows)) {
         cdat_sum_empty_state('No JRMS records found for that name.');
     } else {
         cdat_sum_results_open();
-        cdat_sum_report_banner($banner);
+        cdat_sum_report_banner($banner . ($truncated ? ' (first 500 matches)' : ''));
         cdat_sum_generic_table_open(
             'JRMS Name Search',
             ['PSARRESTED', 'NAME', 'FATHERSNAME', 'CRIMENOS', 'HEADOFCRIME', 'CRIMES INVOLVED', 'PHONE', 'IDPROOF', 'ADDR_DURING_RELEASE', 'JAILNAME', 'ADD_TO_JAIL', 'RELEASEDT', 'IMAGE', 'IRFORM'],

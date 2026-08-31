@@ -6,7 +6,8 @@ require_once CDAT_COMMON . '/includes/sum_ui.php';
 $isAjax = cdat_sum_is_ajax();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $number = trim((string) ($_POST['PHONE_NO'] ?? ''));
+    require_once CDAT_COMMON . '/sql_safe.php';
+    $number = sql_safe_phone((string) ($_POST['PHONE_NO'] ?? ''));
     if ($number !== '') {
         if (!$isAjax) {
             layout_begin('ISD Contacts');

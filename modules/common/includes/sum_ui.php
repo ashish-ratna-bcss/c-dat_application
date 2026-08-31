@@ -13,6 +13,9 @@ function cdat_sum_is_ajax(): bool
 /** AJAX POST with empty fields must not re-render the search form (that duplicates it). */
 function cdat_sum_ajax_need_search(bool $hasSearch, string $message = 'Fill in the required fields and try again.'): void
 {
+    if ($hasSearch) {
+        cdat_sum_begin_heavy_search();
+    }
     if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !cdat_sum_is_ajax() || $hasSearch) {
         return;
     }

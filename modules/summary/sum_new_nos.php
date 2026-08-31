@@ -6,17 +6,18 @@ require_once CDAT_COMMON . '/includes/sum_ui.php';
 $isAjax = cdat_sum_is_ajax();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $number = trim((string) ($_POST['PHONE_NO'] ?? ''));
-    $date = trim((string) ($_POST['FROM_DT'] ?? ''));
+    require_once CDAT_COMMON . '/sql_safe.php';
+    $number = sql_safe_phone((string) ($_POST['PHONE_NO'] ?? ''));
+    $date = sql_safe_date((string) ($_POST['FROM_DT'] ?? ''));
     if ($number !== '' && $date !== '') {
         if (!$isAjax) {
             layout_begin('New Contacts');
             cdat_sum_page_open();
         }
         $conn = get_cdat_pdo();
-                $sql3 = "CREATE TEMP TABLE temp_tt AS SELECT * FROM CDAT_DETAILS1 WHERE PHONE='$number' AND STARTTIME>'$date' AND OTHER NOT IN
-(SELECT DISTINCT OTHER FROM CDATPCSUSPECT WHERE PHONE='$number' AND 
-STARTTIME < '$date')";
+        $sql3 = "CREATE TEMP TABLE temp_tt AS SELECT * FROM CDAT_DETAILS1 WHERE PHONE = ? AND STARTTIME > ? AND OTHER NOT IN
+(SELECT DISTINCT OTHER FROM CDATPCSUSPECT WHERE PHONE = ? AND STARTTIME < ?)";
+        $conn->prepare($sql3)->execute([$number, $date, $number, $date]);
 
         $sql4 = "CREATE TEMP TABLE temp_result AS SELECT LTRIM(RTRIM(PHONE)) AS PHONE, LTRIM(RTRIM(OTHER)) AS OTHER, 
 SUM(CASE WHEN INCOMING='1' THEN 1 ELSE 0 END) AS \"IN\",
@@ -50,9 +51,11 @@ LEFT JOIN ADDRESS_OTHER_STATE D ON A.OTHER=D.PHONE AND D.EFF_TO_DATE IS NULL
 LEFT JOIN CDATPHONEAREA E ON  CASE WHEN LENGTH(OTHER)=10 THEN OTHER ELSE CASE WHEN LENGTH(OTHER)>10 THEN '00' || OTHER ELSE 'POSSIBLE OF VOIP CALL OR SKYPE OR WIFI CALL' END END
  LIKE PHONEPREFIX || '%' ORDER BY CALLS DESC";
 
-        $sql9 = "CREATE TEMP TABLE temp_t AS SELECT  '$number' AS PHONE,'' AS FIRST_CALL,'' AS LAST_CALL,'' AS NICKNAME,'' AS LAST_UPDATED";
+        $sql9 = "CREATE TEMP TABLE temp_t AS SELECT ? AS PHONE,'' AS FIRST_CALL,'' AS LAST_CALL,'' AS NICKNAME,'' AS LAST_UPDATED";
+        $conn->prepare($sql9)->execute([$number]);
 
-        $sql10 = "CREATE TEMP TABLE temp_s AS SELECT A.PHONE,TO_CHAR((MIN(STARTTIME))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS FIRST_CALL,TO_CHAR((MAX(STARTTIME))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS LAST_CALL,B.NICKNAME,TO_CHAR((MAX(A.ASONDATE))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS LAST_UPDATED FROM CDATPCSUSPECT A LEFT JOIN CDATSUSPECT B ON A.PHONE=B.PHONE WHERE A.PHONE='$number' GROUP BY A.PHONE,B.NICKNAME";
+        $sql10 = "CREATE TEMP TABLE temp_s AS SELECT A.PHONE,TO_CHAR((MIN(STARTTIME))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS FIRST_CALL,TO_CHAR((MAX(STARTTIME))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS LAST_CALL,B.NICKNAME,TO_CHAR((MAX(A.ASONDATE))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS LAST_UPDATED FROM CDATPCSUSPECT A LEFT JOIN CDATSUSPECT B ON A.PHONE=B.PHONE WHERE A.PHONE = ? GROUP BY A.PHONE,B.NICKNAME";
+        $conn->prepare($sql10)->execute([$number]);
 
         $sql11 = "SELECT DISTINCT A.PHONE,CASE WHEN A.PHONE=B.PHONE THEN B.FIRST_CALL ELSE A.FIRST_CALL END AS FIRST_CALL,
 CASE WHEN A.PHONE=B.PHONE THEN B.LAST_CALL ELSE A.LAST_CALL END AS LAST_CALL,
@@ -66,12 +69,9 @@ LEFT JOIN CDATPHONEAREA ON CASE WHEN LENGTH(A.PHONE)=10 THEN A.PHONE ELSE CASE W
  LIKE PHONEPREFIX || '%'
 LEFT JOIN temp_s B ON  A.PHONE=B.PHONE";
 
-        $st3 = $conn->query($sql3);
         $st4 = $conn->query($sql4);
         $st5 = $conn->query($sql5);
         $stmt = $conn->query($sql6);
-        $st9 = $conn->query($sql9);
-        $st10 = $conn->query($sql10);
         $st11 = $conn->query($sql11);
 
         $contactRows = cdat_sum_fetch_all($stmt);

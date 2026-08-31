@@ -22,17 +22,23 @@ if ($hasSearch) {
         );
     }
     $conn = get_cdat_pdo();
-        $number = $_POST['PHONE_NO'];
+    $number = trim((string) $_POST['PHONE_NO']);
 
-    $sql8="SELECT 'ADDRESS OF MOBILE NO: ' || '$number' as PHONE1";
+    $sql8 = 'SELECT ? AS PHONE1';
+    $st8 = $conn->prepare($sql8);
+    $st8->execute(['ADDRESS OF MOBILE NO: ' . $number]);
 
-    $sql9="CREATE TEMP TABLE temp_t AS SELECT  '$number' AS PHONE,'' AS FIRST_CALL,'' AS LAST_CALL,'' AS NICKNAME,'' AS MO,'' AS LAST_UPDATED,'' AS INC_OFFICER";
+    $sql9 = "CREATE TEMP TABLE temp_t AS SELECT ? AS PHONE,'' AS FIRST_CALL,'' AS LAST_CALL,'' AS NICKNAME,'' AS MO,'' AS LAST_UPDATED,'' AS INC_OFFICER";
+    $st9 = $conn->prepare($sql9);
+    $st9->execute([$number]);
 
-    $sql10="CREATE TEMP TABLE temp_s AS SELECT A.PHONE,TO_CHAR((MIN(STARTTIME))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS FIRST_CALL,TO_CHAR((MAX(STARTTIME))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS LAST_CALL,B.NICKNAME || '_' || B.ROLE AS NICKNAME,MO,TO_CHAR((MAX(A.ASONDATE))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS LAST_UPDATED,
+    $sql10 = "CREATE TEMP TABLE temp_s AS SELECT A.PHONE,TO_CHAR((MIN(STARTTIME))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS FIRST_CALL,TO_CHAR((MAX(STARTTIME))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS LAST_CALL,B.NICKNAME || '_' || B.ROLE AS NICKNAME,MO,TO_CHAR((MAX(A.ASONDATE))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS LAST_UPDATED,
     INC_OFFICER 
-     FROM CDATPCSUSPECT A LEFT JOIN CDATSUSPECT B ON A.PHONE=B.PHONE WHERE A.PHONE='$number' GROUP BY A.PHONE,B.NICKNAME,MO,B.ROLE, INC_OFFICER";
+     FROM CDATPCSUSPECT A LEFT JOIN CDATSUSPECT B ON A.PHONE=B.PHONE WHERE A.PHONE = ? GROUP BY A.PHONE,B.NICKNAME,MO,B.ROLE, INC_OFFICER";
+    $st10 = $conn->prepare($sql10);
+    $st10->execute([$number]);
 
-    $sql11="SELECT DISTINCT A.PHONE,CASE WHEN A.PHONE=B.PHONE THEN B.FIRST_CALL ELSE A.FIRST_CALL END AS FIRST_CALL,
+    $sql11 = "SELECT DISTINCT A.PHONE,CASE WHEN A.PHONE=B.PHONE THEN B.FIRST_CALL ELSE A.FIRST_CALL END AS FIRST_CALL,
     CASE WHEN A.PHONE=B.PHONE THEN B.LAST_CALL ELSE A.LAST_CALL END AS LAST_CALL,
     CASE WHEN A.PHONE=B.PHONE THEN B.NICKNAME ELSE A.NICKNAME END AS NICKNAME,
     CASE WHEN A.PHONE=B.PHONE THEN B.MO ELSE A.MO END AS MO,
@@ -46,9 +52,6 @@ if ($hasSearch) {
     LIKE phoneprefix || '%'
     LEFT JOIN temp_s B ON  A.PHONE=B.PHONE";
 
-    $st8 = $conn->query($sql8);
-    $st9 = $conn->query($sql9);
-    $st10 = $conn->query($sql10);
     $st11 = $conn->query($sql11);
 
     $bannerTitle = 'ADDRESS OF MOBILE NO: ' . $number;

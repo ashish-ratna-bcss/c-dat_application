@@ -47,7 +47,12 @@ if ($hasSearch) {
 
     set_time_limit(0);
     require_once CDAT_COMMON . '/activity_logger.php';
-        audit_log('Movements in Particular Place', 'Search', [
+    require_once CDAT_COMMON . '/sql_safe.php';
+    $number = sql_safe_phone($number);
+    $lat = (string) sql_safe_float($lat);
+    $long = (string) sql_safe_float($long);
+    $range = (string) max(100, min(5000, (int) $range));
+    audit_log('Movements in Particular Place', 'Search', [
         'phone_number' => $number,
         'lat'   => $lat,
         'long'  => $long,

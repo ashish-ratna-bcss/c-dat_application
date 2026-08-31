@@ -71,8 +71,9 @@ if ($hasSearch) {
     $st4->execute($params4);
     
 
-    $sql5 = "SELECT CASE WHEN COUNT(PHONE) >= 1 THEN '' ELSE '*** NO PHONES ARE AVAILABLE IN IMEI $number ***' END as PHONE FROM temp_tt";
-    $st5 = $conn->query($sql5);
+    $sql5 = "SELECT CASE WHEN COUNT(PHONE) >= 1 THEN '' ELSE '*** NO PHONES ARE AVAILABLE IN IMEI ' || ? || ' ***' END as PHONE FROM temp_tt";
+    $st5 = $conn->prepare($sql5);
+    $st5->execute([$number]);
 
     $bannerTitle = 'LIST OF PHONE NOs USED IN IMEI: ' . $number;
     if ($st4 && ($bannerRow = $st4->fetch(PDO::FETCH_ASSOC))) {

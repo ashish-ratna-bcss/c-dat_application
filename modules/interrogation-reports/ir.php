@@ -39,10 +39,17 @@ if ($hasSearch) {
         );
     }
 $conn = get_cdat_pdo();
-$number = (string) ($_GET['IRKEY'] ?? $_POST['IR_NO'] ?? '');
+$irKeyVal = trim((string) ($_GET['IRKEY'] ?? $_POST['IR_NO'] ?? ''));
+$irParams = [':irkey' => $irKeyVal];
+
+$irRun = static function (PDO $conn, string $sql, array $params): PDOStatement {
+    $st = $conn->prepare($sql);
+    $st->execute($params);
+    return $st;
+};
 
 
-$sql0="SELECT NAME,FATHER_NAME,IMAGE,B.CCNO FROM ir_particulars A LEFT JOIN image_table B ON A.IRKEY=B.IRKEY WHERE A.IRKEY='$number'";
+$sql0="SELECT NAME,FATHER_NAME,IMAGE,B.CCNO FROM ir_particulars A LEFT JOIN image_table B ON A.IRKEY=B.IRKEY WHERE A.IRKEY=:irkey";
 
 $sql1="SELECT DISTINCT 
 IRKEY, NAME, ALIAS_NAME, FATHER_NAME, AGE, TO_CHAR((DATE_OF_BIRTH)::timestamp, 'YYYY-MM-DD HH24:MI:SS') DATE_OF_BIRTH, NATIONALITY, 
@@ -53,71 +60,71 @@ OTHER_ID_PROOFS, SEX, BUILT, HEIGHT, EYES, HAIR, FACE, COLOUR, TEETH, NOSE,
 BEARD, MUSTACHES, EAR, IDENTIFICATION_MARKS, DEFORMITIES_PECULIARITIES, LANGUAGE_DIALECT, 
 BURN_MARKS, LEUCODEMA, MOLE, SCAR, TATTOO, LIVING_STATUS, MARITAL_STATUS, EDUCATION_DETAILS, 
 OCCUPATION, INCOME_GROUP, REGULAR_HABITS, CATEGORY FROM ir_particulars
-WHERE IRKEY='$number'";
+WHERE IRKEY=:irkey";
 
 
-$sql2="SELECT DISTINCT RELATIONSHIP RELATION,NAME || ' FATHER_OR_SPOUSE: ' || FATHER_OR_SPOUSE || ' OCCUPATION: ' || OCCUPATION || ' PHONE_NO: ' || PHONE || ' AGE: ' || AGE NAME,PRESENT_ADDRESS ADDRESS,CRIMINAL_BACKGROUND,STATUS FROM FAMILY_HISTORY WHERE IRKEY='$number' ORDER BY RELATION";
+$sql2="SELECT DISTINCT RELATIONSHIP RELATION,NAME || ' FATHER_OR_SPOUSE: ' || FATHER_OR_SPOUSE || ' OCCUPATION: ' || OCCUPATION || ' PHONE_NO: ' || PHONE || ' AGE: ' || AGE NAME,PRESENT_ADDRESS ADDRESS,CRIMINAL_BACKGROUND,STATUS FROM FAMILY_HISTORY WHERE IRKEY=:irkey ORDER BY RELATION";
 
-$sql3="SELECT DISTINCT PERIOD_OF_OFFENCE FROM OFFENCE_DETAILS WHERE IRKEY='$number'";
+$sql3="SELECT DISTINCT PERIOD_OF_OFFENCE FROM OFFENCE_DETAILS WHERE IRKEY=:irkey";
 
 $sql4="SELECT DISTINCT TOWN_CITY_OR_VILLAGE,POLICE_STATION_LIMITS,NAME || ' S/O ' || FATHER_NAME || ' AGE: ' || AGE || ' OCCUPATION: ' || OCCUPATION NAME 
 ,PHONE,ADDRESS_OF_CONTACT_PERSON ADDRESS FROM LOCAL_CONTACTS_FACILITATORS
-WHERE IRKEY='$number'";
+WHERE IRKEY=:irkey";
 
-$sql5="SELECT DISTINCT REGULAR_HABITS FROM ir_particulars WHERE IRKEY='$number'";
+$sql5="SELECT DISTINCT REGULAR_HABITS FROM ir_particulars WHERE IRKEY=:irkey";
 
 $sql6="SELECT DISTINCT INDULGANCE_BEFORE_OFFENCE FROM OFFENCE_DETAILS
-WHERE IRKEY='$number'";
+WHERE IRKEY=:irkey";
 
 $sql7="SELECT DISTINCT CRIME_HEAD,SUB_TYPE SUB_HEAD,MO FROM OFFENCE_DETAILS
-WHERE IRKEY='$number'";
+WHERE IRKEY=:irkey";
 
 $sql8="SELECT DISTINCT REGULAR_RESIDENCE,PREPARATION_OF_OFFENCE,AFTER_OFFENCE FROM OFFENCE_DETAILS
-WHERE IRKEY='$number'";
+WHERE IRKEY=:irkey";
 
 $sql9="SELECT DISTINCT PROPERTY_STOLEN,PROPERTY_RECOVERED,RECEIVER_NAME,RECEIVER_ADDRESS,REMARKS FROM DISPOSAL_OF_PROPERTY
-WHERE IRKEY='$number'";
+WHERE IRKEY=:irkey";
 
 $sql10="SELECT DISTINCT HOW_SHARE_IS_SPENT FROM DISPOSAL_OF_PROPERTY
-WHERE IRKEY='$number'";
+WHERE IRKEY=:irkey";
 
 $sql11="SELECT DISTINCT DISTRICT,CONFESSED_POLICE_STATION,CONFESSED_CRIME_NO,CONFESSED_YEAR,CONFESSED_SEC_OF_LAW,ASSOCIATES,PROPERTY_STOLEN,PROPERTY_RECOVERED,
-REMARKS FROM PREVIOUS_OFFENCE_DETAILS WHERE IRKEY='$number'";
+REMARKS FROM PREVIOUS_OFFENCE_DETAILS WHERE IRKEY=:irkey";
 
 $sql12="SELECT DISTINCT TO_CHAR(DATE_OF_ARREST::timestamp, 'YYYY-MM-DD HH24:MI:SS') DATE_OF_ARREST,PLACE_OF_ARREST,'CRIME_NO: ' || TO_CHAR(CRIME_NO::timestamp, 'YYYY-MM-DD HH24:MI:SS') || '/' || TO_CHAR(YEAR::timestamp, 'YYYY-MM-DD HH24:MI:SS') || ' SEC_OF_LAW:' || SEC_OF_LAW
 CRIME_NO_SEC_OF_LAW,POLICE_STATION,SUB_DIVISION,DISTRICT_OR_UNIT,
 ARRESTED_BY,INTERROGATED_BY,OTHERS_WHO_CAN_IDENTIFY FROM OFFENCE_DETAILS
-WHERE IRKEY='$number'";
+WHERE IRKEY=:irkey";
 
 $sql13="SELECT DISTINCT BRIEF_FACTS1 || '
 ' || BRIEF_FACTS2 || '
 ' || BRIEF_FACTS3 BRIEF_FACTS FROM BRIEF_FACTS
-WHERE IRKEY='$number'";
+WHERE IRKEY=:irkey";
 
 $sql20="select DISTINCT IRKEY,COUNT(*) TOTAL_NBWS_PENDING,FIRST_HEARING_DATE,DECISION_DATE,CASE_STATUS,NEXT_HEARING_DATE,NATURE_OF_DISPOSAL,COURT_NUMBER_AND_JUDGE,STAGE_OF_CASE,
 PETITIONER_RESPONDENT,ACT_AND_SEC from nbws_verify_data_important
-WHERE CASE_STATUS LIKE '%PENDING%' AND IRKEY='$number'
+WHERE CASE_STATUS LIKE '%PENDING%' AND IRKEY=:irkey
 GROUP BY IRKEY,FIRST_HEARING_DATE,DECISION_DATE,CASE_STATUS,NEXT_HEARING_DATE,NATURE_OF_DISPOSAL,COURT_NUMBER_AND_JUDGE,STAGE_OF_CASE,
 PETITIONER_RESPONDENT,ACT_AND_SEC";
 
-$st0 = $conn->query($sql0);
-$st1 = $conn->query($sql1);
-$st2 = $conn->query($sql1);
-$st3 = $conn->query($sql1);
-$st4 = $conn->query($sql1);
-$st5 = $conn->query($sql2);
-$st6 = $conn->query($sql3);
-$st7 = $conn->query($sql4);
-$st8 = $conn->query($sql5);
-$st9 = $conn->query($sql6);
-$st10 = $conn->query($sql7);
-$st11 = $conn->query($sql8);
-$st12 = $conn->query($sql9);
-$st13 = $conn->query($sql10);
-$st14 = $conn->query($sql11);
-$st15 = $conn->query($sql12);
-$st20 = $conn->query($sql20);
-$st16 = $conn->query($sql13);
+$st0 = $irRun($conn, $sql0, $irParams);
+$st1 = $irRun($conn, $sql1, $irParams);
+$st2 = $irRun($conn, $sql1, $irParams);
+$st3 = $irRun($conn, $sql1, $irParams);
+$st4 = $irRun($conn, $sql1, $irParams);
+$st5 = $irRun($conn, $sql2, $irParams);
+$st6 = $irRun($conn, $sql3, $irParams);
+$st7 = $irRun($conn, $sql4, $irParams);
+$st8 = $irRun($conn, $sql5, $irParams);
+$st9 = $irRun($conn, $sql6, $irParams);
+$st10 = $irRun($conn, $sql7, $irParams);
+$st11 = $irRun($conn, $sql8, $irParams);
+$st12 = $irRun($conn, $sql9, $irParams);
+$st13 = $irRun($conn, $sql10, $irParams);
+$st14 = $irRun($conn, $sql11, $irParams);
+$st15 = $irRun($conn, $sql12, $irParams);
+$st20 = $irRun($conn, $sql20, $irParams);
+$st16 = $irRun($conn, $sql13, $irParams);
 
 $heroRows = cdat_sum_fetch_all($st0);
 $part1 = cdat_sum_fetch_all($st1);

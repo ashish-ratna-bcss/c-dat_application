@@ -56,22 +56,21 @@ if ($hasSearch) {
 
         $number = (string) ($_POST['PHONE_NO'] ?? '');
     $phones = cdat_sum_split_phones($number);
-    $number2 = cdat_sum_sql_phone_in($phones);
 
     // Address queries
     $address1 = "CREATE TEMP TABLE temp_a1 (phone varchar(20))";
     $address3 = "CREATE TEMP TABLE temp_a2 AS SELECT DISTINCT A.PHONE, MIN(STARTTIME) AS FIRST_CALL, MAX(STARTTIME) AS LAST_CALL, 
                 MAX(A.ASONDATE) AS LAST_UPDATED, NICKNAME || '_' || ROLE || ' MO:' || MO AS NICKNAME  FROM CDATPCSUSPECT A 
                 LEFT JOIN CDATSUSPECT B ON A.PHONE = B.PHONE 
-                WHERE A.PHONE IN ('$number2')
+                WHERE A.PHONE IN (SELECT phone FROM temp_a1)
                 GROUP BY A.PHONE, NICKNAME, MO, ROLE";
     $address4 = "CREATE TEMP TABLE temp_a3 AS SELECT DISTINCT A.PHONE, FIRST_CALL, LAST_CALL, LAST_UPDATED, NICKNAME FROM temp_a1 A
                 LEFT JOIN temp_a2 B ON A.PHONE = B.PHONE";
     $address5 = "CREATE TEMP TABLE temp_a4 AS SELECT PHONE, FULLNAME, FULLADDRESS, CATEGORY_TYPE, DOA, EFF_FROM_DATE FROM CDATADDRESS 
-                WHERE PHONE IN ('$number2') AND EFF_TO_DATE IS NULL";
+                WHERE PHONE IN (SELECT phone FROM temp_a1) AND EFF_TO_DATE IS NULL";
     $address6 = "INSERT INTO temp_a4
                 SELECT PHONE, FULLNAME, FULLADDRESS, CATEGORY_TYPE, DOA, EFF_FROM_DATE FROM ADDRESS_OTHER_STATE
-                WHERE PHONE IN ('$number2') AND EFF_TO_DATE IS NULL";
+                WHERE PHONE IN (SELECT phone FROM temp_a1) AND EFF_TO_DATE IS NULL";
     $address7 = "CREATE TEMP TABLE temp_a5 AS SELECT DISTINCT A.PHONE, COALESCE(TO_CHAR((FIRST_CALL)::timestamp, 'YYYY-MM-DD HH24:MI:SS'), 'NIL') AS FIRST_CALL,
                 COALESCE(TO_CHAR((A.LAST_CALL)::timestamp, 'YYYY-MM-DD HH24:MI:SS'), 'NIL') AS LAST_CALL,
                 COALESCE(TO_CHAR((A.LAST_UPDATED)::timestamp, 'YYYY-MM-DD HH24:MI:SS'), 'NIL') AS LAST_UPDATED, COALESCE(NICKNAME, 'NIL') AS NICKNAME,
@@ -87,7 +86,7 @@ if ($hasSearch) {
                 ELSE ADDRESS END AS ADDRESS FROM temp_a5";
 
     // Common contacts queries
-    $sql1 = "CREATE TEMP TABLE temp_t AS SELECT * FROM CDATPCSUSPECT WHERE PHONE IN ('$number2')";
+    $sql1 = "CREATE TEMP TABLE temp_t AS SELECT * FROM CDATPCSUSPECT WHERE PHONE IN (SELECT phone FROM temp_a1)";
     $sql2 = "CREATE TEMP TABLE temp_common_numbertable1 AS SELECT PHONE, OTHER, COUNT(OTHER) AS COUNT1 FROM temp_t
             GROUP BY OTHER, PHONE HAVING (COUNT(OTHER)) > 1 ORDER BY OTHER, PHONE";
     $sql3 = "CREATE TEMP TABLE temp_common_numbertable2 AS SELECT OTHER, PHONE, COUNT(OTHER) COUNT1 FROM temp_common_numbertable1

@@ -36,7 +36,8 @@ if ($hasSearch) {
             MKR_CLAS || ', COLOR: ' || COLOUR || ', ' || VEH_CLASS AS VEHICLE_TYPE, 
             ENG_NO, CHAS_NO, TO_CHAR(ISS_DT::timestamp, 'DD Mon YYYY') AS ISSUED_DATE 
             FROM cdat_rta 
-            WHERE REGN_NO LIKE ?";
+            WHERE REGN_NO LIKE ?
+            LIMIT 501";
     $params9 = array('%' . $number . '%');
     $st9 = $conn->prepare($sql9);
     $st9->execute($params9);
@@ -52,12 +53,16 @@ if ($hasSearch) {
     }
 
     $rows = cdat_sum_fetch_all($st9);
+    $truncated = count($rows) > 500;
+    if ($truncated) {
+        $rows = array_slice($rows, 0, 500);
+    }
 
     if (empty($rows)) {
         cdat_sum_empty_state('No vehicle records found for: ' . $number);
     } else {
         cdat_sum_results_open();
-        cdat_sum_report_banner($bannerTitle);
+        cdat_sum_report_banner($bannerTitle . ($truncated ? ' (first 500 matches — refine search)' : ''));
         cdat_sum_generic_table_open(
             'Vehicle Search',
             ['REGN_NO', 'NAME', 'FATHER_NAME', 'ADDRESS', 'PHONE_NO', 'VEHICLE_TYPE', 'ENG_NO', 'CHAS_NO', 'ISSUED_DATE', 'QRCODE'],

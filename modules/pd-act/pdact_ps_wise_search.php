@@ -42,17 +42,18 @@ if ($hasSearch) {
         );
     }
     $conn = get_cdat_pdo();
-        $number = $ps;
+    require_once CDAT_COMMON . '/sql_safe.php';
+    $psPattern = sql_like_pattern($ps, 200);
 
     $sql0 = "CREATE TEMP TABLE temp_jrms_temp AS select distinct PDACT_KEY,REPLACE(IRKEY,' ','') AS IRKEY,NAME,FATHER_NAME,AGE,DISTRICT AS NATIVE_DISTRICT,STATE AS NATIVE_STATE,PD_ACT_PS,
-(Date_Of_Arrest)::varchar AS DATE_OF_PDACT  from pdact_main_table WHERE PD_ACT_PS LIKE '%$number%'";
+(Date_Of_Arrest)::varchar AS DATE_OF_PDACT  from pdact_main_table WHERE PD_ACT_PS LIKE ?";
+    $conn->prepare($sql0)->execute([$psPattern]);
 
     $sql1 = "select PDACT_KEY,A.IRKEY,NAME,FATHER_NAME,AGE,NATIVE_DISTRICT,NATIVE_STATE,PD_ACT_PS,
 (DATE_OF_PDACT)::varchar AS DATE_OF_PDACT,CASE WHEN (A.IRKEY)::varchar=(B.IRKEY)::varchar
 THEN IMAGE ELSE (SELECT IMAGE FROM image_table WHERE IRKEY='113769')END  AS IMAGE
 FROM temp_jrms_temp A LEFT JOIN image_table B ON (A.IRKEY)::varchar=(B.IRKEY)::varchar ";
 
-    $conn->query($sql0);
     $st1 = $conn->query($sql1);
     $rows = cdat_sum_fetch_all($st1);
 

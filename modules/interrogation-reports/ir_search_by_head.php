@@ -24,10 +24,13 @@ if ($hasSearch) {
         );
     }
     $conn = get_cdat_pdo();
-        $number1 = $crimeHead;
+    require_once CDAT_COMMON . '/sql_safe.php';
+    $likePat = '%' . str_replace(' ', '%', sql_safe_like_value($crimeHead, 200)) . '%';
+    $crimeHeadCheck = trim($crimeHead);
 
-    $sql8 = "SELECT 'DETAILS OF : ' || '$number1' as PHONE1";
-
+    $sql8 = "SELECT 'DETAILS OF : ' || ? as PHONE1";
+    $st8 = $conn->prepare($sql8);
+    $st8->execute([$crimeHeadCheck]);
 
     $sql9 = "SELECT A.IRKEY,(CASE WHEN A.IRKEY IN (SELECT DISTINCT REPLACE(IRKEY,' ','') FROM pdact_main_table
 WHERE IRKEY ~ '^[0-9]+$') THEN 'PDACT IS IMPOSED CLICK HERE TO VIEW THE DETAILS' ELSE '' END) PDACT,CASE WHEN A.IRKEY IN (SELECT DISTINCT REPLACE(IRKEY,' ','') FROM pdact_main_table
@@ -36,15 +39,14 @@ WHERE REPLACE(IRKEY,' ','')=A.IRKEY AND IRKEY ~ '^[0-9]+$')
 ELSE '' END PDACT_KEY,CASE WHEN (A.IRKEY)::varchar=(B.IRKEY)::varchar
 THEN IMAGE ELSE (SELECT IMAGE FROM image_table WHERE IRKEY='113769')END  AS IMAGE,
 NAME,ALIAS_NAME,FATHER_NAME,AGE,PRESENT_ADDRESS,CRIME_HEAD,MO,CRIME_NO,YEAR,SEC_OF_LAW,POLICE_STATION  FROM ir_particulars A
-INNER JOIN OFFENCE_DETAILS B ON  B.CRIME_HEAD LIKE '%' || REPLACE('$number1',' ','%') || '%' AND 
- B.MO LIKE '%' || REPLACE('$number1',' ','%') || '%' AND
-ltrim(rtrim('$number1'))!='' and LENGTH(replace('$number1',' ',''))>'4' AND A.IRKEY=B.IRKEY
+INNER JOIN OFFENCE_DETAILS B ON B.CRIME_HEAD LIKE ? AND 
+ B.MO LIKE ? AND
+LENGTH(REPLACE(?,' ','')) > 4 AND A.IRKEY=B.IRKEY
 LEFT JOIN image_table C ON (A.IRKEY)::varchar=(C.IRKEY)::varchar";
+    $st9 = $conn->prepare($sql9);
+    $st9->execute([$likePat, $likePat, $crimeHeadCheck]);
 
-    $st8 = $conn->query($sql8);
-    $st9 = $conn->query($sql9);
-
-    $banner = 'DETAILS OF : ' . $number1;
+    $banner = 'DETAILS OF : ' . $crimeHead;
     if ($st8 && ($b = $st8->fetch(PDO::FETCH_ASSOC))) {
         $banner = (string) ($b['PHONE1'] ?? $banner);
     }

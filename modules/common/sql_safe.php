@@ -32,6 +32,29 @@ function sql_safe_imei(string $raw): string
     return sql_safe_digits($raw, 18);
 }
 
+function sql_safe_date(string $raw): string
+{
+    $raw = trim($raw);
+    return preg_match('/^\d{4}-\d{2}-\d{2}$/', $raw) ? $raw : '';
+}
+
+/** Escape LIKE metacharacters for use inside a bound parameter value. */
+function sql_safe_like_value(string $raw, int $maxLen = 100): string
+{
+    $v = substr(trim($raw), 0, $maxLen);
+    return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $v);
+}
+
+function sql_like_pattern(string $raw, int $maxLen = 100): string
+{
+    return '%' . sql_safe_like_value($raw, $maxLen) . '%';
+}
+
+function sql_safe_enum(string $raw, array $allowed): string
+{
+    return in_array($raw, $allowed, true) ? $raw : '';
+}
+
 function h($value): string
 {
     return htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');

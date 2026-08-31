@@ -6,7 +6,8 @@ require_once CDAT_COMMON . '/includes/sum_ui.php';
 $isAjax = cdat_sum_is_ajax();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $number = trim((string) ($_POST['PHONE_NO'] ?? ''));
+    require_once CDAT_COMMON . '/sql_safe.php';
+    $number = sql_safe_phone((string) ($_POST['PHONE_NO'] ?? ''));
     if ($number !== '') {
         if (!$isAjax) {
             layout_begin('Summary');
@@ -18,7 +19,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         audit_log('Summary Total', 'Search', ['phone_number' => $number]);
         $conn = get_cdat_pdo();
-                $sql3 = "CREATE TEMP TABLE temp_tt AS SELECT * FROM CDAT_DETAILS  WHERE PHONE='$number' and other ~ '^[0-9]+$'";
+        $sql3 = "CREATE TEMP TABLE temp_tt AS SELECT * FROM CDAT_DETAILS WHERE PHONE = ? and other ~ '^[0-9]+$'";
+        $conn->prepare($sql3)->execute([$number]);
 
         $sql4 = "CREATE TEMP TABLE temp_result AS SELECT LTRIM(RTRIM(PHONE)) AS PHONE, LTRIM(RTRIM(OTHER)) AS OTHER, 
         SUM(CASE WHEN INCOMING='1' THEN 1 ELSE 0 END) AS \"IN\",
@@ -35,19 +37,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $sql6 = "SELECT PHONE, OTHER, \"IN\", \"OUT\", CALLS, DUR, FIRSTCALL, LASTCALL
         FROM temp_result1 ORDER BY CALLS DESC";
 
-        $sql8 = "SELECT 'SUMMARY OF MOBILE NO: ' || '$number' as PHONE1";
+        $sql8 = "SELECT 'SUMMARY OF MOBILE NO: ' || ? as PHONE1";
+        $st8 = $conn->prepare($sql8);
+        $st8->execute([$number]);
 
         $sql10 = "SELECT A.PHONE,TO_CHAR(MIN(STARTTIME), 'YYYY-MM-DD HH24:MI:SS') AS FIRST_CALL,TO_CHAR(MAX(STARTTIME), 'YYYY-MM-DD HH24:MI:SS') AS LAST_CALL,B.NICKNAME,TO_CHAR(MAX(A.ASONDATE), 'YYYY-MM-DD HH24:MI:SS') AS LAST_UPDATED 
-        FROM CDATPCSUSPECT A  LEFT JOIN CDATSUSPECT B  ON A.PHONE=B.PHONE WHERE A.PHONE='$number' GROUP BY A.PHONE,B.NICKNAME";
+        FROM CDATPCSUSPECT A  LEFT JOIN CDATSUSPECT B  ON A.PHONE=B.PHONE WHERE A.PHONE = ? GROUP BY A.PHONE,B.NICKNAME";
+        $st10 = $conn->prepare($sql10);
+        $st10->execute([$number]);
 
         $sql12 = "SELECT case when count(PHONE)>=1 THEN '' ELSE 'Records not found' end as PHONE FROM temp_result";
 
-        $st3 = $conn->query($sql3);
         $st4 = $conn->query($sql4);
         $st5 = $conn->query($sql5);
         $stmt = $conn->query($sql6);
-        $st8 = $conn->query($sql8);
-        $st10 = $conn->query($sql10);
         $st12 = $conn->query($sql12);
 
         if ($stmt === false) {

@@ -22,25 +22,35 @@ if ($hasSearch) {
     }
 
     set_time_limit(0);
-        $conn = get_cdat_pdo();
-        $sql10 = "CREATE TEMP TABLE temp_S AS SELECT DISTINCT A.PHONE,TO_CHAR((MIN(STARTTIME))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS FIRST_CALL,TO_CHAR((MAX(STARTTIME))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS LAST_CALL,B.NICKNAME,B.MO,CATEGORY,TO_CHAR((MAX(A.ASONDATE))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS LAST_UPDATED,
+    require_once CDAT_COMMON . '/sql_safe.php';
+    $number = sql_safe_phone($number);
+    $number1 = sql_safe_phone($number1);
+    if ($number === '' || $number1 === '') {
+        cdat_sum_empty_state('Enter valid mobile numbers and try again.');
+        exit;
+    }
+    $conn = get_cdat_pdo();
+    $sql10 = "CREATE TEMP TABLE temp_S AS SELECT DISTINCT A.PHONE,TO_CHAR((MIN(STARTTIME))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS FIRST_CALL,TO_CHAR((MAX(STARTTIME))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS LAST_CALL,B.NICKNAME,B.MO,CATEGORY,TO_CHAR((MAX(A.ASONDATE))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS LAST_UPDATED,
 INC_OFFICER 
- FROM CDATPCSUSPECT A LEFT JOIN CDATSUSPECT B ON A.PHONE=B.PHONE WHERE A.PHONE='$number'  GROUP BY A.PHONE,B.NICKNAME,MO,CATEGORY, INC_OFFICER";
+ FROM CDATPCSUSPECT A LEFT JOIN CDATSUSPECT B ON A.PHONE=B.PHONE WHERE A.PHONE = ? GROUP BY A.PHONE,B.NICKNAME,MO,CATEGORY, INC_OFFICER";
+    $conn->prepare($sql10)->execute([$number]);
 
     $sql1 = "CREATE TEMP TABLE temp_TT AS SELECT DISTINCT PHONE,OTHER,TO_CHAR((STARTTIME)::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS STARTTIME,DURATION,
 CASE WHEN INCOMING='1' THEN 'IN' ELSE 'OUT' END AS TYPE,
-IMEINUMBER,CELLTOWERID,STATE_KEY,PROVIDER_KEY   FROM CDATPCSUSPECT WHERE PHONE='$number' AND OTHER='$number1'";
+IMEINUMBER,CELLTOWERID,STATE_KEY,PROVIDER_KEY   FROM CDATPCSUSPECT WHERE PHONE = ? AND OTHER = ?";
+    $st1 = $conn->prepare($sql1);
+    $st1->execute([$number, $number1]);
 
     $sql2 = cdr_sql_enrich_tt_local('', '', ['with_last_update' => true, 'with_lat_long' => true]);
 
     $sql5 = "SELECT PHONE,OTHER,NICKNAME,STARTTIME,DURATION,TYPE,IMEINUMBER,CELLTOWERID,OPERATOR,AREADESCRIPTION,LAT,LONG,AZM from temp_temp_cdrs  ORDER BY STARTTIME";
 
-    $sql6 = "select 'CALL DETAILS OF MOBILE NO. ' || '$number' || 'AND OTHER NO. ' || '$number1' as PHONE";
+    $sql6 = "select 'CALL DETAILS OF MOBILE NO. ' || ? || ' AND OTHER NO. ' || ? as PHONE";
+    $st6 = $conn->prepare($sql6);
+    $st6->execute([$number, $number1]);
 
-    $st1 = $conn->query($sql1);
     $st2 = $conn->query($sql2);
     $st5 = $conn->query($sql5);
-    $st6 = $conn->query($sql6);
 
     $bannerTitle = "CALL DETAILS OF MOBILE NO. {$number} AND OTHER NO. {$number1}";
     if ($st6 && ($bannerRow = $st6->fetch(PDO::FETCH_ASSOC))) {
