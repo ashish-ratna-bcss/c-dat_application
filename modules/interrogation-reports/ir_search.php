@@ -26,10 +26,14 @@ if ($hasSearch) {
         );
     }
     $conn = get_cdat_pdo();
+    require_once CDAT_COMMON . '/sql_safe.php';
+    $namePattern = '%' . str_replace(' ', '%', sql_safe_like_value($name, 200)) . '%';
+    $crimePattern = '%' . str_replace(' ', '%', sql_safe_like_value($crimeHead, 200)) . '%';
+    $nameSafe = sql_safe_like_value($name, 200);
 
         // Use parameterized queries to prevent SQL injection
     $sql8 = "SELECT 'DETAILS OF : ' || ? as PHONE1";
-    $params8 = array($name);
+    $params8 = array($nameSafe);
     $st8 = $conn->prepare($sql8);
     $st8->execute($params8);
     
@@ -44,15 +48,15 @@ if ($hasSearch) {
                     A.NAME,A.ALIAS_NAME,A.FATHER_NAME,A.AGE,A.PRESENT_ADDRESS,A.CRIME_HEAD,A.MO,A.CRIME_NO,A.YEAR,A.SEC_OF_LAW,A.POLICE_STATION,
                     (A.DATE_OF_ARREST)::varchar DATE_OF_ARREST 
                     FROM ir_particulars A
-                    INNER JOIN OFFENCE_DETAILS B ON A.NAME LIKE '%' || REPLACE(?, ' ', '%') || '%' 
-                    AND (B.CRIME_HEAD LIKE '%' || REPLACE(?, ' ', '%') || '%' OR 
-                    B.MO LIKE '%' || REPLACE(?, ' ', '%') || '%') 
+                    INNER JOIN OFFENCE_DETAILS B ON A.NAME LIKE ? 
+                    AND (B.CRIME_HEAD LIKE ? OR 
+                    B.MO LIKE ?) 
                     AND LTRIM(RTRIM(?)) != '' 
                     AND LENGTH(REPLACE(?, ' ', '')) > '4' 
                     AND A.IRKEY = B.IRKEY 
                     ORDER BY DATE_OF_ARREST DESC";
 
-    $params9 = array($name, $crimeHead, $crimeHead, $name, $name);
+    $params9 = array($namePattern, $crimePattern, $crimePattern, $nameSafe, $nameSafe);
     $st9 = $conn->prepare($sql9);
     $st9->execute($params9);
     

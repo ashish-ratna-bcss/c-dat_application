@@ -22,6 +22,18 @@ if ($hasSearch) {
     }
 
     set_time_limit(0);
+    require_once CDAT_COMMON . '/sql_safe.php';
+    $number = sql_safe_phone($number);
+    $number1 = sql_safe_phone($number1);
+    if ($number === '' || $number1 === '') {
+        cdat_sum_empty_state('Enter valid mobile numbers and try again.');
+        if ($isAjax) {
+            exit;
+        }
+        cdat_sum_page_close();
+        layout_end();
+        exit;
+    }
         $conn = get_cdat_pdo();
         $sql10 = "CREATE TEMP TABLE temp_S AS SELECT DISTINCT A.PHONE,TO_CHAR((MIN(STARTTIME))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS FIRST_CALL,TO_CHAR((MAX(STARTTIME))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS LAST_CALL,B.NICKNAME,B.MO,CATEGORY,TO_CHAR((MAX(A.ASONDATE))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS LAST_UPDATED,
             INC_OFFICER 

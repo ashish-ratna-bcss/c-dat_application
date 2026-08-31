@@ -24,6 +24,17 @@ if (!$isAjax) {
     cdat_sum_back_link('jrms_search.php');
 }
 cdat_sum_begin_heavy_search();
+require_once CDAT_COMMON . '/sql_safe.php';
+$uniqueKey = sql_safe_alnum($uniqueKey);
+if ($uniqueKey === '') {
+    cdat_sum_empty_state('Enter a valid unique key and try again.');
+    if ($isAjax) {
+        exit;
+    }
+    cdat_sum_page_close();
+    layout_end();
+    exit;
+}
 $conn = get_cdat_pdo();
 
 $sql1 = "CREATE TEMP TABLE temp_jrms_temp AS SELECT DISTINCT PRISONERNO,PSARRESTED,NAME,FATHERSNAME,CRIMENOS,HEADOFCRIME,MOBILENO PHONE,

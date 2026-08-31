@@ -53,9 +53,19 @@ if ($hasSearch) {
         );
     }
     $conn = get_cdat_pdo();
+    require_once CDAT_COMMON . '/sql_safe.php';
 
         $number = (string) ($_POST['PHONE_NO'] ?? '');
-    $phones = cdat_sum_split_phones($number);
+    $phones = array_values(array_filter(array_map('sql_safe_phone', cdat_sum_split_phones($number))));
+    if ($phones === []) {
+        cdat_sum_empty_state('Enter valid mobile numbers and try again.');
+        if ($isAjax) {
+            exit;
+        }
+        cdat_sum_page_close();
+        layout_end();
+        exit;
+    }
 
     // Address queries
     $address1 = "CREATE TEMP TABLE temp_a1 (phone varchar(20))";
@@ -133,9 +143,12 @@ if ($hasSearch) {
     $st4 = $conn->query($sql4);
     $conn->query($sql5);
     if (count($phones) >= 2) {
-        $op = $stringOp === '=' ? '=' : '>';
         $n = max(1, (int) $noVal);
-        $conn->query("DELETE FROM temp_common_numbertable3 WHERE NOT (totalnumberofphones $op $n)");
+        if ($stringOp === '=') {
+            $conn->prepare('DELETE FROM temp_common_numbertable3 WHERE NOT (totalnumberofphones = ?)')->execute([$n]);
+        } else {
+            $conn->prepare('DELETE FROM temp_common_numbertable3 WHERE NOT (totalnumberofphones > ?)')->execute([$n]);
+        }
     }
     $st6 = $conn->query($sql6);
     $st7 = $conn->query($sql7);

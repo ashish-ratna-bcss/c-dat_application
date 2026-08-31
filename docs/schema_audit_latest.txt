@@ -1,0 +1,46 @@
+# Schema audit report
+
+Database: CDATDUPL_DB @ 172.16.212.229
+
+## Summary
+- Local tables (all schemas): 32
+- Views: 3
+- FDW foreign tables: 16
+- Module SQL identifiers scanned: 34
+
+## Missing objects (referenced in modules/, not found as table/view/FDW)
+- (none)
+
+## FDW foreign tables
+- brief_facts
+- disposal_of_property
+- family_history
+- fingerprint_matched_undetected_cases_withimage
+- habitual_offenders
+- image_table
+- ir_particulars
+- jrms_total_2012_to_2017
+- local_contacts_facilitators
+- offence_details
+- pdact_main_table
+- previous_offence_details
+- relationship_with_other_associates
+- rowdy_sheeter_data1
+- training_strength_particulars
+- trng_att_with_empid
+
+## cdatpcsuspect.ucid
+- live type: bigint
+
+## Key app objects
+- cdat_details [view (summary/CDAT)]: yes (public.view)
+- cdat_details1 [view (summary/CDAT)]: yes (public.view)
+- cdatpcsuspect [table]: yes (public.table)
+- jrms_total_2012_to_2017 [fdw]: yes (fdw)
+- ir_particulars [fdw]: yes (fdw)
+- habitual_offenders [fdw]: yes (fdw)
+- nbws_verify_data_important [table (IR detail NBWS)]: yes (public.table)
+- training_strength_particulars [fdw (TRAINING_DB)]: yes (fdw)
+- trng_att_with_empid [fdw (TRAINING_DB)]: yes (fdw)
+
+## PASSED

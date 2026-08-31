@@ -19,18 +19,8 @@ PATTERNS=(
 )
 
 EXCLUDE=(
-  '--glob' '!all_mssql_queries_extracted.sql'
-  '--glob' '!all_postgress_queries_created.sql'
   '--glob' '!docs/**'
-  '--glob' '!scripts/convert_modules_mssql_to_pg.py'
-  '--glob' '!scripts/fix_remaining_pg_sql.py'
-  '--glob' '!scripts/postfix_modules_pg.py'
-  '--glob' '!scripts/compare_pg_mssql_tables.py'
-  '--glob' '!scripts/migrate_copy.py'
-  '--glob' '!scripts/drop_mssql_*'
-  '--glob' '!scripts/check_*mssql*'
-  '--glob' '!scripts/verify_mssql_*'
-  '--glob' '!sql/mssql_to_postgres_migration.sql'
+  '--glob' '!sdr_import/**'
 )
 
 SCAN_PATHS=(modules public routes sql)

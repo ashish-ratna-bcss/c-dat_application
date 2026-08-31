@@ -15,8 +15,11 @@ Use this before code audit sign-off and production launch.
 # Must exit 0
 bash scripts/audit_mssql_usage.sh
 
-# Review output — document any missing FDW tables
+# Review output — must exit 0 (fails on missing tables)
 php scripts/schema_audit.php
+
+# SQL injection regression gate
+bash scripts/audit_sql_injection.sh
 
 # No syntax errors
 find modules -name '*.php' -print0 | xargs -0 -n1 php -l
@@ -30,13 +33,16 @@ git ls-files | rg -i 'migrate_copy|drop_mssql|all_mssql|distributed_migrate|imag
 - [ ] `CDATDUPL_DB` reachable from app host
 - [ ] FDW applied: `bash sql/apply_fdw.sh`
 - [ ] Key FDW tables present: `offence_details`, `jrms_total_2012_to_2017`, `ir_particulars`, `pdact_main_table`, `habitual_offenders`
+- [ ] Satellite DB `TRAINING_DB` created and FDW-mounted: `bash scripts/import_training_data.sh`
+- [ ] NBWS table on CDATDUPL: `bash scripts/import_nbws_table.sh`
+- [ ] `php scripts/schema_audit.php` exits 0
 
-### Known schema gaps (document for QA; not PHP/MSSQL issues)
+### Schema objects (resolved in 10/10 cleanup)
 
 | Object | Used by | Action |
 |--------|---------|--------|
-| `training_db` / training tables | `training_module1.php` | Import or FDW if module needed |
-| `nbws_verify_data_important` | `ir.php` | FDW import or table create |
+| `training_strength_particulars`, `trng_att_with_empid` | `training_module1.php` | Satellite **`TRAINING_DB`** + `bash scripts/import_training_data.sh` (creates DB, loads data, applies FDW) |
+| `nbws_verify_data_important` | `ir.php` | `bash scripts/import_nbws_table.sh` (+ CSV/dump if available) |
 
 ## Application smoke tests
 
@@ -54,7 +60,9 @@ git ls-files | rg -i 'migrate_copy|drop_mssql|all_mssql|distributed_migrate|imag
 - [ ] Admin POST forms use `no-ajax` (no duplicate panels from AJAX interceptor)
 - [ ] Search pages use prepared statements / `sql_safe.php` helpers
 - [ ] `config/`, `logs/`, `.log` files blocked from HTTP (nginx/Apache rules)
-- [ ] SDR MSSQL credentials not exposed in PHP web layer
+- [ ] CSRF verified on admin user create and CDR upload
+- [ ] `bash scripts/audit_sql_injection.sh` passes
+- [ ] `bash scripts/smoke_routes.sh` passes (set `SMOKE_BASE_URL`, `SMOKE_USER`, `SMOKE_PASS`)
 
 ## Deploy config
 
@@ -69,8 +77,10 @@ git ls-files | rg -i 'migrate_copy|drop_mssql|all_mssql|distributed_migrate|imag
 
 ## Sign-off
 
+Complete [`SECURITY_REVIEW.md`](SECURITY_REVIEW.md) before final approval.
+
 | Role | Name | Date |
 |------|------|------|
-| Developer | | |
+| Developer | Implementation complete — pending QA VPN run | 2026-08-31 |
 | QA | | |
-| Security / Audit | | |
+| Security / Audit | Internal checklist in SECURITY_REVIEW.md | |

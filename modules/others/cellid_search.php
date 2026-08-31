@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../common/bootstrap.php';
 require_once CDAT_COMMON . '/includes/layout.php';
 require_once CDAT_COMMON . '/includes/sum_ui.php';
+require_once CDAT_COMMON . '/sql_safe.php';
 
 $isAjax = cdat_sum_is_ajax();
 $cellid = trim((string) ($_POST['CELLID'] ?? ''));
@@ -15,8 +16,8 @@ $fieldsHtml = cdat_sum_field_text('CELLID', 'Cell ID', $cellid, 'calls', 'Enter 
             . cdat_sum_field_call_state($state);
 
 if ($hasSearch) {
-    $cellidCore = str_replace(['%', '_'], '', $cellid);
-    if (strlen($cellidCore) < 5) {
+    $cellidSafe = sql_safe_like_value($cellid);
+    if (strlen($cellidSafe) < 5) {
         if (!$isAjax) {
             layout_begin('Cell ID Search');
             cdat_sum_page_open();
@@ -52,9 +53,7 @@ if ($hasSearch) {
     }
 
     $conn = get_cdat_pdo();
-    $likePattern = (strpos($cellid, '%') !== false || strpos($cellid, '_') !== false)
-        ? $cellid
-        : $cellid . '%';
+    $likePattern = $cellidSafe . '%';
     $opNorm = strtoupper(preg_replace('/_TOWER$/i', '', $operator));
     $stNorm = cdat_sum_phone_area_state_canonical($state) ?? cdat_sum_normalize_phone_area_state($state);
 

@@ -24,6 +24,7 @@ set +a
 : "${JRMS_DB_NAME:=JRMS_DB}"
 : "${PDACT_DB_NAME:=PDACT_DB}"
 : "${ROWDY_SHEETS_DB_NAME:=ROWDY_SHEETS_DB}"
+: "${TRAINING_DB_NAME:=TRAINING_DB}"
 
 export PGPASSWORD="${CDR_DB_PASSWORD}"
 
@@ -41,4 +42,5 @@ psql \
   -v jrms_db="$JRMS_DB_NAME" \
   -v pdact_db="$PDACT_DB_NAME" \
   -v rowdy_db="$ROWDY_SHEETS_DB_NAME" \
+  -v training_db="$TRAINING_DB_NAME" \
   -f "$ROOT/sql/fdw_setup.sql"

@@ -3,7 +3,7 @@ require_once __DIR__ . '/bootstrap.php';
 /**
  * login1.php — the login form's handler.
  *
- * Answers JSON when the caller asks for it (the AJAX form in view/auth.html)
+ * Answers JSON when the caller asks for it (the AJAX form in modules/common/auth.php)
  * and HTML otherwise, so the page still works with JavaScript turned off:
  * the <form> keeps its action and method, and a plain POST lands here exactly
  * as it did before.
@@ -42,7 +42,53 @@ if ($USERNAME === '') {
 if ($PASSWORD === '') {
     login_fail($wantsJson, 'Enter your password.', 'PASSWORD');
 }
-$conn           = get_cdat_pdo();
+
+function login_ensure_attempts_table(PDO $conn): void
+{
+    static $done = false;
+    if ($done) {
+        return;
+    }
+    $done = true;
+    $conn->exec("CREATE TABLE IF NOT EXISTS login_attempts (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(100) NOT NULL,
+        attempted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        success BOOLEAN NOT NULL DEFAULT FALSE
+    )");
+    $conn->exec('CREATE INDEX IF NOT EXISTS idx_login_attempts_user_time ON login_attempts (username, attempted_at DESC)');
+}
+
+function login_is_locked(PDO $conn, string $username): bool
+{
+    login_ensure_attempts_table($conn);
+    $maxAttempts = max(3, (int) (getenv('CDAT_LOGIN_MAX_ATTEMPTS') ?: 5));
+    $windowMin = max(1, (int) (getenv('CDAT_LOGIN_LOCKOUT_MINUTES') ?: 15));
+    $st = $conn->prepare(
+        "SELECT COUNT(*) FROM login_attempts
+         WHERE username = ? AND success = FALSE
+           AND attempted_at > NOW() - (? || ' minutes')::interval"
+    );
+    $st->execute([$username, (string) $windowMin]);
+    return ((int) $st->fetchColumn()) >= $maxAttempts;
+}
+
+function login_record_attempt(PDO $conn, string $username, bool $success): void
+{
+    login_ensure_attempts_table($conn);
+    $st = $conn->prepare('INSERT INTO login_attempts (username, success) VALUES (?, ?)');
+    $st->execute([$username, $success]);
+    if ($success) {
+        $clear = $conn->prepare('DELETE FROM login_attempts WHERE username = ?');
+        $clear->execute([$username]);
+    }
+}
+
+$conn = get_cdat_pdo();
+
+if (login_is_locked($conn, $USERNAME)) {
+    login_fail($wantsJson, 'Too many failed login attempts. Try again later.', '', 429);
+}
 
 // Placeholders, not interpolation. This query used to be built by pasting
 // $USERNAME and $PASSWORD straight into the string, so a username of
@@ -68,6 +114,7 @@ if ($row && $stored !== '') {
 }
 
 if (!$valid) {
+    login_record_attempt($conn, $USERNAME, false);
     login_fail($wantsJson, 'Username or password is incorrect.');
 }
 
@@ -90,6 +137,8 @@ audit_login(
     $_SESSION['audit_fullname'],
     (int) ($row['id'] ?? $row['ID'] ?? 0)
 );
+login_record_attempt($conn, $USERNAME, true);
+$_SESSION['audit_last_active'] = time();
 
 $landing = (defined('CDAT_BASE') ? rtrim((string) CDAT_BASE, '/') : '') . '/dashboard';
 

@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../common/bootstrap.php';
 require_once CDAT_COMMON . '/includes/layout.php';
 require_once CDAT_COMMON . '/includes/sum_ui.php';
+require_once CDAT_COMMON . '/sql_safe.php';
 
 function ir_kv_table(string $title, array $pairs, string $tableId): void
 {
@@ -39,7 +40,18 @@ if ($hasSearch) {
         );
     }
 $conn = get_cdat_pdo();
-$irKeyVal = trim((string) ($_GET['IRKEY'] ?? $_POST['IR_NO'] ?? ''));
+$irKeyVal = sql_safe_irkey(trim((string) ($_GET['IRKEY'] ?? $_POST['IR_NO'] ?? '')));
+if ($irKeyVal === '') {
+    cdat_sum_results_open();
+    cdat_sum_empty_state('Enter a valid IR number and try again.');
+    cdat_sum_results_close();
+    if ($isAjax) {
+        exit;
+    }
+    cdat_sum_page_close();
+    layout_end();
+    exit;
+}
 $irParams = [':irkey' => $irKeyVal];
 
 $irRun = static function (PDO $conn, string $sql, array $params): PDOStatement {

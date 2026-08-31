@@ -24,13 +24,20 @@ if ($hasSearch) {
 
     set_time_limit(0);
     require_once CDAT_COMMON . '/activity_logger.php';
-    
-    audit_log('CDAT Contacts', 'Search', ['phone_number' => $_POST['PHONE_NO'] ?? '']);
-    $conn = get_cdat_pdo();
-
-        if ($number === '') {
-        die('<div class="alert alert-warning mb-0" role="alert">Phone number required</div>');
+    require_once CDAT_COMMON . '/sql_safe.php';
+    $number = sql_safe_phone($number);
+    if ($number === '') {
+        cdat_sum_empty_state('Enter a valid mobile number and try again.');
+        if ($isAjax) {
+            exit;
+        }
+        cdat_sum_page_close();
+        layout_end();
+        exit;
     }
+
+    audit_log('CDAT Contacts', 'Search', ['phone_number' => $number]);
+    $conn = get_cdat_pdo();
 
     // Use parameterized queries to prevent SQL injection
     $sql10 = "SELECT DISTINCT A.PHONE,TO_CHAR((MIN(STARTTIME))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS FIRST_CALL,TO_CHAR((MAX(STARTTIME))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS LAST_CALL,B.NICKNAME || '_' || B.ROLE NICKNAME,B.MO,CATEGORY,TO_CHAR((MAX(A.ASONDATE))::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS LAST_UPDATED,

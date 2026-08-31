@@ -24,10 +24,11 @@ if ($hasSearch) {
         );
     }
     $conn = get_cdat_pdo();
+    require_once CDAT_COMMON . '/sql_safe.php';
+    $number = trim((string) ($_POST['VEHICLE_NO'] ?? ''));
+    $searchPattern = sql_like_pattern($number, 200);
 
-        $number = trim($_POST['VEHICLE_NO']);
-
-    // Use parameterized queries to prevent SQL injection
+        // Use parameterized queries to prevent SQL injection
     $sql8 = "SELECT 'VEHICLE ADDRESS SEARCH' as PHONE1";
     $st8 = $conn->query($sql8);
 
@@ -38,7 +39,7 @@ if ($hasSearch) {
             FROM cdat_rta 
             WHERE REGN_NO LIKE ?
             LIMIT 501";
-    $params9 = array('%' . $number . '%');
+    $params9 = array($searchPattern);
     $st9 = $conn->prepare($sql9);
     $st9->execute($params9);
     

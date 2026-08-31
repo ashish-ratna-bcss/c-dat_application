@@ -2,6 +2,13 @@
 
 return [
 
+    [
+        'method'  => 'GET',
+        'path'    => '/health',
+        'name'    => 'health',
+        'handler' => 'modules/common/health.php',
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Auth

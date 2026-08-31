@@ -20,6 +20,7 @@ DROP SERVER IF EXISTS ir_server      CASCADE;
 DROP SERVER IF EXISTS jrms_server    CASCADE;
 DROP SERVER IF EXISTS pdact_server   CASCADE;
 DROP SERVER IF EXISTS rowdy_server   CASCADE;
+DROP SERVER IF EXISTS training_server CASCADE;
 
 CREATE SERVER ir_server
     FOREIGN DATA WRAPPER postgres_fdw
@@ -37,6 +38,10 @@ CREATE SERVER rowdy_server
     FOREIGN DATA WRAPPER postgres_fdw
     OPTIONS (host :'db_host', port :'db_port', dbname :'rowdy_db');
 
+CREATE SERVER training_server
+    FOREIGN DATA WRAPPER postgres_fdw
+    OPTIONS (host :'db_host', port :'db_port', dbname :'training_db');
+
 CREATE USER MAPPING FOR CURRENT_USER
     SERVER ir_server
     OPTIONS (user :'db_user', password :'db_password');
@@ -51,6 +56,10 @@ CREATE USER MAPPING FOR CURRENT_USER
 
 CREATE USER MAPPING FOR CURRENT_USER
     SERVER rowdy_server
+    OPTIONS (user :'db_user', password :'db_password');
+
+CREATE USER MAPPING FOR CURRENT_USER
+    SERVER training_server
     OPTIONS (user :'db_user', password :'db_password');
 
 IMPORT FOREIGN SCHEMA public
@@ -68,6 +77,10 @@ IMPORT FOREIGN SCHEMA public
 
 IMPORT FOREIGN SCHEMA public
     FROM SERVER rowdy_server
+    INTO public;
+
+IMPORT FOREIGN SCHEMA public
+    FROM SERVER training_server
     INTO public;
 
 SELECT

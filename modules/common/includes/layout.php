@@ -333,6 +333,10 @@ function layout_begin(string $title = 'Call Data Analysis Tool', string $subtitl
 <link href="https://cdn.jsdelivr.net/npm/simple-datatables@latest/dist/style.css" rel="stylesheet" type="text/css">
 <link rel="stylesheet" href="<?= CDAT_ASSETS ?>/css/cdat-bootstrap.css?v=<?= time() ?>">
 <link rel="stylesheet" href="<?= CDAT_ASSETS ?>/css/app.css?v=<?= time() ?>">
+<?php
+require_once CDAT_COMMON . '/csrf.php';
+?>
+<meta name="csrf-token" content="<?= htmlspecialchars(csrf_token(), ENT_QUOTES) ?>">
 <?= $head ?>
 </head>
 <body>
@@ -430,7 +434,7 @@ require_once __DIR__ . '/quick_links.php';
 cdat_ql_render_modal();
 ?>
 <script>
-// Absolute-ish so the picker works from view/ as well as modules/.
+// Absolute-ish so the picker works from any routed module page.
 window.CDAT_CSRF  = <?= json_encode(cdat_csrf()) ?>;
 window.CDAT_BASE  = <?= json_encode($base) ?>;
 window.CDAT_QLAPI = <?= json_encode(cdat_href('/api/quick-links')) ?>;

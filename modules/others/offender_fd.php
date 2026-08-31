@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../common/bootstrap.php';
 require_once CDAT_COMMON . '/includes/layout.php';
 require_once CDAT_COMMON . '/includes/sum_ui.php';
+require_once CDAT_COMMON . '/sql_safe.php';
 
 function offender_kv_table(string $title, array $pairs, string $tableId): void
 {
@@ -26,7 +27,7 @@ if (!$isAjax) {
     cdat_sum_back_link('offender_search_by_mo.php');
 }
 $conn = get_cdat_pdo();
-$moKey = trim((string) ($_GET['MO_KEY'] ?? ''));
+$moKey = sql_safe_alnum(trim((string) ($_GET['MO_KEY'] ?? '')));
 if ($moKey === '') {
     cdat_sum_results_open();
     cdat_sum_empty_state('MO key is required.');

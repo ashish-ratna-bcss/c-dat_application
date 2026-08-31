@@ -5,6 +5,7 @@ require_once __DIR__ . '/../common/bootstrap.php';
  * Admin-only module to create and manage application logins.
  */
 require_once CDAT_COMMON . '/activity_logger.php';
+require_once CDAT_COMMON . '/csrf.php';
 audit_require_admin();
 
 function cdat_ensure_logins_status_column(PDO $db): void
@@ -116,6 +117,7 @@ if (is_array($flash)) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_verify();
     $userAction = strtolower(trim((string) ($_POST['user_action'] ?? 'create')));
 
     if ($userAction === 'edit') {
@@ -426,18 +428,21 @@ cdat_sum_page_open('sum-create-user-page');
                   <?php if (!$isSelf): ?>
                     <?php if ($status === 'active'): ?>
                       <form method="post" action="<?= cdat_sum_h($formAction) ?>" class="sum-users-action-form no-ajax" data-no-ajax onsubmit="return confirm('Deactivate user <?= cdat_sum_h($username) ?>?');">
+                        <?= csrf_field() ?>
                         <input type="hidden" name="user_action" value="deactivate" />
                         <input type="hidden" name="user_id" value="<?= $userId ?>" />
                         <button type="submit" class="btn btn-warning btn-sm">Deactivate</button>
                       </form>
                     <?php else: ?>
                       <form method="post" action="<?= cdat_sum_h($formAction) ?>" class="sum-users-action-form no-ajax" data-no-ajax onsubmit="return confirm('Activate user <?= cdat_sum_h($username) ?>?');">
+                        <?= csrf_field() ?>
                         <input type="hidden" name="user_action" value="activate" />
                         <input type="hidden" name="user_id" value="<?= $userId ?>" />
                         <button type="submit" class="btn btn-success btn-sm">Activate</button>
                       </form>
                     <?php endif; ?>
                     <form method="post" action="<?= cdat_sum_h($formAction) ?>" class="sum-users-action-form no-ajax" data-no-ajax onsubmit="return confirm('Permanently delete user <?= cdat_sum_h($username) ?>? This cannot be undone.');">
+                      <?= csrf_field() ?>
                       <input type="hidden" name="user_action" value="delete" />
                       <input type="hidden" name="user_id" value="<?= $userId ?>" />
                       <button type="submit" class="btn btn-danger btn-sm">Delete</button>
@@ -477,6 +482,7 @@ cdat_sum_page_open('sum-create-user-page');
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <form method="post" action="<?= cdat_sum_h($formAction) ?>" class="no-ajax" data-no-ajax id="createUserForm">
+        <?= csrf_field() ?>
         <input type="hidden" name="user_action" value="create" />
         <div class="modal-body">
           <p class="sum-create-user-modal__desc">Enter credentials for a new application login.</p>
@@ -522,6 +528,7 @@ cdat_sum_page_open('sum-create-user-page');
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <form method="post" action="<?= cdat_sum_h($formAction) ?>" class="no-ajax" data-no-ajax id="editUserForm">
+        <?= csrf_field() ?>
         <input type="hidden" name="user_action" value="edit" />
         <input type="hidden" name="user_id" id="edit_user_id" value="<?= (int) $editValues['user_id'] ?>" />
         <input type="hidden" name="username" id="edit_username_hidden" value="<?= cdat_sum_h($editValues['username']) ?>" />

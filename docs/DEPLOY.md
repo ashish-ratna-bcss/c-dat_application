@@ -16,8 +16,12 @@ Copy `.env.example` to `.env` and set:
 | `CDR_DB_HOST`, `CDR_DB_PORT` | PostgreSQL host |
 | `CDR_DB_NAME` | Main app DB (default `CDATDUPL_DB`) |
 | `CDR_DB_USER`, `CDR_DB_PASSWORD` | DB credentials |
-| `IR_DB_NAME`, `JRMS_DB_NAME`, `PDACT_DB_NAME`, `ROWDY_SHEETS_DB_NAME` | FDW source DB names |
-| `MSSQL_SA_PASSWORD`, `MSSQL_CONTAINER` | SDR `.bak` pipeline only |
+| `IR_DB_NAME`, `JRMS_DB_NAME`, `PDACT_DB_NAME`, `ROWDY_SHEETS_DB_NAME`, `TRAINING_DB_NAME` | Satellite PostgreSQL DB names (FDW sources) |
+| `CDAT_SQL_CONSOLE` | Set `0` to disable admin SQL console in production |
+| `CDAT_SESSION_IDLE_MINUTES` | Session idle timeout (default 30) |
+| `CDAT_LOGIN_MAX_ATTEMPTS` | Failed logins before lockout (default 5) |
+| `CDAT_LOGIN_LOCKOUT_MINUTES` | Lockout window (default 15) |
+| `MSSQL_SA_PASSWORD`, `MSSQL_CONTAINER` | SDR `.bak` pipeline only — see [`SDR_PIPELINE.md`](SDR_PIPELINE.md) |
 
 PHP reads these via `config/db_config.php` (generated from `.env` on first bootstrap).
 
@@ -25,13 +29,40 @@ PHP reads these via `config/db_config.php` (generated from `.env` on first boots
 
 ## Database setup
 
-1. Create `CDATDUPL_DB` and satellite DBs (`IR_DB`, `JRMS_DB`, etc.) or restore from backups.
+1. Create `CDATDUPL_DB` and satellite DBs (`IR_DB`, `JRMS_DB`, `TRAINING_DB`, etc.) or restore from backups.
 2. Apply canonical schema: `sql/cdr_db.sql` (and satellite SQL files as needed).
-3. Mount FDW foreign tables into the main DB:
+3. Training satellite (separate DB, not local tables on CDATDUPL):
+
+```bash
+bash scripts/import_training_data.sh   # creates TRAINING_DB, schema, optional CSV/dump, then FDW
+```
+
+4. Mount FDW foreign tables into the main DB:
 
 ```bash
 bash sql/apply_fdw.sh
 ```
+
+5. NBWS court data (local table on CDATDUPL until IR source exists):
+
+```bash
+bash scripts/import_nbws_table.sh
+```
+
+6. Verify schema (must exit 0):
+
+```bash
+php scripts/schema_audit.php
+```
+
+### Performance indexes
+
+Ensure these exist on heavy search paths (create on VPN if missing):
+
+- `cdatpcsuspect(phone)`, `cdatpcsuspect(imeinumber)`, `cdatpcsuspect(celltowerid)`
+- FDW join keys: `ir_particulars(irkey)`, `offence_details(irkey)`, `jrms_total_2012_to_2017` crime-head columns
+- On **TRAINING_DB**: `training_strength_particulars(employee_id, general_no, name)`, `trng_att_with_empid(employee_id)`
+- `public.nbws_verify_data_important(irkey)` on CDATDUPL_DB
 
 ## Web server
 
@@ -80,7 +111,37 @@ php scripts/schema_audit.php         # Tables/FDW vs modules/
 find modules -name '*.php' -print0 | xargs -0 -n1 php -l
 ```
 
-See [`HANDOVER_CHECKLIST.md`](HANDOVER_CHECKLIST.md) for full sign-off steps.
+## Backups & restore
+
+Daily backup (cron example):
+
+```bash
+pg_dump -h "$CDR_DB_HOST" -U "$CDR_DB_USER" -Fc "$CDR_DB_NAME" > /var/backups/cdat_$(date +%Y%m%d).dump
+```
+
+Restore drill (staging only):
+
+```bash
+pg_restore -h "$CDR_DB_HOST" -U "$CDR_DB_USER" -d CDATDUPL_DB_STAGING --clean /var/backups/cdat_YYYYMMDD.dump
+```
+
+## Worker monitoring
+
+Run CDR worker under systemd or cron watchdog:
+
+```bash
+python3 worker.py   # polls var/cdr_documents/inbox/cdr/
+```
+
+Alert if process not running or inbox queue grows beyond threshold.
+
+## Health check
+
+```bash
+curl -sS http://127.0.0.1:8020/health
+# {"status":"ok","db":"ok","version":"..."}
+```
+
 
 ## SDR pipeline (optional)
 

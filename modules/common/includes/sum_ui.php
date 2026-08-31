@@ -304,18 +304,6 @@ function cdat_sum_field_hms(string $hName, string $mName, string $sName, string 
          . '</div></div>';
 }
 
-function cdat_sum_tower_cascade_script(): void
-{
-    echo '<script src="' . htmlspecialchars(CDAT_ASSETS . '/js/jquerydynamic.js', ENT_QUOTES)
-       . '"></script>'
-       . '<script>function getps(val){jQuery.ajax({type:"POST",url:'
-       . json_encode(function_exists('cdat_href') ? cdat_href('/api/crime-numbers') : '/api/crime-numbers')
-       . ',data:"POLICE_STATION="+val,success:function(data){jQuery("temp_Crime-list").html(data);}});}'
-       . 'function getyear(val1){jQuery.ajax({type:"POST",url:'
-       . json_encode(function_exists('cdat_href') ? cdat_href('/api/years') : '/api/years')
-       . ',data:"CRIME_NO="+val1,success:function(data){jQuery("temp_YEAR").html(data);}});}</script>';
-}
-
 function cdat_sum_field_date(string $name, string $label, string $id = '', string $value = '',
                              bool $required = true): string
 {

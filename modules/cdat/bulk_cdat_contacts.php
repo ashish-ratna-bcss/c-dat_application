@@ -1,13 +1,14 @@
 <?php
 require_once __DIR__ . '/../common/bootstrap.php';
 // One page for both halves of this screen: the form, and the results.
-// Was view/bulk_cdat_contacts.htm (form) || controller/bulk_cdat_contacts.php (handler).
+// Bulk CDAT contacts search — routed via routes/web.php.
 // GET shows the form; a submit renders the form and the results below it.
 // !empty($_GET) covers links that pass parameters in the query string.
 $__submitted = ($_SERVER['REQUEST_METHOD'] === 'POST') || !empty($_GET);
 
 require_once CDAT_COMMON . '/includes/layout.php';
 require_once CDAT_COMMON . '/includes/sum_ui.php';
+require_once CDAT_COMMON . '/sql_safe.php';
 
 $isAjax = cdat_sum_is_ajax();
 $phoneValue = (string) ($_POST['PHONE_NO'] ?? '');
@@ -34,8 +35,17 @@ if ($__submitted && $phoneValue !== '') {
     }
     $conn = get_cdat_pdo();
     cdat_sum_begin_heavy_search();
-        $number = (string) ($_POST['PHONE_NO'] ?? '');
-    $phones = cdat_sum_split_phones($number);
+    $number = (string) ($_POST['PHONE_NO'] ?? '');
+    $phones = array_values(array_filter(array_map('sql_safe_phone', cdat_sum_split_phones($number))));
+    if ($phones === []) {
+        cdat_sum_empty_state('Enter valid mobile numbers and try again.');
+        if ($isAjax) {
+            exit;
+        }
+        cdat_sum_page_close();
+        layout_end();
+        exit;
+    }
 
     $sqlB1= "CREATE TEMP TABLE temp_t1 (phone varchar(20))";
 

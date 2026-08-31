@@ -7,6 +7,15 @@ require_once __DIR__ . '/bootstrap.php';
  */
 
 if (session_status() === PHP_SESSION_NONE) {
+    $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+    session_set_cookie_params([
+        'lifetime' => 0,
+        'path'     => '/',
+        'httponly' => true,
+        'secure'   => $secure,
+        'samesite' => 'Lax',
+    ]);
     session_start();
 }
 
@@ -161,10 +170,19 @@ function audit_require_session(): void
     if (empty($_SESSION['audit_username'])) {
         // Was LOGIN.HTML, which resolved to the bare POST handler with no form, so
         // users landed on "USERNAME AND PASSWORD REQUIRED" with nothing to fill in.
-        // ../view/auth.html is the actual login form.
+        // modules/common/auth.php is the login form.
         header('Location: ' . (defined('CDAT_BASE') ? rtrim((string) CDAT_BASE, '/') : '') . '/login');
         exit;
     }
+    $idleLimit = (int) (getenv('CDAT_SESSION_IDLE_MINUTES') ?: 30);
+    $now = time();
+    $last = (int) ($_SESSION['audit_last_active'] ?? $now);
+    if ($idleLimit > 0 && ($now - $last) > ($idleLimit * 60)) {
+        audit_logout();
+        header('Location: ' . (defined('CDAT_BASE') ? rtrim((string) CDAT_BASE, '/') : '') . '/login?expired=1');
+        exit;
+    }
+    $_SESSION['audit_last_active'] = $now;
 }
 
 function audit_is_admin(): bool

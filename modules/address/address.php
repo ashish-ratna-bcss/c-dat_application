@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../common/bootstrap.php';
 require_once CDAT_COMMON . '/includes/layout.php';
 require_once CDAT_COMMON . '/includes/sum_ui.php';
+require_once CDAT_COMMON . '/sql_safe.php';
 
 $isAjax = cdat_sum_is_ajax();
 $phone = trim((string) ($_POST['PHONE_NO'] ?? ''));
@@ -22,7 +23,16 @@ if ($hasSearch) {
         );
     }
     $conn = get_cdat_pdo();
-    $number = trim((string) $_POST['PHONE_NO']);
+    $number = sql_safe_phone($phone);
+    if ($number === '') {
+        cdat_sum_empty_state('Enter a valid mobile number and try again.');
+        if ($isAjax) {
+            exit;
+        }
+        cdat_sum_page_close();
+        layout_end();
+        exit;
+    }
 
     $sql8 = 'SELECT ? AS PHONE1';
     $st8 = $conn->prepare($sql8);

@@ -273,3 +273,24 @@ CREATE TABLE IF NOT EXISTS relationship_with_other_associates (
     REMARKS varchar(250) NULL
 );
 
+-- ------------------------------------------------------------
+
+
+-- TABLE: NBWS_VERIFY_DATA_IMPORTANT (court / NBWS pending cases)
+-- Used by modules/interrogation-reports/ir.php
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS nbws_verify_data_important (
+    IRKEY numeric(18, 0) NOT NULL,
+    FIRST_HEARING_DATE date NULL,
+    DECISION_DATE date NULL,
+    CASE_STATUS varchar(500) NULL,
+    NEXT_HEARING_DATE date NULL,
+    NATURE_OF_DISPOSAL varchar(500) NULL,
+    COURT_NUMBER_AND_JUDGE varchar(500) NULL,
+    STAGE_OF_CASE varchar(500) NULL,
+    PETITIONER_RESPONDENT varchar(1000) NULL,
+    ACT_AND_SEC varchar(500) NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_nbws_verify_irkey ON nbws_verify_data_important (IRKEY);
+

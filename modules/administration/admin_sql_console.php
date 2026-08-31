@@ -3,17 +3,34 @@ require_once __DIR__ . '/../common/bootstrap.php';
 /**
  * admin_sql_console.php
  * Admin-only page — PostgreSQL SQL Query Console
- * UI matches the existing Hyderabad City Police project structure.
  */
 require_once CDAT_COMMON . '/activity_logger.php';
-audit_require_admin(); // Restrict to admin-only
+require_once CDAT_COMMON . '/csrf.php';
+
+if (getenv('CDAT_SQL_CONSOLE') === '0') {
+    http_response_code(404);
+    echo 'SQL console disabled.';
+    exit;
+}
+
+audit_require_admin();
 
 $db = audit_db();
 
+function cdat_sql_console_max_rows(): int
+{
+    return max(100, min(10000, (int) (getenv('CDAT_SQL_CONSOLE_MAX_ROWS') ?: 10000)));
+}
+
+function cdat_sql_console_timeout_ms(): int
+{
+    return max(1000, min(300000, (int) (getenv('CDAT_SQL_CONSOLE_TIMEOUT_MS') ?: 60000)));
+}
+
 function cdat_sql_console_begin_query(PDO $db): void
 {
-    set_time_limit(0);
-    $db->exec('SET statement_timeout = 0');
+    set_time_limit(120);
+    $db->exec('SET statement_timeout = ' . cdat_sql_console_timeout_ms());
 }
 
 /** Read-only guard: SELECT / WITH only, no writes or multiple statements. */
@@ -22,6 +39,9 @@ function cdat_sql_console_validate(string $sql): string
     $sql = trim($sql);
     if ($sql === '') {
         throw new Exception('Query is empty.');
+    }
+    if (strlen($sql) > 8192) {
+        throw new Exception('Query exceeds maximum length (8192 characters).');
     }
     if (!preg_match('/^(select|with)\b/is', $sql)) {
         throw new Exception('Only read-only SELECT queries are allowed.');
@@ -70,6 +90,7 @@ function cdat_sql_console_recent_queries(PDO $db, int $limit = 10): array
 
 // ── Handling CSV / Excel Export ──
 if (isset($_POST['export']) && isset($_POST['sql_query'])) {
+    csrf_verify();
     $raw_query = $_POST['sql_query'];
     $export_type = $_POST['export_type'] ?? 'csv'; // 'csv' or 'excel'
     
@@ -79,6 +100,10 @@ if (isset($_POST['export']) && isset($_POST['sql_query'])) {
         cdat_sql_console_begin_query($db);
         $stmt = $db->query($exec_query);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $maxRows = cdat_sql_console_max_rows();
+        if (count($rows) > $maxRows) {
+            $rows = array_slice($rows, 0, $maxRows);
+        }
         
         audit_log('SQL Query Console', 'Export ' . strtoupper($export_type), [
             'query' => $exec_query,
@@ -137,6 +162,7 @@ $total_rows = 0;
 $execution_time = 0.0;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['BTN_EXECUTE']) && $query !== '') {
+    csrf_verify();
     $start_time = microtime(true);
     try {
         $exec_query = cdat_sql_console_validate($query);
@@ -144,6 +170,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['BTN_EXECUTE']) && $qu
         cdat_sql_console_begin_query($db);
         $stmt = $db->query($exec_query);
         $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $maxRows = cdat_sql_console_max_rows();
+        if (count($results) > $maxRows) {
+            $results = array_slice($results, 0, $maxRows);
+        }
         $total_rows = count($results);
         
         if ($total_rows > 0) {
@@ -181,6 +211,7 @@ cdat_sum_page_open('sum-admin-layout');
       <h2 class="sum-console-panel__title">SQL Query Console (PostgreSQL — read-only)</h2>
       <p class="sum-console-panel__desc mb-2">Any SELECT query is allowed. Writes (INSERT/UPDATE/DELETE/DDL) are blocked for safety.</p>
       <form id="sqlForm" name="sqlForm" method="post" action="" class="no-ajax" data-no-ajax>
+        <?= csrf_field() ?>
         <textarea id="sql_query" name="sql_query" class="sum-console-editor form-control font-monospace" placeholder="Read-only: SELECT * FROM cdatpcsuspect WHERE phone = '7569422355'"><?= htmlspecialchars($query) ?></textarea>
         <div class="sum-console-actions">
           <input type="submit" name="BTN_EXECUTE" id="BTN_EXECUTE" value="Execute Query" class="sum-console-btn btn btn-primary btn-sm" />
@@ -197,12 +228,14 @@ cdat_sum_page_open('sum-admin-layout');
     <?php if ($_SERVER['REQUEST_METHOD'] === 'POST' && $error === '' && isset($_POST['BTN_EXECUTE'])): ?>
       <div class="sum-console-actions d-flex flex-wrap gap-2 justify-content-end mb-3">
         <form method="post" action="" class="no-ajax" data-no-ajax>
+          <?= csrf_field() ?>
           <input type="hidden" name="sql_query" value="<?= htmlspecialchars($query) ?>" />
           <input type="hidden" name="export" value="1" />
           <input type="hidden" name="export_type" value="csv" />
           <input type="submit" value="Export CSV" class="btn btn-primary btn-sm" />
         </form>
         <form method="post" action="" class="no-ajax" data-no-ajax>
+          <?= csrf_field() ?>
           <input type="hidden" name="sql_query" value="<?= htmlspecialchars($query) ?>" />
           <input type="hidden" name="export" value="1" />
           <input type="hidden" name="export_type" value="excel" />

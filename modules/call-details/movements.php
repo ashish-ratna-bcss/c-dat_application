@@ -22,6 +22,17 @@ if ($hasSearch) {
 
     cdat_sum_begin_heavy_search();
     require_once CDAT_COMMON . '/activity_logger.php';
+    require_once CDAT_COMMON . '/sql_safe.php';
+    $number = sql_safe_phone($number);
+    if ($number === '') {
+        cdat_sum_empty_state('Enter a valid mobile number and try again.');
+        if ($isAjax) {
+            exit;
+        }
+        cdat_sum_page_close();
+        layout_end();
+        exit;
+    }
     audit_log('Movements / Call Details', 'Search', ['phone_number' => $number]);
 
     $conn = get_cdat_pdo();

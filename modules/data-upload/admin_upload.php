@@ -11,6 +11,11 @@ require_once CDAT_COMMON . '/activity_logger.php';
 require_once CDAT_UPLOAD . '/admin_upload_page.php';
 audit_require_uploader();
 
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' || isset($_POST['ajax_action'])) {
+    require_once CDAT_COMMON . '/csrf.php';
+    csrf_verify();
+}
+
 if (!defined('CDAT_UPLOAD_PAGE')) {
     if ($_SERVER['REQUEST_METHOD'] === 'POST' || isset($_POST['ajax_action'])) {
         define('CDAT_UPLOAD_PAGE', 'cdr');

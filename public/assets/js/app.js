@@ -653,6 +653,10 @@
         if (btn && btn.name) {
             formData.append(btn.name, btn.dataset.original || btn.value);
         }
+        var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        if (csrfMeta && csrfMeta.content) {
+            formData.append('csrf_token', csrfMeta.content);
+        }
 
         searchAbort = new AbortController();
         var thisAbort = searchAbort;
@@ -661,7 +665,8 @@
             method: form.method || 'POST',
             body: formData,
             headers: {
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': csrfMeta && csrfMeta.content ? csrfMeta.content : ''
             },
             signal: thisAbort.signal
         })
@@ -1663,4 +1668,30 @@
     window.initDatePickers();
     window.initFileUploads();
 
+}());
+
+(function () {
+    'use strict';
+    var origFetch = window.fetch;
+    if (typeof origFetch !== 'function') {
+        return;
+    }
+    window.fetch = function (url, opts) {
+        opts = opts || {};
+        var meta = document.querySelector('meta[name="csrf-token"]');
+        var token = meta && meta.content ? meta.content : '';
+        if (token && opts.body instanceof FormData) {
+            if (!opts.body.has('csrf_token')) {
+                opts.body.append('csrf_token', token);
+            }
+        }
+        if (token) {
+            var headers = new Headers(opts.headers || {});
+            if (!headers.has('X-CSRF-TOKEN')) {
+                headers.set('X-CSRF-TOKEN', token);
+            }
+            opts.headers = headers;
+        }
+        return origFetch.call(this, url, opts);
+    };
 }());

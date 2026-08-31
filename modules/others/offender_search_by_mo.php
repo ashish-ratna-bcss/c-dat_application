@@ -24,12 +24,13 @@ if ($hasSearch) {
         );
     }
     $conn = get_cdat_pdo();
+    require_once CDAT_COMMON . '/sql_safe.php';
+    $number = trim((string) ($_POST['MO'] ?? ''));
+    $searchPattern = '%' . str_replace(' ', '%', sql_safe_like_value($number, 200)) . '%';
 
-        $number = trim($_POST['MO']);
-
-    // Use parameterized queries to prevent SQL injection
+        // Use parameterized queries to prevent SQL injection
     $sql8 = "SELECT 'DETAILS OF : ' || ? as PHONE1";
-    $params8 = array($number);
+    $params8 = array(sql_safe_like_value($number, 200));
     $st8 = $conn->prepare($sql8);
     $st8->execute($params8);
     
@@ -37,7 +38,6 @@ if ($hasSearch) {
     $sql9 = "SELECT DISTINCT MO_KEY, ACC_NAME AS ACCUSED_NAME, FATHER_NAME, AGE, MO1, MO2, POLICE_STATION 
             FROM COMPLETE_MO_CLASSIFICATION
             WHERE (MO1 LIKE ? OR MO2 LIKE ? OR CRIME_HEAD LIKE ?)";
-    $searchPattern = '%' . str_replace(' ', '%', $number) . '%';
     $params9 = array($searchPattern, $searchPattern, $searchPattern);
     $st9 = $conn->prepare($sql9);
     $st9->execute($params9);

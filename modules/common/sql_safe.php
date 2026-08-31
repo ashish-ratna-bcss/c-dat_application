@@ -55,6 +55,12 @@ function sql_safe_enum(string $raw, array $allowed): string
     return in_array($raw, $allowed, true) ? $raw : '';
 }
 
+/** IRKEY / numeric report key (digits only, max 18). */
+function sql_safe_irkey(string $raw): string
+{
+    return sql_safe_digits($raw, 18);
+}
+
 function h($value): string
 {
     return htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');

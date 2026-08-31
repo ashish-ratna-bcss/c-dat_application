@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../common/bootstrap.php';
 require_once CDAT_COMMON . '/includes/layout.php';
 require_once CDAT_COMMON . '/includes/sum_ui.php';
+require_once CDAT_COMMON . '/sql_safe.php';
 
 $isAjax = cdat_sum_is_ajax();
 
@@ -13,7 +14,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             cdat_sum_page_open();
         }
         $conn = get_cdat_pdo();
-                $phones = cdat_sum_split_phones($number);
+        $phones = array_values(array_filter(array_map('sql_safe_phone', cdat_sum_split_phones($number))));
+        if ($phones === []) {
+            cdat_sum_empty_state('Enter valid mobile numbers and try again.');
+            if ($isAjax) {
+                exit;
+            }
+            cdat_sum_page_close();
+            layout_end();
+            exit;
+        }
 
         $sql1= "CREATE TEMP TABLE temp_t1 (phone varchar(20))";
 

@@ -2,11 +2,16 @@
 require_once __DIR__ . '/../common/bootstrap.php';
 require_once CDAT_COMMON . '/includes/layout.php';
 require_once CDAT_COMMON . '/includes/sum_ui.php';
+require_once CDAT_COMMON . '/sql_safe.php';
 
 $isAjax = cdat_sum_is_ajax();
-$criteria = trim((string) ($_POST['EMPLOYEE_SEARCH'] ?? ''));
+$criteria = sql_safe_enum(trim((string) ($_POST['EMPLOYEE_SEARCH'] ?? '')), array_keys([
+    'EMPLOYEE_ID' => true, 'GENERAL_NO' => true, 'NAME' => true,
+]));
 $searchNo = trim((string) ($_POST['EMPLOYEE_SEARCH_NO'] ?? ''));
-$rank = trim((string) ($_POST['EMPLOYEE_SEARCH_RANK'] ?? ''));
+$rank = sql_safe_enum(trim((string) ($_POST['EMPLOYEE_SEARCH_RANK'] ?? '')), [
+    '', 'INSPECTOR', 'SI', 'ASI', 'HC', 'PC', 'HG',
+]);
 $hasSearch = $criteria !== '' && $searchNo !== '';
 cdat_sum_ajax_need_search($hasSearch, 'Enter search criteria and a number and try again.');
 
@@ -44,8 +49,8 @@ if ($hasSearch) {
         );
     }
     $conn = get_cdat_pdo();
-    $searchNo = $searchNo;
-    $rankPattern = $rank !== '' ? '%' . $rank . '%' : '%';
+    $searchPattern = sql_like_pattern($searchNo);
+    $rankPattern = $rank !== '' ? sql_like_pattern($rank) : '%';
 
     $pwdmsColumns = [
         'EMPLOYEE_ID' => 'EMPLOYEE_ID',
@@ -70,20 +75,20 @@ if ($hasSearch) {
     $trainingCol = $trainingColumns[$criteria];
 
     $sql8 = "SELECT 'EMPLOYEE SEARCH IN PWDMS' as PHONE1";
-    $sql9 = "SELECT DISTINCT EMPLOYEE_ID,NAME,RANK,ROLE,GENERAL_NO,WING_NAME,ZONE_NAME,DIVISION_NAME,
-POLICE_STATION FROM TRAINING_DB.TRAINING_STRENGTH_PARTICULARS WHERE {$pwdmsCol} LIKE :search
-AND RANK LIKE :rank LIMIT 501";
+    $sql9 = "SELECT DISTINCT employee_id, name, rank, role, general_no, wing_name, zone_name, division_name,
+police_station FROM training_strength_particulars WHERE {$pwdmsCol} LIKE :search
+AND rank LIKE :rank LIMIT 501";
     $sql10 = "SELECT 'EMPLOYEE SEARCH IN TRAINING DATA' as PHONE1";
-    $sql11 = "SELECT DISTINCT EMPLOYEE_ID,GENERAL_NO,NAMES NAME,PS_NAME POLICE_STATION,PH_NO PHONE_NO,ZONE,
-RANK,COURSE_NAME,START_DATE,END_DATE FROM TRNG_ATT_WITH_EMPID WHERE {$trainingCol} LIKE :search AND
-RANK LIKE :rank LIMIT 501";
+    $sql11 = "SELECT DISTINCT employee_id, general_no, names AS name, ps_name AS police_station, ph_no AS phone_no, zone,
+rank, course_name, start_date, end_date FROM trng_att_with_empid WHERE {$trainingCol} LIKE :search AND
+rank LIKE :rank LIMIT 501";
 
     $st8 = $conn->query($sql8);
     $st9 = $conn->prepare($sql9);
-    $st9->execute([':search' => '%' . $searchNo . '%', ':rank' => $rankPattern]);
+    $st9->execute([':search' => $searchPattern, ':rank' => $rankPattern]);
     $st10 = $conn->query($sql10);
     $st11 = $conn->prepare($sql11);
-    $st11->execute([':search' => '%' . $searchNo . '%', ':rank' => $rankPattern]);
+    $st11->execute([':search' => $searchPattern, ':rank' => $rankPattern]);
 
     $banner1 = 'EMPLOYEE SEARCH IN PWDMS';
     if ($st8 && ($b = $st8->fetch(PDO::FETCH_ASSOC))) {

@@ -21,9 +21,18 @@ if ($hasSearch) {
             'Search'
         );
     }
+    require_once CDAT_COMMON . '/sql_safe.php';
+    $number = sql_safe_phone($number);
+    if ($number === '') {
+        cdat_sum_empty_state('Enter a valid mobile number and try again.');
+        if ($isAjax) {
+            exit;
+        }
+        cdat_sum_page_close();
+        layout_end();
+        exit;
+    }
     $conn = get_cdat_pdo();
-
-        $number = $_POST['PHONE_NO'];
 
     // Use parameterized queries to prevent SQL injection
     $sql1 = "CREATE TEMP TABLE temp_t AS SELECT ? AS PHONE, '' AS FIRST_CALL, '' AS LAST_CALL, '' AS NICKNAME, '' AS LAST_UPDATED";
@@ -89,8 +98,9 @@ if ($hasSearch) {
     $st8->execute($params8);
     
 
-    $sql9 = "SELECT CASE WHEN COUNT(PHONE) >= 1 THEN '' ELSE '*** NO CDAT CONTACTS TO OTHERS OF $number ***' END as CNTS FROM temp_temp2";
-    $st9 = $conn->query($sql9);
+    $sql9 = "SELECT CASE WHEN COUNT(PHONE) >= 1 THEN '' ELSE ? END as CNTS FROM temp_temp2";
+    $st9 = $conn->prepare($sql9);
+    $st9->execute(['*** NO CDAT CONTACTS TO OTHERS OF ' . $number . ' ***']);
 
     $bannerTitle = 'OTHERS CDAT CONTACTS OF MOBILE NO: ' . $number;
     if ($st8 && ($bannerRow = $st8->fetch(PDO::FETCH_ASSOC))) {
