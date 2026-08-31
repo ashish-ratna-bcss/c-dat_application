@@ -2,7 +2,6 @@
 require_once __DIR__ . '/../common/bootstrap.php';
 require_once CDAT_COMMON . '/includes/layout.php';
 require_once CDAT_COMMON . '/includes/sum_ui.php';
-require_once CDAT_COMMON . '/dbcontroller.php';
 
 $isAjax = cdat_sum_is_ajax();
 $fromDt = trim((string) ($_POST['FROM_DT'] ?? ''));
@@ -11,10 +10,11 @@ $ps = trim((string) ($_POST['PSARRESTED'] ?? ''));
 $hasSearch = $fromDt !== '' && $toDt !== '' && $ps !== '';
 cdat_sum_ajax_need_search($hasSearch, 'Enter dates and a police station and try again.');
 
-$db_handle = new DBController();
-$query = "select distinct PSARRESTED from jrms_total_2012_to_2017
-where jailname in ('CHERLAPALLI','CHANCHALGUDA','CHANCHALGUDA WOMEN') AND  jailname in ('CHERLAPALLI','CHANCHALGUDA','CHANCHALGUDA WOMEN')
-and psarrested in ('Abidroad','Bahadurpura','Afzalgunj','Amberpet','Asifnagar','Banjara Hills','Begumbazar','Begumpet','Bhavaninagar',
+$conn = get_cdat_pdo();
+$results = $conn->query(
+    "SELECT DISTINCT PSARRESTED FROM jrms_total_2012_to_2017
+     WHERE jailname IN ('CHERLAPALLI','CHANCHALGUDA','CHANCHALGUDA WOMEN')
+       AND psarrested IN ('Abidroad','Bahadurpura','Afzalgunj','Amberpet','Asifnagar','Banjara Hills','Begumbazar','Begumpet','Bhavaninagar',
 'Bollarum','Bowenpally','CCS','CCS HYD','Chaderghat','Chandrayanagutta','Charminar','Chatrinaka',
 'Chikkadpally','Chilkalguda','CYBER CRIME CCS','CYBER CRIME PS','Dabeerpura','Falaknuma','Gandhinagar',
 'Golconda','Gopalapuram','Habeebnagar','Humayunnagar','Hussainialam','Jubilee Hills','KACHEGUDA','Kachiguda','Kalapathar',
@@ -23,8 +23,8 @@ and psarrested in ('Abidroad','Bahadurpura','Afzalgunj','Amberpet','Asifnagar','
 'Nampally','Narayanaguda','Osmania University','Panjagutta','RAINBAZAR','Ramgopalpet',
 'Reinbazar','Saidabad','Saifabad','Sanjeevareddynagar','Shahalibanda','Shahinayathgunj','SR NAGAR',
 'Sultanbazar','Tappachabutra','THIRUMALAGIRI','THUKARAMGATE','Trimulgherry','Tukaramgate',
-'WPS SouthZone','SANTOSHNAGAR','Is Sadan','Bandlaguda','Domalguda','Secretariat','Khairatabad','Warasiguda','Gudimalkapur','Masab tank','Film nagar','Madhuranagar','Borabanda')";
-$results = $db_handle->runQuery($query) ?: [];
+'WPS SouthZone','SANTOSHNAGAR','Is Sadan','Bandlaguda','Domalguda','Secretariat','Khairatabad','Warasiguda','Gudimalkapur','Masab tank','Film nagar','Madhuranagar','Borabanda')"
+)->fetchAll(PDO::FETCH_ASSOC) ?: [];
 $psOptions = ['' => 'Select POLICE STATION'];
 foreach ($results as $r) {
     $v = (string) ($r['PSARRESTED'] ?? '');
@@ -78,6 +78,9 @@ LEFT JOIN temp_jrms_count B ON A.UNIQUE_KEY=B.UNIQUE_KEY ORDER BY JAILNAME, RELE
     $sql6 = "SELECT 'ACCUSED RELEASED FROM: ' || ? || ' TO: ' || ? || ' OF POLICE STATION ' || ? AS PHONE";
     $st6 = $conn->prepare($sql6);
     $st6->execute([$f_date, $t_date, $ps]);
+
+    $conn->query($sql11);
+    $st2 = $conn->query($sql2);
 
     $banner = 'ACCUSED RELEASED FROM: ' . $f_date . ' TO: ' . $t_date . ' OF POLICE STATION ' . $ps;
     if ($st6 && ($b = $st6->fetch(PDO::FETCH_ASSOC))) {

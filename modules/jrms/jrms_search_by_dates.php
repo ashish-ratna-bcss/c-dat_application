@@ -2,7 +2,6 @@
 require_once __DIR__ . '/../common/bootstrap.php';
 require_once CDAT_COMMON . '/includes/layout.php';
 require_once CDAT_COMMON . '/includes/sum_ui.php';
-require_once CDAT_COMMON . '/dbcontroller.php';
 
 $isAjax = cdat_sum_is_ajax();
 $fromDt = trim((string) ($_POST['FROM_DT'] ?? ''));
@@ -11,10 +10,10 @@ $crimeHead = trim((string) ($_POST['CRIMEHEAD'] ?? ''));
 $hasSearch = $fromDt !== '' && $toDt !== '';
 cdat_sum_ajax_need_search($hasSearch, 'Enter both dates and try again.');
 
-$db_handle = new DBController();
-$query = "SELECT distinct HEADOFCRIME FROM jrms_total_2012_to_2017
-WHERE HEADOFCRIME!='' ORDER BY HEADOFCRIME";
-$results = $db_handle->runQuery($query) ?: [];
+$conn = get_cdat_pdo();
+$results = $conn->query(
+    "SELECT DISTINCT HEADOFCRIME FROM jrms_total_2012_to_2017 WHERE HEADOFCRIME != '' ORDER BY HEADOFCRIME"
+)->fetchAll(PDO::FETCH_ASSOC) ?: [];
 $crimeOptions = ['' => 'Select CrimeHead'];
 foreach ($results as $r) {
     $v = (string) ($r['HEADOFCRIME'] ?? '');

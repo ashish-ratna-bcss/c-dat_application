@@ -11,7 +11,7 @@ class UploadVerificationService
 
     public function __construct()
     {
-        $this->dbConfig = require CDAT_CONFIG . '/db_config.php';
+        $this->dbConfig = cdat_db_config();
         $this->db = audit_db();
     }
 

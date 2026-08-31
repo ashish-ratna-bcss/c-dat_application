@@ -22,4 +22,4 @@ if (!defined('CDAT_ASSETS')) {
     define('CDAT_ASSETS', rtrim((string) CDAT_BASE, '/') . '/public/assets');
 }
 
-require_once CDAT_COMMON . '/db_connect.php';
+require_once CDAT_CONFIG . '/db_connect.php';

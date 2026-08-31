@@ -79,8 +79,7 @@ Historical MSSQL query catalogs (`all_mssql_queries_extracted.sql`, migration sc
 
 ## Kept connection layer
 
-- `modules/common/bootstrap.php` → `modules/common/db_connect.php` → `get_cdat_pdo()`
-- `modules/common/dbcontroller.php` — query helper (optional future removal)
+- `modules/common/bootstrap.php` → `config/db_connect.php` → `get_cdat_pdo()`
 
 ## API dropdowns (PostgreSQL prepared statements)
 

@@ -1,6 +1,6 @@
 <?php
 
-require_once CDAT_COMMON . '/db_connect.php';
+require_once CDAT_CONFIG . '/db_connect.php';
 require_once dirname(__DIR__) . '/common/bootstrap.php';
 /**
  * admin_upload.php
@@ -618,7 +618,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['ajax_action'])) {
 ?>
 <?php
 
-require_once CDAT_COMMON . '/db_connect.php';
+require_once CDAT_CONFIG . '/db_connect.php';
 $uploadPage = CDAT_UPLOAD_PAGE;
 $uploadSelfUrl = cdat_upload_self_url($uploadPage);
 $uploadPageTitle = match ($uploadPage) {
@@ -664,7 +664,7 @@ ob_start();
 <link rel="stylesheet" href="<?= htmlspecialchars(CDAT_ASSETS) ?>/css/upload.css">
 <?php
 
-require_once CDAT_COMMON . '/db_connect.php';
+require_once CDAT_CONFIG . '/db_connect.php';
 layout_begin($uploadPageTitle, $uploadPageSubtitle, ob_get_clean());
 cdat_sum_page_open();
 $historyUrl = (function_exists('cdat_href') ? cdat_href('/data-upload/history') : '/data-upload/history') . '?type=' . ($uploadPage === 'custom' ? 'custom' : 'standard');
@@ -682,52 +682,52 @@ if ($openAfterUpload === '') {
 }
 ?>
         <?php 
-require_once CDAT_COMMON . '/db_connect.php';
+require_once CDAT_CONFIG . '/db_connect.php';
 if ($showStandardUpload): ?>
         <div class="tab-content active" id="tab-content-legacy">
             <div class="upload-wrapper">
                 <?php 
-require_once CDAT_COMMON . '/db_connect.php';
+require_once CDAT_CONFIG . '/db_connect.php';
 if ($error !== ''): ?>
                   <div class="msg-container msg-error"><?= htmlspecialchars($error) ?></div>
                 <?php 
-require_once CDAT_COMMON . '/db_connect.php';
+require_once CDAT_CONFIG . '/db_connect.php';
 endif; ?>
 
                 <?php
                   
-require_once CDAT_COMMON . '/db_connect.php';
+require_once CDAT_CONFIG . '/db_connect.php';
 $hideSuccessBanner = $success !== '' && is_array($results)
                       && (($results['status'] ?? '') === 'Pending Verification');
                 ?>
                 <?php 
-require_once CDAT_COMMON . '/db_connect.php';
+require_once CDAT_CONFIG . '/db_connect.php';
 if ($success !== '' && !$hideSuccessBanner): ?>
                   <div class="msg-container msg-success" id="upload-success-msg">
                     <?= htmlspecialchars($success) ?>
                     <?php 
-require_once CDAT_COMMON . '/db_connect.php';
+require_once CDAT_CONFIG . '/db_connect.php';
 foreach ($successLinks as $lnk): ?>
                       <a href="<?= htmlspecialchars($lnk['url'], ENT_QUOTES) ?>" class="msg-link"><?= htmlspecialchars($lnk['text']) ?></a>
                     <?php 
-require_once CDAT_COMMON . '/db_connect.php';
+require_once CDAT_CONFIG . '/db_connect.php';
 endforeach; ?>
                   </div>
                 <?php 
-require_once CDAT_COMMON . '/db_connect.php';
+require_once CDAT_CONFIG . '/db_connect.php';
 endif; ?>
 
                 <?php 
-require_once CDAT_COMMON . '/db_connect.php';
+require_once CDAT_CONFIG . '/db_connect.php';
 if ($step === 1): ?>
                   <?php 
-require_once CDAT_COMMON . '/db_connect.php';
+require_once CDAT_CONFIG . '/db_connect.php';
 if ($uploadPage === 'sdr'): ?>
                   <div class="staging-banner">
                     <strong>SDR backups</strong> (.bak, up to 700 GB) use <em>resumable chunked upload</em> — if interrupted, re-select the same file to continue.
                   </div>
                   <?php 
-require_once CDAT_COMMON . '/db_connect.php';
+require_once CDAT_CONFIG . '/db_connect.php';
 endif; ?>
                   <div id="sdr-pending-banner" class="staging-banner" style="display:none; border-color:#FFA500; margin-bottom:12px;"></div>
                   <form action="<?= htmlspecialchars($uploadSelfUrl, ENT_QUOTES) ?>" method="post" enctype="multipart/form-data" id="standard-upload-form" class="upload-form upload-panel" onsubmit="return handleStandardUploadSubmit(event)">
@@ -736,28 +736,28 @@ endif; ?>
 
                     <div class="upload-layout row g-3<?= $uploadPage === 'sdr' ? ' upload-layout--file-only' : '' ?>">
                       <?php 
-require_once CDAT_COMMON . '/db_connect.php';
+require_once CDAT_CONFIG . '/db_connect.php';
 if ($fixedModule === ''): ?>
                       <div class="form-group col-12 col-md-6 col-lg-4">
                         <label class="form-label" for="module">Select Module</label>
                         <select class="form-select" name="module" id="module" required="required" onchange="updateModuleHint(this.value)">
                           <option value="">-- Choose Module --</option>
                           <?php 
-require_once CDAT_COMMON . '/db_connect.php';
+require_once CDAT_CONFIG . '/db_connect.php';
 foreach ($modules as $key => $conf): ?>
                             <option value="<?= htmlspecialchars($key) ?>"<?= ($selectedModule === $key ? ' selected="selected"' : '') ?>><?= htmlspecialchars($conf['name']) ?></option>
                           <?php 
-require_once CDAT_COMMON . '/db_connect.php';
+require_once CDAT_CONFIG . '/db_connect.php';
 endforeach; ?>
                         </select>
                         <div id="module-hint" class="module-hint" style="display:none;"></div>
                       </div>
                       <?php 
-require_once CDAT_COMMON . '/db_connect.php';
+require_once CDAT_CONFIG . '/db_connect.php';
 else: ?>
                       <input type="hidden" name="module" id="module" value="<?= htmlspecialchars($fixedModule, ENT_QUOTES) ?>" />
                       <?php 
-require_once CDAT_COMMON . '/db_connect.php';
+require_once CDAT_CONFIG . '/db_connect.php';
 endif; ?>
 
                       <div class="form-group col-12 col-md-6 col-lg-4<?= $uploadPage === 'cdr' ? '' : ' d-none' ?>" id="standard-network-group">
@@ -815,17 +815,17 @@ endif; ?>
                       <div id="standard-preview-files"></div>
                   </div>
                 <?php 
-require_once CDAT_COMMON . '/db_connect.php';
+require_once CDAT_CONFIG . '/db_connect.php';
 endif; ?>
 
             </div>
         </div>
         <?php 
-require_once CDAT_COMMON . '/db_connect.php';
+require_once CDAT_CONFIG . '/db_connect.php';
 endif; ?>
 
         <?php 
-require_once CDAT_COMMON . '/db_connect.php';
+require_once CDAT_CONFIG . '/db_connect.php';
 if ($showCustomUpload): ?>
         <div class="tab-content active" id="tab-content-custom">
             <div class="upload-wrapper">
@@ -973,7 +973,7 @@ if ($showCustomUpload): ?>
             </div>
         </div>
         <?php 
-require_once CDAT_COMMON . '/db_connect.php';
+require_once CDAT_CONFIG . '/db_connect.php';
 endif; ?>
 
 <style>
@@ -1613,11 +1613,11 @@ let customContentFingerprint = '';
 let newlyCreatedTableName = '';
 
 <?php 
-require_once CDAT_COMMON . '/db_connect.php';
+require_once CDAT_CONFIG . '/db_connect.php';
 if ($showCustomUpload): ?>
 setupCustomDragAndDrop();
 <?php 
-require_once CDAT_COMMON . '/db_connect.php';
+require_once CDAT_CONFIG . '/db_connect.php';
 endif; ?>
 
 function setupCustomDragAndDrop() {
@@ -2019,7 +2019,7 @@ function printCustomLog(text) {
 </div>
 <?php
 
-require_once CDAT_COMMON . '/db_connect.php';
+require_once CDAT_CONFIG . '/db_connect.php';
 cdat_sum_page_close();
 layout_end();
 ?>

@@ -24,20 +24,7 @@ if (session_status() === PHP_SESSION_NONE) {
 // ─────────────────────────────────────────────
 function audit_db(): PDO
 {
-    static $pdo = null;
-    if ($pdo === null) {
-        $c = require CDAT_CONFIG . '/db_config.php';
-        $pdo = new PDO(
-            'pgsql:host=' . $c['host'] . ';port=' . $c['port'] . ';dbname=' . $c['database'],
-            $c['user'],
-            $c['password'],
-            [
-                PDO::ATTR_ERRMODE            => PDO::ERRMODE_SILENT,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            ]
-        );
-    }
-    return $pdo;
+    return get_cdat_pdo();
 }
 
 // ─────────────────────────────────────────────

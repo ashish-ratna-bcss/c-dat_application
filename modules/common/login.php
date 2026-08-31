@@ -76,8 +76,8 @@ function login_is_locked(PDO $conn, string $username): bool
 function login_record_attempt(PDO $conn, string $username, bool $success): void
 {
     login_ensure_attempts_table($conn);
-    $st = $conn->prepare('INSERT INTO login_attempts (username, success) VALUES (?, ?)');
-    $st->execute([$username, $success]);
+    $st = $conn->prepare('INSERT INTO login_attempts (username, success) VALUES (?, ?::boolean)');
+    $st->execute([$username, $success ? 'true' : 'false']);
     if ($success) {
         $clear = $conn->prepare('DELETE FROM login_attempts WHERE username = ?');
         $clear->execute([$username]);

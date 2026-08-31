@@ -204,7 +204,7 @@ function cdat_sum_phone_area_state_options(string $placeholder = 'Select state')
         $loaded = true;
         try {
             if (!function_exists('get_cdat_pdo')) {
-                require_once dirname(__DIR__) . '/db_connect.php';
+                require_once CDAT_CONFIG . '/db_connect.php';
             }
             $sql = 'SELECT DISTINCT UPPER(TRIM(REPLACE(state, \'-\', \'_\'))) AS state_norm'
                  . ' FROM cdatphonearea'

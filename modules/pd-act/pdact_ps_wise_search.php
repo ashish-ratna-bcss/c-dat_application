@@ -2,16 +2,16 @@
 require_once __DIR__ . '/../common/bootstrap.php';
 require_once CDAT_COMMON . '/includes/layout.php';
 require_once CDAT_COMMON . '/includes/sum_ui.php';
-require_once CDAT_COMMON . '/dbcontroller.php';
 
 $isAjax = cdat_sum_is_ajax();
 $ps = trim((string) ($_POST['PDACT_PS'] ?? ''));
 $hasSearch = $ps !== '';
 cdat_sum_ajax_need_search($hasSearch, 'Select a police station and try again.');
 
-$db_handle = new DBController();
-$query = "SELECT DISTINCT UPPER(LTRIM(RTRIM(PD_ACT_PS))) PD_ACT_PS FROM pdact_main_table";
-$psRows = $db_handle->runQuery($query) ?: [];
+$conn = get_cdat_pdo();
+$psRows = $conn->query(
+    'SELECT DISTINCT UPPER(LTRIM(RTRIM(PD_ACT_PS))) AS PD_ACT_PS FROM pdact_main_table'
+)->fetchAll(PDO::FETCH_ASSOC) ?: [];
 $psOptions = ['' => 'Select Police Station'];
 foreach ($psRows as $r) {
     $v = (string) ($r['PD_ACT_PS'] ?? '');

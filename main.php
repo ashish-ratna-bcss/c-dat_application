@@ -43,6 +43,7 @@ $deny = [
     'bootstrap.php',
     'cdr_upload_config.php',
     'cdr_upload_parser.php',
+    'db_connect.php',
     'db_config.php',
     'document_processing_client.php',
     'excel_converter.php',

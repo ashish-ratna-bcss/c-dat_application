@@ -34,13 +34,7 @@ _DB_DEFAULTS = {'host': '127.0.0.1', 'port': '5432', 'database': 'postgres', 'us
 
 
 def load_db_config() -> dict[str, str]:
-    """Database settings, in order of precedence:
-
-        1. environment variables      (deployment overrides)
-        2. config/db_config.php           (what the web app itself uses)
-        3. built-in defaults          (host/port/db/user only, never a password)
-    """
-    # Auto-load .env file if it exists so we don't rely on the terminal
+    """Database settings from .env (and process environment)."""
     env_file = BASE_DIR / '.env'
     if env_file.exists():
         for line in env_file.read_text(encoding='utf-8', errors='ignore').splitlines():
@@ -54,21 +48,6 @@ def load_db_config() -> dict[str, str]:
     for key, env in _DB_ENV.items():
         if env in os.environ:
             cfg[key] = os.environ.get(env, '')
-
-    php_cfg = BASE_DIR / 'config' / 'db_config.php'
-    if php_cfg.exists():
-        text = php_cfg.read_text(encoding='utf-8', errors='replace')
-        for key in _DB_ENV:
-            if key in cfg:
-                continue
-            marker = f"'{key}' => '"
-            start = text.find(marker)
-            if start == -1:
-                continue
-            start += len(marker)
-            end = text.find("'", start)
-            if end != -1:
-                cfg[key] = text[start:end]
 
     for key, fallback in _DB_DEFAULTS.items():
         cfg.setdefault(key, fallback)
