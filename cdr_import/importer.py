@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 from typing import Optional
 from .config import DEFAULT_BATCH_SIZE, PROGRESS_UPDATE_EVERY_BATCHES
-from .db import db_connection, ensure_schema, ensure_job_staging_table, file_sha256, get_or_create_job, insert_staging_batch, next_ucids, update_job_progress, utcnow
+from .db import db_connection, ensure_schema, ensure_job_staging_table, ensure_positive_ucid_sequence, file_sha256, get_or_create_job, insert_staging_batch, next_ucids, update_job_progress, utcnow
 from document_processing.staging import ensure_staging_batch, finalize_staging_job, original_cdr_basename
 from .detect import detect_operator, extract_phone_from_filename
 from .models import CdrRecord
@@ -60,6 +60,9 @@ def import_file(file_path: str | Path, *, dry_run: bool=True, batch_size: int=DE
 
         batch_id = ensure_staging_batch(conn, job_id=job_id, module='cdr', staging_tables=staging_tables)
         result['staging_batch_id'] = batch_id
+
+        # Auto-detect next UCID from highest value already in production.
+        ensure_positive_ucid_sequence(conn, resync=True)
 
         if not resume:
             rows_committed = 0

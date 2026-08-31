@@ -907,8 +907,26 @@ class UploadVerificationService
         audit_log('Data Upload', 'Reject Staging', ['batch_id' => $batchId]);
     }
 
+    private function ensurePositiveUcidSequence(bool $resync = false): void
+    {
+        $seqLast = (int)$this->db->query(
+            "SELECT COALESCE(last_value, 0) FROM cdr_import_ucid_seq"
+        )->fetchColumn();
+        if (!$resync && $seqLast > 0) {
+            return;
+        }
+        $max = (int)$this->db->query(
+            'SELECT COALESCE(MAX(ucid), 0) FROM cdatpcsuspect WHERE ucid > 0'
+        )->fetchColumn();
+        $startFrom = max($max, $seqLast > 0 ? $seqLast : 0);
+        $this->db->exec('ALTER SEQUENCE cdr_import_ucid_seq INCREMENT BY 1');
+        $stmt = $this->db->prepare("SELECT setval('cdr_import_ucid_seq', :start, true)");
+        $stmt->execute([':start' => $startFrom]);
+    }
+
     private function promoteCdr(string $qualifiedTable): int
     {
+        $this->ensurePositiveUcidSequence(true);
         // Re-check uniqueness at promote time against production
         // (phone, other, starttime, duration, incoming).
         $sql = "
@@ -918,7 +936,8 @@ class UploadVerificationService
                 last_cellid, roaming_nw, call_type, calling_no, called_no, asondate
             )
             SELECT
-                s.ucid, s.phone, s.other, s.starttime, s.duration, s.incoming, s.imeinumber, s.imsinumber,
+                CASE WHEN s.ucid < 0 THEN nextval('cdr_import_ucid_seq') ELSE s.ucid END,
+                s.phone, s.other, s.starttime, s.duration, s.incoming, s.imeinumber, s.imsinumber,
                 s.celltowerid, s.otherinfo, s.tower_key, s.provider_key, s.state_key, s.first_cellid,
                 s.last_cellid, s.roaming_nw, s.call_type, s.calling_no, s.called_no, COALESCE(s.asondate, NOW())
             FROM {$qualifiedTable} s

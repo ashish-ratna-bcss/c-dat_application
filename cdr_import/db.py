@@ -59,7 +59,28 @@ def update_job_progress(conn, job_id: int, *, rows_committed: int, last_source_r
     with conn.cursor() as cur:
         cur.execute(f"\n            UPDATE {JOBS_TABLE}\n            SET rows_committed = %s,\n                last_source_row_no = %s,\n                total_rows_estimated = COALESCE(%s, total_rows_estimated),\n                status = %s,\n                error_message = %s,\n                updated_at = NOW(),\n                completed_at = CASE WHEN %s IN ('completed', 'failed') THEN NOW() ELSE completed_at END\n            WHERE job_id = %s\n            ", (rows_committed, last_source_row_no, total_rows_estimated, status, error_message, status, job_id))
 
+def ensure_positive_ucid_sequence(conn, *, resync: bool = False) -> None:
+    """Continue positive UCIDs after the highest UCID already in cdatpcsuspect.
+
+    Auto-detected on each new import job (resync=True). No hardcoded start value:
+    next UCID = MAX(existing production UCID) + 1, or 1 when production is empty.
+    """
+    with conn.cursor() as cur:
+        cur.execute(
+            "CREATE SEQUENCE IF NOT EXISTS cdr_import_ucid_seq START WITH 1 INCREMENT BY 1"
+        )
+        cur.execute('ALTER SEQUENCE cdr_import_ucid_seq INCREMENT BY 1')
+        cur.execute("SELECT COALESCE(last_value, 0) FROM cdr_import_ucid_seq")
+        seq_last = int(cur.fetchone()[0] or 0)
+        if not resync and seq_last > 0:
+            return
+        cur.execute('SELECT COALESCE(MAX(ucid), 0) FROM cdatpcsuspect WHERE ucid > 0')
+        max_ucid = int(cur.fetchone()[0] or 0)
+        start_from = max(max_ucid, seq_last if seq_last > 0 else 0)
+        cur.execute("SELECT setval('cdr_import_ucid_seq', %s, true)", (start_from,))
+
 def next_ucids(conn, count: int) -> list[int]:
+    ensure_positive_ucid_sequence(conn)
     with conn.cursor() as cur:
         cur.execute("SELECT nextval('cdr_import_ucid_seq') FROM generate_series(1, %s)", (count,))
         return [int(row[0]) for row in cur.fetchall()]

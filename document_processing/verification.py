@@ -6,6 +6,7 @@ from typing import Any, Optional
 import psycopg2
 import psycopg2.extras
 from cdr_import.config import load_db_config
+from cdr_import.db import ensure_positive_ucid_sequence
 from cdr_import.staging_dedup import production_not_exists_sql, refresh_cdr_staging_duplicates
 
 class VerificationError(Exception):
@@ -121,6 +122,7 @@ def _approve_cdr_only(batch: dict, username: str) -> dict:
     _assert_qualified(table)
     with _conn() as conn:
         refresh_cdr_staging_duplicates(conn, table)
+        ensure_positive_ucid_sequence(conn, resync=True)
         with conn.cursor() as cur:
             cur.execute(
                 f'''
@@ -130,7 +132,8 @@ def _approve_cdr_only(batch: dict, username: str) -> dict:
                     last_cellid, roaming_nw, call_type, calling_no, called_no, asondate
                 )
                 SELECT
-                    s.ucid, s.phone, s.other, s.starttime, s.duration, s.incoming, s.imeinumber, s.imsinumber,
+                    CASE WHEN s.ucid < 0 THEN nextval('cdr_import_ucid_seq') ELSE s.ucid END,
+                    s.phone, s.other, s.starttime, s.duration, s.incoming, s.imeinumber, s.imsinumber,
                     s.celltowerid, s.otherinfo, s.tower_key, s.provider_key, s.state_key, s.first_cellid,
                     s.last_cellid, s.roaming_nw, s.call_type, s.calling_no, s.called_no, COALESCE(s.asondate, NOW())
                 FROM {table} s
