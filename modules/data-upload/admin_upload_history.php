@@ -119,11 +119,16 @@ try {
     $selectQuery = "
         SELECT l.*, b.verified_by, b.verification_status AS batch_verification_status
         FROM upload_activity_logs l
-        LEFT JOIN upload_staging_batches b
-            ON b.batch_id = l.staging_batch_id
-            OR (l.staging_batch_id IS NULL AND b.document_job_id = l.document_job_id)
+        LEFT JOIN LATERAL (
+            SELECT verified_by, verification_status, batch_id
+            FROM upload_staging_batches b
+            WHERE b.batch_id = l.staging_batch_id
+               OR (l.staging_batch_id IS NULL AND b.document_job_id = l.document_job_id)
+            ORDER BY b.batch_id DESC
+            LIMIT 1
+        ) b ON TRUE
         WHERE {$whereClause}
-        ORDER BY l.uploaded_at DESC
+        ORDER BY l.uploaded_at DESC, l.id DESC
         LIMIT :limit OFFSET :offset
     ";
     $selectStmt = $db->prepare($selectQuery);
@@ -170,6 +175,28 @@ function renderApprovalStatus(array $log): array
         'text' => '—',
         'class' => 'approval-na',
     ];
+}
+
+function cdat_history_page_url(
+    int $pageNum,
+    string $type,
+    string $filterUser,
+    string $filterModule,
+    string $filterStatus,
+    string $fromDate,
+    string $toDate
+): string {
+    $query = array_filter([
+        'page' => $pageNum > 1 ? $pageNum : null,
+        'type' => $type !== '' ? $type : null,
+        'filter_user' => $filterUser !== '' ? $filterUser : null,
+        'filter_module' => $filterModule !== '' ? $filterModule : null,
+        'filter_status' => $filterStatus !== '' ? $filterStatus : null,
+        'from_date' => $fromDate !== '' ? $fromDate : null,
+        'to_date' => $toDate !== '' ? $toDate : null,
+    ], static fn($v) => $v !== null && $v !== '');
+    $base = function_exists('cdat_href') ? cdat_href('/data-upload/history') : '/data-upload/history';
+    return $query === [] ? $base : $base . '?' . http_build_query($query);
 }
 ?>
 <?php
@@ -377,17 +404,17 @@ cdat_sum_page_open();
                 <?php if ($totalPages > 1): ?>
                   <div class="history-pagination d-flex flex-wrap gap-1">
                     <?php if ($page > 1): ?>
-                      <a href="?page=<?= $page - 1 ?>&type=<?= urlencode($type) ?>&filter_user=<?= urlencode($filterUser) ?>&filter_module=<?= urlencode($filterModule) ?>&filter_status=<?= urlencode($filterStatus) ?>&from_date=<?= urlencode($fromDate) ?>&to_date=<?= urlencode($toDate) ?>" class="btn btn-outline-secondary btn-sm">&laquo; Prev</a>
+                      <a href="<?= htmlspecialchars(cdat_history_page_url($page - 1, $type, $filterUser, $filterModule, $filterStatus, $fromDate, $toDate), ENT_QUOTES) ?>" class="btn btn-outline-secondary btn-sm">&laquo; Prev</a>
                     <?php endif; ?>
 
                     <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-                      <a href="?page=<?= $i ?>&type=<?= urlencode($type) ?>&filter_user=<?= urlencode($filterUser) ?>&filter_module=<?= urlencode($filterModule) ?>&filter_status=<?= urlencode($filterStatus) ?>&from_date=<?= urlencode($fromDate) ?>&to_date=<?= urlencode($toDate) ?>" class="btn btn-sm <?= ($page === $i) ? 'btn-primary' : 'btn-outline-secondary' ?>">
+                      <a href="<?= htmlspecialchars(cdat_history_page_url($i, $type, $filterUser, $filterModule, $filterStatus, $fromDate, $toDate), ENT_QUOTES) ?>" class="btn btn-sm <?= ($page === $i) ? 'btn-primary' : 'btn-outline-secondary' ?>">
                         <?= $i ?>
                       </a>
                     <?php endfor; ?>
 
                     <?php if ($page < $totalPages): ?>
-                      <a href="?page=<?= $page || 1 ?>&type=<?= urlencode($type) ?>&filter_user=<?= urlencode($filterUser) ?>&filter_module=<?= urlencode($filterModule) ?>&filter_status=<?= urlencode($filterStatus) ?>&from_date=<?= urlencode($fromDate) ?>&to_date=<?= urlencode($toDate) ?>" class="btn btn-outline-secondary btn-sm">Next &raquo;</a>
+                      <a href="<?= htmlspecialchars(cdat_history_page_url($page + 1, $type, $filterUser, $filterModule, $filterStatus, $fromDate, $toDate), ENT_QUOTES) ?>" class="btn btn-outline-secondary btn-sm">Next &raquo;</a>
                     <?php endif; ?>
                   </div>
                 <?php endif; ?>
