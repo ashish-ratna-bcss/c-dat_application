@@ -75,9 +75,6 @@ echo "--- 8. Docker MSSQL container ---"
 docker stats mssql --no-stream 2>/dev/null || echo "  docker stats unavailable"
 echo
 
-echo "--- 9. Any migration already running? ---"
-ps aux | grep -E 'migrate_copy|migrate_cdr|migrate_dumps|check_' | grep -v grep || echo "  none"
+echo "--- 9. Any background import workers running? ---"
+ps aux | grep -E 'worker\.py|main\.py|sdr_import|cdr_import' | grep -v grep || echo "  none"
 echo
-
-echo "--- 10. What migrate_copy.py writes to (from script on server) ---"
-grep -E 'copy_table|JRMS_DB|IR_DB|CDATDUPL_DB|PDACT|ROWDY|mssql_dump' /tmp/migrate_copy.py 2>/dev/null | head -25 || echo "  /tmp/migrate_copy.py not found"

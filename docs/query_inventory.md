@@ -1,11 +1,8 @@
-# Query inventory — modules/ native PostgreSQL rewrite
+# Query inventory — modules/ native PostgreSQL
 
-Reference catalogs (not loaded at runtime):
+Runtime: all PHP pages under `modules/` use `get_cdat_pdo()` (PostgreSQL). MSSQL regression gate: `bash scripts/audit_mssql_usage.sh`.
 
-- `all_mssql_queries_extracted.sql` — original MSSQL with `Used in: modules/...` markers
-- `all_postgress_queries_created.sql` — PG translations (update as PHP is converted)
-
-## Status: converted to native PG SQL
+Historical MSSQL query catalogs (`all_mssql_queries_extracted.sql`, migration scripts) were **removed** from the repo during production cleanup.
 
 ### JRMS (4 files)
 
@@ -98,6 +95,10 @@ Reference catalogs (not loaded at runtime):
 
 - `cdat_sum_ajax_need_search()` calls `cdat_sum_begin_heavy_search()` when a valid search runs (fixes PHP 30s timeout on all search pages).
 - `cellid_search.php`, `vehicle_search.php`, JRMS detail searches: `LIMIT 500` + min prefix where applicable.
+
+## SQL hardening
+
+Search pages use prepared statements and `modules/common/sql_safe.php` helpers (`sql_safe_phone`, `sql_safe_date`, `sql_like_pattern`). Bulk phone pages use temp-table `IN (SELECT phone FROM temp_*)` instead of string interpolation.
 
 ## Out of scope
 

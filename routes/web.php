@@ -616,11 +616,4 @@ return [
         'handler' => 'modules/data-upload/admin_upload_history.php',
     ],
 
-    [
-        'method'  => ['GET', 'POST'],
-        'path'    => '/profile',
-        'name'    => 'profile',
-        'handler' => 'view/profile.html',
-    ],
-
 ];

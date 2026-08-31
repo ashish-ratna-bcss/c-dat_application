@@ -107,11 +107,6 @@ if (preg_match('#^/controller/(.+)$#', $path, $m)) {
 }
 
 if (preg_match('/\.(html?)$/i', $base)) {
-    $view = $root . '/view/' . $base;
-    if (is_file($view)) {
-        cdat_dispatch($root, $web, 'view/' . $base);
-        return true;
-    }
     $base = preg_replace('/\.(html?)$/i', '.php', $base);
 }
 
