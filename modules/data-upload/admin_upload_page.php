@@ -36,6 +36,23 @@ function cdat_upload_verify_url(?int $logId = null): string
     return $history . '?type=standard';
 }
 
+/** Normalize PDO row keys (CASE_UPPER) to lowercase for templates. */
+function cdat_upload_row(array $row): array
+{
+    $out = [];
+    foreach ($row as $key => $value) {
+        $out[strtolower((string) $key)] = $value;
+    }
+    return $out;
+}
+
+/** @param mixed $default */
+function cdat_upload_row_val(array $row, string $key, mixed $default = ''): mixed
+{
+    $upper = strtoupper($key);
+    return $row[$key] ?? $row[$upper] ?? $default;
+}
+
 /**
  * Move one staged document job into the live table.
  * @return array{ok:bool, inserted:?int, status:?string, message:?string, error?:string}

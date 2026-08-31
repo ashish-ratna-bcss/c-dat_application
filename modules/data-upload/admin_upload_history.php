@@ -135,7 +135,7 @@ try {
     $selectStmt->bindValue(':limit', $limit, PDO::PARAM_INT);
     $selectStmt->bindValue(':offset', $offset, PDO::PARAM_INT);
     $selectStmt->execute();
-    $logs = $selectStmt->fetchAll();
+    $logs = array_map('cdat_upload_row', $selectStmt->fetchAll(PDO::FETCH_ASSOC) ?: []);
 } catch (Exception $e) {
     // Fail silently
 }
@@ -318,9 +318,9 @@ cdat_sum_page_open();
                           <td><?= htmlspecialchars($log['ip_address']) ?></td>
                           <td><?= (int)$log['total_records'] ?></td>
                           <?php
-                            $pendingVerify = ($log['upload_status'] === 'Pending Verification');
-                            $insertedShown = $pendingVerify ? 0 : (int)$log['inserted_records'];
-                            $failedShown = $pendingVerify ? 0 : (int)$log['failed_records'];
+                            $pendingVerify = (($log['upload_status'] ?? '') === 'Pending Verification');
+                            $insertedShown = $pendingVerify ? 0 : (int)($log['inserted_records'] ?? 0);
+                            $failedShown = $pendingVerify ? 0 : (int)($log['failed_records'] ?? 0);
                           ?>
                           <td style="color: #90EE90; font-weight: bold;"><?= $insertedShown ?></td>
                           <?php if ($type !== 'custom'): ?>
@@ -328,13 +328,13 @@ cdat_sum_page_open();
                           <?php endif; ?>
                           <td>
                             <?php
-                              $statusClass = strtolower(str_replace(' ', '-', $log['upload_status']));
+                              $statusClass = strtolower(str_replace(' ', '-', (string)($log['upload_status'] ?? '')));
                               if (!in_array($statusClass, ['success','partial','failed','pending-verification','rejected','processing'], true)) {
                                   $statusClass = 'partial';
                               }
                             ?>
                             <span class="badge-status status-<?= htmlspecialchars($statusClass) ?>" data-upload-status="<?= $rowJobId > 0 ? (int)$log['id'] : '' ?>">
-                              <?= htmlspecialchars($log['upload_status']) ?>
+                              <?= htmlspecialchars((string)($log['upload_status'] ?? '')) ?>
                             </span>
                           </td>
                           <?php if ($type !== 'custom'): ?>
@@ -348,8 +348,8 @@ cdat_sum_page_open();
                           <?php endif; ?>
                           <td>
                             <?php
-                              $pendingVerify = ($log['upload_status'] === 'Pending Verification');
-                              $isSuccess = ($log['upload_status'] === 'Success');
+                              $pendingVerify = (($log['upload_status'] ?? '') === 'Pending Verification');
+                              $isSuccess = (($log['upload_status'] ?? '') === 'Success');
                               $hasJob = !empty($log['document_job_id']);
                               $rowJobId = (int) ($log['document_job_id'] ?? 0);
                               $stagingUrl = cdat_upload_verify_url((int) $log['id']);
