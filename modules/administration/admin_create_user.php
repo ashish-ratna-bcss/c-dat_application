@@ -539,7 +539,7 @@ cdat_sum_page_open('sum-create-user-page');
           <?php endif; ?>
           <div class="mb-3">
             <label class="form-label" for="edit_username_display">Username</label>
-            <input type="text" class="form-control" id="edit_username_display" value="<?= cdat_sum_h($editValues['username']) ?>" readonly="readonly" disabled="disabled" />
+            <input type="text" class="form-control" id="edit_username_display" value="<?= cdat_sum_h($editValues['username']) ?>" readonly="readonly" aria-readonly="true" />
           </div>
           <div class="mb-3">
             <label class="form-label" for="edit_fullname">Full name</label>
@@ -567,103 +567,11 @@ cdat_sum_page_open('sum-create-user-page');
   </div>
 </div>
 
-<script>
-(function () {
-  var table = document.getElementById('admin_users_table');
-  var search = document.getElementById('users-table-search');
-  var exportBtn = document.getElementById('users-export-excel');
-  var printBtn = document.getElementById('users-print');
-
-  if (search && table) {
-    search.addEventListener('input', function () {
-      var q = this.value.toLowerCase().trim();
-      Array.prototype.forEach.call(table.tBodies[0].rows, function (row) {
-        row.style.display = row.textContent.toLowerCase().indexOf(q) !== -1 ? '' : 'none';
-      });
-    });
-  }
-
-  function cellExportText(td) {
-    if (td.classList.contains('no-export') || td.querySelector('button')) {
-      return '';
-    }
-    return td.textContent.replace(/\s+/g, ' ').trim();
-  }
-
-  function exportUsersExcel() {
-    if (!table) return;
-    var html = '<table border="1"><thead><tr>';
-    Array.prototype.forEach.call(table.tHead.rows[0].cells, function (th) {
-      if (th.classList.contains('no-export')) return;
-      html += '<th>' + th.textContent + '</th>';
-    });
-    html += '</tr></thead><tbody>';
-    Array.prototype.forEach.call(table.tBodies[0].rows, function (row) {
-      if (row.style.display === 'none') return;
-      html += '<tr>';
-      Array.prototype.forEach.call(row.cells, function (td) {
-        if (td.classList.contains('no-export')) return;
-        html += '<td>' + cellExportText(td) + '</td>';
-      });
-      html += '</tr>';
-    });
-    html += '</tbody></table>';
-    var blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' });
-    var link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'users_' + Date.now() + '.xls';
-    link.click();
-    URL.revokeObjectURL(link.href);
-  }
-
-  function printUsers() {
-    window.print();
-  }
-
-  if (exportBtn) exportBtn.addEventListener('click', exportUsersExcel);
-  if (printBtn) printBtn.addEventListener('click', printUsers);
-
-  var successToast = document.getElementById('users-success-toast');
-  if (successToast && window.bootstrap) {
-    var toast = bootstrap.Toast.getOrCreateInstance(successToast, { delay: 3500, autohide: true });
-    toast.show();
-  }
-
-  document.querySelectorAll('.sum-users-edit-btn').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      var id = document.getElementById('edit_user_id');
-      var hiddenUser = document.getElementById('edit_username_hidden');
-      var displayUser = document.getElementById('edit_username_display');
-      var fullname = document.getElementById('edit_fullname');
-      var role = document.getElementById('edit_role');
-      var password = document.getElementById('edit_password');
-      if (id) id.value = btn.getAttribute('data-user-id') || '';
-      if (hiddenUser) hiddenUser.value = btn.getAttribute('data-username') || '';
-      if (displayUser) displayUser.value = btn.getAttribute('data-username') || '';
-      if (fullname) fullname.value = btn.getAttribute('data-fullname') || '';
-      if (role) role.value = btn.getAttribute('data-role') || 'user';
-      if (password) password.value = '';
-    });
-  });
-
-  <?php if ($openModal): ?>
-  document.addEventListener('DOMContentLoaded', function () {
-    var el = document.getElementById('createUserModal');
-    if (el && window.bootstrap) {
-      bootstrap.Modal.getOrCreateInstance(el).show();
-    }
-  });
-  <?php endif; ?>
-  <?php if ($openEditModal): ?>
-  document.addEventListener('DOMContentLoaded', function () {
-    var el = document.getElementById('editUserModal');
-    if (el && window.bootstrap) {
-      bootstrap.Modal.getOrCreateInstance(el).show();
-    }
-  });
-  <?php endif; ?>
-})();
-</script>
+<?php if ($openModal): ?>
+<span data-users-open-modal="create" hidden aria-hidden="true"></span>
+<?php elseif ($openEditModal): ?>
+<span data-users-open-modal="edit" hidden aria-hidden="true"></span>
+<?php endif; ?>
 <?php
 cdat_sum_page_close();
 layout_end();

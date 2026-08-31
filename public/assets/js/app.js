@@ -172,6 +172,7 @@
             if (typeof window.initDatePickers === 'function') window.initDatePickers(pane);
             if (typeof window.initFileUploads === 'function') window.initFileUploads(pane);
             if (typeof window.initGlobalDatatables === 'function') window.initGlobalDatatables();
+            if (typeof window.initUserManagement === 'function') window.initUserManagement(pane);
         }).catch(function (err) {
             if (err && err.name === 'AbortError') { return; }
             window.location.href = url;
@@ -1662,11 +1663,115 @@
         syncUI();
     }
 
+    function usersCellExportText(td) {
+        if (td.classList.contains('no-export') || td.querySelector('button')) {
+            return '';
+        }
+        return td.textContent.replace(/\s+/g, ' ').trim();
+    }
+
+    window.initUserManagement = function (root) {
+        root = root || document;
+        var table = root.querySelector('#admin_users_table');
+        if (!table) {
+            return;
+        }
+
+        var search = root.querySelector('#users-table-search');
+        if (search && !search.dataset.cdatUsersBound) {
+            search.dataset.cdatUsersBound = '1';
+            search.addEventListener('input', function () {
+                var q = this.value.toLowerCase().trim();
+                Array.prototype.forEach.call(table.tBodies[0].rows, function (row) {
+                    row.style.display = row.textContent.toLowerCase().indexOf(q) !== -1 ? '' : 'none';
+                });
+            });
+        }
+
+        var exportBtn = root.querySelector('#users-export-excel');
+        if (exportBtn && !exportBtn.dataset.cdatUsersBound) {
+            exportBtn.dataset.cdatUsersBound = '1';
+            exportBtn.addEventListener('click', function () {
+                var html = '<table border="1"><thead><tr>';
+                Array.prototype.forEach.call(table.tHead.rows[0].cells, function (th) {
+                    if (th.classList.contains('no-export')) return;
+                    html += '<th>' + th.textContent + '</th>';
+                });
+                html += '</tr></thead><tbody>';
+                Array.prototype.forEach.call(table.tBodies[0].rows, function (row) {
+                    if (row.style.display === 'none') return;
+                    html += '<tr>';
+                    Array.prototype.forEach.call(row.cells, function (td) {
+                        if (td.classList.contains('no-export')) return;
+                        html += '<td>' + usersCellExportText(td) + '</td>';
+                    });
+                    html += '</tr>';
+                });
+                html += '</tbody></table>';
+                var blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+                var link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = 'users_' + Date.now() + '.xls';
+                link.click();
+                URL.revokeObjectURL(link.href);
+            });
+        }
+
+        var printBtn = root.querySelector('#users-print');
+        if (printBtn && !printBtn.dataset.cdatUsersBound) {
+            printBtn.dataset.cdatUsersBound = '1';
+            printBtn.addEventListener('click', function () {
+                window.print();
+            });
+        }
+
+        var successToast = root.querySelector('#users-success-toast');
+        if (successToast && window.bootstrap && !successToast.dataset.cdatUsersShown) {
+            successToast.dataset.cdatUsersShown = '1';
+            bootstrap.Toast.getOrCreateInstance(successToast, { delay: 3500, autohide: true }).show();
+        }
+
+        var autoOpen = root.querySelector('[data-users-open-modal]');
+        if (autoOpen && window.bootstrap) {
+            var modalId = autoOpen.getAttribute('data-users-open-modal') === 'edit'
+                ? 'editUserModal'
+                : 'createUserModal';
+            var modalEl = root.querySelector('#' + modalId) || document.getElementById(modalId);
+            if (modalEl) {
+                bootstrap.Modal.getOrCreateInstance(modalEl).show();
+            }
+        }
+    };
+
+    if (!window._cdatEditUserModalBound) {
+        window._cdatEditUserModalBound = true;
+        document.addEventListener('show.bs.modal', function (event) {
+            if (!event.target || event.target.id !== 'editUserModal') return;
+            var btn = event.relatedTarget;
+            if (!btn || !btn.classList || !btn.classList.contains('sum-users-edit-btn')) return;
+            var modal = event.target;
+            var ds = btn.dataset;
+            var id = modal.querySelector('#edit_user_id');
+            var hiddenUser = modal.querySelector('#edit_username_hidden');
+            var displayUser = modal.querySelector('#edit_username_display');
+            var fullname = modal.querySelector('#edit_fullname');
+            var role = modal.querySelector('#edit_role');
+            var password = modal.querySelector('#edit_password');
+            if (id) id.value = ds.userId || '';
+            if (hiddenUser) hiddenUser.value = ds.username || '';
+            if (displayUser) displayUser.value = ds.username || '';
+            if (fullname) fullname.value = ds.fullname || '';
+            if (role) role.value = ds.role || 'user';
+            if (password) password.value = '';
+        });
+    }
+
     // Call it on initial page load
     window.initGlobalDatatables();
     window.initSearchableSelects();
     window.initDatePickers();
     window.initFileUploads();
+    window.initUserManagement();
 
 }());
 
