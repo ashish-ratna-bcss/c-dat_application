@@ -71,19 +71,24 @@ if (!$valid) {
     login_fail($wantsJson, 'Username or password is incorrect.');
 }
 
+$accountStatus = strtolower((string)($row['STATUS'] ?? $row['status'] ?? 'active'));
+if ($accountStatus !== 'active') {
+    login_fail($wantsJson, 'This account is deactivated. Contact an administrator.');
+}
+
 // New session id on privilege change, so a session cookie planted before login
 // cannot be reused afterwards.
 if (session_status() === PHP_SESSION_ACTIVE) {
     session_regenerate_id(true);
 }
 
-$_SESSION['audit_role']     = strtolower($row['ROLE'] ?? 'user');
-$_SESSION['audit_fullname'] = $row['FULLNAME'] ?? $USERNAME;
+$_SESSION['audit_role']     = strtolower($row['ROLE'] ?? $row['role'] ?? 'user');
+$_SESSION['audit_fullname'] = $row['FULLNAME'] ?? $row['fullname'] ?? $USERNAME;
 
 audit_login(
     $USERNAME,
     $_SESSION['audit_fullname'],
-    (int)($row['ID'] ?? 0)
+    (int) ($row['id'] ?? $row['ID'] ?? 0)
 );
 
 $landing = (defined('CDAT_BASE') ? rtrim((string) CDAT_BASE, '/') : '') . '/dashboard';

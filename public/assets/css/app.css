@@ -1131,6 +1131,286 @@ input.sum-date-input[readonly] {
 
 /* IR / data-entry forms (legacy div+textarea markup inside) */
 .sum-entry-card { max-width: 960px; }
+
+/* admin_create_user.php */
+.sum-create-user-page {
+    max-width: none;
+}
+.sum-users-panel {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 5px rgba(15,39,64,.06);
+}
+.sum-users-panel__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .85rem 1rem;
+    padding: 1rem 1.15rem;
+    background: #f7fafd;
+    border-bottom: 1px solid var(--line);
+}
+.sum-users-panel__head-left {
+    display: flex;
+    align-items: center;
+    gap: .85rem;
+    min-width: 0;
+    flex: 1 1 240px;
+}
+.sum-users-panel__icon {
+    flex: 0 0 auto;
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    background: #e8f1fb;
+    border-radius: 10px;
+    color: #12559f;
+}
+.sum-users-panel__icon svg { width: 22px; height: 22px; }
+.sum-users-panel__title {
+    margin: 0;
+    font-size: 1.02rem;
+    font-weight: 650;
+    color: var(--ink);
+}
+.sum-users-panel__desc {
+    margin: .15rem 0 0;
+    font-size: .82rem;
+    color: var(--ink-soft);
+}
+.sum-users-panel__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: .5rem;
+    flex: 1 1 320px;
+}
+.sum-users-search {
+    width: 11rem;
+    max-width: 100%;
+    margin: 0 !important;
+}
+.sum-users-create-btn {
+    font-weight: 650;
+    padding: .45rem .9rem !important;
+    white-space: nowrap;
+}
+.sum-users-panel__alert {
+    padding: .75rem 1rem 0;
+}
+.sum-users-panel__alert .sum-status { margin: 0; }
+.sum-users-panel__empty {
+    padding: 2rem 1.15rem;
+    color: var(--ink-soft);
+    font-size: .88rem;
+    text-align: center;
+}
+.sum-users-panel__empty p { margin-bottom: .75rem; }
+.sum-create-user-modal__desc {
+    margin: 0 0 1rem;
+    font-size: .88rem;
+    color: var(--ink-soft);
+}
+.sum-create-user-modal .modal-header {
+    background: #f7fafd;
+    border-bottom: 1px solid var(--line);
+}
+.sum-create-user-modal .modal-title {
+    font-size: 1rem;
+    font-weight: 650;
+}
+.sum-create-user-modal .modal-footer {
+    background: #fafbfd;
+    border-top: 1px solid var(--line);
+}
+.sum-users-table {
+    width: 100%;
+    table-layout: auto;
+    font-size: .88rem;
+}
+.sum-users-table thead th {
+    background: var(--thead);
+    color: #fff;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    padding: .6rem 1rem;
+    border: 0;
+    white-space: nowrap;
+}
+.sum-users-table tbody td {
+    padding: .65rem 1rem;
+    vertical-align: middle;
+    border-color: var(--line);
+}
+.sum-users-table tbody td:not(.sum-users-table__actions):not(.sum-users-table__role):not(.sum-users-table__status) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.sum-users-table__username {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-weight: 600;
+    min-width: 7rem;
+}
+.sum-users-table__role {
+    width: 1%;
+    white-space: nowrap;
+}
+.sum-users-table__status {
+    width: 1%;
+    white-space: nowrap;
+}
+.sum-users-table__created {
+    width: 11.5rem;
+    min-width: 11.5rem;
+    white-space: nowrap;
+}
+.sum-users-table__actions {
+    width: 1%;
+    min-width: 17.5rem;
+    white-space: nowrap;
+    overflow: visible !important;
+    text-overflow: clip !important;
+}
+.sum-users-row--inactive td:not(.sum-users-table__actions) {
+    color: #94a3b8;
+}
+.sum-users-you {
+    font-size: .72rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+}
+.sum-users-status {
+    display: inline-block;
+    padding: .12rem .55rem;
+    border-radius: 999px;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+}
+.sum-users-status--active { background: #ecfdf3; color: #15803d; }
+.sum-users-status--inactive { background: #fef2f2; color: #b91c1c; }
+.sum-users-action-group {
+    display: inline-flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: .3rem;
+}
+.sum-users-action-form { margin: 0; flex: 0 0 auto; }
+.sum-users-action-group .sum-users-edit-btn {
+    padding: .32rem .55rem !important;
+    font-size: .76rem !important;
+    font-weight: 650 !important;
+    line-height: 1.2;
+    min-width: 0;
+    white-space: nowrap;
+}
+.content .sum-users-action-group .sum-users-edit-btn.btn-primary {
+    background: #0d6efd !important;
+    border-color: #0d6efd !important;
+    color: #fff !important;
+}
+.content .sum-users-action-group .sum-users-edit-btn.btn-primary:hover {
+    background: #0b5ed7 !important;
+    border-color: #0a58ca !important;
+    color: #fff !important;
+}
+.sum-users-action-form .btn {
+    padding: .32rem .55rem !important;
+    font-size: .76rem !important;
+    font-weight: 650 !important;
+    line-height: 1.2;
+    min-width: 0;
+    white-space: nowrap;
+}
+.content .sum-users-action-form .btn.btn-warning {
+    background: #f59e0b !important;
+    border-color: #d97706 !important;
+    color: #fff !important;
+}
+.content .sum-users-action-form .btn.btn-warning:hover:not(:disabled) {
+    background: #d97706 !important;
+    border-color: #b45309 !important;
+    color: #fff !important;
+}
+.content .sum-users-action-form .btn.btn-danger {
+    background: #dc3545 !important;
+    border-color: #dc3545 !important;
+    color: #fff !important;
+}
+.content .sum-users-action-form .btn.btn-danger:hover:not(:disabled) {
+    background: #bb2d3b !important;
+    border-color: #b02a37 !important;
+    color: #fff !important;
+}
+.content .sum-users-action-form .btn.btn-success {
+    background: #198754 !important;
+    border-color: #198754 !important;
+    color: #fff !important;
+}
+.content .sum-users-action-form .btn.btn-success:hover:not(:disabled) {
+    background: #157347 !important;
+    border-color: #146c43 !important;
+    color: #fff !important;
+}
+.content .sum-users-action-form .btn:disabled {
+    opacity: .55 !important;
+    cursor: not-allowed !important;
+}
+@media print {
+    .sum-users-table__actions, .no-export { display: none !important; }
+}
+.sum-users-role {
+    display: inline-block;
+    padding: .12rem .55rem;
+    border-radius: 999px;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .02em;
+    white-space: nowrap;
+    background: #eef2f6;
+    color: #475569;
+}
+.sum-users-role--admin { background: #e8f1fb; color: #12559f; }
+.sum-users-role--poweruser { background: #eef6ee; color: #2d6a2d; }
+.sum-users-role--user { background: #f3f4f6; color: #64748b; }
+
+@media (max-width: 991px) {
+    .sum-users-table__actions {
+        min-width: 15rem;
+    }
+    .sum-users-action-group {
+        flex-wrap: wrap;
+    }
+}
+@media (max-width: 767px) {
+    .sum-users-panel__actions {
+        width: 100%;
+        justify-content: stretch;
+    }
+    .sum-users-search { width: 100%; flex: 1 1 100%; }
+    .sum-users-panel__actions .cdat-dt-btn,
+    .sum-users-panel__actions .sum-users-create-btn {
+        flex: 1 1 auto;
+    }
+}
+@media print {
+    .sidebar, .topbar, .sum-users-panel__actions, .sum-users-panel__alert,
+    #createUserModal, #editUserModal, .modal-backdrop { display: none !important; }
+    .sum-users-panel { box-shadow: none; border: 0; }
+    .sum-users-panel__head { background: #fff; border: 0; padding-bottom: .5rem; }
+    .content { margin: 0 !important; padding: 0 !important; }
+}
+
 .sum-entry-form br { display: none; }
 .sum-entry-form > div {
     margin: .7rem 0 .25rem;

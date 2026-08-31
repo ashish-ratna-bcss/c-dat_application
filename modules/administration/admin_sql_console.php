@@ -10,41 +10,79 @@ audit_require_admin(); // Restrict to admin-only
 
 $db = audit_db();
 
+function cdat_sql_console_begin_query(PDO $db): void
+{
+    set_time_limit(0);
+    $db->exec('SET statement_timeout = 0');
+}
+
+/** Read-only guard: SELECT / WITH only, no writes or multiple statements. */
+function cdat_sql_console_validate(string $sql): string
+{
+    $sql = trim($sql);
+    if ($sql === '') {
+        throw new Exception('Query is empty.');
+    }
+    if (!preg_match('/^(select|with)\b/is', $sql)) {
+        throw new Exception('Only read-only SELECT queries are allowed.');
+    }
+    $semicolon_pos = strpos($sql, ';');
+    if ($semicolon_pos !== false && $semicolon_pos < strlen($sql) - 1) {
+        throw new Exception('Multiple SQL statements are blocked.');
+    }
+    if (preg_match('/\b(insert|update|delete|drop|truncate|alter|create|grant|revoke)\b/i', $sql)) {
+        throw new Exception('Only read-only SELECT queries are allowed.');
+    }
+
+    return rtrim($sql, ';');
+}
+
+function cdat_sql_console_log_query(PDO $db, string $query, float $execution_time, int $row_count): void
+{
+    $stmt = $db->prepare(
+        'INSERT INTO admin_query_logs (username, query_text, duration_ms, row_count)
+         VALUES (:uname, :q, :duration_ms, :row_count)'
+    );
+    $stmt->execute([
+        ':uname'       => $_SESSION['audit_username'] ?? 'unknown',
+        ':q'           => $query,
+        ':duration_ms' => (int) round($execution_time * 1000),
+        ':row_count'   => $row_count,
+    ]);
+}
+
+/** @return list<array<string,mixed>> */
+function cdat_sql_console_recent_queries(PDO $db, int $limit = 10): array
+{
+    $stmt = $db->query(
+        'SELECT username, query_text, duration_ms, row_count, executed_at
+         FROM admin_query_logs
+         ORDER BY executed_at DESC
+         LIMIT ' . max(1, min($limit, 50))
+    );
+    if ($stmt === false) {
+        return [];
+    }
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    return is_array($rows) ? $rows : [];
+}
+
 // ── Handling CSV / Excel Export ──
 if (isset($_POST['export']) && isset($_POST['sql_query'])) {
     $raw_query = $_POST['sql_query'];
     $export_type = $_POST['export_type'] ?? 'csv'; // 'csv' or 'excel'
     
     try {
-        $clean_query = trim($raw_query);
+        $exec_query = cdat_sql_console_validate($raw_query);
         
-        // 1. Basic validation
-        if (!preg_match('/^select\b/i', $clean_query)) {
-            throw new Exception("Only SELECT queries are allowed.");
-        }
-        
-        // 2. Block multiple statements
-        $semicolon_pos = strpos($clean_query, ';');
-        if ($semicolon_pos !== false && $semicolon_pos < (strlen($clean_query) - 1)) {
-            throw new Exception("Multiple SQL statements are blocked.");
-        }
-        
-        // 3. Block DDL/DML keywords
-        if (preg_match('/\b(insert|update|delete|drop|truncate|alter|create|grant|revoke)\b/i', $clean_query)) {
-            throw new Exception("Only SELECT queries are allowed. DML/DDL commands are blocked.");
-        }
-        
-        // Strip trailing semicolon and wrap query to enforce maximum 1000 records
-        $exec_query = rtrim($clean_query, ';');
-        $wrapped_query = "SELECT * FROM ($exec_query) AS query_run LIMIT 1000";
-        
-        $stmt = $db->query($wrapped_query);
+        cdat_sql_console_begin_query($db);
+        $stmt = $db->query($exec_query);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
-        // Log to User Activity Trail
         audit_log('SQL Query Console', 'Export ' . strtoupper($export_type), [
-            'query' => $clean_query,
-            'rows_count' => count($rows)
+            'query' => $exec_query,
+            'rows_count' => count($rows),
         ]);
         
         if ($export_type === 'excel') {
@@ -97,40 +135,16 @@ $columns = [];
 $results = [];
 $total_rows = 0;
 $execution_time = 0.0;
-$limit_warning = false;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['BTN_EXECUTE']) && $query !== '') {
     $start_time = microtime(true);
     try {
-        // 1. Basic validation
-        if (!preg_match('/^select\b/i', $query)) {
-            throw new Exception("Only SELECT queries are allowed.");
-        }
+        $exec_query = cdat_sql_console_validate($query);
         
-        // 2. Block multiple statements
-        $semicolon_pos = strpos($query, ';');
-        if ($semicolon_pos !== false && $semicolon_pos < (strlen($query) - 1)) {
-            throw new Exception("Multiple SQL statements are blocked.");
-        }
-        
-        // 3. Block DDL/DML keywords
-        if (preg_match('/\b(insert|update|delete|drop|truncate|alter|create|grant|revoke)\b/i', $query)) {
-            throw new Exception("Only SELECT queries are allowed. DML/DDL commands are blocked.");
-        }
-        
-        // Strip trailing semicolon and wrap query to enforce maximum 1000 records
-        $exec_query = rtrim($query, ';');
-        $wrapped_query = "SELECT * FROM ($exec_query) AS query_run LIMIT 1001";
-        
-        $stmt = $db->query($wrapped_query);
+        cdat_sql_console_begin_query($db);
+        $stmt = $db->query($exec_query);
         $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $total_rows = count($results);
-        
-        if ($total_rows > 1000) {
-            $limit_warning = true;
-            array_pop($results); // Remove the 1001st record
-            $total_rows = 1000;
-        }
         
         if ($total_rows > 0) {
             $columns = array_keys($results[0]);
@@ -138,38 +152,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['BTN_EXECUTE']) && $qu
         
         $execution_time = microtime(true) - $start_time;
         
-        // Log to User Activity Trail
         audit_log('SQL Query Console', 'Execute Query', [
-            'query' => $query,
+            'query' => $exec_query,
             'duration' => round($execution_time, 4) . 's',
-            'rows_count' => $total_rows
+            'rows_count' => $total_rows,
         ]);
         
-        // Log query execution history
-        $logStmt = $db->prepare("
-            INSERT INTO admin_query_logs (user_id, username, query_text, execution_time, ip_address)
-            VALUES (:uid, :uname, :q, :time, :ip)
-        ");
-        $logStmt->execute([
-            ':uid'   => $_SESSION['audit_user_id'] ?? 0,
-            ':uname' => $_SESSION['audit_username'] ?? 'unknown',
-            ':q'     => $query,
-            ':time'  => round($execution_time, 4),
-            ':ip'    => $_SERVER['REMOTE_ADDR'] ?? 'unknown'
-        ]);
+        cdat_sql_console_log_query($db, $exec_query, $execution_time, $total_rows);
         
     } catch (Throwable $e) {
         $error = $e->getMessage();
     }
 }
 
-// Fetch query history (last 15 records)
-$history = [];
-try {
-    $history = $db->query("SELECT * FROM admin_query_logs ORDER BY created_at DESC LIMIT 10")->fetchAll(PDO::FETCH_ASSOC);
-} catch (Throwable $e) {
-    // Ignore history load errors
-}
+// Fetch query history (last 10 records)
+$history = cdat_sql_console_recent_queries($db);
 ?>
 <?php
 require_once CDAT_COMMON . '/includes/layout.php';
@@ -181,9 +178,10 @@ cdat_sum_page_open('sum-admin-layout');
 <div class="row g-4">
   <div class="col-12 col-lg-9">
     <section class="sum-console-panel" aria-label="SQL Query Console">
-      <h2 class="sum-console-panel__title">SQL Query Console (PostgreSQL)</h2>
+      <h2 class="sum-console-panel__title">SQL Query Console (PostgreSQL — read-only)</h2>
+      <p class="sum-console-panel__desc mb-2">Any SELECT query is allowed. Writes (INSERT/UPDATE/DELETE/DDL) are blocked for safety.</p>
       <form id="sqlForm" name="sqlForm" method="post" action="" class="no-ajax" data-no-ajax>
-        <textarea id="sql_query" name="sql_query" class="sum-console-editor form-control font-monospace" placeholder="Type your SELECT query here... e.g. SELECT * FROM user_sessions LIMIT 100;"><?= htmlspecialchars($query) ?></textarea>
+        <textarea id="sql_query" name="sql_query" class="sum-console-editor form-control font-monospace" placeholder="Read-only: SELECT * FROM cdatpcsuspect WHERE phone = '7569422355'"><?= htmlspecialchars($query) ?></textarea>
         <div class="sum-console-actions">
           <input type="submit" name="BTN_EXECUTE" id="BTN_EXECUTE" value="Execute Query" class="sum-console-btn btn btn-primary btn-sm" />
           <input type="button" value="Clear" class="sum-console-btn sum-console-btn--secondary btn btn-secondary btn-sm" onclick="document.getElementById('sql_query').value='';" />
@@ -194,10 +192,6 @@ cdat_sum_page_open('sum-admin-layout');
 
     <?php if ($error !== ''): ?>
       <?php cdat_sum_status_message('Error: ' . $error, false); ?>
-    <?php endif; ?>
-
-    <?php if ($limit_warning): ?>
-      <div class="sum-status" role="status">Showing first 1000 records.</div>
     <?php endif; ?>
 
     <?php if ($_SERVER['REQUEST_METHOD'] === 'POST' && $error === '' && isset($_POST['BTN_EXECUTE'])): ?>
@@ -240,10 +234,11 @@ cdat_sum_page_open('sum-admin-layout');
       <h2 class="sum-console-panel__title">Recent Queries</h2>
       <?php if (!empty($history)): ?>
         <?php foreach ($history as $h): ?>
-          <div class="sum-history-item" onclick="document.getElementById('sql_query').value = this.getAttribute('data-query');" data-query="<?= htmlspecialchars($h['query_text']) ?>" title="Click to copy query to editor">
-            <b><?= htmlspecialchars($h['username']) ?></b> (<?= round((float)$h['execution_time'], 3) ?>s)<br/>
-            <span><?= date('d-m-Y h:i A', strtotime($h['created_at'])) ?></span>
-            <code><?= htmlspecialchars(substr($h['query_text'], 0, 80)) ?><?= strlen($h['query_text']) > 80 ? '...' : '' ?></code>
+          <div class="sum-history-item" onclick="document.getElementById('sql_query').value = this.getAttribute('data-query');" data-query="<?= htmlspecialchars($h['query_text'] ?? $h['QUERY_TEXT'] ?? '') ?>" title="Click to copy query to editor">
+            <b><?= htmlspecialchars($h['username'] ?? $h['USERNAME'] ?? 'unknown') ?></b> (<?= round(((float) ($h['duration_ms'] ?? $h['DURATION_MS'] ?? 0)) / 1000, 3) ?>s)<br/>
+            <span><?= date('d-m-Y h:i A', strtotime((string) ($h['executed_at'] ?? $h['EXECUTED_AT'] ?? 'now'))) ?></span>
+            <?php $qtext = (string) ($h['query_text'] ?? $h['QUERY_TEXT'] ?? ''); ?>
+            <code><?= htmlspecialchars(substr($qtext, 0, 80)) ?><?= strlen($qtext) > 80 ? '...' : '' ?></code>
           </div>
         <?php endforeach; ?>
       <?php else: ?>

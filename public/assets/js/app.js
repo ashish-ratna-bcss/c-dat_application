@@ -750,6 +750,7 @@
             var tables = document.querySelectorAll('table[border="1"], table#myTable');
             Array.prototype.forEach.call(tables, function(table) {
                 if (table.closest('.datatable-wrapper') || table.closest('.dataTable-wrapper')) return;
+                if (table.getAttribute('data-no-datatable') === '1') return;
 
                 var hasThead = table.querySelector('thead');
                 var hasTbody = table.querySelector('tbody');

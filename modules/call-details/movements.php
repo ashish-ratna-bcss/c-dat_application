@@ -20,7 +20,7 @@ if ($hasSearch) {
         );
     }
 
-    set_time_limit(0);
+    cdat_sum_begin_heavy_search();
     require_once CDAT_COMMON . '/activity_logger.php';
     audit_log('Movements / Call Details', 'Search', ['phone_number' => $number]);
 
@@ -49,7 +49,7 @@ ORDER BY STARTTIME ASC
 LIMIT ? OFFSET ?";
 
     $st = $conn->prepare($sql);
-    $st->execute([$number, $offset, $limit]);
+    $st->execute([$number, $limit, $offset]);
     if ($st === false) {
         die(print_r(error_get_last(), true));
     }

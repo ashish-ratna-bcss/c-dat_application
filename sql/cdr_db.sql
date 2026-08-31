@@ -838,6 +838,7 @@ CREATE TABLE IF NOT EXISTS logins (
     password        VARCHAR(255) NOT NULL,
     role            VARCHAR(50)  NOT NULL DEFAULT 'user',
     fullname        VARCHAR(255) NOT NULL DEFAULT '',
+    status          VARCHAR(20)  NOT NULL DEFAULT 'active',
     created_at      TIMESTAMP    NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMP    NOT NULL DEFAULT NOW()
 );
