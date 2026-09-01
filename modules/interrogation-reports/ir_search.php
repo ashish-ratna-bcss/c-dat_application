@@ -39,14 +39,14 @@ if ($hasSearch) {
     
 
     $sql9 = "SELECT DISTINCT A.IRKEY,
-                    (CASE WHEN A.IRKEY IN (SELECT DISTINCT REPLACE(IRKEY,' ','') FROM pdact_main_table
+                    (CASE WHEN (A.IRKEY)::varchar IN (SELECT DISTINCT REPLACE(IRKEY,' ','') FROM pdact_main_table
                     WHERE IRKEY ~ '^[0-9]+$') THEN 'PDACT IS IMPOSED CLICK HERE TO VIEW THE DETAILS' ELSE '' END) PDACT,
-                    CASE WHEN A.IRKEY IN (SELECT DISTINCT REPLACE(IRKEY,' ','') FROM pdact_main_table
-                    WHERE IRKEY ~ '^[0-9]+$') THEN (SELECT DISTINCT (MAX(PDACT_KEY)::varchar) FROM pdact_main_table 
-                    WHERE REPLACE(IRKEY,' ','')=A.IRKEY AND IRKEY ~ '^[0-9]+$') 
+                    CASE WHEN (A.IRKEY)::varchar IN (SELECT DISTINCT REPLACE(IRKEY,' ','') FROM pdact_main_table
+                    WHERE IRKEY ~ '^[0-9]+$') THEN (SELECT DISTINCT (MAX(PDACT_KEY)::varchar) FROM pdact_main_table
+                    WHERE REPLACE(IRKEY,' ','')=(A.IRKEY)::varchar AND IRKEY ~ '^[0-9]+$')
                     ELSE '' END PDACT_KEY,
-                    A.NAME,A.ALIAS_NAME,A.FATHER_NAME,A.AGE,A.PRESENT_ADDRESS,A.CRIME_HEAD,A.MO,A.CRIME_NO,A.YEAR,A.SEC_OF_LAW,A.POLICE_STATION,
-                    (A.DATE_OF_ARREST)::varchar DATE_OF_ARREST 
+                    A.NAME,A.ALIAS_NAME,A.FATHER_NAME,A.AGE,A.PRESENT_ADDRESS,B.CRIME_HEAD,B.MO,B.CRIME_NO,B.YEAR,B.SEC_OF_LAW,B.POLICE_STATION,
+                    (B.DATE_OF_ARREST)::varchar DATE_OF_ARREST
                     FROM ir_particulars A
                     INNER JOIN OFFENCE_DETAILS B ON A.NAME LIKE ? 
                     AND (B.CRIME_HEAD LIKE ? OR 
