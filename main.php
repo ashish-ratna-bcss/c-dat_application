@@ -41,13 +41,7 @@ if (str_starts_with($path, '/config')) {
 $deny = [
     'activity_logger.php',
     'bootstrap.php',
-    'cdr_upload_config.php',
-    'cdr_upload_parser.php',
     'db_connect.php',
-    'db_config.php',
-    'document_processing_client.php',
-    'excel_converter.php',
-    'upload_verification_service.php',
     'web.php',
 ];
 $base = strtolower(basename($path));

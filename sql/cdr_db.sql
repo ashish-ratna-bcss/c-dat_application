@@ -731,18 +731,6 @@ CREATE TABLE IF NOT EXISTS document_jobs (
     UNIQUE (module, source_file, file_sha256)
 );
 
-CREATE TABLE IF NOT EXISTS upload_staging_batches (
-    batch_id            BIGSERIAL PRIMARY KEY,
-    document_job_id     BIGINT NOT NULL UNIQUE REFERENCES document_jobs (job_id) ON DELETE CASCADE,
-    upload_log_id       BIGINT,
-    module              VARCHAR(20) NOT NULL,
-    staging_tables      JSONB NOT NULL DEFAULT '{}'::jsonb,
-    verification_status VARCHAR(30) NOT NULL DEFAULT 'pending',
-    created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    verified_at         TIMESTAMPTZ,
-    verified_by         VARCHAR(100)
-);
-
 CREATE TABLE IF NOT EXISTS upload_activity_logs (
     id                  BIGSERIAL PRIMARY KEY,
     user_id             BIGINT,
@@ -764,19 +752,6 @@ CREATE TABLE IF NOT EXISTS upload_activity_logs (
     staging_batch_id    BIGINT,
     verification_status VARCHAR(30),
     uploaded_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS upload_approval_queue (
-    queue_id          BIGSERIAL PRIMARY KEY,
-    batch_id          BIGINT NOT NULL REFERENCES upload_staging_batches (batch_id) ON DELETE CASCADE,
-    module            VARCHAR(20) NOT NULL,
-    username          VARCHAR(100) NOT NULL DEFAULT '',
-    status            VARCHAR(20) NOT NULL DEFAULT 'queued',
-    inserted_records  BIGINT,
-    error_message     TEXT,
-    queued_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    started_at        TIMESTAMPTZ,
-    completed_at      TIMESTAMPTZ
 );
 
 CREATE TABLE IF NOT EXISTS cdatpcsuspect_staging (
@@ -910,15 +885,11 @@ CREATE INDEX IF NOT EXISTS idx_logins_username            ON logins (username);
 CREATE INDEX IF NOT EXISTS idx_document_jobs_status       ON document_jobs (status);
 CREATE INDEX IF NOT EXISTS idx_document_jobs_module       ON document_jobs (module, status);
 CREATE INDEX IF NOT EXISTS idx_user_activity_logs_user    ON user_activity_logs (username);
-CREATE INDEX IF NOT EXISTS idx_upload_staging_batches_status ON upload_staging_batches (verification_status);
-CREATE INDEX IF NOT EXISTS idx_upload_logs_staging_batch  ON upload_activity_logs (staging_batch_id);
 CREATE INDEX IF NOT EXISTS idx_upload_logs_document_job   ON upload_activity_logs (document_job_id);
-CREATE INDEX IF NOT EXISTS idx_upload_approval_queue_module_status ON upload_approval_queue (module, status, queued_at);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_upload_approval_queue_batch_active
-    ON upload_approval_queue (batch_id)
-    WHERE status IN ('queued', 'running');
 CREATE INDEX IF NOT EXISTS idx_cdatpcsuspect_staging_job
     ON cdatpcsuspect_staging (import_job_id, source_row_number);
+
+-- CDR upload pipeline tables: sql/cdatdbschema.sql (schema cdatupload).
 
 -- =============================================================================
 -- Additional tables from Excel inventory (missed in first pass)

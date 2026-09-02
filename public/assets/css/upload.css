@@ -215,7 +215,7 @@
 .content .preview-table td.preview-readonly { background: #f1f4f8; color: var(--ink-soft); }
 
 /* ==================================================================
-   admin_upload_history.php and admin_upload_verify.php
+/* CDR upload + history */
    ------------------------------------------------------------------
    The remaps above only reach style="" attributes. These two pages set
    their colours in CLASSES in their own <style> block, all written for
@@ -439,9 +439,26 @@
 }
 .content .upload-layout--file-only { width: 100%; }
 .content .upload-form .form-group { margin-bottom: 0; width: 100%; }
-.content .upload-form .form-group label {
+.content .cdr-file-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
     min-height: 1.25rem;
     margin: 0 0 .4rem;
+}
+.content .cdr-file-head .form-label {
+    margin: 0;
+}
+.content .cdr-toolbar {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    flex-wrap: wrap;
+    margin: 0;
+}
+.content .cdr-toolbar .btn[hidden] {
+    display: none !important;
 }
 .content .upload-field-file { min-width: 0; }
 .content .upload-form .req { color: #b45309; }
@@ -565,7 +582,7 @@
     z-index: 80;
     display: grid;
     place-items: center;
-    padding: 1.1rem;
+    padding: 1rem;
 }
 .content .staging-modal[hidden] { display: none; }
 .staging-modal__backdrop {
@@ -576,10 +593,10 @@
 .staging-modal__dialog {
     position: relative;
     z-index: 1;
-    width: min(1240px, calc(100vw - 1.25rem));
-    height: min(880px, calc(100vh - 1.5rem));
+    width: min(1080px, calc(100vw - 2rem));
+    max-height: calc(100vh - 2rem);
     background: #fff;
-    border-radius: 14px;
+    border-radius: 12px;
     box-shadow: 0 18px 50px rgba(8, 18, 28, .32);
     display: flex;
     flex-direction: column;
@@ -587,20 +604,25 @@
 }
 .staging-modal__head {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     gap: .75rem;
     width: 100%;
-    padding: .8rem 1.1rem;
+    padding: .75rem 1rem;
     border-bottom: 1px solid var(--line);
     flex: 0 0 auto;
 }
+.staging-modal__head-text { min-width: 0; }
 .staging-modal__head h2 {
     margin: 0;
-    font-size: 1.05rem;
+    font-size: 1.02rem;
     font-weight: 650;
 }
-/* staging modal buttons now use Bootstrap classes in markup — keep only layout helpers */
+.staging-modal__meta {
+    margin: .2rem 0 0;
+    font-size: .8rem;
+    color: var(--ink-soft);
+}
 .staging-modal__actions {
     margin-left: auto;
     display: flex;
@@ -608,15 +630,36 @@
     gap: 8px;
     flex: 0 0 auto;
 }
-/* disabled state: Bootstrap does not auto-cursor progress on disabled buttons */
 .staging-modal__load:disabled,
 .content button.staging-modal__load:disabled { cursor: wait; }
-/* action-text-btn → Bootstrap btn classes in markup */
-.staging-modal__frame {
+.staging-modal__body {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
     flex: 1 1 auto;
-    width: 100%;
-    border: 0;
-    background: #fff;
+    padding: 0;
+    overflow: hidden;
+}
+.staging-modal__table-wrap {
+    flex: 1 1 auto;
+    min-height: 180px;
+    max-height: min(58vh, 560px);
+    overflow: auto;
+}
+.staging-modal__table-wrap .cdr-table {
+    width: max-content;
+    min-width: 100%;
+}
+.staging-modal__pager {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    padding: .55rem 1rem;
+    border-top: 1px solid var(--line);
+    flex: 0 0 auto;
+    font-size: .8rem;
+    color: var(--ink-soft);
 }
 @media (max-width: 720px) {
     .content .upload-layout { --bs-gutter-x: .85rem; }
@@ -883,3 +926,177 @@ body.staging-embed .verify-footer .btn {
 /* btn-approve / btn-reject / btn-refresh: replaced by Bootstrap btn-success/btn-danger/btn-outline-secondary in markup */
 .content #message,
 body.staging-embed #message { min-height: 0; margin: 0; }
+
+/* CDR preview */
+.content .cdr-preview {
+    margin-top: 1.15rem;
+    padding-top: 1.15rem;
+    border-top: 1px solid var(--line);
+}
+.content .cdr-subject {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: .65rem;
+    margin: 0 0 1rem;
+}
+.content .cdr-kv {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: .55rem .75rem;
+    min-height: 3.4rem;
+}
+.content .cdr-kv--wide { grid-column: 1 / -1; }
+.content .cdr-kv span {
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+}
+.content .cdr-kv strong {
+    font-size: .9rem;
+    font-weight: 650;
+    color: var(--ink);
+    word-break: break-word;
+}
+.content .cdr-stats {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: .7rem;
+    margin: 0 0 .75rem;
+}
+.content .cdr-stat {
+    background: #f7fafd;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: .75rem .9rem;
+}
+.content .cdr-stat__label {
+    display: block;
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: #64748b;
+    margin-bottom: .2rem;
+}
+.content .cdr-stat__value {
+    display: block;
+    font-size: 1.35rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+    color: #0f172a;
+}
+.content .cdr-stat--total { background: #dbeafe; border-color: #93c5fd; }
+.content .cdr-stat--total .cdr-stat__value { color: #1d4ed8; }
+.content .cdr-stat--dup { background: #fef3c7; border-color: #fcd34d; }
+.content .cdr-stat--dup .cdr-stat__value { color: #b45309; }
+.content .cdr-stat--db { background: #e2e8f0; border-color: #cbd5e1; }
+.content .cdr-stat--db .cdr-stat__value { color: #475569; }
+.content .cdr-stat--new { background: #dcfce7; border-color: #86efac; }
+.content .cdr-stat--new .cdr-stat__value { color: #15803d; }
+.content .cdr-stat--staging { background: #f3e8ff; border-color: #d8b4fe; }
+.content .cdr-stat--staging .cdr-stat__value { color: #7e22ce; }
+.content .upload-wrapper--cdr .sum-fu.has-files {
+    grid-template-columns: 1fr;
+}
+.content .upload-wrapper--cdr .sum-fu.has-files .sum-fu__clear {
+    display: none !important;
+}
+.content .cdr-actions {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    margin: 0 0 .75rem;
+    flex-wrap: wrap;
+}
+.content .cdr-actions #cdr-stage-status { margin: 0; }
+.content .cdr-preview__note {
+    margin: 0 0 .65rem;
+    font-size: .82rem;
+    color: var(--ink-soft);
+}
+.content .cdr-table-card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(15,39,64,.06);
+}
+.content .cdr-preview .preview-table-wrapper {
+    max-height: min(58vh, 560px);
+    border: 0;
+    border-radius: 0;
+}
+.content .cdr-table {
+    width: max-content;
+    min-width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: .8rem;
+}
+.content .cdr-table th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--thead);
+    color: #fff;
+    font-weight: 600;
+    font-size: .75rem;
+    letter-spacing: .02em;
+    text-align: left;
+    padding: .5rem .7rem;
+    white-space: nowrap;
+    border-bottom: 0;
+}
+.content .cdr-table td {
+    padding: .42rem .7rem;
+    border-bottom: 1px solid var(--line);
+    vertical-align: middle;
+    white-space: nowrap;
+    color: var(--ink);
+    background: #fff;
+}
+.content .cdr-table tbody tr:nth-child(even) td { background: #f7fafd; }
+.content .cdr-table tbody tr:hover td { background: #eef5fc; }
+.content .cdr-table tbody tr.cdr-row--new td { background: #dcfce7; }
+.content .cdr-table tbody tr.cdr-row--duplicate td { background: #fef3c7; }
+.content .cdr-table tbody tr.cdr-row--in_staging td { background: #f3e8ff; }
+.content .cdr-table tbody tr.cdr-row--in_db td { background: #e2e8f0; }
+.content .cdr-table tbody tr.cdr-row--new:hover td { background: #bbf7d0; }
+.content .cdr-table tbody tr.cdr-row--duplicate:hover td { background: #fde68a; }
+.content .cdr-table tbody tr.cdr-row--in_staging:hover td { background: #e9d5ff; }
+.content .cdr-table tbody tr.cdr-row--in_db:hover td { background: #cbd5e1; }
+.content .cdr-col-status {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    min-width: 10.5rem;
+    box-shadow: 4px 0 8px -6px rgba(15,39,64,.25);
+}
+.content .cdr-table th.cdr-col-status { z-index: 3; }
+.content .cdr-empty { color: #94a3b8; }
+.content .cdr-status {
+    display: inline-block;
+    border-radius: 999px;
+    padding: .12rem .5rem;
+    font-size: .72rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+.content .cdr-status--new { background: #dcfce7; color: #166534; }
+.content .cdr-status--duplicate { background: #fef3c7; color: #92400e; }
+.content .cdr-status--in_staging { background: #f3e8ff; color: #6b21a8; }
+.content .cdr-status--in_db { background: #e2e8f0; color: #334155; }
+@media (max-width: 1100px) {
+    .content .cdr-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 900px) {
+    .content .cdr-stats,
+    .content .cdr-subject { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

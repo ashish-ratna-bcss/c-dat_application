@@ -32,9 +32,7 @@ return [
     ['label' => 'Dashboard', 'url' => '/dashboard', 'icon' => 'home'],
 
     ['label' => 'Data Upload', 'icon' => 'upload', 'role' => 'uploader', 'children' => [
-        ['label' => 'CDR',                      'url' => '/data-upload/cdr', 'role' => 'uploader'],
-        ['label' => 'SDR',                      'url' => '/data-upload/sdr', 'role' => 'uploader'],
-        ['label' => 'Custom Table',             'url' => '/data-upload/custom', 'role' => 'uploader'],
+        ['label' => 'CDR (Call Data Record)',   'url' => '/data-upload/cdr', 'role' => 'uploader'],
         ['label' => 'Upload History',           'url' => '/data-upload/history', 'role' => 'uploader'],
     ]],
 

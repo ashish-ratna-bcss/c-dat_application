@@ -45,8 +45,12 @@ __pycache__/
 *.egg-info/
 .venv/
 venv/
+env/
 
 # Backup and temp files
 *.bak
 *.save
 *.tmp
+
+# Archived previous CDR/SDR import stack (local only; see docs/SDR_PIPELINE.md)
+old_removed_codeShivang/

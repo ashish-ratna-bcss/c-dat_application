@@ -600,7 +600,7 @@
         if (form.getAttribute('enctype') && form.getAttribute('enctype').includes('multipart/form-data')) return;
         if (form.method && form.method.toLowerCase() === 'get') return;
         if (form.classList.contains('no-ajax') || form.hasAttribute('data-no-ajax')) return;
-        if (form.action && (form.action.includes('login.php') || form.action.includes('logout.php') || form.action.includes('admin_upload.php'))) return;
+        if (form.action && (form.action.includes('login.php') || form.action.includes('logout.php'))) return;
 
         // Ensure we actually capture the submit button that was clicked.
         var btn = e.submitter || form.querySelector('input[type="submit"][name="BTN_SUM"], button[type="submit"], input[type="submit"]');

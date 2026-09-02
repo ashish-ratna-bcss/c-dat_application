@@ -58,7 +58,7 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Data Upload
+    | Data Upload (pages only — old Python document API is disconnected)
     |--------------------------------------------------------------------------
     */
 
@@ -78,51 +78,9 @@ return [
 
     [
         'method'  => ['GET', 'POST'],
-        'path'    => '/data-upload/sdr',
-        'name'    => 'data-upload.sdr',
-        'handler' => 'modules/data-upload/admin_upload_sdr.php',
-    ],
-
-    [
-        'method'  => ['GET', 'POST'],
-        'path'    => '/data-upload/custom',
-        'name'    => 'data-upload.custom',
-        'handler' => 'modules/data-upload/admin_upload_custom.php',
-    ],
-
-    [
-        'method'  => ['GET', 'POST'],
         'path'    => '/data-upload/history',
         'name'    => 'data-upload.history',
         'handler' => 'modules/data-upload/admin_upload_history.php',
-    ],
-
-    [
-        'method'  => ['GET', 'POST'],
-        'path'    => '/data-upload/verify',
-        'name'    => 'data-upload.verify',
-        'handler' => 'modules/data-upload/admin_upload_verify.php',
-    ],
-
-    [
-        'method'  => ['GET', 'POST'],
-        'path'    => '/data-upload/job-status',
-        'name'    => 'data-upload.job-status',
-        'handler' => 'modules/data-upload/admin_upload_job_status.php',
-    ],
-
-    [
-        'method'  => ['GET', 'POST'],
-        'path'    => '/data-upload/sync-jobs',
-        'name'    => 'data-upload.sync-jobs',
-        'handler' => 'modules/data-upload/admin_upload_sync_jobs.php',
-    ],
-
-    [
-        'method'  => 'GET',
-        'path'    => '/data-upload/template',
-        'name'    => 'data-upload.template',
-        'handler' => 'modules/data-upload/download_template.php',
     ],
 
     [

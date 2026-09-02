@@ -70,7 +70,7 @@ Ensure these exist on heavy search paths (create on VPN if missing):
 
 Use [`cdat-web.nginx.conf`](../cdat-web.nginx.conf) as a template. Set `root` to your deploy path (e.g. `/mnt/storage1/cdat-web`).
 
-Document API proxy (`/document-api/`) forwards to Python service on port 8088.
+Document API proxy is not used for the current CDR upload. PHP talks to `dataUpload/` on port **8090**.
 
 ### Apache (optional / dev)
 
@@ -84,13 +84,15 @@ php -S localhost:8020 main.php
 
 ## Python services
 
-```bash
-# Document processing API (CDR/SDR uploads)
-python3 main.py          # http://127.0.0.1:8088
+CDR upload API (preview / staging / insert):
 
-# Background CDR import worker
-python3 worker.py
+```bash
+cd dataUpload
+source env/bin/activate
+python main.py          # http://127.0.0.1:8090
 ```
+
+The previous import API (`python3 main.py` on **8088**) and `worker.py` are archived. See [SDR_PIPELINE.md](SDR_PIPELINE.md).
 
 ## Runtime directories
 
@@ -127,13 +129,7 @@ pg_restore -h "$CDR_DB_HOST" -U "$CDR_DB_USER" -d CDATDUPL_DB_STAGING --clean /v
 
 ## Worker monitoring
 
-Run CDR worker under systemd or cron watchdog:
-
-```bash
-python3 worker.py   # polls var/cdr_documents/inbox/cdr/
-```
-
-Alert if process not running or inbox queue grows beyond threshold.
+CDR staging/insert workers start with `dataUpload/python main.py`. There is no separate `worker.py`.
 
 ## Health check
 
@@ -145,4 +141,4 @@ curl -sS http://127.0.0.1:8020/health
 
 ## SDR pipeline (optional)
 
-SDR subscriber `.bak` uploads use `sdr_import/` (MSSQL restore → PostgreSQL migrate). This is the **only** runtime MSSQL dependency. Requires Docker MSSQL or equivalent. Out of scope for standard CDR-only deployments.
+SDR is not in `dataUpload/` yet. Rebuild from [SDR_PIPELINE.md](SDR_PIPELINE.md). Old restore/migrate code is in `old_removed_codeShivang/` (gitignored).

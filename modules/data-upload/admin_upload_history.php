@@ -1,13 +1,124 @@
 <?php
 require_once __DIR__ . '/../common/bootstrap.php';
 /**
- * admin_upload_history.php
- * Audit log viewer for CDR data uploads.
- * Filterable, paginated audit list with date range restrictions.
+ * Upload History for CDR files staged from the CDR page.
  */
 require_once CDAT_COMMON . '/activity_logger.php';
-require_once CDAT_UPLOAD . '/admin_upload_page.php';
 audit_require_uploader();
+
+function cdat_upload_schema(): string
+{
+    static $name = null;
+    if ($name !== null) {
+        return $name;
+    }
+    $name = 'cdatupload';
+    $envFile = CDAT_ROOT . '/.env';
+    if (is_readable($envFile)) {
+        foreach (file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+            $line = trim((string) $line);
+            if ($line === '' || $line[0] === '#' || !str_contains($line, '=')) {
+                continue;
+            }
+            [$key, $value] = array_map('trim', explode('=', $line, 2));
+            $value = trim($value, "\"'");
+            if ($key === 'CDAT_UPLOAD_SCHEMA' && $value !== '') {
+                $name = $value;
+                break;
+            }
+        }
+    }
+    if (!preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $name)) {
+        $name = 'cdatupload';
+    }
+    return $name;
+}
+
+function cdat_upload_logs_table(): string
+{
+    return cdat_upload_schema() . '.upload_activity_logs';
+}
+
+function cdat_data_upload_url(): string
+{
+    $host = '127.0.0.1';
+    $port = '8090';
+    $url = '';
+    $envFile = CDAT_ROOT . '/.env';
+    if (is_readable($envFile)) {
+        foreach (file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+            $line = trim((string) $line);
+            if ($line === '' || $line[0] === '#' || !str_contains($line, '=')) {
+                continue;
+            }
+            [$key, $value] = array_map('trim', explode('=', $line, 2));
+            $value = trim($value, "\"'");
+            if ($key === 'DATA_UPLOAD_URL' && $value !== '') {
+                $url = $value;
+            } elseif ($key === 'DATA_UPLOAD_HOST' && $value !== '') {
+                $host = $value;
+            } elseif ($key === 'DATA_UPLOAD_PORT' && $value !== '') {
+                $port = $value;
+            }
+        }
+    }
+    if ($url === '/' || strcasecmp($url, 'same') === 0) {
+        return '';
+    }
+    if ($url !== '') {
+        return rtrim($url, '/');
+    }
+    return 'http://' . $host . ':' . $port;
+}
+
+function cdat_upload_self_url(string $page = 'cdr'): string
+{
+    $path = $page === 'history' ? '/data-upload/history' : '/data-upload/cdr';
+    return function_exists('cdat_href') ? cdat_href($path) : $path;
+}
+
+function cdat_upload_row(array $row): array
+{
+    $out = [];
+    foreach ($row as $key => $value) {
+        $out[strtolower((string) $key)] = $value;
+    }
+    return $out;
+}
+
+function cdat_insert_staging_job(int $jobId): array
+{
+    if ($jobId <= 0) {
+        return ['ok' => false, 'error' => 'Missing job id.', 'inserted' => null, 'status' => null, 'message' => null];
+    }
+    $url = cdat_data_upload_url() . '/api/v1/cdr/jobs/' . $jobId . '/insert';
+    $ctx = stream_context_create([
+        'http' => [
+            'method' => 'POST',
+            'timeout' => 600,
+            'ignore_errors' => true,
+            'header' => "Accept: application/json\r\n",
+        ],
+    ]);
+    $raw = @file_get_contents($url, false, $ctx);
+    $payload = is_string($raw) ? json_decode($raw, true) : null;
+    if (!is_array($payload) || empty($payload['ok'])) {
+        $detail = is_array($payload) ? ($payload['detail'] ?? $payload['error'] ?? null) : null;
+        return [
+            'ok' => false,
+            'error' => is_string($detail) ? $detail : 'Could not queue Insert DB.',
+            'inserted' => null,
+            'status' => null,
+            'message' => null,
+        ];
+    }
+    return [
+        'ok' => true,
+        'inserted' => $payload['inserted_records'] ?? 0,
+        'status' => $payload['phase'] ?? 'inserting',
+        'message' => $payload['message'] ?? 'Insert queued.',
+    ];
+}
 
 if (isset($_POST['ajax_action']) && $_POST['ajax_action'] === 'approve_staging') {
     header('Content-Type: application/json');
@@ -25,21 +136,19 @@ if (isset($_POST['ajax_action']) && $_POST['ajax_action'] === 'approve_staging')
     exit;
 }
 
-$config = require CDAT_UPLOAD . '/cdr_upload_config.php';
-$configs = $config;
-unset($configs['api']);
 $db = audit_db();
+$logsTable = cdat_upload_logs_table();
+$jobsApi = cdat_data_upload_url() . '/api/v1/cdr/jobs';
 
 // 1. Get unique upload usernames for filtering
 try {
-    $userStmt = $db->query("SELECT DISTINCT username FROM upload_activity_logs ORDER BY username");
+    $userStmt = $db->query("SELECT DISTINCT username FROM {$logsTable} ORDER BY username");
     $uploadUsers = $userStmt->fetchAll(PDO::FETCH_COLUMN);
 } catch (Exception $e) {
     $uploadUsers = [];
 }
 
 // 2. Read query parameters
-$type = trim($_GET['type'] ?? 'standard'); // default to standard if not specified
 $filterUser = trim($_GET['filter_user'] ?? '');
 $filterModule = trim($_GET['filter_module'] ?? '');
 $filterStatus = trim($_GET['filter_status'] ?? '');
@@ -63,11 +172,8 @@ if (strtotime($fromDate) > strtotime($toDate)) {
 $where = [];
 $params = [];
 
-if ($type === 'custom') {
-    $where[] = "module_name LIKE 'Custom:%'";
-} else {
-    $where[] = "module_name NOT LIKE 'Custom:%'";
-}
+$where[] = "module_name NOT LIKE 'Custom:%'";
+$where[] = "module_name <> 'SDR'";
 
 if ($filterUser !== '') {
     $where[] = 'username = :username';
@@ -99,7 +205,7 @@ $offset = ($page - 1) * $limit;
 // Count total records
 $totalRecords = 0;
 try {
-    $countQuery = "SELECT COUNT(*) FROM upload_activity_logs WHERE " . $whereClause;
+    $countQuery = "SELECT COUNT(*) FROM {$logsTable} WHERE " . $whereClause;
     $countStmt = $db->prepare($countQuery);
     $countStmt->execute($params);
     $totalRecords = (int)$countStmt->fetchColumn();
@@ -117,16 +223,8 @@ if ($page > $totalPages) {
 $logs = [];
 try {
     $selectQuery = "
-        SELECT l.*, b.verified_by, b.verification_status AS batch_verification_status
-        FROM upload_activity_logs l
-        LEFT JOIN LATERAL (
-            SELECT verified_by, verification_status, batch_id
-            FROM upload_staging_batches b
-            WHERE b.batch_id = l.staging_batch_id
-               OR (l.staging_batch_id IS NULL AND b.document_job_id = l.document_job_id)
-            ORDER BY b.batch_id DESC
-            LIMIT 1
-        ) b ON TRUE
+        SELECT l.*
+        FROM {$logsTable} l
         WHERE {$whereClause}
         ORDER BY l.uploaded_at DESC, l.id DESC
         LIMIT :limit OFFSET :offset
@@ -148,7 +246,7 @@ try {
 function renderApprovalStatus(array $log): array
 {
     $uploadStatus = (string)($log['upload_status'] ?? '');
-    $verificationStatus = strtolower((string)($log['verification_status'] ?? $log['batch_verification_status'] ?? ''));
+    $verificationStatus = strtolower((string)($log['verification_status'] ?? ''));
     $verifiedBy = trim((string)($log['verified_by'] ?? ''));
 
     if ($verificationStatus === 'approved' || ($uploadStatus === 'Success' && $verifiedBy !== '')) {
@@ -179,7 +277,6 @@ function renderApprovalStatus(array $log): array
 
 function cdat_history_page_url(
     int $pageNum,
-    string $type,
     string $filterUser,
     string $filterModule,
     string $filterStatus,
@@ -188,7 +285,6 @@ function cdat_history_page_url(
 ): string {
     $query = array_filter([
         'page' => $pageNum > 1 ? $pageNum : null,
-        'type' => $type !== '' ? $type : null,
         'filter_user' => $filterUser !== '' ? $filterUser : null,
         'filter_module' => $filterModule !== '' ? $filterModule : null,
         'filter_status' => $filterStatus !== '' ? $filterStatus : null,
@@ -224,7 +320,6 @@ cdat_sum_page_open();
                 <!-- Filter Card -->
                 <div class="history-filter-card">
                   <form action="<?= htmlspecialchars(function_exists('cdat_href') ? cdat_href('/data-upload/history') : '/data-upload/history') ?>" method="get" id="filterForm">
-                    <input type="hidden" name="type" value="<?= htmlspecialchars($type) ?>" />
                     <div class="row g-2 align-items-end">
                       <div class="col-12 col-sm-6 col-lg-4 col-xl">
                         <label class="form-label mb-1" for="filter_user">Uploaded By</label>
@@ -236,17 +331,13 @@ cdat_sum_page_open();
                         </select>
                       </div>
 
-                      <?php if ($type !== 'custom'): ?>
                       <div class="col-12 col-sm-6 col-lg-4 col-xl">
                         <label class="form-label mb-1" for="filter_module">Module</label>
                         <select class="form-select form-select-sm" name="filter_module" id="filter_module" data-placeholder="-- All Modules --">
                           <option value="">-- All Modules --</option>
-                          <?php foreach ($configs as $key => $conf): ?>
-                            <option value="<?= htmlspecialchars($conf['name']) ?>" <?= ($filterModule === $conf['name']) ? 'selected' : '' ?>><?= htmlspecialchars($conf['name']) ?></option>
-                          <?php endforeach; ?>
+                          <option value="CDR" <?= ($filterModule === 'CDR') ? 'selected' : '' ?>>CDR</option>
                         </select>
                       </div>
-                      <?php endif; ?>
 
                       <div class="col-12 col-sm-6 col-lg-4 col-xl">
                         <label class="form-label mb-1" for="filter_status">Status</label>
@@ -274,8 +365,8 @@ cdat_sum_page_open();
                       <div class="col-12 col-lg-auto">
                         <div class="d-flex flex-wrap gap-2">
                           <input type="submit" class="btn btn-primary btn-sm flex-fill flex-lg-grow-0" value="Filter" />
-                          <a href="<?= htmlspecialchars(function_exists('cdat_href') ? cdat_href('/data-upload/history') : '/data-upload/history') ?>?type=<?= urlencode($type) ?>" class="btn btn-outline-secondary btn-sm flex-fill flex-lg-grow-0">Reset</a>
-                          <a href="<?= htmlspecialchars($type === 'custom' ? cdat_upload_self_url('custom') : cdat_upload_self_url('cdr')) ?>" class="btn btn-outline-primary btn-sm flex-fill flex-lg-grow-0">Back to Upload Panel</a>
+                          <a href="<?= htmlspecialchars(function_exists('cdat_href') ? cdat_href('/data-upload/history') : '/data-upload/history') ?>" class="btn btn-outline-secondary btn-sm flex-fill flex-lg-grow-0">Reset</a>
+                          <a href="<?= htmlspecialchars(cdat_upload_self_url('cdr')) ?>" class="btn btn-outline-primary btn-sm flex-fill flex-lg-grow-0">Back to Upload Panel</a>
                         </div>
                       </div>
                     </div>
@@ -290,27 +381,14 @@ cdat_sum_page_open();
                     <tr>
                       <th>Uploaded At</th>
                       <th>File Name</th>
-                      <?php if ($type === 'custom'): ?>
-                        <th>Database</th>
-                        <th>Target Table</th>
-                        <th>Newly Created?</th>
-                      <?php else: ?>
-                        <th>Module Name</th>
-                      <?php endif; ?>
+                      <th>Module Name</th>
                       <th>Uploaded By</th>
                       <th>IP Address</th>
                       <th>Total Rows</th>
                       <th>Inserted</th>
-                      <?php if ($type !== 'custom'): ?>
-                        <th>Failed</th>
-                      <?php endif; ?>
+                      <th>Failed</th>
                       <th>Status</th>
-                      <?php if ($type !== 'custom'): ?>
-                      <?php if (false): // Approval column hidden - admin-approval step removed ?>
-                      <th>Approval</th>
-                      <?php endif; ?>
                       <th>Action</th>
-                      <?php endif; ?>
                     </tr>
                   </thead>
                   <tbody>
@@ -321,26 +399,16 @@ cdat_sum_page_open();
                     <?php else: ?>
                       <?php foreach ($logs as $log): ?>
                         <?php
-                          $isProcessing = ($log['upload_status'] ?? '') === 'Processing' && !empty($log['document_job_id']);
-                          $rowJobId = $isProcessing ? (int)$log['document_job_id'] : 0;
+                          $isProcessing = ($log['upload_status'] ?? '') === 'Processing';
+                          $rowJobId = (int) ($log['document_job_id'] ?? 0);
                         ?>
-                        <tr<?= $rowJobId > 0 ? ' data-processing-job="' . $rowJobId . '" data-log-id="' . (int)$log['id'] . '"' : '' ?>>
+                        <tr<?= $rowJobId > 0 ? ' data-pipeline-job="' . $rowJobId . '" data-log-id="' . (int)$log['id'] . '"' : '' ?>>
                           <td><?= date('d-m-Y H:i A', strtotime($log['uploaded_at'])) ?></td>
                           <td style="font-weight: bold; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<?= htmlspecialchars($log['file_name']) ?>">
                             <?= htmlspecialchars($log['file_name']) ?>
                             <div style="font-size: 10px; color: #ccc;"><?= number_format($log['file_size'] / 1024, 2) ?> KB</div>
                           </td>
-                          <?php if ($type === 'custom'): ?>
-                            <td style="color: #FFA500; font-weight: bold;"><?= htmlspecialchars($log['db_name'] ?? '') ?></td>
-                            <td style="color: #FFD700; font-weight: bold;"><?= htmlspecialchars($log['table_name'] ?? '') ?></td>
-                            <td>
-                              <span class="badge-status" style="background: <?= strtolower($log['is_new_table'] ?? '') === 'yes' ? '#28a745' : 'rgba(255,255,255,0.1)' ?>; padding: 2px 6px; border-radius: 3px; font-size: 10px;">
-                                <?= htmlspecialchars($log['is_new_table'] ?? 'No') ?>
-                              </span>
-                            </td>
-                          <?php else: ?>
-                            <td><?= htmlspecialchars($log['module_name']) ?></td>
-                          <?php endif; ?>
+                          <td><?= htmlspecialchars($log['module_name']) ?></td>
                           <td><?= htmlspecialchars($log['username']) ?></td>
                           <td><?= htmlspecialchars($log['ip_address']) ?></td>
                           <td><?= (int)$log['total_records'] ?></td>
@@ -350,9 +418,7 @@ cdat_sum_page_open();
                             $failedShown = $pendingVerify ? 0 : (int)($log['failed_records'] ?? 0);
                           ?>
                           <td style="color: #90EE90; font-weight: bold;"><?= $insertedShown ?></td>
-                          <?php if ($type !== 'custom'): ?>
                             <td style="color: #FFB6C1; font-weight: bold;"><?= $failedShown ?></td>
-                          <?php endif; ?>
                           <td>
                             <?php
                               $statusClass = strtolower(str_replace(' ', '-', (string)($log['upload_status'] ?? '')));
@@ -361,38 +427,22 @@ cdat_sum_page_open();
                               }
                             ?>
                             <span class="badge-status status-<?= htmlspecialchars($statusClass) ?>" data-upload-status="<?= $rowJobId > 0 ? (int)$log['id'] : '' ?>">
-                              <?= htmlspecialchars((string)($log['upload_status'] ?? '')) ?>
+                              <?= htmlspecialchars($isProcessing ? 'Processing' : (string)($log['upload_status'] ?? '')) ?>
                             </span>
                           </td>
-                          <?php if ($type !== 'custom'): ?>
-                          <?php if (false): // Approval column hidden - admin-approval step removed ?>
-                          <?php $approval = renderApprovalStatus($log); ?>
-                          <td>
-                            <span class="<?= htmlspecialchars($approval['class']) ?>">
-                              <?= $approval['text'] ?>
-                            </span>
-                          </td>
-                          <?php endif; ?>
                           <td>
                             <?php
                               $pendingVerify = (($log['upload_status'] ?? '') === 'Pending Verification');
-                              $isSuccess = (($log['upload_status'] ?? '') === 'Success');
-                              $hasJob = !empty($log['document_job_id']);
-                              $rowJobId = (int) ($log['document_job_id'] ?? 0);
-                              $stagingUrl = cdat_upload_verify_url((int) $log['id']);
                             ?>
-                            <?php if ($hasJob && !$isSuccess): ?>
-                              <span class="action-btns">
-                                <?php if ($pendingVerify): ?>
-                                <button type="button" class="btn btn-success btn-sm d-inline-flex align-items-center justify-content-center js-load-to-db" data-job-id="<?= $rowJobId ?>">Load to DB</button>
-                                <?php endif; ?>
-                                <button type="button" class="btn btn-info btn-sm d-inline-flex align-items-center justify-content-center js-view-staging" data-staging-url="<?= htmlspecialchars($stagingUrl, ENT_QUOTES) ?>" data-job-id="<?= $rowJobId ?>" data-can-insert="<?= $pendingVerify ? '1' : '0' ?>">View</button>
-                              </span>
-                            <?php else: ?>
-                              —
-                            <?php endif; ?>
+                            <span class="action-btns" data-pipeline-actions="<?= $rowJobId ?>">
+                              <?php if ($rowJobId > 0 && $pendingVerify): ?>
+                                <button type="button" class="btn btn-success btn-sm d-inline-flex align-items-center justify-content-center js-insert-db" data-job-id="<?= $rowJobId ?>">Insert DB</button>
+                                <button type="button" class="btn btn-info btn-sm d-inline-flex align-items-center justify-content-center js-view-staging" data-job-id="<?= $rowJobId ?>">View</button>
+                              <?php else: ?>
+                                —
+                              <?php endif; ?>
+                            </span>
                           </td>
-                          <?php endif; ?>
                         </tr>
                       <?php endforeach; ?>
                     <?php endif; ?>
@@ -404,17 +454,17 @@ cdat_sum_page_open();
                 <?php if ($totalPages > 1): ?>
                   <div class="history-pagination d-flex flex-wrap gap-1">
                     <?php if ($page > 1): ?>
-                      <a href="<?= htmlspecialchars(cdat_history_page_url($page - 1, $type, $filterUser, $filterModule, $filterStatus, $fromDate, $toDate), ENT_QUOTES) ?>" class="btn btn-outline-secondary btn-sm">&laquo; Prev</a>
+                      <a href="<?= htmlspecialchars(cdat_history_page_url($page - 1, $filterUser, $filterModule, $filterStatus, $fromDate, $toDate), ENT_QUOTES) ?>" class="btn btn-outline-secondary btn-sm">&laquo; Prev</a>
                     <?php endif; ?>
 
                     <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-                      <a href="<?= htmlspecialchars(cdat_history_page_url($i, $type, $filterUser, $filterModule, $filterStatus, $fromDate, $toDate), ENT_QUOTES) ?>" class="btn btn-sm <?= ($page === $i) ? 'btn-primary' : 'btn-outline-secondary' ?>">
+                      <a href="<?= htmlspecialchars(cdat_history_page_url($i, $filterUser, $filterModule, $filterStatus, $fromDate, $toDate), ENT_QUOTES) ?>" class="btn btn-sm <?= ($page === $i) ? 'btn-primary' : 'btn-outline-secondary' ?>">
                         <?= $i ?>
                       </a>
                     <?php endfor; ?>
 
                     <?php if ($page < $totalPages): ?>
-                      <a href="<?= htmlspecialchars(cdat_history_page_url($page + 1, $type, $filterUser, $filterModule, $filterStatus, $fromDate, $toDate), ENT_QUOTES) ?>" class="btn btn-outline-secondary btn-sm">Next &raquo;</a>
+                      <a href="<?= htmlspecialchars(cdat_history_page_url($page + 1, $filterUser, $filterModule, $filterStatus, $fromDate, $toDate), ENT_QUOTES) ?>" class="btn btn-outline-secondary btn-sm">Next &raquo;</a>
                     <?php endif; ?>
                   </div>
                 <?php endif; ?>
@@ -476,107 +526,166 @@ document.getElementById('filterForm').addEventListener('submit', function(e) {
 });
 </script>
 <script type="text/javascript">
-(function pollProcessingUploads() {
-    var rows = document.querySelectorAll('tr[data-processing-job]');
-    if (!rows.length) return;
-    var jobIds = [];
-    rows.forEach(function(row) {
-        var id = parseInt(row.getAttribute('data-processing-job'), 10);
-        if (id > 0) jobIds.push(id);
-    });
-    if (!jobIds.length) return;
+(function () {
+    var jobsApi = <?= json_encode($jobsApi, JSON_UNESCAPED_SLASHES) ?>;
+    var activeJobId = 0;
+    var pageSize = 100;
+    var pageOffset = 0;
+    var pageTotal = 0;
+    var pageFile = '';
 
-    var delay = 8000;
-
-    function statusClassFor(label) {
-        var cls = (label || '').toLowerCase().replace(/\s+/g, '-');
-        if (['success','partial','failed','pending-verification','rejected','processing'].indexOf(cls) === -1) {
-            cls = 'partial';
-        }
-        return cls;
+    function escapeHtml(value) {
+        return String(value == null ? '' : value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
     }
 
-    function updateRow(row, job) {
-        var logId = row.getAttribute('data-log-id');
-        var badge = logId ? document.querySelector('[data-upload-status="' + logId + '"]') : null;
-        var uploadStatus = job.upload_status || '';
-        if (badge && uploadStatus) {
-            badge.textContent = uploadStatus;
-            badge.className = 'badge-status status-' + statusClassFor(uploadStatus);
+    function cellText(value) {
+        var text = String(value == null ? '' : value).trim();
+        if (!text || text === '-' || text === '--' || text === '---') {
+            return '<span class="cdr-empty">—</span>';
         }
-        if (uploadStatus && uploadStatus !== 'Processing') {
-            row.removeAttribute('data-processing-job');
-        }
+        return escapeHtml(text);
     }
 
-    function sync() {
-        fetch(<?= json_encode(function_exists('cdat_href') ? cdat_href('/data-upload/sync-jobs') : '/data-upload/sync-jobs') ?>, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ job_ids: jobIds })
-        }).then(function(r) { return r.json(); }).then(function(data) {
-            if (!data.ok || !data.jobs) return;
-            var stillProcessing = false;
-            data.jobs.forEach(function(job) {
-                if (!job.job_id) return;
-                var row = document.querySelector('tr[data-processing-job="' + job.job_id + '"]');
-                if (!row) return;
-                updateRow(row, job);
-                if ((job.upload_status || '') === 'Processing') {
-                    stillProcessing = true;
+    function closeStagingModal() {
+        var modal = document.getElementById('staging-modal');
+        if (modal) modal.hidden = true;
+        activeJobId = 0;
+        pageOffset = 0;
+        pageTotal = 0;
+        document.body.style.overflow = '';
+    }
+
+    function formatCount(n) {
+        return Number(n || 0).toLocaleString('en-IN');
+    }
+
+    function loadStagingPage() {
+        var meta = document.getElementById('staging-modal-meta');
+        var table = document.getElementById('staging-modal-table');
+        var pageEl = document.getElementById('staging-modal-page');
+        var prevBtn = document.getElementById('staging-modal-prev');
+        var nextBtn = document.getElementById('staging-modal-next');
+        var insertBtn = document.getElementById('staging-modal-load');
+        if (!table) return;
+        meta.textContent = 'Loading…';
+        fetch(jobsApi + '/' + activeJobId + '/rows?limit=' + pageSize + '&offset=' + pageOffset)
+            .then(function (r) { return r.json().then(function (body) { return { ok: r.ok, body: body }; }); })
+            .then(function (res) {
+                if (!res.ok || res.body.ok === false) {
+                    throw new Error(res.body.detail || 'Could not load staging rows.');
                 }
+                var cols = (res.body.columns || []).map(function (c) { return c.name || c; });
+                var rows = res.body.rows || [];
+                pageTotal = Number(res.body.total || rows.length);
+                var from = pageTotal ? pageOffset + 1 : 0;
+                var to = Math.min(pageOffset + rows.length, pageTotal);
+                meta.textContent = (pageFile ? pageFile + ' · ' : '') + formatCount(pageTotal) + ' rows';
+                pageEl.textContent = pageTotal
+                    ? ('Showing ' + formatCount(from) + '–' + formatCount(to) + ' of ' + formatCount(pageTotal))
+                    : 'No rows';
+                prevBtn.disabled = pageOffset <= 0;
+                nextBtn.disabled = pageOffset + pageSize >= pageTotal;
+                table.querySelector('thead').innerHTML = '<tr>' + cols.map(function (name) {
+                    return '<th>' + escapeHtml(name) + '</th>';
+                }).join('') + '</tr>';
+                table.querySelector('tbody').innerHTML = rows.length
+                    ? rows.map(function (row) {
+                        return '<tr>' + cols.map(function (name) {
+                            return '<td>' + cellText(row[name]) + '</td>';
+                        }).join('') + '</tr>';
+                    }).join('')
+                    : '<tr><td colspan="' + Math.max(cols.length, 1) + '">No staging rows.</td></tr>';
+                var wrap = table.closest('.staging-modal__table-wrap');
+                if (wrap) wrap.scrollTop = 0;
+                return fetch(jobsApi + '?ids=' + activeJobId).then(function (r) { return r.json(); });
+            })
+            .then(function (data) {
+                var job = (data && data.jobs && data.jobs[0]) || {};
+                if (job.filename) {
+                    pageFile = job.filename;
+                    meta.textContent = pageFile + ' · ' + formatCount(pageTotal) + ' rows';
+                }
+                if (insertBtn) insertBtn.hidden = !job.can_insert;
+            })
+            .catch(function (err) {
+                meta.textContent = err.message || 'Could not load staging rows.';
             });
-            if (stillProcessing) {
-                delay = Math.min(Math.round(delay * 1.25), 20000);
-                setTimeout(sync, delay);
+    }
+
+    function openStagingModal(jobId) {
+        var modal = document.getElementById('staging-modal');
+        var table = document.getElementById('staging-modal-table');
+        var insertBtn = document.getElementById('staging-modal-load');
+        if (!modal || !table) return;
+        activeJobId = parseInt(jobId, 10) || 0;
+        pageOffset = 0;
+        pageFile = '';
+        table.querySelector('thead').innerHTML = '';
+        table.querySelector('tbody').innerHTML = '';
+        if (insertBtn) {
+            insertBtn.hidden = true;
+            insertBtn.setAttribute('data-job-id', String(activeJobId));
+        }
+        modal.hidden = false;
+        document.body.style.overflow = 'hidden';
+        loadStagingPage();
+    }
+
+    function renderActions(job) {
+        var html = '';
+        if (job.can_insert) {
+            html += '<button type="button" class="btn btn-success btn-sm js-insert-db" data-job-id="' + job.job_id + '">Insert DB</button> ';
+        }
+        if (job.can_view) {
+            html += '<button type="button" class="btn btn-info btn-sm js-view-staging" data-job-id="' + job.job_id + '">View</button>';
+        }
+        return html || '—';
+    }
+
+    function applyJob(job) {
+        var rows = document.querySelectorAll('[data-pipeline-job="' + job.job_id + '"]');
+        Array.prototype.forEach.call(rows, function (tr) {
+            var badge = tr.querySelector('.badge-status');
+            if (badge && job.status_text) {
+                badge.textContent = job.status_text;
+                badge.className = 'badge-status status-' + (
+                    job.phase === 'failed' ? 'failed'
+                    : job.phase === 'inserted' ? 'success'
+                    : job.phase === 'staged' ? 'pending-verification'
+                    : 'processing'
+                );
             }
-        }).catch(function() {
-            setTimeout(sync, delay);
+            var insertedCell = tr.children[6];
+            var failedCell = tr.children[7];
+            if (insertedCell && job.inserted_records != null) insertedCell.textContent = job.inserted_records;
+            if (failedCell && job.failed_records != null) failedCell.textContent = job.failed_records;
+            var totalCell = tr.children[5];
+            if (totalCell && job.total_records != null) totalCell.textContent = job.total_records;
+            var actions = tr.querySelector('[data-pipeline-actions]');
+            if (actions) actions.innerHTML = renderActions(job);
         });
     }
 
-    sync();
-})();
-</script>
-<script type="text/javascript">
-(function () {
-    var historySelf = <?= json_encode(function_exists('cdat_href') ? cdat_href('/data-upload/history') : '/data-upload/history') ?>;
-    var activeJobId = 0;
-
-    function embedStagingUrl(url) {
-        if (!url) return url;
-        return url + (url.indexOf('?') >= 0 ? '&' : '?') + 'embed=1';
+    function pollJobs() {
+        var ids = [];
+        document.querySelectorAll('[data-pipeline-job]').forEach(function (el) {
+            var id = el.getAttribute('data-pipeline-job');
+            if (id && ids.indexOf(id) === -1) ids.push(id);
+        });
+        if (!ids.length) return;
+        fetch(jobsApi + '?ids=' + ids.join(','))
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                (data.jobs || []).forEach(applyJob);
+            })
+            .catch(function () {});
     }
 
-    function closeStagingModal(reload) {
-        var modal = document.getElementById('staging-modal');
-        var frame = document.getElementById('staging-modal-frame');
-        var loadBtn = document.getElementById('staging-modal-load');
-        if (modal) modal.hidden = true;
-        if (frame) frame.src = 'about:blank';
-        if (loadBtn) loadBtn.hidden = true;
-        activeJobId = 0;
-        document.body.style.overflow = '';
-        if (reload) window.location.reload();
-    }
-
-    function openStagingModal(url, jobId, canInsert) {
-        var modal = document.getElementById('staging-modal');
-        var frame = document.getElementById('staging-modal-frame');
-        var loadBtn = document.getElementById('staging-modal-load');
-        if (!modal || !frame) return;
-        activeJobId = parseInt(jobId, 10) || 0;
-        if (loadBtn) {
-            loadBtn.hidden = !canInsert;
-            loadBtn.disabled = false;
-            loadBtn.textContent = 'Load to DB';
-        }
-        frame.src = embedStagingUrl(url);
-        modal.hidden = false;
-        document.body.style.overflow = 'hidden';
-    }
-
-    function loadToDb(jobId, btn) {
+    function insertJob(jobId, btn) {
         jobId = parseInt(jobId, 10) || 0;
         if (jobId <= 0) {
             alert('No staging job found for this upload.');
@@ -585,73 +694,85 @@ document.getElementById('filterForm').addEventListener('submit', function(e) {
         var orig = btn ? btn.textContent : '';
         if (btn) {
             btn.disabled = true;
-            btn.textContent = 'Loading…';
+            btn.textContent = 'Queuing…';
         }
-        var fd = new FormData();
-        fd.append('ajax_action', 'approve_staging');
-        fd.append('job_id', jobId);
-        fetch(historySelf, { method: 'POST', body: fd })
-            .then(function (r) { return r.json(); })
-            .then(function (data) {
-                if (!data.ok) {
-                    alert(data.error || 'Insert failed.');
-                    if (btn) { btn.disabled = false; btn.textContent = orig || 'Load to DB'; }
-                    return;
+        fetch(jobsApi + '/' + jobId + '/insert', { method: 'POST' })
+            .then(function (r) { return r.json().then(function (body) { return { ok: r.ok, body: body }; }); })
+            .then(function (res) {
+                if (!res.ok || res.body.ok === false) {
+                    throw new Error(res.body.detail || res.body.error || 'Insert failed.');
                 }
-                window.location.reload();
+                closeStagingModal();
+                pollJobs();
             })
             .catch(function (err) {
-                alert('Insert failed: ' + (err.message || err));
-                if (btn) { btn.disabled = false; btn.textContent = orig || 'Load to DB'; }
+                alert(err.message || 'Insert failed.');
+                if (btn) { btn.disabled = false; btn.textContent = orig || 'Insert DB'; }
             });
     }
 
     document.addEventListener('click', function (e) {
-        var loadBtn = e.target.closest('.js-load-to-db');
-        if (loadBtn) {
-            loadToDb(loadBtn.getAttribute('data-job-id'), loadBtn);
+        var insertBtn = e.target.closest('.js-insert-db, #staging-modal-load');
+        if (insertBtn && insertBtn.id === 'staging-modal-load') {
+            insertJob(insertBtn.getAttribute('data-job-id') || activeJobId, insertBtn);
+            return;
+        }
+        if (insertBtn && insertBtn.classList.contains('js-insert-db')) {
+            insertJob(insertBtn.getAttribute('data-job-id'), insertBtn);
             return;
         }
         var viewBtn = e.target.closest('.js-view-staging');
         if (viewBtn) {
-            openStagingModal(
-                viewBtn.getAttribute('data-staging-url'),
-                viewBtn.getAttribute('data-job-id'),
-                viewBtn.getAttribute('data-can-insert') === '1'
-            );
+            openStagingModal(viewBtn.getAttribute('data-job-id'));
             return;
         }
         if (e.target.closest('[data-staging-close], #staging-modal-close')) {
-            closeStagingModal(false);
+            closeStagingModal();
+            return;
         }
-        if (e.target.closest('#staging-modal-load')) {
-            var headerLoad = document.getElementById('staging-modal-load');
-            loadToDb(activeJobId, headerLoad);
+        if (e.target.closest('#staging-modal-prev') && pageOffset > 0) {
+            pageOffset = Math.max(0, pageOffset - pageSize);
+            loadStagingPage();
+            return;
+        }
+        if (e.target.closest('#staging-modal-next') && pageOffset + pageSize < pageTotal) {
+            pageOffset += pageSize;
+            loadStagingPage();
         }
     });
     document.addEventListener('keydown', function (e) {
-        if (e.key !== 'Escape') return;
-        var modal = document.getElementById('staging-modal');
-        if (modal && !modal.hidden) closeStagingModal(false);
+        if (e.key === 'Escape') closeStagingModal();
     });
-    window.addEventListener('message', function (e) {
-        if (e.data && e.data.type === 'cdat-staging-close') {
-            closeStagingModal(!!e.data.reload);
-        }
-    });
+    pollJobs();
+    setInterval(pollJobs, 2000);
 })();
 </script>
 <div id="staging-modal" class="staging-modal" hidden>
   <div class="staging-modal__backdrop" data-staging-close="1"></div>
   <div class="staging-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="staging-modal-title">
     <div class="staging-modal__head">
-      <h2 id="staging-modal-title">Staging data</h2>
+      <div class="staging-modal__head-text">
+        <h2 id="staging-modal-title">Staging data</h2>
+        <p id="staging-modal-meta" class="staging-modal__meta"></p>
+      </div>
       <div class="staging-modal__actions">
-        <button type="button" class="staging-modal__load btn btn-success btn-sm" id="staging-modal-load" hidden>Load to DB</button>
+        <button type="button" class="staging-modal__load btn btn-success btn-sm" id="staging-modal-load" hidden>Insert DB</button>
         <button type="button" class="staging-modal__close btn btn-outline-secondary btn-sm" id="staging-modal-close">Close</button>
       </div>
     </div>
-    <iframe id="staging-modal-frame" class="staging-modal__frame" title="Staging data"></iframe>
+    <div class="staging-modal__body">
+      <div class="staging-modal__table-wrap">
+        <table class="preview-table cdr-table" id="staging-modal-table">
+          <thead></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="staging-modal__pager">
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="staging-modal-prev">Previous</button>
+        <span id="staging-modal-page">—</span>
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="staging-modal-next">Next</button>
+      </div>
+    </div>
   </div>
 </div>
 <?php
