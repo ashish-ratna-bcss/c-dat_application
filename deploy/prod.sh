@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
-# Production: dataUpload API on 127.0.0.1:8090 (PHP is Nginx + PHP-FPM).
-# Usage:
-#   ./deploy/prod.sh start
-#   ./deploy/prod.sh stop
-#   ./deploy/prod.sh status
+# Production: PM2 runs PHP + dataUpload API.
+# Ports come from .env (PHP_PORT, DATA_UPLOAD_HOST, DATA_UPLOAD_PORT).
+# Usage: ./deploy/prod.sh start|stop|status|restart
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -11,50 +9,57 @@ cd "$ROOT"
 
 API_DIR="$ROOT/dataUpload"
 VENV="$API_DIR/env"
-RUN_DIR="$ROOT/var/deploy"
-PID_FILE="$RUN_DIR/dataupload.pid"
-LOG_FILE="$API_DIR/logs/dataupload.log"
-API_URL="${DATA_UPLOAD_URL:-http://127.0.0.1:8090}"
+PHP_APP="cdat-v2-php"
+API_APP="cdat-v2-api"
 ACTION="${1:-start}"
 
-mkdir -p "$RUN_DIR" "$API_DIR/logs"
+env_get() {
+  local key="$1" default="${2:-}" line value
+  [[ -f "$ROOT/.env" ]] || { echo "$default"; return 0; }
+  line="$(grep -E "^${key}=" "$ROOT/.env" | tail -n 1 || true)"
+  value="${line#*=}"
+  value="${value%\"}"
+  value="${value#\"}"
+  value="${value%\'}"
+  value="${value#\'}"
+  echo "${value:-$default}"
+}
 
-api_pid() {
-  if [[ -f "$PID_FILE" ]]; then
-    local pid
-    pid="$(cat "$PID_FILE")"
-    if kill -0 "$pid" 2>/dev/null; then
-      echo "$pid"
-      return 0
+PHP_HOST="${PHP_HOST:-$(env_get PHP_HOST 0.0.0.0)}"
+PHP_PORT="${PHP_PORT:-$(env_get PHP_PORT 8022)}"
+API_HOST="$(env_get DATA_UPLOAD_HOST 0.0.0.0)"
+API_PORT="$(env_get DATA_UPLOAD_PORT 5022)"
+API_URL="$(env_get DATA_UPLOAD_URL "http://127.0.0.1:${API_PORT}")"
+
+stop_pidfiles() {
+  local pidfile pid
+  for pidfile in "$ROOT/var/deploy/php.pid" "$ROOT/var/deploy/dataupload.pid"; do
+    if [[ -f "$pidfile" ]]; then
+      pid="$(cat "$pidfile")"
+      if kill -0 "$pid" 2>/dev/null; then
+        kill "$pid" 2>/dev/null || true
+        sleep 1
+        kill -0 "$pid" 2>/dev/null && kill -9 "$pid" 2>/dev/null || true
+      fi
+      rm -f "$pidfile"
     fi
-    rm -f "$PID_FILE"
-  fi
-  return 1
+  done
 }
 
 status() {
-  local pid
-  if pid="$(api_pid)"; then
-    echo "dataUpload API running (pid $pid)  $API_URL/health"
-    curl -fsS "$API_URL/health" || true
-    echo
-  else
-    echo "dataUpload API is not running."
-    return 1
-  fi
+  pm2 status "$PHP_APP" "$API_APP"
+  echo
+  curl -sS -o /dev/null -w "PHP  HTTP %{http_code}  http://127.0.0.1:${PHP_PORT}/login\n" \
+    "http://127.0.0.1:${PHP_PORT}/login" || true
+  curl -sS -w "\nAPI  HTTP %{http_code}  ${API_URL}/health\n" \
+    "http://127.0.0.1:${API_PORT}/health" || true
 }
 
 stop() {
-  local pid
-  if pid="$(api_pid)"; then
-    kill "$pid"
-    sleep 1
-    kill -0 "$pid" 2>/dev/null && kill -9 "$pid" 2>/dev/null || true
-    rm -f "$PID_FILE"
-    echo "Stopped dataUpload API (pid $pid)."
-  else
-    echo "dataUpload API was not running."
-  fi
+  pm2 delete "$PHP_APP" "$API_APP" >/dev/null 2>&1 || true
+  stop_pidfiles
+  pm2 save >/dev/null 2>&1 || true
+  echo "Stopped $PHP_APP and $API_APP"
 }
 
 start() {
@@ -62,10 +67,13 @@ start() {
     echo "Missing $ROOT/.env — copy .env.example and set production credentials." >&2
     exit 1
   fi
+  if ! command -v pm2 >/dev/null 2>&1; then
+    echo "pm2 is not installed or not on PATH." >&2
+    exit 1
+  fi
 
   export CDAT_SQL_CONSOLE="${CDAT_SQL_CONSOLE:-0}"
-  export DATA_UPLOAD_HOST="${DATA_UPLOAD_HOST:-127.0.0.1}"
-  export DATA_UPLOAD_PORT="${DATA_UPLOAD_PORT:-8090}"
+  mkdir -p "$ROOT/logs" "$API_DIR/logs" "$ROOT/var/deploy"
 
   if [[ ! -x "$VENV/bin/python" ]]; then
     echo "Creating dataUpload venv…"
@@ -73,30 +81,22 @@ start() {
     "$VENV/bin/pip" install -r "$API_DIR/requirements.txt"
   fi
 
-  if pid="$(api_pid)"; then
-    echo "Already running (pid $pid)."
-    status
-    return 0
-  fi
+  stop_pidfiles
+  pm2 delete "$PHP_APP" "$API_APP" >/dev/null 2>&1 || true
 
-  echo "Starting dataUpload API on ${DATA_UPLOAD_HOST}:${DATA_UPLOAD_PORT}…"
-  (
-    cd "$API_DIR"
-    exec "$VENV/bin/python" main.py
-  ) >>"$LOG_FILE" 2>&1 &
-  echo $! >"$PID_FILE"
-  sleep 2
+  pm2 start php --name "$PHP_APP" --cwd "$ROOT" --interpreter none \
+    --output "$ROOT/logs/php-server.log" --error "$ROOT/logs/php-error.log" --merge-logs \
+    -- -S "${PHP_HOST}:${PHP_PORT}" "$ROOT/main.php"
 
-  if ! api_pid >/dev/null; then
-    echo "API failed to start. Last log lines:" >&2
-    tail -n 40 "$LOG_FILE" >&2
-    exit 1
-  fi
+  pm2 start "$VENV/bin/python" --name "$API_APP" --cwd "$API_DIR" --interpreter none \
+    --output "$API_DIR/logs/dataupload.log" --error "$API_DIR/logs/dataupload-error.log" --merge-logs \
+    -- main.py
 
+  pm2 save
+  sleep 3
+  echo "PHP  ${PHP_HOST}:${PHP_PORT}"
+  echo "API  ${API_HOST}:${API_PORT}  (${API_URL})"
   status
-  echo
-  echo "PHP is a separate process (php -S or PHP-FPM)."
-  echo "Log: $LOG_FILE"
 }
 
 case "$ACTION" in

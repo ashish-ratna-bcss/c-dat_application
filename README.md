@@ -20,7 +20,7 @@ public/assets/           CSS / JS
 routes/web.php           Pretty URLs
 sql/                     Live tables (`cdr_db.sql`) + upload schemas (`cdatdbschema.sql`)
 dataUpload/              FastAPI: preview → staging → Insert DB
-deploy/                  `dev.sh` (local) and `prod.sh` (API daemon)
+deploy/                  `dev.sh` (local 8020/8090) and `prod.sh` (PM2)
 docs/                    Deploy, SDR rebuild notes, user guides
 ```
 
@@ -37,7 +37,7 @@ cp .env.example .env    # set CDR_DB_*
 ./deploy/dev.sh         # PHP 8020 + API 8090
 ```
 
-Production: `./deploy/prod.sh start` plus your own web server in front of `main.php`. Details in [docs/DEPLOY.md](docs/DEPLOY.md).
+Production: `./deploy/prod.sh start` (PM2: PHP + API). Ports come from `.env` (`PHP_PORT`, `DATA_UPLOAD_PORT`). Details in [docs/DEPLOY.md](docs/DEPLOY.md).
 
 ## Do not commit
 

@@ -385,8 +385,9 @@ cdat_sum_page_open();
                       <th>Uploaded By</th>
                       <th>IP Address</th>
                       <th>Total Rows</th>
+                      <th>New</th>
+                      <th>Skipped</th>
                       <th>Inserted</th>
-                      <th>Failed</th>
                       <th>Status</th>
                       <th>Action</th>
                     </tr>
@@ -394,7 +395,7 @@ cdat_sum_page_open();
                   <tbody>
                     <?php if (empty($logs)): ?>
                       <tr>
-                        <td colspan="10" style="text-align: center; padding: 20px; color: #ccc;">No upload records matching filters were found.</td>
+                        <td colspan="11" style="text-align: center; padding: 20px; color: #ccc;">No upload records matching filters were found.</td>
                       </tr>
                     <?php else: ?>
                       <?php foreach ($logs as $log): ?>
@@ -413,12 +414,14 @@ cdat_sum_page_open();
                           <td><?= htmlspecialchars($log['ip_address']) ?></td>
                           <td><?= (int)$log['total_records'] ?></td>
                           <?php
-                            $pendingVerify = (($log['upload_status'] ?? '') === 'Pending Verification');
-                            $insertedShown = $pendingVerify ? 0 : (int)($log['inserted_records'] ?? 0);
-                            $failedShown = $pendingVerify ? 0 : (int)($log['failed_records'] ?? 0);
+                            $totalShown = (int) ($log['total_records'] ?? 0);
+                            $skippedShown = (int) ($log['failed_records'] ?? 0);
+                            $newShown = (int) ($log['new_records'] ?? max(0, $totalShown - $skippedShown));
+                            $insertedShown = (int) ($log['inserted_records'] ?? 0);
                           ?>
+                          <td style="color: #90EE90; font-weight: bold;"><?= $newShown ?></td>
+                          <td style="color: #E6C35C; font-weight: bold;"><?= $skippedShown ?></td>
                           <td style="color: #90EE90; font-weight: bold;"><?= $insertedShown ?></td>
-                            <td style="color: #FFB6C1; font-weight: bold;"><?= $failedShown ?></td>
                           <td>
                             <?php
                               $statusClass = strtolower(str_replace(' ', '-', (string)($log['upload_status'] ?? '')));
@@ -659,12 +662,14 @@ document.getElementById('filterForm').addEventListener('submit', function(e) {
                     : 'processing'
                 );
             }
-            var insertedCell = tr.children[6];
-            var failedCell = tr.children[7];
-            if (insertedCell && job.inserted_records != null) insertedCell.textContent = job.inserted_records;
-            if (failedCell && job.failed_records != null) failedCell.textContent = job.failed_records;
             var totalCell = tr.children[5];
+            var newCell = tr.children[6];
+            var skippedCell = tr.children[7];
+            var insertedCell = tr.children[8];
             if (totalCell && job.total_records != null) totalCell.textContent = job.total_records;
+            if (newCell && job.new_records != null) newCell.textContent = job.new_records;
+            if (skippedCell && job.failed_records != null) skippedCell.textContent = job.failed_records;
+            if (insertedCell && job.inserted_records != null) insertedCell.textContent = job.inserted_records;
             var actions = tr.querySelector('[data-pipeline-actions]');
             if (actions) actions.innerHTML = renderActions(job);
         });

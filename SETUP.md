@@ -65,19 +65,17 @@ Default local login is `admin` / `admin123` if that account exists in `logins`.
 
 ## 4. Production
 
-1. Copy the tree to the server. Serve `main.php` with PHP-FPM (or another PHP front).
-2. `.env`: real DB credentials, `CDAT_SQL_CONSOLE=0`.
-3. Start the API:
+1. Copy the tree to the server.
+2. `.env`: real DB credentials, `CDAT_SQL_CONSOLE=0`, plus `PHP_PORT` / `DATA_UPLOAD_PORT` / `DATA_UPLOAD_URL`.
+3. Start with PM2:
 
 ```bash
 ./deploy/prod.sh start
 ./deploy/prod.sh status
 ```
 
-Leave `DATA_UPLOAD_URL` unset so the browser talks to `http://127.0.0.1:8090`, or set it to the public API URL if PHP and the API are on different hosts.
-
 Logs:
-- PHP: `logs/application.log` (errors) and `logs/php-server.log` (`./deploy/dev.sh`)
+- PHP: `logs/application.log` (errors) and `logs/php-server.log`
 - API: `dataUpload/logs/dataupload.log`
 
 Stop: `./deploy/prod.sh stop`.
