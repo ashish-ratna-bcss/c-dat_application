@@ -178,7 +178,7 @@ def main() -> int:
 
     try:
         ensure_dest_table(pg)
-        existing = mc.pg_table_row_estimate(pg, DEST_TABLE)
+        existing = max(0, mc.pg_table_row_estimate(pg, DEST_TABLE))
 
         mcur = ms.cursor()
         mcur.arraysize = batch_size
@@ -227,7 +227,7 @@ def main() -> int:
                 deleted = cur.rowcount
             pg.commit()
             print(f"resume: deleted {deleted:,} incomplete rows", flush=True)
-            existing = mc.pg_table_row_estimate(pg, DEST_TABLE)
+            existing = max(0, mc.pg_table_row_estimate(pg, DEST_TABLE))
 
         if existing > 0 and not cp:
             print(
@@ -336,11 +336,11 @@ def main() -> int:
         mc.save_checkpoint(cp_path, state)
         print(
             f"COPY DONE {DEST_TABLE}: {total:,} rows in dest "
-            f"(MSSQL target {MSSQL_TARGET:,}). "
-            f"Do not swap until dest is near target; then build indexes and rename.",
+            f"(MSSQL target {MSSQL_TARGET:,}). Starting indexes + swap.",
             flush=True,
         )
-        return 0
+        from finish_pcsuspect_swap import finish as do_swap
+        return do_swap()
     finally:
         ms.close()
         pg.close()
