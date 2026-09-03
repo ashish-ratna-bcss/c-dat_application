@@ -1,9 +1,11 @@
 """dataUpload settings. Database values come from the repo-root .env."""
 from __future__ import annotations
 
+import logging
 import os
 import re
 from datetime import datetime
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 SERVICE_ROOT = Path(__file__).resolve().parent
@@ -88,6 +90,7 @@ class Settings:
         if origin.strip()
     ]
     upload_dir: Path = Path(_env("DATA_UPLOAD_DIR", str(SERVICE_ROOT / "uploads")))
+    log_dir: Path = Path(_env("DATA_UPLOAD_LOG_DIR", str(SERVICE_ROOT / "logs")))
     max_upload_mb: int = int(_env("DATA_UPLOAD_MAX_MB", "512"))
     pcsuspect_schema: str = _env("CDAT_PCSUSPECT_SCHEMA", "cdatpcsuspectstagingdb")
     upload_schema: str = _env("CDAT_UPLOAD_SCHEMA", "cdatupload")
@@ -113,12 +116,50 @@ class Settings:
         self.db_password = db["password"]
         if not self.upload_dir.is_absolute():
             self.upload_dir = (SERVICE_ROOT / self.upload_dir).resolve()
+        if not self.log_dir.is_absolute():
+            self.log_dir = (SERVICE_ROOT / self.log_dir).resolve()
         self.cdr_upload_dir = self.upload_dir / "cdr"
+        self.log_file = self.log_dir / "dataupload.log"
 
     def ensure_runtime_dirs(self) -> None:
-        """Create uploads/ and uploads/cdr/ when the server starts."""
+        """Create uploads/, uploads/cdr/, and logs/ when the server starts."""
         self.upload_dir.mkdir(parents=True, exist_ok=True)
         self.cdr_upload_dir.mkdir(parents=True, exist_ok=True)
+        self.log_dir.mkdir(parents=True, exist_ok=True)
+
+    def configure_logging(self) -> Path:
+        """Write API and pipeline logs to dataUpload/logs/dataupload.log."""
+        self.ensure_runtime_dirs()
+        log_path = str(self.log_file.resolve())
+        formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s")
+        root = logging.getLogger()
+        root.setLevel(logging.INFO)
+
+        has_file = any(
+            isinstance(handler, logging.FileHandler)
+            and getattr(handler, "baseFilename", "") == log_path
+            for handler in root.handlers
+        )
+        if not has_file:
+            file_handler = RotatingFileHandler(
+                self.log_file,
+                maxBytes=10 * 1024 * 1024,
+                backupCount=5,
+                encoding="utf-8",
+            )
+            file_handler.setFormatter(formatter)
+            root.addHandler(file_handler)
+
+        has_stream = any(
+            isinstance(handler, logging.StreamHandler)
+            and not isinstance(handler, logging.FileHandler)
+            for handler in root.handlers
+        )
+        if not has_stream:
+            stream_handler = logging.StreamHandler()
+            stream_handler.setFormatter(formatter)
+            root.addHandler(stream_handler)
+        return self.log_file
 
 
 settings = Settings()

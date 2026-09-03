@@ -13,6 +13,7 @@ c-dat_application/
     setup.md           this file
     requirements.txt
     env/               Python virtual environment (created below)
+    logs/              API + pipeline log (dataupload.log)
     cdr/
       preview.py       CDR CSV detect + preview
     uploads/           created at startup if missing
@@ -48,7 +49,7 @@ Edit the repo-root `.env` (copy from `.env.example` if needed). These keys are u
 
 On this machine, startup:
 
-- creates `dataUpload/uploads/` and `dataUpload/uploads/cdr/` if they are missing
+- creates `dataUpload/uploads/`, `dataUpload/uploads/cdr/`, and `dataUpload/logs/` if they are missing
 - creates any missing databases from `.env` and applies `sql/*.sql` (`CREATE TABLE IF NOT EXISTS`)
 - creates PostgreSQL schema `cdatpcsuspectstagingdb` inside `CDATDUPL_DB` if it is missing
 
@@ -59,6 +60,7 @@ Optional overrides (not required in `.env`):
 - `DATA_UPLOAD_HOST` / `DATA_UPLOAD_PORT` — bind address (default `127.0.0.1:8090`)
 - `DATA_UPLOAD_API_KEY` — optional `X-API-Key` header
 - `DATA_UPLOAD_DIR` — where uploaded files are stored (default `dataUpload/uploads`)
+- `DATA_UPLOAD_LOG_DIR` — API log folder (default `dataUpload/logs`)
 - `DATA_UPLOAD_MAX_MB` — upload size limit (default `512`)
 - `DATA_UPLOAD_URL` — public API URL used by the CDR page (default `http://127.0.0.1:8090`)
 

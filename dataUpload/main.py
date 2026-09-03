@@ -35,6 +35,8 @@ from cdr.dataProcessing import (
 )
 from db import ensure_databases_and_schema, ping
 
+settings.configure_logging()
+
 
 class HealthResponse(BaseModel):
     status: str = "ok"
@@ -68,8 +70,9 @@ auth_deps = [Depends(verify_api_key)] if settings.api_key else []
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    settings.ensure_runtime_dirs()
+    settings.configure_logging()
     print(f"Upload dirs: {settings.upload_dir} and {settings.cdr_upload_dir}")
+    print(f"Log file: {settings.log_file}")
     summary = ensure_databases_and_schema()
     ping()
     created = summary.get("created_databases") or []
@@ -339,6 +342,7 @@ def run() -> None:
         port=settings.port,
         reload=False,
         app_dir=str(SERVICE_ROOT),
+        log_config=None,
     )
 
 

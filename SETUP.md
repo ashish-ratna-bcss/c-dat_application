@@ -65,17 +65,22 @@ Default local login is `admin` / `admin123` if that account exists in `logins`.
 
 ## 4. Production
 
-1. Copy the tree to the server. Set `root` in `cdat-web.nginx.conf`. Point PHP-FPM at `main.php`.
-2. `.env`: real DB credentials, `CDAT_SQL_CONSOLE=0`, `DATA_UPLOAD_URL=/`.
-3. Nginx proxies `/api/v1/` to `127.0.0.1:8090` (already in `cdat-web.nginx.conf`).
-4. Start the API:
+1. Copy the tree to the server. Serve `main.php` with PHP-FPM (or another PHP front).
+2. `.env`: real DB credentials, `CDAT_SQL_CONSOLE=0`.
+3. Start the API:
 
 ```bash
 ./deploy/prod.sh start
 ./deploy/prod.sh status
 ```
 
-Logs: `var/deploy/dataupload.log`. Stop: `./deploy/prod.sh stop`.
+Leave `DATA_UPLOAD_URL` unset so the browser talks to `http://127.0.0.1:8090`, or set it to the public API URL if PHP and the API are on different hosts.
+
+Logs:
+- PHP: `logs/application.log` (errors) and `logs/php-server.log` (`./deploy/dev.sh`)
+- API: `dataUpload/logs/dataupload.log`
+
+Stop: `./deploy/prod.sh stop`.
 
 More: [docs/DEPLOY.md](docs/DEPLOY.md), [dataUpload/setup.md](dataUpload/setup.md).
 

@@ -37,7 +37,7 @@ cp .env.example .env    # set CDR_DB_*
 ./deploy/dev.sh         # PHP 8020 + API 8090
 ```
 
-Production: Nginx from `cdat-web.nginx.conf`, `DATA_UPLOAD_URL=/` in `.env`, and `./deploy/prod.sh start`. Details in [docs/DEPLOY.md](docs/DEPLOY.md).
+Production: `./deploy/prod.sh start` plus your own web server in front of `main.php`. Details in [docs/DEPLOY.md](docs/DEPLOY.md).
 
 ## Do not commit
 

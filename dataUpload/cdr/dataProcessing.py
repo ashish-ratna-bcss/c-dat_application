@@ -589,7 +589,7 @@ def job_rows(job_id: int, *, limit: int = 200, offset: int = 0) -> dict[str, Any
 
 def run() -> None:
     """Keep a worker process alive (optional; FastAPI already starts the pool)."""
-    logging.basicConfig(level=logging.INFO)
+    settings.configure_logging()
     start_pipeline()
     print(f"CDR pipeline worker running ({MAX_WORKERS} parallel jobs). Ctrl+C to stop.")
     try:

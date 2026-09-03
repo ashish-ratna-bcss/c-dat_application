@@ -13,11 +13,11 @@ API_DIR="$ROOT/dataUpload"
 VENV="$API_DIR/env"
 RUN_DIR="$ROOT/var/deploy"
 PID_FILE="$RUN_DIR/dataupload.pid"
-LOG_FILE="$RUN_DIR/dataupload.log"
+LOG_FILE="$API_DIR/logs/dataupload.log"
 API_URL="${DATA_UPLOAD_URL:-http://127.0.0.1:8090}"
 ACTION="${1:-start}"
 
-mkdir -p "$RUN_DIR"
+mkdir -p "$RUN_DIR" "$API_DIR/logs"
 
 api_pid() {
   if [[ -f "$PID_FILE" ]]; then
@@ -95,8 +95,7 @@ start() {
 
   status
   echo
-  echo "PHP is served by Nginx + PHP-FPM (see cdat-web.nginx.conf)."
-  echo "Set DATA_UPLOAD_URL=/ in .env so the browser uses this proxy, not :8090."
+  echo "PHP is a separate process (php -S or PHP-FPM)."
   echo "Log: $LOG_FILE"
 }
 

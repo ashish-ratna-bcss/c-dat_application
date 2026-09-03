@@ -66,11 +66,7 @@ Ensure these exist on heavy search paths (create on VPN if missing):
 
 ## Web server
 
-### Nginx (Linux production)
-
-Use [`cdat-web.nginx.conf`](../cdat-web.nginx.conf) as a template. Set `root` to your deploy path (e.g. `/mnt/storage1/cdat-web`).
-
-Document API proxy is not used for the current CDR upload. PHP talks to `dataUpload/` on port **8090**.
+PHP is served by `php -S` (local) or whatever front you run in production (`main.php`). The CDR page talks to the dataUpload API on port **8090**.
 
 ### Apache (optional / dev)
 
@@ -104,6 +100,12 @@ var/cdr_documents/inbox/sdr/
 ```
 
 Do not populate `uploads/` or `var/` with real subscriber data in the repository.
+
+Application logs:
+
+- PHP: `logs/application.log` (PHP `error_log`; folder is blocked over HTTP)
+- PHP built-in server (`./deploy/dev.sh`): `logs/php-server.log`
+- dataUpload API: `dataUpload/logs/dataupload.log`
 
 ## Pre-deploy checks
 

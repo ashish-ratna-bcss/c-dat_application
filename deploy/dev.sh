@@ -27,13 +27,18 @@ if [[ ! -x "$VENV/bin/python" ]]; then
   "$VENV/bin/pip" install -r "$API_DIR/requirements.txt"
 fi
 
+mkdir -p "$ROOT/logs" "$API_DIR/logs"
+
 echo "PHP  http://${PHP_HOST}:${PHP_PORT}/login"
 echo "API  http://127.0.0.1:8090/health"
 echo "CDR  http://${PHP_HOST}:${PHP_PORT}/data-upload/cdr"
+echo "Logs PHP  $ROOT/logs/application.log"
+echo "Logs PHP  $ROOT/logs/php-server.log"
+echo "Logs API  $API_DIR/logs/dataupload.log"
 echo "Stop with Ctrl+C"
 echo
 
-php -S "${PHP_HOST}:${PHP_PORT}" "$ROOT/main.php" &
+php -S "${PHP_HOST}:${PHP_PORT}" "$ROOT/main.php" >>"$ROOT/logs/php-server.log" 2>&1 &
 PHP_PID=$!
 
 (

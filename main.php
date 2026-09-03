@@ -5,8 +5,25 @@
  *   php -S localhost:8020 main.php
  */
 $root = __DIR__;
+$logDir = $root . '/logs';
+if (!is_dir($logDir)) {
+    @mkdir($logDir, 0775, true);
+}
+ini_set('log_errors', '1');
+ini_set('error_log', $logDir . '/application.log');
 $uri  = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 $path = '/' . ltrim(rawurldecode($uri), '/');
+
+$blocked = (
+    str_starts_with($path, '/config')
+    || str_starts_with($path, '/logs')
+    || str_starts_with($path, '/dataUpload')
+    || preg_match('/\.(env|log)$/i', $path)
+);
+if ($blocked) {
+    http_response_code(403);
+    exit;
+}
 
 // php -S sends CSS/JS/images through this file. SCRIPT_NAME is then the
 // asset URL (e.g. /public/assets/images/logo.png), not /main.php — do not
@@ -33,7 +50,14 @@ $path = '/' . ltrim($path, '/');
 if ($path !== '/') {
     $path = rtrim($path, '/');
 }
-if (str_starts_with($path, '/config')) {
+
+$blocked = (
+    str_starts_with($path, '/config')
+    || str_starts_with($path, '/logs')
+    || str_starts_with($path, '/dataUpload')
+    || preg_match('/\.(env|log)$/i', $path)
+);
+if ($blocked) {
     http_response_code(403);
     exit;
 }
