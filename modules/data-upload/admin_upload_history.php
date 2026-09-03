@@ -41,34 +41,30 @@ function cdat_upload_logs_table(): string
 
 function cdat_data_upload_url(): string
 {
-    $host = '127.0.0.1';
-    $port = '8090';
-    $url = '';
-    $envFile = CDAT_ROOT . '/.env';
-    if (is_readable($envFile)) {
-        foreach (file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
-            $line = trim((string) $line);
-            if ($line === '' || $line[0] === '#' || !str_contains($line, '=')) {
-                continue;
-            }
-            [$key, $value] = array_map('trim', explode('=', $line, 2));
-            $value = trim($value, "\"'");
-            if ($key === 'DATA_UPLOAD_URL' && $value !== '') {
-                $url = $value;
-            } elseif ($key === 'DATA_UPLOAD_HOST' && $value !== '') {
-                $host = $value;
-            } elseif ($key === 'DATA_UPLOAD_PORT' && $value !== '') {
-                $port = $value;
-            }
-        }
-    }
+    cdat_load_dotenv();
+    $url = (string) (getenv('DATA_UPLOAD_URL') ?: '');
+    $host = (string) (getenv('DATA_UPLOAD_HOST') ?: '127.0.0.1');
+    $port = (string) (getenv('DATA_UPLOAD_PORT') ?: '8090');
     if ($url === '/' || strcasecmp($url, 'same') === 0) {
         return '';
     }
     if ($url !== '') {
         return rtrim($url, '/');
     }
+    if ($host === '0.0.0.0' || $host === '::' || $host === '[::]') {
+        $host = '127.0.0.1';
+    }
     return 'http://' . $host . ':' . $port;
+}
+
+function cdat_data_upload_api_key(): string
+{
+    cdat_load_dotenv();
+    $key = (string) (getenv('DATA_UPLOAD_API_KEY') ?: '');
+    if ($key === '') {
+        $key = (string) (getenv('CDR_API_KEY') ?: '');
+    }
+    return $key;
 }
 
 function cdat_upload_self_url(string $page = 'cdr'): string
@@ -92,12 +88,17 @@ function cdat_insert_staging_job(int $jobId): array
         return ['ok' => false, 'error' => 'Missing job id.', 'inserted' => null, 'status' => null, 'message' => null];
     }
     $url = cdat_data_upload_url() . '/api/v1/cdr/jobs/' . $jobId . '/insert';
+    $headers = "Accept: application/json\r\n";
+    $apiKey = cdat_data_upload_api_key();
+    if ($apiKey !== '') {
+        $headers .= 'X-API-Key: ' . $apiKey . "\r\n";
+    }
     $ctx = stream_context_create([
         'http' => [
             'method' => 'POST',
             'timeout' => 600,
             'ignore_errors' => true,
-            'header' => "Accept: application/json\r\n",
+            'header' => $headers,
         ],
     ]);
     $raw = @file_get_contents($url, false, $ctx);
@@ -121,9 +122,14 @@ function cdat_insert_staging_job(int $jobId): array
 }
 
 if (isset($_POST['ajax_action']) && $_POST['ajax_action'] === 'approve_staging') {
+    require_once CDAT_COMMON . '/csrf.php';
+    csrf_verify();
     header('Content-Type: application/json');
     $out = cdat_insert_staging_job((int) ($_POST['job_id'] ?? 0));
     if (!empty($out['ok'])) {
+        audit_log('Data Upload', 'Approve staging / Insert DB', [
+            'job_id' => (int) ($_POST['job_id'] ?? 0),
+        ]);
         echo json_encode([
             'ok' => true,
             'inserted' => $out['inserted'] ?? null,
@@ -138,7 +144,7 @@ if (isset($_POST['ajax_action']) && $_POST['ajax_action'] === 'approve_staging')
 
 $db = audit_db();
 $logsTable = cdat_upload_logs_table();
-$jobsApi = cdat_data_upload_url() . '/api/v1/cdr/jobs';
+$jobsApi = (defined('CDAT_BASE') ? rtrim((string) CDAT_BASE, '/') : '') . '/api/data-upload/cdr/jobs';
 
 // 1. Get unique upload usernames for filtering
 try {
@@ -701,7 +707,14 @@ document.getElementById('filterForm').addEventListener('submit', function(e) {
             btn.disabled = true;
             btn.textContent = 'Queuing…';
         }
-        fetch(jobsApi + '/' + jobId + '/insert', { method: 'POST' })
+        fetch(jobsApi + '/' + jobId + '/insert', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') || {}).content || '',
+                'Accept': 'application/json'
+            }
+        })
             .then(function (r) { return r.json().then(function (body) { return { ok: r.ok, body: body }; }); })
             .then(function (res) {
                 if (!res.ok || res.body.ok === false) {

@@ -29,5 +29,10 @@ if (!is_dir(CDAT_LOG_DIR)) {
 }
 ini_set('log_errors', '1');
 ini_set('error_log', CDAT_LOG_DIR . '/application.log');
+// Production-safe defaults; detailed errors go to the log file only.
+ini_set('display_errors', '0');
+ini_set('display_startup_errors', '0');
+error_reporting(E_ALL);
 
 require_once CDAT_CONFIG . '/db_connect.php';
+cdat_load_dotenv();

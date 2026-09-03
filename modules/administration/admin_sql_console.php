@@ -50,11 +50,34 @@ function cdat_sql_console_validate(string $sql): string
     if ($semicolon_pos !== false && $semicolon_pos < strlen($sql) - 1) {
         throw new Exception('Multiple SQL statements are blocked.');
     }
-    if (preg_match('/\b(insert|update|delete|drop|truncate|alter|create|grant|revoke)\b/i', $sql)) {
+    // Keyword / dangerous-function denylist (defense in depth — DB role must also be read-only).
+    $blocked = '/\b('
+        . 'insert|update|delete|drop|truncate|alter|create|grant|revoke|copy|call|'
+        . 'execute|do|listen|notify|unlisten|reindex|vacuum|cluster|comment|'
+        . 'security\s+definer|set\s+role|set\s+session|reset\s+role|'
+        . 'pg_read_file|pg_write_file|pg_ls_dir|pg_read_binary_file|'
+        . 'lo_import|lo_export|lo_unlink|dblink|dblink_exec|'
+        . 'pg_sleep|pg_terminate_backend|pg_cancel_backend'
+        . ')\b/i';
+    if (preg_match($blocked, $sql)) {
         throw new Exception('Only read-only SELECT queries are allowed.');
+    }
+    // Block C-style and nested comment tricks used to smuggle keywords.
+    if (str_contains($sql, '/*') || str_contains($sql, '*/') || str_contains($sql, '--')) {
+        throw new Exception('SQL comments are not allowed in the console.');
     }
 
     return rtrim($sql, ';');
+}
+
+/** Prefix CSV/Excel cell values so spreadsheet apps do not treat them as formulas. */
+function cdat_sql_console_csv_cell($value): string
+{
+    $text = (string) $value;
+    if ($text !== '' && preg_match('/^[=+\-@\t\r]/', $text)) {
+        $text = "'" . $text;
+    }
+    return '"' . str_replace('"', '""', $text) . '"';
 }
 
 function cdat_sql_console_log_query(PDO $db, string $query, float $execution_time, int $row_count): void
@@ -124,7 +147,11 @@ if (isset($_POST['export']) && isset($_POST['sql_query'])) {
                 foreach ($rows as $row) {
                     echo '<tr>';
                     foreach ($row as $val) {
-                        echo '<td>' . htmlspecialchars($val ?? '') . '</td>';
+                        $text = (string) ($val ?? '');
+                        if ($text !== '' && preg_match('/^[=+\-@\t\r]/', $text)) {
+                            $text = "'" . $text;
+                        }
+                        echo '<td>' . htmlspecialchars($text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</td>';
                     }
                     echo '</tr>';
                 }
@@ -140,7 +167,15 @@ if (isset($_POST['export']) && isset($_POST['sql_query'])) {
             if (!empty($rows)) {
                 fputcsv($output, array_keys($rows[0]));
                 foreach ($rows as $row) {
-                    fputcsv($output, $row);
+                    $safe = [];
+                    foreach ($row as $val) {
+                        $text = (string) ($val ?? '');
+                        if ($text !== '' && preg_match('/^[=+\-@\t\r]/', $text)) {
+                            $text = "'" . $text;
+                        }
+                        $safe[] = $text;
+                    }
+                    fputcsv($output, $safe);
                 }
             } else {
                 fputcsv($output, ['No records found']);
@@ -149,7 +184,9 @@ if (isset($_POST['export']) && isset($_POST['sql_query'])) {
         }
         exit;
     } catch (Throwable $e) {
-        die("Export Error: " . $e->getMessage());
+        error_log('SQL console export error: ' . $e->getMessage());
+        http_response_code(400);
+        die('Export failed. Check the query and try again.');
     }
 }
 

@@ -1,5 +1,43 @@
 <?php
 
+/**
+ * Load KEY=VALUE pairs from the application root .env into putenv/$_ENV
+ * so getenv('CDAT_*') and related toggles work for PHP-FPM / php -S.
+ * Does not overwrite variables already set in the process environment.
+ */
+function cdat_load_dotenv(): void
+{
+    static $loaded = false;
+    if ($loaded) {
+        return;
+    }
+    $loaded = true;
+
+    if (!defined('CDAT_ROOT')) {
+        return;
+    }
+    $envFile = CDAT_ROOT . '/.env';
+    if (!is_readable($envFile)) {
+        return;
+    }
+    foreach (file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+        $line = trim((string) $line);
+        if ($line === '' || $line[0] === '#' || !str_contains($line, '=')) {
+            continue;
+        }
+        [$key, $value] = array_map('trim', explode('=', $line, 2));
+        if ($key === '' || !preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $key)) {
+            continue;
+        }
+        $value = trim($value, "\"'");
+        if (getenv($key) !== false) {
+            continue;
+        }
+        putenv($key . '=' . $value);
+        $_ENV[$key] = $value;
+    }
+}
+
 /** Database settings from .env. */
 function cdat_db_config(): array
 {
@@ -8,32 +46,15 @@ function cdat_db_config(): array
         return $cfg;
     }
 
-    $cfg = [
-        'host'     => '127.0.0.1',
-        'port'     => '5432',
-        'database' => 'CDATDUPL_DB',
-        'user'     => 'postgres',
-        'password' => '',
-    ];
+    cdat_load_dotenv();
 
-    $envFile = CDAT_ROOT . '/.env';
-    if (is_readable($envFile)) {
-        foreach (file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
-            $line = trim($line);
-            if ($line === '' || $line[0] === '#' || !str_contains($line, '=')) {
-                continue;
-            }
-            [$key, $value] = array_map('trim', explode('=', $line, 2));
-            match ($key) {
-                'CDR_DB_HOST'     => $cfg['host'] = $value,
-                'CDR_DB_PORT'     => $cfg['port'] = $value,
-                'CDR_DB_NAME'     => $cfg['database'] = $value,
-                'CDR_DB_USER'     => $cfg['user'] = $value,
-                'CDR_DB_PASSWORD' => $cfg['password'] = $value,
-                default           => null,
-            };
-        }
-    }
+    $cfg = [
+        'host'     => getenv('CDR_DB_HOST') ?: '127.0.0.1',
+        'port'     => getenv('CDR_DB_PORT') ?: '5432',
+        'database' => getenv('CDR_DB_NAME') ?: 'CDATDUPL_DB',
+        'user'     => getenv('CDR_DB_USER') ?: 'postgres',
+        'password' => getenv('CDR_DB_PASSWORD') !== false ? (string) getenv('CDR_DB_PASSWORD') : '',
+    ];
 
     return $cfg;
 }

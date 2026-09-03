@@ -152,23 +152,89 @@ function audit_log(string $module, string $action_type, array $search_data = [])
 // Auth / Role Helpers
 // ─────────────────────────────────────────────
 
+function audit_request_wants_json(): bool
+{
+    if (($_POST['ajax'] ?? '') === '1') {
+        return true;
+    }
+    if (strcasecmp($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '', 'XMLHttpRequest') === 0) {
+        return true;
+    }
+    $accept = (string) ($_SERVER['HTTP_ACCEPT'] ?? '');
+    return str_contains($accept, 'application/json');
+}
+
+function audit_deny_unauthenticated(string $reason = 'Authentication required.'): void
+{
+    $login = (defined('CDAT_BASE') ? rtrim((string) CDAT_BASE, '/') : '') . '/login';
+    if (audit_request_wants_json()) {
+        http_response_code(401);
+        header('Content-Type: application/json; charset=utf-8');
+        header('Cache-Control: no-store');
+        echo json_encode(['ok' => false, 'error' => $reason, 'redirect' => $login]);
+        exit;
+    }
+    header('Location: ' . $login . ($reason === 'Session expired.' ? '?expired=1' : ''));
+    exit;
+}
+
+/**
+ * Re-check account status/role from the database (throttled).
+ * Deactivated accounts and role demotions take effect without waiting for logout.
+ */
+function audit_revalidate_account(): void
+{
+    $username = (string) ($_SESSION['audit_username'] ?? '');
+    if ($username === '') {
+        return;
+    }
+    $now = time();
+    $lastCheck = (int) ($_SESSION['audit_account_checked_at'] ?? 0);
+    if (($now - $lastCheck) < 60) {
+        return;
+    }
+    $_SESSION['audit_account_checked_at'] = $now;
+    try {
+        $st = audit_db()->prepare(
+            'SELECT ROLE, STATUS FROM LOGINS WHERE USERNAME = ? LIMIT 1'
+        );
+        $st->execute([$username]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+        if (!$row) {
+            audit_logout();
+            $_SESSION = [];
+            audit_deny_unauthenticated('Authentication required.');
+        }
+        $status = strtolower((string) ($row['STATUS'] ?? $row['status'] ?? 'active'));
+        if ($status !== 'active') {
+            audit_logout();
+            $_SESSION = [];
+            audit_deny_unauthenticated('This account is deactivated.');
+        }
+        $role = strtolower((string) ($row['ROLE'] ?? $row['role'] ?? 'user'));
+        $_SESSION['audit_role'] = $role;
+    } catch (Throwable $e) {
+        error_log('audit_revalidate_account error: ' . $e->getMessage());
+    }
+}
+
 function audit_require_session(): void
 {
     if (empty($_SESSION['audit_username'])) {
         // Was LOGIN.HTML, which resolved to the bare POST handler with no form, so
         // users landed on "USERNAME AND PASSWORD REQUIRED" with nothing to fill in.
         // modules/common/auth.php is the login form.
-        header('Location: ' . (defined('CDAT_BASE') ? rtrim((string) CDAT_BASE, '/') : '') . '/login');
-        exit;
+        audit_deny_unauthenticated('Authentication required.');
     }
     $idleLimit = (int) (getenv('CDAT_SESSION_IDLE_MINUTES') ?: 30);
     $now = time();
     $last = (int) ($_SESSION['audit_last_active'] ?? $now);
     if ($idleLimit > 0 && ($now - $last) > ($idleLimit * 60)) {
         audit_logout();
-        header('Location: ' . (defined('CDAT_BASE') ? rtrim((string) CDAT_BASE, '/') : '') . '/login?expired=1');
-        exit;
+        $_SESSION = [];
+        audit_deny_unauthenticated('Session expired.');
     }
+    audit_revalidate_account();
     $_SESSION['audit_last_active'] = $now;
 }
 

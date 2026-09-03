@@ -83,6 +83,9 @@ return [
         'handler' => 'modules/data-upload/admin_upload_history.php',
     ],
 
+    // Nested paths under /api/data-upload/* are dispatched by main.php prefix match
+    // to modules/data-upload/upload_api_proxy.php
+
     [
         'method'  => ['GET', 'POST'],
         'path'    => '/api/police-stations',

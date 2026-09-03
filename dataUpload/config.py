@@ -84,6 +84,8 @@ class Settings:
     host: str = _env("DATA_UPLOAD_HOST", "127.0.0.1")
     port: int = int(_env("DATA_UPLOAD_PORT", "8090"))
     api_key: str = _env("DATA_UPLOAD_API_KEY") or _env("CDR_API_KEY")
+    # Dev-only escape hatch. Production must set DATA_UPLOAD_API_KEY.
+    allow_unauthenticated_api: bool = _env("CDAT_ALLOW_UNAUTHENTICATED_API", "0") == "1"
     cors_origins: list[str] = [
         origin.strip()
         for origin in _env("DATA_UPLOAD_CORS_ORIGINS", "*").split(",")

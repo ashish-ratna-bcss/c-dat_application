@@ -1,5 +1,7 @@
 <?php
 require_once __DIR__ . '/bootstrap.php';
+require_once CDAT_COMMON . '/activity_logger.php';
+audit_require_session();
 
 if (!empty($_POST['DISTRICT'])) {
     $district = trim((string) $_POST['DISTRICT']);

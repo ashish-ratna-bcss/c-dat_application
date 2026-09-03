@@ -101,15 +101,27 @@ $row = $st1 ? $st1->fetch(PDO::FETCH_ASSOC) : false;
 $stored = (string)($row['PASSWORD'] ?? $row['password'] ?? '');
 $valid = false;
 if ($row && $stored !== '') {
-    if (str_starts_with($stored, '$2y$') || str_starts_with($stored, '$2a$') || str_starts_with($stored, '$argon2')) {
+    $isHashed = str_starts_with($stored, '$2y$')
+        || str_starts_with($stored, '$2a$')
+        || str_starts_with($stored, '$argon2');
+    if ($isHashed) {
         $valid = password_verify($PASSWORD, $stored);
-    } else {
+    } elseif (getenv('CDAT_ALLOW_PLAINTEXT_MIGRATION') === '1') {
+        // Controlled one-time migration window only. Default is refuse plaintext.
         $valid = hash_equals($stored, $PASSWORD);
         if ($valid) {
             $hashed = password_hash($PASSWORD, PASSWORD_DEFAULT);
-            $stmt = $conn->prepare("UPDATE logins SET PASSWORD = ? WHERE USERNAME = ?");
+            $stmt = $conn->prepare('UPDATE logins SET PASSWORD = ? WHERE USERNAME = ?');
             $stmt->execute([$hashed, $USERNAME]);
+            error_log('cdat auth: migrated plaintext password hash for user ' . $USERNAME);
         }
+    } else {
+        error_log('cdat auth: refusing plaintext password login for user ' . $USERNAME);
+        login_record_attempt($conn, $USERNAME, false);
+        login_fail(
+            $wantsJson,
+            'This account requires a password reset. Contact an administrator.'
+        );
     }
 }
 

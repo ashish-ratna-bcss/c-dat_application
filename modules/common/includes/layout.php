@@ -21,6 +21,18 @@ if (!defined('CDAT_BOOTSTRAP')) {
     define('CDAT_BOOTSTRAP', CDAT_ASSETS . '/vendor/bootstrap');
 }
 
+/*
+ * Server-side session gate for every page that loads the shared shell.
+ * Menu visibility is not a control — investigative modules must not be
+ * reachable by direct URL without authentication.
+ *
+ * Opt out only for intentional public/JSON handlers via CDAT_SKIP_SESSION_GUARD.
+ */
+if (!defined('CDAT_SKIP_SESSION_GUARD') || !CDAT_SKIP_SESSION_GUARD) {
+    require_once dirname(__DIR__) . '/activity_logger.php';
+    audit_require_session();
+}
+
 /**
  * Is this menu entry the page currently being viewed?
  * Menu urls may use %26 for filenames with "&" (e.g. day%26nightloc.php);

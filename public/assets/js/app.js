@@ -865,6 +865,10 @@
             var row = [], cols = rows[i].querySelectorAll('td, th');
             for (var j = 0; j < cols.length; j++) {
                 var data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, '').replace(/"/g, '""');
+                // Mitigate CSV/Excel formula injection from imported LE data.
+                if (/^[=+\-@\t]/.test(data)) {
+                    data = "'" + data;
+                }
                 row.push('"' + data + '"');
             }
             csv.push(row.join(','));

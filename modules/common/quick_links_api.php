@@ -11,6 +11,9 @@ require_once __DIR__ . '/bootstrap.php';
  * would follow it and hand the picker an HTML page to parse.
  */
 
+if (!defined('CDAT_SKIP_SESSION_GUARD')) {
+    define('CDAT_SKIP_SESSION_GUARD', true);
+}
 require_once CDAT_COMMON . '/includes/layout.php';
 require_once CDAT_COMMON . '/includes/quick_links.php';
 

@@ -11,6 +11,23 @@ if (!is_dir($logDir)) {
 }
 ini_set('log_errors', '1');
 ini_set('error_log', $logDir . '/application.log');
+ini_set('display_errors', '0');
+ini_set('display_startup_errors', '0');
+
+// Baseline security headers for php -S / PHP-FPM (Nginx should reinforce these).
+if (!headers_sent()) {
+    header('X-Content-Type-Options: nosniff');
+    header('X-Frame-Options: DENY');
+    header('Referrer-Policy: strict-origin-when-cross-origin');
+    header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
+    header('Cross-Origin-Opener-Policy: same-origin');
+    $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+    if ($secure) {
+        header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+    }
+}
+
 $uri  = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 $path = '/' . ltrim(rawurldecode($uri), '/');
 
@@ -105,6 +122,13 @@ function cdat_dispatch(string $root, string $web, string $handler): void
 $method = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
 $routes = require $root . '/routes/web.php';
 $GLOBALS['CDAT_ROUTES'] = $routes;
+
+// Prefix: authenticated FastAPI proxy (nested job IDs under /api/data-upload/...)
+if (str_starts_with($path, '/api/data-upload')) {
+    cdat_dispatch($root, $web, 'modules/data-upload/upload_api_proxy.php');
+    return true;
+}
+
 foreach ($routes as $route) {
     $routePath = rtrim((string) ($route['path'] ?? ''), '/') ?: '/';
     if ($routePath !== $path) {

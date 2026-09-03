@@ -13,6 +13,7 @@ import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Optional
+import logging
 
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -58,14 +59,29 @@ class ErrorResponse(BaseModel):
     detail: str
 
 
+def _is_loopback_host(host: str) -> bool:
+    h = (host or "").strip().lower()
+    return h in {"127.0.0.1", "localhost", "::1"}
+
+
 def verify_api_key(
     x_api_key: Optional[str] = Header(default=None, alias="X-API-Key"),
 ) -> None:
-    if settings.api_key and x_api_key != settings.api_key:
-        raise HTTPException(status_code=401, detail="Invalid or missing X-API-Key header")
+    """Require X-API-Key whenever configured; refuse open APIs outside controlled local dev."""
+    if settings.api_key:
+        if not x_api_key or x_api_key != settings.api_key:
+            raise HTTPException(status_code=401, detail="Invalid or missing X-API-Key header")
+        return
+    if settings.allow_unauthenticated_api and _is_loopback_host(settings.host):
+        return
+    raise HTTPException(
+        status_code=503,
+        detail="Upload API key is not configured. Set DATA_UPLOAD_API_KEY.",
+    )
 
 
-auth_deps = [Depends(verify_api_key)] if settings.api_key else []
+# Always attached — never silently open mutating endpoints.
+auth_deps = [Depends(verify_api_key)]
 
 
 @asynccontextmanager
@@ -121,25 +137,20 @@ def create_app() -> FastAPI:
         try:
             return HealthResponse(db=ping())
         except Exception as exc:
+            logging.getLogger(__name__).exception("health check failed: %s", exc)
             raise HTTPException(
                 status_code=503,
-                detail=f"Database unavailable: {exc}",
+                detail="Database unavailable",
             ) from exc
 
     @app.get(f"{settings.api_prefix}/config", tags=["system"], dependencies=auth_deps)
     def runtime_config() -> JSONResponse:
+        # Do not expose DB credentials, filesystem paths, or internal hosts.
         return JSONResponse(
             {
-                "upload_dir": str(settings.upload_dir.resolve()),
-                "cdr_upload_dir": str(settings.cdr_upload_dir.resolve()),
                 "max_upload_mb": settings.max_upload_mb,
-                "db": {
-                    "host": settings.db_host,
-                    "port": settings.db_port,
-                    "name": settings.db_name,
-                    "user": settings.db_user,
-                    "pcsuspect_schema": settings.pcsuspect_schema,
-                },
+                "pcsuspect_schema": settings.pcsuspect_schema,
+                "api_version": settings.api_version,
             }
         )
 
@@ -335,6 +346,18 @@ app = create_app()
 
 def run() -> None:
     import uvicorn
+
+    if not settings.api_key:
+        if not _is_loopback_host(settings.host) and not settings.allow_unauthenticated_api:
+            raise SystemExit(
+                "Refusing to start dataUpload on a non-loopback host without "
+                "DATA_UPLOAD_API_KEY. Bind to 127.0.0.1 or set the API key."
+            )
+        print(
+            "WARNING: DATA_UPLOAD_API_KEY is unset. "
+            "Mutating endpoints require the key unless "
+            "CDAT_ALLOW_UNAUTHENTICATED_API=1 on loopback."
+        )
 
     uvicorn.run(
         "main:app",

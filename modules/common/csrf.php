@@ -20,7 +20,8 @@ function csrf_field(): string
 
 function csrf_verify(): void
 {
-    if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+    $method = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+    if (!in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
         return;
     }
     if (session_status() === PHP_SESSION_NONE) {
@@ -30,8 +31,15 @@ function csrf_verify(): void
     $expected = (string) ($_SESSION['csrf_token'] ?? '');
     if ($sent === '' || $expected === '' || !hash_equals($expected, $sent)) {
         http_response_code(403);
-        header('Content-Type: text/plain; charset=utf-8');
-        echo 'Invalid or missing CSRF token.';
+        $wantsJson = str_contains((string) ($_SERVER['HTTP_ACCEPT'] ?? ''), 'application/json')
+            || strcasecmp((string) ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? ''), 'XMLHttpRequest') === 0;
+        if ($wantsJson) {
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['ok' => false, 'detail' => 'Invalid or missing CSRF token.']);
+        } else {
+            header('Content-Type: text/plain; charset=utf-8');
+            echo 'Invalid or missing CSRF token.';
+        }
         exit;
     }
 }

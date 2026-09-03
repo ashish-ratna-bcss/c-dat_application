@@ -27,9 +27,19 @@ env_get() {
 
 PHP_HOST="${PHP_HOST:-$(env_get PHP_HOST 0.0.0.0)}"
 PHP_PORT="${PHP_PORT:-$(env_get PHP_PORT 8022)}"
-API_HOST="$(env_get DATA_UPLOAD_HOST 0.0.0.0)"
+# FastAPI must stay on loopback; the PHP upload proxy reaches it locally.
+API_HOST="$(env_get DATA_UPLOAD_HOST 127.0.0.1)"
 API_PORT="$(env_get DATA_UPLOAD_PORT 5022)"
 API_URL="$(env_get DATA_UPLOAD_URL "http://127.0.0.1:${API_PORT}")"
+API_KEY="$(env_get DATA_UPLOAD_API_KEY "")"
+
+if [[ "${API_HOST}" != "127.0.0.1" && "${API_HOST}" != "localhost" && "${API_HOST}" != "::1" ]]; then
+  if [[ -z "${API_KEY}" ]]; then
+    echo "DATA_UPLOAD_HOST=${API_HOST} requires DATA_UPLOAD_API_KEY (or bind API to 127.0.0.1)." >&2
+    exit 1
+  fi
+  echo "WARNING: DATA_UPLOAD_HOST=${API_HOST} is not loopback. Prefer 127.0.0.1 + PHP proxy." >&2
+fi
 
 stop_pidfiles() {
   local pidfile pid

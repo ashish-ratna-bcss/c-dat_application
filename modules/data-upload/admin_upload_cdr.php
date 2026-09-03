@@ -4,40 +4,8 @@ require_once CDAT_COMMON . '/activity_logger.php';
 require_once CDAT_COMMON . '/csrf.php';
 audit_require_uploader();
 
-function cdat_data_upload_url(): string
-{
-    $host = '127.0.0.1';
-    $port = '8090';
-    $url = '';
-    $envFile = CDAT_ROOT . '/.env';
-    if (is_readable($envFile)) {
-        foreach (file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
-            $line = trim((string) $line);
-            if ($line === '' || $line[0] === '#' || !str_contains($line, '=')) {
-                continue;
-            }
-            [$key, $value] = array_map('trim', explode('=', $line, 2));
-            $value = trim($value, "\"'");
-            if ($key === 'DATA_UPLOAD_URL' && $value !== '') {
-                $url = $value;
-            } elseif ($key === 'DATA_UPLOAD_HOST' && $value !== '') {
-                $host = $value;
-            } elseif ($key === 'DATA_UPLOAD_PORT' && $value !== '') {
-                $port = $value;
-            }
-        }
-    }
-    if ($url === '/' || strcasecmp($url, 'same') === 0) {
-        return '';
-    }
-    if ($url !== '') {
-        return rtrim($url, '/');
-    }
-    return 'http://' . $host . ':' . $port;
-}
-
-$previewApi = cdat_data_upload_url() . '/api/v1/cdr/preview';
-$stageApi = cdat_data_upload_url() . '/api/v1/cdr/stage';
+$previewApi = (defined('CDAT_BASE') ? rtrim((string) CDAT_BASE, '/') : '') . '/api/data-upload/cdr/preview';
+$stageApi = (defined('CDAT_BASE') ? rtrim((string) CDAT_BASE, '/') : '') . '/api/data-upload/cdr/stage';
 $cdrUsername = (string) ($_SESSION['audit_username'] ?? 'user');
 $cdrClientIp = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
 
@@ -251,7 +219,15 @@ cdat_sum_page_open();
     var body = new FormData();
     body.append('file', file, file.name);
     try {
-      var response = await fetch(endpoint, { method: 'POST', body: body });
+      var response = await fetch(endpoint, {
+        method: 'POST',
+        body: body,
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') || {}).content || '',
+          'Accept': 'application/json'
+        }
+      });
       var payload = await response.json().catch(function () { return {}; });
       if (!response.ok || payload.ok === false) {
         var detail = payload.detail || payload.error || ('Preview failed (' + response.status + ').');
@@ -279,7 +255,15 @@ cdat_sum_page_open();
     body.append('username', username);
     body.append('ip_address', clientIp);
     try {
-      var response = await fetch(stageEndpoint, { method: 'POST', body: body });
+      var response = await fetch(stageEndpoint, {
+        method: 'POST',
+        body: body,
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') || {}).content || '',
+          'Accept': 'application/json'
+        }
+      });
       var payload = await response.json().catch(function () { return {}; });
       if (!response.ok || payload.ok === false) {
         var detail = payload.detail || payload.error || ('Staging failed (' + response.status + ').');
